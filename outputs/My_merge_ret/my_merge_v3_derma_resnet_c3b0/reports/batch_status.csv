@@ -1,0 +1,2 @@
+status,task_type,dataset,model,clip_model,num_clients,beta,seed,method,merge_weight_mode,eval_json,merged_deleted,seconds,test_acc,test_loss,updated_at,error
+OK,small,dermamnist_224,resnet,,3,0.0,42,my_merge,equal,outputs/my_merge_v3_derma_resnet_c3b0/eval/small/dermamnist_224/resnet/clients_3/beta_0/seed_42/my_merge/eval.json,False,148.59,0.6763092269326684,1.098904900479495,2026-04-19T20:01:30,

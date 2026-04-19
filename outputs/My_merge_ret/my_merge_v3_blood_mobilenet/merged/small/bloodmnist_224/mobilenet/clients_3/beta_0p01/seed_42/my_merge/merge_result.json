@@ -1,0 +1,102 @@
+{
+  "task_type": "small",
+  "dataset": "bloodmnist_224",
+  "model": "mobilenet",
+  "clip_model": "",
+  "num_clients": 3,
+  "beta": 0.01,
+  "seed": 42,
+  "method": "my_merge",
+  "merge_weight_mode": "equal",
+  "method_info": {
+    "implementation": "morphology_guided_boundary_cascade_merge_v3",
+    "base_weights": [
+      0.3333333333333333,
+      0.3333333333333333,
+      0.3333333333333333
+    ],
+    "overall_weights": [
+      0.3250877857208252,
+      0.34521979093551636,
+      0.32969242334365845
+    ],
+    "morphology_weights": [
+      0.3085971176624298,
+      0.3544391989707947,
+      0.3369636833667755
+    ],
+    "class_weights": [
+      [
+        0.2561783790588379,
+        0.25625571608543396,
+        0.4875658452510834
+      ],
+      [
+        0.25526630878448486,
+        0.4894656836986542,
+        0.25526803731918335
+      ],
+      [
+        0.0511736124753952,
+        0.05117416009306908,
+        0.8976522088050842
+      ],
+      [
+        0.12414254248142242,
+        0.12429167330265045,
+        0.7515657544136047
+      ],
+      [
+        0.05091287940740585,
+        0.8981741070747375,
+        0.050912968814373016
+      ],
+      [
+        0.050623636692762375,
+        0.8530270457267761,
+        0.0963493064045906
+      ],
+      [
+        0.48757272958755493,
+        0.25624486804008484,
+        0.256182461977005
+      ],
+      [
+        0.8988028764724731,
+        0.050598546862602234,
+        0.05059853941202164
+      ]
+    ],
+    "feature_summary": {
+      "feature_0": 0.5513299703598022,
+      "feature_1": 0.13653753697872162,
+      "feature_2": 0.7363248467445374,
+      "feature_3": 0.5583968758583069,
+      "feature_4": 0.41011661291122437
+    },
+    "head_scale": 0.18580041268977468,
+    "bn_recalibrated": true,
+    "candidate_metrics": {
+      "avg_candidate": {
+        "acc": 0.4491822429906542,
+        "morph_acc": 0.43881885788879216,
+        "score": 0.5281696374106367,
+        "max_abs": 26.777442932128906
+      },
+      "morphology_candidate": {
+        "acc": 0.272196261682243,
+        "morph_acc": 0.2859075108391045,
+        "score": 0.3236596136332818,
+        "max_abs": 40.0
+      }
+    },
+    "selected_candidate": "avg"
+  },
+  "source_clients": [
+    "client_0.pt",
+    "client_1.pt",
+    "client_2.pt"
+  ],
+  "merged_checkpoint": "outputs/my_merge_v3_blood_mobilenet/merged/small/bloodmnist_224/mobilenet/clients_3/beta_0p01/seed_42/my_merge/merged.pt",
+  "meta_path": "outputs/my_merge_v3_blood_mobilenet/merged/small/bloodmnist_224/mobilenet/clients_3/beta_0p01/seed_42/my_merge/meta.json"
+}

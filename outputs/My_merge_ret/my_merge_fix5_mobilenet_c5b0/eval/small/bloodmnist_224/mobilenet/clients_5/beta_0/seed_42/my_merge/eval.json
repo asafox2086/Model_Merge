@@ -1,0 +1,16 @@
+{
+  "task_type": "small",
+  "dataset": "bloodmnist_224",
+  "model": "mobilenet",
+  "clip_model": "",
+  "num_clients": 5,
+  "beta": 0.0,
+  "seed": 42,
+  "method": "my_merge",
+  "split": "test",
+  "checkpoint_path": "outputs/my_merge_fix5_mobilenet_c5b0/merged/small/bloodmnist_224/mobilenet/clients_5/beta_0/seed_42/my_merge/merged.pt",
+  "merged_dir": "outputs/my_merge_fix5_mobilenet_c5b0/merged/small/bloodmnist_224/mobilenet/clients_5/beta_0/seed_42/my_merge",
+  "test_acc": 0.19467991815258695,
+  "test_loss": 14.773849750742931,
+  "num_samples": 3421
+}

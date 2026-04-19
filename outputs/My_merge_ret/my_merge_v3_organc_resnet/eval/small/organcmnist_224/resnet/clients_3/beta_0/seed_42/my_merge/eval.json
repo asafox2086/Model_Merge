@@ -1,0 +1,16 @@
+{
+  "task_type": "small",
+  "dataset": "organcmnist_224",
+  "model": "resnet",
+  "clip_model": "",
+  "num_clients": 3,
+  "beta": 0.0,
+  "seed": 42,
+  "method": "my_merge",
+  "split": "test",
+  "checkpoint_path": "outputs/my_merge_v3_organc_resnet/merged/small/organcmnist_224/resnet/clients_3/beta_0/seed_42/my_merge/merged.pt",
+  "merged_dir": "outputs/my_merge_v3_organc_resnet/merged/small/organcmnist_224/resnet/clients_3/beta_0/seed_42/my_merge",
+  "test_acc": 0.5562317429406037,
+  "test_loss": 1.7381260767651625,
+  "num_samples": 8216
+}

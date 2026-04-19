@@ -1,0 +1,103 @@
+{
+  "task_type": "small",
+  "dataset": "chaoshengmnist_224",
+  "model": "resnet",
+  "clip_model": "",
+  "num_clients": 3,
+  "beta": 0.0,
+  "seed": 42,
+  "method": "my_merge",
+  "merge_weight_mode": "equal",
+  "method_info": {
+    "implementation": "morphology_guided_boundary_cascade_merge_v3",
+    "base_weights": [
+      0.3333333333333333,
+      0.3333333333333333,
+      0.3333333333333333
+    ],
+    "overall_weights": [
+      0.30611029267311096,
+      0.37704744935035706,
+      0.3168422281742096
+    ],
+    "morphology_weights": [
+      0.30585554242134094,
+      0.37601250410079956,
+      0.3181319236755371
+    ],
+    "class_weights": [
+      [
+        0.05688865855336189,
+        0.885819137096405,
+        0.05729216709733009
+      ],
+      [
+        0.0728059783577919,
+        0.09122452884912491,
+        0.8359694480895996
+      ],
+      [
+        0.05254466459155083,
+        0.06338188052177429,
+        0.8840733766555786
+      ],
+      [
+        0.5158438682556152,
+        0.26080721616744995,
+        0.22334885597229004
+      ],
+      [
+        0.09699308127164841,
+        0.8055786490440369,
+        0.09742827713489532
+      ],
+      [
+        0.8837816715240479,
+        0.06388406455516815,
+        0.05233422666788101
+      ],
+      [
+        0.08852863311767578,
+        0.8220813870429993,
+        0.08938998728990555
+      ],
+      [
+        0.6881164312362671,
+        0.17008095979690552,
+        0.141802579164505
+      ]
+    ],
+    "feature_summary": {
+      "feature_0": 0.4722655713558197,
+      "feature_1": 0.13064898550510406,
+      "feature_2": 0.7605647444725037,
+      "feature_3": 0.09240017831325531,
+      "feature_4": 0.3736567497253418,
+      "feature_5": 5.3519816398620605
+    },
+    "head_scale": 1.0,
+    "bn_recalibrated": true,
+    "candidate_metrics": {
+      "avg_candidate": {
+        "acc": 0.3770491803278688,
+        "morph_acc": 0.3862266351005212,
+        "score": 0.44656997464596265,
+        "max_abs": 4.738885402679443
+      },
+      "morphology_candidate": {
+        "acc": 0.36429872495446264,
+        "morph_acc": 0.3660874400263919,
+        "score": 0.43019446415921314,
+        "max_abs": 7.164194107055664
+      }
+    },
+    "selected_candidate": "avg"
+  },
+  "source_clients": [
+    "client_0.pt",
+    "client_1.pt",
+    "client_2.pt"
+  ],
+  "merged_checkpoint": "outputs/my_merge_v3_chao_resnet_c3b0/merged/small/chaoshengmnist_224/resnet/clients_3/beta_0/seed_42/my_merge/merged.pt",
+  "meta_path": "outputs/my_merge_v3_chao_resnet_c3b0/merged/small/chaoshengmnist_224/resnet/clients_3/beta_0/seed_42/my_merge/meta.json"
+}

@@ -1,0 +1,16 @@
+{
+  "task_type": "small",
+  "dataset": "chaoshengmnist_224",
+  "model": "resnet",
+  "clip_model": "",
+  "num_clients": 3,
+  "beta": 0.0,
+  "seed": 42,
+  "method": "my_merge",
+  "split": "test",
+  "checkpoint_path": "outputs/my_merge_v3_chao_resnet_c3b0/merged/small/chaoshengmnist_224/resnet/clients_3/beta_0/seed_42/my_merge/merged.pt",
+  "merged_dir": "outputs/my_merge_v3_chao_resnet_c3b0/merged/small/chaoshengmnist_224/resnet/clients_3/beta_0/seed_42/my_merge",
+  "test_acc": 0.3710691823899371,
+  "test_loss": 1.6555920450513897,
+  "num_samples": 1113
+}

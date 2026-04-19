@@ -1,0 +1,16 @@
+{
+  "task_type": "small",
+  "dataset": "dermamnist_224",
+  "model": "resnet",
+  "clip_model": "",
+  "num_clients": 3,
+  "beta": 0.0,
+  "seed": 42,
+  "method": "my_merge",
+  "split": "test",
+  "checkpoint_path": "outputs/my_merge_v3_derma_resnet_c3b0/merged/small/dermamnist_224/resnet/clients_3/beta_0/seed_42/my_merge/merged.pt",
+  "merged_dir": "outputs/my_merge_v3_derma_resnet_c3b0/merged/small/dermamnist_224/resnet/clients_3/beta_0/seed_42/my_merge",
+  "test_acc": 0.6763092269326684,
+  "test_loss": 1.098904900479495,
+  "num_samples": 2005
+}

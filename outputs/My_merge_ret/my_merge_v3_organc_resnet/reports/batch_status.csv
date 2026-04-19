@@ -1,0 +1,2 @@
+status,task_type,dataset,model,clip_model,num_clients,beta,seed,method,merge_weight_mode,eval_json,merged_deleted,seconds,test_acc,test_loss,updated_at,error
+OK,small,organcmnist_224,resnet,,3,0.0,42,my_merge,equal,outputs/my_merge_v3_organc_resnet/eval/small/organcmnist_224/resnet/clients_3/beta_0/seed_42/my_merge/eval.json,False,107.86,0.5562317429406037,1.7381260767651625,2026-04-19T19:47:39,

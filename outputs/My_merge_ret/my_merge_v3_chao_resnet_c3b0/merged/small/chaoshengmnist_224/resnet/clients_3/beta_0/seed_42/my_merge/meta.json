@@ -1,0 +1,81 @@
+{
+  "task_type": "small",
+  "dataset": "chaoshengmnist_224",
+  "model": "resnet",
+  "train_mode": "fl",
+  "num_clients": 3,
+  "beta": 0.0,
+  "seed": 42,
+  "num_classes": 8,
+  "observed_num_classes": 8,
+  "in_channels": 3,
+  "epochs": 50,
+  "batch_size": 64,
+  "lr": 0.001,
+  "weight_decay": 0.0001,
+  "image_size": 224,
+  "pretrained": true,
+  "source_batch_dir": "20260308_210543_small_8bb",
+  "source_run_name": "20260308_210547_chaoshengmnist_224_resnet_c3_b0p0_s42",
+  "source_log_dir": "/data1/users/weiyipan/ML/MedModelMerging/logs/20260308_210543_small_8bb/20260308_210547_chaoshengmnist_224_resnet_c3_b0p0_s42",
+  "source_ckpt_dir": "/data1/users/weiyipan/ML/MedModelMerging/checkpoints/20260308_210543_small_8bb/20260308_210547_chaoshengmnist_224_resnet_c3_b0p0_s42",
+  "client_classes": {
+    "0": [
+      3,
+      7,
+      5
+    ],
+    "1": [
+      4,
+      6,
+      0
+    ],
+    "2": [
+      2,
+      1
+    ]
+  },
+  "clients": [
+    {
+      "client_id": 0,
+      "num_samples": 1606,
+      "classes": [
+        3,
+        7,
+        5
+      ],
+      "best_val_acc": 0.3861566484517304,
+      "test_acc": 0.3755615453728661,
+      "test_loss": 5.922886267598963,
+      "checkpoint": "client_0.pt",
+      "source_checkpoint": "/data1/users/weiyipan/ML/MedModelMerging/checkpoints/20260308_210543_small_8bb/20260308_210547_chaoshengmnist_224_resnet_c3_b0p0_s42/client_0_best.pt"
+    },
+    {
+      "client_id": 1,
+      "num_samples": 1436,
+      "classes": [
+        4,
+        6,
+        0
+      ],
+      "best_val_acc": 0.36429872495446264,
+      "test_acc": 0.35399820305480684,
+      "test_loss": 6.222591572052064,
+      "checkpoint": "client_1.pt",
+      "source_checkpoint": "/data1/users/weiyipan/ML/MedModelMerging/checkpoints/20260308_210543_small_8bb/20260308_210547_chaoshengmnist_224_resnet_c3_b0p0_s42/client_1_best.pt"
+    },
+    {
+      "client_id": 2,
+      "num_samples": 827,
+      "classes": [
+        2,
+        1
+      ],
+      "best_val_acc": 0.20947176684881602,
+      "test_acc": 0.20844564240790656,
+      "test_loss": 7.68727670579158,
+      "checkpoint": "client_2.pt",
+      "source_checkpoint": "/data1/users/weiyipan/ML/MedModelMerging/checkpoints/20260308_210543_small_8bb/20260308_210547_chaoshengmnist_224_resnet_c3_b0p0_s42/client_2_best.pt"
+    }
+  ]
+}

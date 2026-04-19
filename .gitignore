@@ -1,6 +1,10 @@
 __pycache__/
 *.pyc
 outputs/
+!outputs/
+outputs/*
+!outputs/My_merge_ret/
+!outputs/My_merge_ret/**
 model_hub/
 methods/
 *.log

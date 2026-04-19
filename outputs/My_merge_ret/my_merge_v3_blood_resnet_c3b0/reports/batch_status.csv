@@ -1,0 +1,2 @@
+status,task_type,dataset,model,clip_model,num_clients,beta,seed,method,merge_weight_mode,eval_json,merged_deleted,seconds,test_acc,test_loss,updated_at,error
+OK,small,bloodmnist_224,resnet,,3,0.0,42,my_merge,equal,outputs/my_merge_v3_blood_resnet_c3b0/eval/small/bloodmnist_224/resnet/clients_3/beta_0/seed_42/my_merge/eval.json,False,205.1,0.4595147617655656,1.369197012736274,2026-04-19T20:02:27,

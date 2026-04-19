@@ -1,0 +1,84 @@
+{
+  "task_type": "small",
+  "dataset": "bloodmnist_224",
+  "model": "mobilenet",
+  "clip_model": "",
+  "num_clients": 3,
+  "beta": 0.01,
+  "seed": 42,
+  "method": "my_merge",
+  "merge_weight_mode": "equal",
+  "method_info": {
+    "implementation": "morphology_guided_boundary_cascade_merge",
+    "base_weights": [
+      0.3333333333333333,
+      0.3333333333333333,
+      0.3333333333333333
+    ],
+    "overall_weights": [
+      0.32752665877342224,
+      0.34253761172294617,
+      0.3299356997013092
+    ],
+    "morphology_weights": [
+      0.31475985050201416,
+      0.3492109179496765,
+      0.33602920174598694
+    ],
+    "class_weights": [
+      [
+        0.23912066221237183,
+        0.23916125297546387,
+        0.5217181444168091
+      ],
+      [
+        0.23860609531402588,
+        0.5227869153022766,
+        0.2386070191860199
+      ],
+      [
+        0.06041703000664711,
+        0.06041739881038666,
+        0.8791655898094177
+      ],
+      [
+        0.13398723304271698,
+        0.134077787399292,
+        0.7319349646568298
+      ],
+      [
+        0.06006520241498947,
+        0.8798695206642151,
+        0.060065265744924545
+      ],
+      [
+        0.05815887078642845,
+        0.8149482011795044,
+        0.12689289450645447
+      ],
+      [
+        0.5217218995094299,
+        0.23915541172027588,
+        0.2391226440668106
+      ],
+      [
+        0.8804345726966858,
+        0.05978266894817352,
+        0.059782665222883224
+      ]
+    ],
+    "feature_summary": {
+      "mean_nc_ratio": 0.5513299703598022,
+      "mean_boundary_strength": 0.13653753697872162,
+      "mean_roundness": 0.7363248467445374
+    },
+    "head_scale": 0.01
+  },
+  "source_clients": [
+    "client_0.pt",
+    "client_1.pt",
+    "client_2.pt"
+  ],
+  "merged_checkpoint": "outputs/my_merge_fix5_mobilenet_c5b0/merged/small/bloodmnist_224/mobilenet/clients_3/beta_0p01/seed_42/my_merge/merged.pt",
+  "meta_path": "outputs/my_merge_fix5_mobilenet_c5b0/merged/small/bloodmnist_224/mobilenet/clients_3/beta_0p01/seed_42/my_merge/meta.json"
+}
