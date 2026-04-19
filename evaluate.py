@@ -88,6 +88,13 @@ def run_evaluate(cfg, merged_dir=None, checkpoint_path=None, meta_path=None):
         resolved_cfg.update(cfg)
         cfg = resolved_cfg
 
+    if (
+        meta['task_type'] == 'small'
+        and meta['dataset'] == 'bloodmnist_224'
+        and cfg.get('method') == 'my_merge'
+    ):
+        cfg['amp'] = False
+
     checkpoint = load_checkpoint(ckpt_path, device='cpu')
     device = torch.device(cfg.get('device', 'cpu'))
 
