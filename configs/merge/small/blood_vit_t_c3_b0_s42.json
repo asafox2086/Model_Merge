@@ -1,0 +1,16 @@
+{
+  "task_type": "small",
+  "dataset": "bloodmnist_224",
+  "model": "vit_t",
+  "num_clients": 3,
+  "beta": 0,
+  "seed": 42,
+  "method": "avg",
+  "merge_weight_mode": "equal",
+  "model_hub_root": "/data1/users/weiyipan/ML/MedMNSITMerge/model_hub",
+  "data_root": "/data1/users/weiyipan/FL/data/Med_data",
+  "device": "cuda:0",
+  "batch_size": 64,
+  "num_workers": 0,
+  "output_root": "/data1/users/weiyipan/ML/MedMNSITMerge/outputs"
+}

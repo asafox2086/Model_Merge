@@ -1,0 +1,15 @@
+{
+  "task_type": "small",
+  "dataset": "bloodmnist_224",
+  "model": "resnet",
+  "num_clients": 3,
+  "beta": 0,
+  "seed": 42,
+  "method": "avg",
+  "split": "test",
+  "data_root": "/data1/users/weiyipan/FL/data/Med_data",
+  "device": "cuda:0",
+  "batch_size": 128,
+  "num_workers": 4,
+  "output_root": "/data1/users/weiyipan/ML/MedMNSITMerge/outputs"
+}

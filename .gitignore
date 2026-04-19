@@ -1,0 +1,14 @@
+__pycache__/
+*.pyc
+outputs/
+model_hub/
+methods/
+*.log
+logs/
+
+.tmp/
+.miniforge/
+.gpuenv/
+Med_data/
+result/
+reference_cache/

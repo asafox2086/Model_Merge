@@ -1,0 +1,123 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+source "$(cd "$(dirname "$0")" && pwd)/scripts/multi_gpu_common.sh"
+
+TASK_TYPES=( ${TASK_TYPES:-small vlm} )
+CUSTOM_METHODS=( ${CUSTOM_METHODS:-my_merge} )
+
+CUSTOM_EXTRA_ARGS="${CUSTOM_EXTRA_ARGS:-}"
+LOG_ROOT="${LOG_ROOT:-${ROOT_DIR}/logs/${RUN_TAG}/custom_methods}"
+OUTPUT_ROOT="${OUTPUT_ROOT:-${ROOT_DIR}/outputs/custom_methods_${RUN_TAG}}"
+
+mkdir -p "${TMPDIR}" "${LOG_ROOT}" "${OUTPUT_ROOT}"
+
+read -r -a GPU_ARRAY <<< "${GPU_IDS}"
+GPU_COUNT="${#GPU_ARRAY[@]}"
+if (( GPU_COUNT == 0 )); then
+  echo "GPU_IDS is empty" >&2
+  exit 1
+fi
+
+read -r -a CUSTOM_EXTRA_ARGS_ARRAY <<< "${CUSTOM_EXTRA_ARGS}"
+
+RESUME_ARGS=()
+DELETE_ARGS=()
+build_boolean_flag_args "${RESUME_FLAG}" "--resume" "--no-resume" RESUME_ARGS
+build_boolean_flag_args "${DELETE_FLAG}" "--delete-merged" "--no-delete-merged" DELETE_ARGS
+validate_methods "${CUSTOM_METHODS[@]}"
+
+case " ${TASK_TYPES[*]} " in
+  *" small "*)
+    prepare_reference_cache "small"
+    ;;
+esac
+case " ${TASK_TYPES[*]} " in
+  *" vlm "*)
+    prepare_reference_cache "vlm"
+    ;;
+esac
+
+run_job() {
+  local task_type="$1"
+  local method="$2"
+  local gpu_id="$3"
+  local job_name="${task_type}__${method}"
+  local output_dir="${OUTPUT_ROOT}/${job_name}"
+  local log_path="${LOG_ROOT}/${task_type}__${method}__gpu${gpu_id}.log"
+  local -a method_args=()
+  local -a cmd=(
+    "${PYTHON_BIN}" "${ROOT_DIR}/scripts/run_all_avg_eval.py"
+    --model-hub-root "${MODEL_HUB_ROOT}"
+    --data-root "${DATA_ROOT}"
+    --output-root "${output_dir}"
+    --device "${DEVICE}"
+    --num-workers "${NUM_WORKERS}"
+    --task-type "${task_type}"
+    --method "${method}"
+    "${RESUME_ARGS[@]}"
+    "${DELETE_ARGS[@]}"
+  )
+
+  build_method_args "${method}" method_args
+  cmd+=( "${method_args[@]}" )
+  if (( ${#CUSTOM_EXTRA_ARGS_ARRAY[@]} > 0 )); then
+    cmd+=( "${CUSTOM_EXTRA_ARGS_ARRAY[@]}" )
+  fi
+
+  if [[ "${task_type}" == "small" ]]; then
+    cmd+=(--small-batch-size "${SMALL_BATCH_SIZE}" --vlm-batch-size 1 --datasets "${DATASETS[@]}" --small-models "${SMALL_MODELS[@]}")
+  else
+    cmd+=(--small-batch-size 1 --vlm-batch-size "${VLM_BATCH_SIZE}" --datasets "${DATASETS[@]}" --clip-models "${CLIP_MODELS[@]}")
+  fi
+
+  {
+    echo "[$(date +%F\ %T)] start | task_type=${task_type} | method=${method} | gpu=${gpu_id}"
+    echo "[$(date +%F\ %T)] job_name=${job_name}"
+    echo "[$(date +%F\ %T)] output_root=${output_dir}"
+    CUDA_VISIBLE_DEVICES="${gpu_id}" "${cmd[@]}"
+    echo "[$(date +%F\ %T)] done | task_type=${task_type} | method=${method} | gpu=${gpu_id}"
+  } >> "${log_path}" 2>&1
+}
+
+JOBS=()
+for task_type in "${TASK_TYPES[@]}"; do
+  for method in "${CUSTOM_METHODS[@]}"; do
+    JOBS+=( "${task_type}|${method}" )
+  done
+done
+
+echo "[$(date +%F\ %T)] RUN_TAG=${RUN_TAG}"
+echo "[$(date +%F\ %T)] GPUs=${GPU_IDS}"
+echo "[$(date +%F\ %T)] device=${DEVICE}"
+echo "[$(date +%F\ %T)] task_types=${TASK_TYPES[*]}"
+echo "[$(date +%F\ %T)] custom_methods=${CUSTOM_METHODS[*]}"
+echo "[$(date +%F\ %T)] datasets=${DATASETS[*]}"
+echo "[$(date +%F\ %T)] small_models=${SMALL_MODELS[*]}"
+echo "[$(date +%F\ %T)] clip_models=${CLIP_MODELS[*]}"
+echo "[$(date +%F\ %T)] logs=${LOG_ROOT}"
+echo "[$(date +%F\ %T)] outputs=${OUTPUT_ROOT}"
+echo "[$(date +%F\ %T)] HF_ENDPOINT=${HF_ENDPOINT:-<unset>}"
+echo "[$(date +%F\ %T)] HF_LOCAL_FILES_ONLY=${HF_LOCAL_FILES_ONLY}"
+echo "[$(date +%F\ %T)] HF_HUB_OFFLINE=${HF_HUB_OFFLINE:-<unset>}"
+echo "[$(date +%F\ %T)] TRANSFORMERS_OFFLINE=${TRANSFORMERS_OFFLINE:-<unset>}"
+if (( ${#CUSTOM_EXTRA_ARGS_ARRAY[@]} )); then
+  echo "[$(date +%F\ %T)] custom_extra_args=${CUSTOM_EXTRA_ARGS}"
+fi
+
+for worker_idx in "${!GPU_ARRAY[@]}"; do
+  gpu_id="${GPU_ARRAY[worker_idx]}"
+  (
+    for job_idx in "${!JOBS[@]}"; do
+      if (( job_idx % GPU_COUNT != worker_idx )); then
+        continue
+      fi
+      IFS='|' read -r task_type method <<< "${JOBS[job_idx]}"
+      run_job "${task_type}" "${method}" "${gpu_id}"
+    done
+  ) &
+done
+
+wait
+
+echo "[$(date +%F\ %T)] custom methods run finished"
