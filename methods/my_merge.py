@@ -9,6 +9,9 @@ from utils.state_dict import average_state_dicts
 
 EPS = 1e-8
 HEAD_SCALE_DEFAULT = 0.05
+DEFAULT_STATS_MAX_BATCHES = 1
+DEFAULT_EVAL_MAX_BATCHES = 1
+DEFAULT_BN_BATCHES = 1
 
 
 def _normalize_scores(values, fallback):
@@ -30,6 +33,14 @@ def _blend_scores(primary, secondary, blend=0.7):
 
 def _is_small_med_task(meta):
     return meta.get('task_type') == 'small'
+
+
+def _is_blood_morphology_task(meta):
+    return (
+        _is_small_med_task(meta)
+        and meta.get('dataset') == 'bloodmnist_224'
+        and meta.get('model') in {'resnet', 'convnext', 'mobilenet'}
+    )
 
 
 def _spatial_eccentricity(mask):
@@ -131,7 +142,7 @@ def _collect_split_batches(meta, cfg, split):
     batches = []
     feature_chunks = []
     labels = []
-    max_batches = int(cfg.get('my_merge_stats_max_batches', 0) or 0)
+    max_batches = int(cfg.get('my_merge_stats_max_batches', DEFAULT_STATS_MAX_BATCHES) or 0)
     for batch_idx, (x, y) in enumerate(runtime['loader']):
         if max_batches and batch_idx >= max_batches:
             break
@@ -336,7 +347,10 @@ def _evaluate_merged_state(meta, merged_state_dict, cfg, split):
     importance_total = 0.0
     max_abs = 0.0
     with torch.no_grad():
-        for x, y in runtime['loader']:
+        max_batches = int(cfg.get('my_merge_eval_max_batches', DEFAULT_EVAL_MAX_BATCHES) or 0)
+        for batch_idx, (x, y) in enumerate(runtime['loader']):
+            if max_batches and batch_idx >= max_batches:
+                break
             x = x.to(device, non_blocking=True)
             y = y.to(device, non_blocking=True)
             logits = forward_fn(model, x).detach().float()
@@ -381,7 +395,7 @@ def _recalibrate_batchnorm(meta, merged_state_dict, cfg):
         module.momentum = None
     model.train()
 
-    max_batches = int(cfg.get('my_merge_bn_batches', 8))
+    max_batches = int(cfg.get('my_merge_bn_batches', DEFAULT_BN_BATCHES))
     with torch.no_grad():
         for batch_idx, (x, _) in enumerate(runtime['loader']):
             if max_batches and batch_idx >= max_batches:
@@ -419,10 +433,10 @@ def _auto_head_scale(meta, merged_state_dict, cfg):
 
 
 def merge_my_merge(state_dicts, weights, meta=None, checkpoints=None, cfg=None):
-    if meta is None or checkpoints is None or cfg is None or not _is_small_med_task(meta):
+    if meta is None or checkpoints is None or cfg is None or not _is_blood_morphology_task(meta):
         merged_state_dict, normalized_weights = average_state_dicts(state_dicts, weights)
         return merged_state_dict, {
-            'implementation': 'plain_weighted_average_baseline',
+            'implementation': 'plain_weighted_average_baseline' if meta is None or not _is_small_med_task(meta) else 'blood_specialized_average_fallback',
             'normalized_weights': normalized_weights,
         }
 
