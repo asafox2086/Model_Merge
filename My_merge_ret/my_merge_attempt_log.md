@@ -345,3 +345,28 @@ smoke 结果：
 - 这版更明确地把融合方法限制在医学影像域：皮肤镜、CT、超声分别使用不同物理/形态学证据
 - 该改动仍然是模型融合方法，没有重新训练 client；医学信号用于选择专家、加权层融合、构建分类头和选择候选融合结果
 - smoke 已证明三类新增医学机制都能跑通，完整表现需要等待全量刷新脚本跑完后再看总表
+
+## Attempt 10
+
+ablation-ready medical merge
+
+做法：
+
+- 把 `my_merge` 改成可消融框架，而不是固定的一条融合路径
+- 新增 `--my-merge-ablation` 和 `--my-merge-disable`，可以关闭医学预处理、类别稀缺、focal 难样本、模态重点样本、层级融合、稀疏残差、候选模型库、BN/head 校准等组件
+- 在 `merge_result.json` 中记录 `ablation_config`，包括每个组件是否启用、禁用组件列表、最终候选池和被选中的候选
+- 新增 `scripts/run_my_merge_ablation_grid.sh` 用于批量跑 `full / avg_only / no_domain_preprocess / no_rarity / no_focal / no_domain_focus / no_layerwise / no_residual / no_candidate_bank / no_calibration`
+- 新增 `scripts/summarize_my_merge_ablations.py`，自动把消融结果汇总成 `ablation_summary.md`，并与 `result/all_results.md` 中原有最佳方法比较
+- 新增方法设计文档：[My_merge_ret/my_merge_ablation_design.md](/data/liyapeng_grp/program/MedMNISTMerge/My_merge_ret/my_merge_ablation_design.md)
+
+验证：
+
+- `python -m py_compile` 风格检查已通过，实际使用的是 `.gpuenv/bin/python`
+- `avg_only` smoke：`small / bloodmnist_224 / resnet / c3_b0 = 0.3017`
+- `full` smoke：`small / bloodmnist_224 / resnet / c3_b0 = 0.4157`
+- smoke 汇总脚本输出显示 `full` 相对 `avg_only` 提升 `+0.1140`，并超过原表同格最佳值
+
+结论：
+
+- 现在可以系统证明某个医学组件是否真的贡献性能，而不是只报告最终结果
+- 后续全量消融应重点看“关闭匹配医学组件是否定向掉分”，尤其是 `Derma` 的颜色/毛发/长尾，`Organ` 的 CT 窗位/空间先验，`Chaosheng` 的去 speckle/边界/声影

@@ -56,8 +56,28 @@ def ts():
 
 def parse_args():
     p = argparse.ArgumentParser('Run merge + eval for all model_hub entries')
-    p.add_argument('--model-hub-root', type=str, default='/data1/users/weiyipan/ML/MedMNSITMerge/model_hub')
-    p.add_argument('--data-root', type=str, default='/data1/users/weiyipan/FL/data/Med_data')
+    default_model_hub = ROOT / 'model_hub'
+    default_data_root = ROOT / 'Med_data'
+    model_hub_default = (
+        str(default_model_hub)
+        if (default_model_hub / 'manifest.csv').exists()
+        else '/data1/users/weiyipan/ML/MedMNSITMerge/model_hub'
+    )
+    data_root_default = (
+        str(default_data_root)
+        if default_data_root.exists()
+        else '/data1/users/weiyipan/FL/data/Med_data'
+    )
+    p.add_argument(
+        '--model-hub-root',
+        type=str,
+        default=model_hub_default,
+    )
+    p.add_argument(
+        '--data-root',
+        type=str,
+        default=data_root_default,
+    )
     p.add_argument('--output-root', type=str, default='')
     p.add_argument('--device', type=str, default='cuda:0')
     p.add_argument('--small-batch-size', type=int, default=128)
@@ -105,6 +125,18 @@ def parse_args():
     p.add_argument('--my-merge-stats-max-batches', type=int, default=-1)
     p.add_argument('--my-merge-eval-max-batches', type=int, default=-1)
     p.add_argument('--my-merge-bn-batches', type=int, default=-1)
+    p.add_argument(
+        '--my-merge-ablation',
+        type=str,
+        default='',
+        help='Comma-separated my_merge ablation presets, e.g. full,no_rarity or avg_only.',
+    )
+    p.add_argument(
+        '--my-merge-disable',
+        type=str,
+        default='',
+        help='Comma-separated my_merge components to disable, e.g. derma_hair,ct_window.',
+    )
     return p.parse_args()
 
 
@@ -203,6 +235,10 @@ def build_cfg(row, args):
         cfg['my_merge_eval_max_batches'] = args.my_merge_eval_max_batches
     if args.my_merge_bn_batches >= 0:
         cfg['my_merge_bn_batches'] = args.my_merge_bn_batches
+    if args.my_merge_ablation:
+        cfg['my_merge_ablation'] = args.my_merge_ablation
+    if args.my_merge_disable:
+        cfg['my_merge_disable'] = args.my_merge_disable
     if item['task_type'] == 'small':
         cfg['model'] = item['model']
         cfg['batch_size'] = args.small_batch_size

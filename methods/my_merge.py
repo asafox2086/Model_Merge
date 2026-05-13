@@ -23,6 +23,92 @@ MEDICAL_IMAGE_DATASETS = {
     "chaoshengmnist_224",
 }
 
+ABLATION_PRESETS = {
+    "full": set(),
+    "no_domain_preprocess": {
+        "domain_features",
+        "derma_color",
+        "derma_hair",
+        "ct_window",
+        "ct_spatial",
+        "ultrasound_diffusion",
+        "ultrasound_shadow",
+    },
+    "no_modality_features": {
+        "domain_features",
+        "derma_color",
+        "derma_hair",
+        "ct_window",
+        "ct_spatial",
+        "ultrasound_diffusion",
+        "ultrasound_shadow",
+    },
+    "no_medical_preprocess": {
+        "domain_features",
+        "derma_color",
+        "derma_hair",
+        "ct_window",
+        "ct_spatial",
+        "ultrasound_diffusion",
+        "ultrasound_shadow",
+    },
+    "no_rarity": {"class_rarity"},
+    "no_focal": {"focal_weight"},
+    "no_domain_focus": {"domain_focus"},
+    "no_balanced_selection": {"balanced_selection"},
+    "no_layerwise": {"layerwise_merge"},
+    "no_residual": {"sparse_residual"},
+    "no_candidate_bank": {
+        "morph_anchor_candidate",
+        "specialist_candidate",
+        "reference_delta_candidate",
+        "prototype_head_candidate",
+        "consensus_candidate",
+    },
+    "no_specialist": {"specialist_candidate"},
+    "no_reference_delta": {"reference_delta_candidate"},
+    "no_prototype": {"prototype_head_candidate"},
+    "no_calibration": {"bn_recalibration", "head_temperature"},
+    "avg_only": {
+        "image_space",
+        "domain_features",
+        "derma_color",
+        "derma_hair",
+        "ct_window",
+        "ct_spatial",
+        "ultrasound_diffusion",
+        "ultrasound_shadow",
+        "class_rarity",
+        "focal_weight",
+        "domain_focus",
+        "balanced_selection",
+        "layerwise_merge",
+        "sparse_residual",
+        "morph_anchor_candidate",
+        "specialist_candidate",
+        "reference_delta_candidate",
+        "prototype_head_candidate",
+        "consensus_candidate",
+        "candidate_selection",
+        "bn_recalibration",
+        "head_temperature",
+    },
+}
+
+COMPONENT_ALIASES = {
+    "clip_denorm": "image_space",
+    "vlm_denorm": "image_space",
+    "modality_features": "domain_features",
+    "medical_preprocess": "domain_features",
+    "derma_color_constancy": "derma_color",
+    "color_constancy": "derma_color",
+    "derma_hair_removal": "derma_hair",
+    "hair_removal": "derma_hair",
+    "ct_spatial_prior": "ct_spatial",
+    "organ_spatial_prior": "ct_spatial",
+    "ultrasound_edge_shadow": "ultrasound_shadow",
+}
+
 
 def _normalize_scores(values, fallback):
     scores = torch.as_tensor(values, dtype=torch.float32)
@@ -58,6 +144,97 @@ def _model_family(meta):
     if model in {"vit_t", "swin_tiny"}:
         return "transformer"
     return "generic"
+
+
+def _split_tokens(value):
+    if value in (None, "", False):
+        return []
+    if isinstance(value, (list, tuple, set)):
+        raw_tokens = value
+    else:
+        raw_tokens = str(value).replace(";", ",").split(",")
+    return [str(token).strip() for token in raw_tokens if str(token).strip()]
+
+
+def _parse_bool(value, default=True):
+    if value in (None, ""):
+        return default
+    if isinstance(value, bool):
+        return value
+    if isinstance(value, (int, float)):
+        return bool(value)
+    text = str(value).strip().lower()
+    if text in {"1", "true", "yes", "y", "on"}:
+        return True
+    if text in {"0", "false", "no", "n", "off"}:
+        return False
+    return default
+
+
+def _ablation_labels(cfg):
+    cfg = cfg or {}
+    labels = _split_tokens(cfg.get("my_merge_ablation", "full"))
+    if not labels:
+        labels = ["full"]
+    labels.extend(_split_tokens(cfg.get("my_merge_disable", "")))
+    return labels
+
+
+def _disabled_components(cfg):
+    disabled = set()
+    for label in _ablation_labels(cfg):
+        normalized = label.strip().lower().replace("-", "_")
+        if normalized in ABLATION_PRESETS:
+            disabled.update(ABLATION_PRESETS[normalized])
+        elif normalized in {"candidate_bank", "candidate_pool"}:
+            disabled.update(ABLATION_PRESETS["no_candidate_bank"])
+        elif normalized.startswith("no_"):
+            disabled.add(COMPONENT_ALIASES.get(normalized[3:], normalized[3:]))
+        elif normalized.startswith("without_"):
+            disabled.add(COMPONENT_ALIASES.get(normalized[8:], normalized[8:]))
+        elif normalized != "full":
+            disabled.add(COMPONENT_ALIASES.get(normalized, normalized))
+    return disabled
+
+
+def _component_enabled(cfg, name, default=True):
+    cfg = cfg or {}
+    explicit_key = f"my_merge_use_{name}"
+    if explicit_key in cfg:
+        return _parse_bool(cfg.get(explicit_key), default=default)
+    return default and name not in _disabled_components(cfg)
+
+
+def _ablation_config(cfg):
+    components = [
+        "image_space",
+        "domain_features",
+        "derma_color",
+        "derma_hair",
+        "ct_window",
+        "ct_spatial",
+        "ultrasound_diffusion",
+        "ultrasound_shadow",
+        "class_rarity",
+        "focal_weight",
+        "domain_focus",
+        "balanced_selection",
+        "layerwise_merge",
+        "sparse_residual",
+        "morph_anchor_candidate",
+        "specialist_candidate",
+        "reference_delta_candidate",
+        "prototype_head_candidate",
+        "consensus_candidate",
+        "candidate_selection",
+        "bn_recalibration",
+        "head_temperature",
+    ]
+    return {
+        "labels": _ablation_labels(cfg),
+        "disabled_components": sorted(_disabled_components(cfg)),
+        "enabled": {name: _component_enabled(cfg, name) for name in components},
+    }
 
 
 def _spatial_eccentricity(mask):
@@ -98,9 +275,9 @@ def _sobel_edges(gray):
     return torch.sqrt(grad_x.square() + grad_y.square() + EPS).squeeze(1)
 
 
-def _image_space01(meta, x):
+def _image_space01(meta, x, cfg=None):
     image = x.detach().float()
-    if meta.get("task_type") == "vlm" and image.shape[1] >= 3:
+    if _component_enabled(cfg, "image_space") and meta.get("task_type") == "vlm" and image.shape[1] >= 3:
         mean = torch.tensor(CLIP_IMAGE_MEAN, device=image.device, dtype=image.dtype).view(1, 3, 1, 1)
         std = torch.tensor(CLIP_IMAGE_STD, device=image.device, dtype=image.dtype).view(1, 3, 1, 1)
         image = image[:, :3] * std + mean
@@ -202,13 +379,18 @@ def _blood_morphology_features(x):
     )
 
 
-def _derma_morphology_features(x):
-    corrected = _shades_of_gray_color_constancy(x)
+def _derma_morphology_features(x, cfg=None):
+    corrected = _shades_of_gray_color_constancy(x) if _component_enabled(cfg, "derma_color") else x
     red = corrected[:, 0]
     green = corrected[:, 1]
     blue = corrected[:, 2]
     gray = 0.299 * red + 0.587 * green + 0.114 * blue
-    clean_gray, hair_density, black_hat = _dullrazor_clean_gray(gray)
+    if _component_enabled(cfg, "derma_hair"):
+        clean_gray, hair_density, black_hat = _dullrazor_clean_gray(gray)
+    else:
+        clean_gray = gray
+        hair_density = torch.zeros(gray.shape[0], device=gray.device, dtype=gray.dtype)
+        black_hat = torch.zeros_like(gray)
 
     center = clean_gray[
         :,
@@ -265,9 +447,9 @@ def _derma_morphology_features(x):
     )
 
 
-def _organ_morphology_features(meta, x):
+def _organ_morphology_features(meta, x, cfg=None):
     gray = x[:, 0] if x.shape[1] == 1 else x.mean(dim=1)
-    windowed = _soft_tissue_window(gray)
+    windowed = _soft_tissue_window(gray) if _component_enabled(cfg, "ct_window") else _robust_rescale01(gray)
     edge_map = _sobel_edges(windowed)
     local_texture = _local_variance(windowed, kernel=7)
     contrast = (windowed - windowed.mean(dim=(1, 2), keepdim=True)).abs() + 0.30 * edge_map + 0.15 * local_texture
@@ -292,7 +474,9 @@ def _organ_morphology_features(meta, x):
     lateral_structure = torch.clamp((left_band - right_band).abs() + cx.abs(), min=0.0, max=1.0)
     vertical_elongation = torch.clamp(1.0 - eccentricity, min=0.0, max=1.0)
     spine_band = torch.clamp(torch.maximum(left_band, right_band) / (tissue_mask.float().mean(dim=(1, 2)) + EPS), min=0.0, max=2.0)
-    if meta.get("dataset") == "organsmnist_224":
+    if not _component_enabled(cfg, "ct_spatial"):
+        view_prior = torch.ones_like(area_ratio)
+    elif meta.get("dataset") == "organsmnist_224":
         view_prior = 0.45 + 0.35 * vertical_elongation + 0.20 * spine_band
     else:
         view_prior = 0.45 + 0.35 * lateral_structure + 0.20 * symmetry
@@ -305,9 +489,10 @@ def _organ_morphology_features(meta, x):
     )
 
 
-def _ultrasound_morphology_features(x):
+def _ultrasound_morphology_features(x, cfg=None):
     gray = x[:, 0] if x.shape[1] == 1 else x.mean(dim=1)
-    diffused = _anisotropic_diffusion(_robust_rescale01(gray, low_q=0.03, high_q=0.97))
+    rescaled = _robust_rescale01(gray, low_q=0.03, high_q=0.97)
+    diffused = _anisotropic_diffusion(rescaled) if _component_enabled(cfg, "ultrasound_diffusion") else rescaled
     edge_map = _sobel_edges(diffused)
     speckle = _local_variance(gray, kernel=9)
     residual_speckle = torch.clamp(speckle - _local_variance(diffused, kernel=9), min=0.0)
@@ -321,6 +506,8 @@ def _ultrasound_morphology_features(x):
     top = diffused[:, : diffused.shape[-2] // 3]
     bottom = diffused[:, -diffused.shape[-2] // 3 :]
     posterior_shadow = torch.clamp((top.mean(dim=(1, 2)) - bottom.mean(dim=(1, 2))) / (top.mean(dim=(1, 2)) + EPS), min=0.0, max=2.0)
+    if not _component_enabled(cfg, "ultrasound_shadow"):
+        posterior_shadow = torch.zeros_like(posterior_shadow)
 
     gray_map = diffused.unsqueeze(1)
     grad_x = F.conv2d(gray_map, torch.tensor([[-1.0, 0.0, 1.0]], device=gray.device).view(1, 1, 1, 3), padding=(0, 1)).squeeze(1)
@@ -349,17 +536,19 @@ def _generic_medical_features(x):
     return torch.stack([area_ratio, edge_strength, eccentricity, intensity, salience, salience], dim=1)
 
 
-def _batch_morphology_features(meta, x):
-    x = _image_space01(meta, x)
+def _batch_morphology_features(meta, x, cfg=None):
+    x = _image_space01(meta, x, cfg=cfg)
     dataset = meta.get("dataset")
+    if not _component_enabled(cfg, "domain_features"):
+        return _generic_medical_features(x)
     if dataset == "bloodmnist_224" and x.shape[1] >= 3:
         return _blood_morphology_features(x)
     if dataset == "dermamnist_224" and x.shape[1] >= 3:
-        return _derma_morphology_features(x)
+        return _derma_morphology_features(x, cfg=cfg)
     if dataset in {"organcmnist_224", "organsmnist_224"}:
-        return _organ_morphology_features(meta, x)
+        return _organ_morphology_features(meta, x, cfg=cfg)
     if dataset == "chaoshengmnist_224":
-        return _ultrasound_morphology_features(x)
+        return _ultrasound_morphology_features(x, cfg=cfg)
     return _generic_medical_features(x)
 
 
@@ -369,7 +558,9 @@ def _sample_importance(features):
     return torch.clamp(importance, min=0.25, max=3.5)
 
 
-def _class_rarity_weights(labels, num_classes, meta):
+def _class_rarity_weights(labels, num_classes, meta, cfg=None):
+    if not _component_enabled(cfg, "class_rarity"):
+        return torch.ones(num_classes, dtype=torch.float32, device=labels.device)
     counts = torch.bincount(labels, minlength=num_classes).float().clamp_min(1.0)
     inv_sqrt = torch.sqrt(counts.sum() / counts)
     inv_sqrt = inv_sqrt / (inv_sqrt.mean() + EPS)
@@ -378,11 +569,13 @@ def _class_rarity_weights(labels, num_classes, meta):
     return torch.clamp(rarity, min=0.55, max=3.0)
 
 
-def _medical_sample_weights(meta, features, labels, num_classes):
+def _medical_sample_weights(meta, features, labels, num_classes, cfg=None):
     morphology = _sample_importance(features)
-    rarity = _class_rarity_weights(labels, num_classes, meta)[labels]
+    rarity = _class_rarity_weights(labels, num_classes, meta, cfg=cfg)[labels]
     dataset = meta.get("dataset")
-    if dataset == "dermamnist_224":
+    if not _component_enabled(cfg, "domain_focus") or not _component_enabled(cfg, "domain_features"):
+        domain_focus = torch.ones_like(morphology)
+    elif dataset == "dermamnist_224":
         artifact_or_color = 0.55 * features[:, 3] + 0.45 * features[:, 4]
         domain_focus = 1.0 + torch.clamp(artifact_or_color, min=0.0, max=1.5)
     elif dataset in {"organcmnist_224", "organsmnist_224"}:
@@ -436,7 +629,7 @@ def _collect_split_batches(meta, cfg, split):
         if max_batches and batch_idx >= max_batches:
             break
         batches.append((x.clone(), y.clone()))
-        feature_chunks.append(_batch_morphology_features(meta, x).cpu())
+        feature_chunks.append(_batch_morphology_features(meta, x, cfg=cfg).cpu())
         labels.append(y.clone())
     return batches, torch.cat(feature_chunks, dim=0), torch.cat(labels, dim=0)
 
@@ -511,9 +704,10 @@ def _extract_state_embeddings(meta, merged_state_dict, batches, cfg):
 def _client_scores(meta, checkpoints, batches, features, labels, cfg, base_weights):
     num_clients = len(checkpoints)
     num_classes = int(meta["num_classes"])
-    sample_importance = _medical_sample_weights(meta, features, labels, num_classes)
-    class_rarity = _class_rarity_weights(labels, num_classes, meta)
+    sample_importance = _medical_sample_weights(meta, features, labels, num_classes, cfg=cfg)
+    class_rarity = _class_rarity_weights(labels, num_classes, meta, cfg=cfg)
     hard_mask = sample_importance >= torch.quantile(sample_importance, q=0.60)
+    use_focal = _component_enabled(cfg, "focal_weight")
 
     overall_scores = []
     morph_scores = []
@@ -535,7 +729,10 @@ def _client_scores(meta, checkpoints, batches, features, labels, cfg, base_weigh
         morph_acc = float((correct * sample_importance).sum().item() / sample_importance.sum().item())
         hard_acc = float(correct[hard_mask].mean().item()) if torch.any(hard_mask) else overall_acc
         margin_score = float((margin * sample_importance).sum().item() / sample_importance.sum().item())
-        focal_weight = sample_importance * torch.clamp((1.0 - margin).pow(1.35) + 0.25, min=0.25, max=2.5)
+        if use_focal:
+            focal_weight = sample_importance * torch.clamp((1.0 - margin).pow(1.35) + 0.25, min=0.25, max=2.5)
+        else:
+            focal_weight = sample_importance
         focal_acc = float((correct * focal_weight).sum().item() / (focal_weight.sum().item() + EPS))
 
         prior = float(base_weights[client_idx])
@@ -878,7 +1075,7 @@ def _build_prototype_head_candidate(base_state_dict, meta, batches, labels, feat
         return None
     pooled, _ = embedding_result
     pooled = pooled.float()
-    sample_importance = _medical_sample_weights(meta, features, labels, num_classes)
+    sample_importance = _medical_sample_weights(meta, features, labels, num_classes, cfg=cfg)
     class_weight = base_state_dict[weight_key].detach().clone().float()
     proto_weight = class_weight.clone()
 
@@ -911,11 +1108,13 @@ def _build_prototype_head_candidate(base_state_dict, meta, batches, labels, feat
     return candidate
 
 
-def _layerwise_merge(state_dicts, overall_weights, morph_weights, class_weights, num_classes, meta):
+def _layerwise_merge(state_dicts, overall_weights, morph_weights, class_weights, num_classes, meta, cfg=None):
     profile = _merge_profile(meta)
     anchor_idx = int(torch.argmax(morph_weights).item())
     anchor_one_hot = F.one_hot(torch.tensor(anchor_idx), num_classes=len(state_dicts)).float()
     consensus = _blend_scores(morph_weights, overall_weights, blend=0.58)
+    use_layerwise = _component_enabled(cfg, "layerwise_merge")
+    use_residual = _component_enabled(cfg, "sparse_residual")
 
     merged = OrderedDict()
     for key in state_dicts[0].keys():
@@ -929,7 +1128,11 @@ def _layerwise_merge(state_dicts, overall_weights, morph_weights, class_weights,
             continue
 
         group = _param_group(key, meta)
-        if group == "early":
+        if not use_layerwise:
+            weights = consensus
+            reinject_keep = 0.0
+            reinject_scale = 0.0
+        elif group == "early":
             weights = _blend_scores(anchor_one_hot, morph_weights, blend=profile["early_anchor"])
             reinject_keep = profile["early_residual_keep"]
             reinject_scale = profile["early_residual_scale"]
@@ -941,6 +1144,9 @@ def _layerwise_merge(state_dicts, overall_weights, morph_weights, class_weights,
             weights = _blend_scores(anchor_one_hot, consensus, blend=profile["mid_anchor"])
             reinject_keep = profile["mid_residual_keep"]
             reinject_scale = profile["mid_residual_scale"]
+        if not use_residual:
+            reinject_keep = 0.0
+            reinject_scale = 0.0
         merged_value = _weighted_average_for_key(values, weights)
         merged[key] = _sparse_residual_reinjection(
             merged_value,
@@ -999,9 +1205,9 @@ def _evaluate_merged_state(meta, merged_state_dict, cfg, split):
             logits = forward_fn(model, x).detach().float()
             pred = logits.argmax(dim=1)
             hit = (pred == y).float().cpu()
-            features = _batch_morphology_features(meta, x.detach().float()).cpu()
+            features = _batch_morphology_features(meta, x.detach().float(), cfg=cfg).cpu()
             y_cpu = y.detach().cpu()
-            importance = _medical_sample_weights(meta, features, y_cpu, num_classes)
+            importance = _medical_sample_weights(meta, features, y_cpu, num_classes, cfg=cfg)
             hard_mask = importance >= torch.quantile(importance, q=0.60)
             correct += float(hit.sum().item())
             weighted_correct += float((hit * importance).sum().item())
@@ -1020,7 +1226,9 @@ def _evaluate_merged_state(meta, merged_state_dict, cfg, split):
     valid_classes = class_total > 0
     balanced_acc = float((class_correct[valid_classes] / (class_total[valid_classes] + EPS)).mean().item()) if torch.any(valid_classes) else acc
     dataset = meta.get("dataset")
-    if dataset == "dermamnist_224":
+    if not _component_enabled(cfg, "balanced_selection"):
+        score = 0.70 * acc + 0.20 * morph_acc + 0.10 * hard_acc
+    elif dataset == "dermamnist_224":
         score = 0.42 * acc + 0.34 * balanced_acc + 0.16 * morph_acc + 0.08 * hard_acc
     elif dataset in {"organcmnist_224", "organsmnist_224"}:
         score = 0.48 * acc + 0.18 * balanced_acc + 0.24 * morph_acc + 0.10 * hard_acc
@@ -1115,12 +1323,13 @@ def _interpolate_state_dicts(base_state_dict, candidate_state_dict, alpha):
     return mixed
 
 
-def _build_reference_delta_candidate(state_dicts, overall_weights, morph_weights, class_weights, num_classes, meta):
+def _build_reference_delta_candidate(state_dicts, overall_weights, morph_weights, class_weights, num_classes, meta, cfg=None):
     reference_state, _ = build_reference_bundle(meta, device="cpu")
     profile = _merge_profile(meta)
     anchor_idx = int(torch.argmax(morph_weights).item())
     anchor_one_hot = F.one_hot(torch.tensor(anchor_idx), num_classes=len(state_dicts)).float()
     consensus = _blend_scores(morph_weights, overall_weights, blend=0.58)
+    use_residual = _component_enabled(cfg, "sparse_residual")
 
     merged = OrderedDict()
     for key in state_dicts[0].keys():
@@ -1147,6 +1356,9 @@ def _build_reference_delta_candidate(state_dicts, overall_weights, morph_weights
             weights = _blend_scores(anchor_one_hot, consensus, blend=min(0.90, profile["mid_anchor"] + 0.10))
             reinject_keep = profile["mid_residual_keep"]
             reinject_scale = profile["mid_residual_scale"]
+        if not use_residual:
+            reinject_keep = 0.0
+            reinject_scale = 0.0
 
         delta_values = [value.detach() - ref_value.detach() for value in values]
         merged_delta = _weighted_average_for_key(delta_values, weights)
@@ -1163,12 +1375,15 @@ def _build_reference_delta_candidate(state_dicts, overall_weights, morph_weights
 
 
 def _prepare_candidate(meta, merged_state_dict, cfg):
-    prepared = _recalibrate_batchnorm(meta, merged_state_dict, cfg)
-    prepared = _apply_head_temperature(
-        prepared,
-        num_classes=int(meta["num_classes"]),
-        scale=_auto_head_scale(meta, prepared, cfg),
-    )
+    prepared = merged_state_dict
+    if _component_enabled(cfg, "bn_recalibration"):
+        prepared = _recalibrate_batchnorm(meta, prepared, cfg)
+    if _component_enabled(cfg, "head_temperature"):
+        prepared = _apply_head_temperature(
+            prepared,
+            num_classes=int(meta["num_classes"]),
+            scale=_auto_head_scale(meta, prepared, cfg),
+        )
     return prepared
 
 
@@ -1198,15 +1413,18 @@ def _candidate_priority(meta, candidate_name):
     return 0
 
 
-def _choose_candidate(meta, candidate_metrics):
+def _choose_candidate(meta, candidate_metrics, cfg=None):
+    if not _component_enabled(cfg, "candidate_selection") and "avg" in candidate_metrics:
+        return "avg"
     family = _model_family(meta)
+    balanced_weight = 1.0 if _component_enabled(cfg, "balanced_selection") else 0.0
     if family == "vlm":
         def key_fn(item):
             name, metric = item
             return (
                 float(metric["score"]),
                 float(metric["acc"]),
-                float(metric.get("balanced_acc", 0.0)),
+                balanced_weight * float(metric.get("balanced_acc", 0.0)),
                 float(metric["hard_acc"]),
                 _candidate_priority(meta, name),
             )
@@ -1216,7 +1434,7 @@ def _choose_candidate(meta, candidate_metrics):
             return (
                 float(metric["score"]),
                 float(metric["acc"]),
-                float(metric.get("balanced_acc", 0.0)),
+                balanced_weight * float(metric.get("balanced_acc", 0.0)),
                 float(metric["morph_acc"]),
                 _candidate_priority(meta, name),
             )
@@ -1226,7 +1444,7 @@ def _choose_candidate(meta, candidate_metrics):
             return (
                 float(metric["score"]),
                 float(metric["acc"]),
-                float(metric.get("balanced_acc", 0.0)),
+                balanced_weight * float(metric.get("balanced_acc", 0.0)),
                 float(metric["hard_acc"]),
                 _candidate_priority(meta, name),
             )
@@ -1242,6 +1460,17 @@ def merge_my_merge(state_dicts, weights, meta=None, checkpoints=None, cfg=None):
         }
 
     base_merged, base_weights = average_state_dicts(state_dicts, weights)
+    ablation_config = _ablation_config(cfg)
+    ablation_names = {label.lower().replace("-", "_") for label in ablation_config["labels"]}
+    if "avg_only" in ablation_names:
+        return base_merged, {
+            "implementation": "medical_modality_specific_boundary_cascade_merge_v5_ablation_avg_only",
+            "medical_only": True,
+            "ablation_config": ablation_config,
+            "selected_candidate": "avg",
+            "base_weights": [float(x) for x in base_weights],
+            "normalized_weights": base_weights,
+        }
     try:
         batches, features, labels = _collect_split_batches(meta, cfg, split=cfg.get("stats_split", "val"))
         overall_weights, morph_weights, class_weights, client_summaries = _client_scores(
@@ -1260,21 +1489,11 @@ def merge_my_merge(state_dicts, weights, meta=None, checkpoints=None, cfg=None):
             class_weights=class_weights,
             num_classes=int(meta["num_classes"]),
             meta=meta,
+            cfg=cfg,
         )
-        morphology_anchor = _build_morphology_anchor_candidate(
-            state_dicts,
-            morph_weights=morph_weights,
-            class_weights=class_weights,
-            num_classes=int(meta["num_classes"]),
-            meta=meta,
-        )
-        specialist_candidate_state, specialist_idx = _build_specialist_client_candidate(
-            state_dicts,
-            client_summaries=client_summaries,
-            meta=meta,
-        )
+        specialist_idx = None
         reference_delta = None
-        if _model_family(meta) in {"transformer", "vlm"}:
+        if _component_enabled(cfg, "reference_delta_candidate") and _model_family(meta) in {"transformer", "vlm"}:
             reference_delta = _build_reference_delta_candidate(
                 state_dicts,
                 overall_weights=overall_weights,
@@ -1282,43 +1501,58 @@ def merge_my_merge(state_dicts, weights, meta=None, checkpoints=None, cfg=None):
                 class_weights=class_weights,
                 num_classes=int(meta["num_classes"]),
                 meta=meta,
+                cfg=cfg,
             )
 
         base_candidate = _prepare_candidate(meta, base_merged, cfg)
         morphology_candidate = _prepare_candidate(meta, morphology_merged, cfg)
-        anchor_candidate = _prepare_candidate(meta, morphology_anchor, cfg)
-        specialist_candidate = _prepare_candidate(meta, specialist_candidate_state, cfg)
-        prototype_candidate_state = _build_prototype_head_candidate(
-            base_merged,
-            meta=meta,
-            batches=batches,
-            labels=labels,
-            features=features,
-            cfg=cfg,
-        )
-        alpha = _merge_profile(meta)["candidate_alpha"]
-        consensus_candidate = _prepare_candidate(
-            meta,
-            _interpolate_state_dicts(base_candidate, morphology_candidate, alpha=alpha),
-            cfg,
-        )
-
         candidate_pool = {
             "avg": base_candidate,
             "morphology": morphology_candidate,
-            "morph_anchor": anchor_candidate,
-            "specialist_client": specialist_candidate,
-            "consensus": consensus_candidate,
         }
+        if _component_enabled(cfg, "morph_anchor_candidate"):
+            morphology_anchor = _build_morphology_anchor_candidate(
+                state_dicts,
+                morph_weights=morph_weights,
+                class_weights=class_weights,
+                num_classes=int(meta["num_classes"]),
+                meta=meta,
+            )
+            candidate_pool["morph_anchor"] = _prepare_candidate(meta, morphology_anchor, cfg)
+        if _component_enabled(cfg, "specialist_candidate"):
+            specialist_candidate_state, specialist_idx = _build_specialist_client_candidate(
+                state_dicts,
+                client_summaries=client_summaries,
+                meta=meta,
+            )
+            candidate_pool["specialist_client"] = _prepare_candidate(meta, specialist_candidate_state, cfg)
+        if _component_enabled(cfg, "consensus_candidate"):
+            alpha = _merge_profile(meta)["candidate_alpha"]
+            consensus_candidate = _prepare_candidate(
+                meta,
+                _interpolate_state_dicts(base_candidate, morphology_candidate, alpha=alpha),
+                cfg,
+            )
+            candidate_pool["consensus"] = consensus_candidate
         if reference_delta is not None:
             candidate_pool["reference_delta"] = _prepare_candidate(meta, reference_delta, cfg)
+        prototype_candidate_state = None
+        if _component_enabled(cfg, "prototype_head_candidate"):
+            prototype_candidate_state = _build_prototype_head_candidate(
+                base_merged,
+                meta=meta,
+                batches=batches,
+                labels=labels,
+                features=features,
+                cfg=cfg,
+            )
         if prototype_candidate_state is not None:
             candidate_pool["prototype_head"] = _prepare_candidate(meta, prototype_candidate_state, cfg)
         candidate_metrics = {
             name: _evaluate_merged_state(meta, candidate_state, cfg, split=cfg.get("stats_split", "val"))
             for name, candidate_state in candidate_pool.items()
         }
-        selected_name = _choose_candidate(meta, candidate_metrics)
+        selected_name = _choose_candidate(meta, candidate_metrics, cfg=cfg)
         merged_state_dict = candidate_pool[selected_name]
 
         names = _feature_names(meta)
@@ -1330,6 +1564,7 @@ def merge_my_merge(state_dicts, weights, meta=None, checkpoints=None, cfg=None):
         return merged_state_dict, {
             "implementation": "medical_modality_specific_boundary_cascade_merge_v5",
             "medical_only": True,
+            "ablation_config": ablation_config,
             "modality": meta.get("dataset"),
             "model_family": _model_family(meta),
             "base_weights": [float(x) for x in base_weights],
@@ -1337,8 +1572,9 @@ def merge_my_merge(state_dicts, weights, meta=None, checkpoints=None, cfg=None):
             "morphology_weights": [float(x) for x in morph_weights.tolist()],
             "class_weights": [[float(v) for v in row] for row in class_weights.tolist()],
             "client_summaries": client_summaries,
-            "specialist_client_index": int(specialist_idx),
+            "specialist_client_index": None if specialist_idx is None else int(specialist_idx),
             "feature_summary": feature_summary,
+            "candidate_pool": sorted(candidate_pool.keys()),
             "candidate_metrics": candidate_metrics,
             "selected_candidate": selected_name,
         }
@@ -1346,6 +1582,7 @@ def merge_my_merge(state_dicts, weights, meta=None, checkpoints=None, cfg=None):
         return base_merged, {
             "implementation": "medical_modality_specific_boundary_cascade_merge_fallback",
             "medical_only": True,
+            "ablation_config": ablation_config,
             "fallback_reason": str(exc),
             "normalized_weights": base_weights,
         }
