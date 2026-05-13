@@ -87,26 +87,26 @@
       <td>0.6499</td>
       <td>0.1825</td>
       <td><u>0.6713</u></td>
-      <td><strong>0.6688</strong></td>
+      <td><u>0.6688</u></td>
       <td>0.5332</td>
       <td>0.3213</td>
       <td>0.1439</td>
       <td>0.2132</td>
       <td>0.1304</td>
       <td>0.1526</td>
-      <td><u>0.2485</u></td>
+      <td>0.2485</td>
       <td>0.1131</td>
       <td>0.1140</td>
       <td>0.1918</td>
-      <td><u>0.1971</u></td>
-      <td><u>0.3379</u></td>
+      <td>0.1971</td>
+      <td>0.3379</td>
       <td>0.3240</td>
       <td>0.2761</td>
       <td>0.0710</td>
       <td>0.1911</td>
       <td>0.1325</td>
       <td>0.2354</td>
-      <td>0.3744</td>
+      <td><u>0.3744</u></td>
       <td>0.2552</td>
       <td>0.3010</td>
       <td>0.1743</td>
@@ -132,37 +132,37 @@
       <td>0.5711</td>
       <td>0.6648</td>
       <td>0.1097</td>
-      <td><strong>0.6688</strong></td>
+      <td><u>0.6688</u></td>
       <td><strong>0.6738</strong></td>
       <td>0.6075</td>
-      <td><strong>0.6688</strong></td>
       <td><u>0.6688</u></td>
+      <td>0.6688</td>
       <td>0.1809</td>
       <td>0.1504</td>
-      <td><strong>0.4637</strong></td>
+      <td><u>0.4637</u></td>
       <td>0.1355</td>
       <td><strong>0.2165</strong></td>
       <td>0.1531</td>
-      <td><u>0.1788</u></td>
+      <td>0.1788</td>
       <td>0.0724</td>
-      <td><strong>0.3841</strong></td>
+      <td><u>0.3841</u></td>
       <td>0.1856</td>
       <td>0.1691</td>
       <td>0.2396</td>
       <td>0.1251</td>
-      <td><u>0.2158</u></td>
+      <td>0.2158</td>
       <td>0.2337</td>
       <td>0.1033</td>
       <td>0.1406</td>
       <td>0.3182</td>
       <td>0.1923</td>
       <td><u>0.3827</u></td>
-      <td><strong>0.4681</strong></td>
+      <td><u>0.4681</u></td>
       <td>0.1231</td>
       <td><strong>0.3468</strong></td>
       <td>0.1267</td>
       <td>0.1051</td>
-      <td><strong>0.2893</strong></td>
+      <td><u>0.2893</u></td>
       <td>0.1617</td>
     </tr>
     <tr>
@@ -180,19 +180,19 @@
       <td>0.5666</td>
       <td>0.6728</td>
       <td>0.5726</td>
-      <td><u>0.6584</u></td>
+      <td>0.6584</td>
       <td>0.2214</td>
       <td>0.5940</td>
-      <td><strong>0.6688</strong></td>
+      <td><u>0.6688</u></td>
       <td>0.6234</td>
       <td>0.3071</td>
       <td>0.0944</td>
       <td>0.2039</td>
-      <td><strong>0.2764</strong></td>
+      <td><u>0.2764</u></td>
       <td>0.2009</td>
-      <td><strong>0.2991</strong></td>
+      <td><u>0.2991</u></td>
       <td>0.1288</td>
-      <td><u>0.1924</u></td>
+      <td>0.1924</td>
       <td>0.1738</td>
       <td>0.1183</td>
       <td>0.3053</td>
@@ -200,7 +200,7 @@
       <td>0.2320</td>
       <td>0.1272</td>
       <td>0.3143</td>
-      <td><u>0.1602</u></td>
+      <td>0.1602</td>
       <td>0.2353</td>
       <td>0.3657</td>
       <td>0.2111</td>
@@ -208,7 +208,7 @@
       <td>0.1734</td>
       <td>0.1572</td>
       <td>0.1671</td>
-      <td><u>0.1941</u></td>
+      <td>0.1941</td>
       <td>0.1680</td>
       <td>0.1500</td>
       <td>0.1644</td>
@@ -219,7 +219,7 @@
       <td>0.3315</td>
       <td>0.2593</td>
       <td>0.0912</td>
-      <td><strong>0.2917</strong></td>
+      <td><u>0.2917</u></td>
       <td>0.1976</td>
       <td>0.2087</td>
       <td>0.2353</td>
@@ -228,25 +228,25 @@
       <td>0.6579</td>
       <td>0.6703</td>
       <td>0.1097</td>
-      <td><strong>0.6688</strong></td>
+      <td><u>0.6688</u></td>
       <td>0.6688</td>
       <td>0.3297</td>
-      <td><strong>0.6688</strong></td>
       <td><u>0.6688</u></td>
+      <td>0.6688</td>
       <td>0.1284</td>
       <td>0.0895</td>
       <td>0.3374</td>
       <td>0.1291</td>
-      <td><u>0.2064</u></td>
+      <td>0.2064</td>
       <td>0.1189</td>
       <td>0.1786</td>
       <td>0.0768</td>
-      <td><u>0.3023</u></td>
+      <td>0.3023</td>
       <td>0.1586</td>
       <td>0.1689</td>
       <td>0.2096</td>
       <td>0.1197</td>
-      <td><strong>0.2168</strong></td>
+      <td><u>0.2168</u></td>
       <td>0.0690</td>
       <td>0.1473</td>
       <td>0.1066</td>
@@ -258,7 +258,7 @@
       <td>0.2049</td>
       <td>0.1267</td>
       <td>0.1303</td>
-      <td><u>0.2749</u></td>
+      <td>0.2749</td>
       <td>0.1617</td>
     </tr>
     <tr>
@@ -274,7 +274,7 @@
       <td><u>0.4306</u></td>
       <td>0.5875</td>
       <td>0.4753</td>
-      <td><strong>0.6808</strong></td>
+      <td><u>0.6808</u></td>
       <td>0.1636</td>
       <td>0.2723</td>
       <td>0.4170</td>
@@ -288,11 +288,11 @@
       <td>0.1375</td>
       <td>0.1944</td>
       <td>0.0491</td>
-      <td><strong>0.2153</strong></td>
+      <td><u>0.2153</u></td>
       <td>0.1521</td>
-      <td><strong>0.2189</strong></td>
+      <td><u>0.2189</u></td>
       <td>0.1648</td>
-      <td><u>0.3676</u></td>
+      <td>0.3676</td>
       <td>0.1608</td>
       <td>0.1458</td>
       <td>0.1802</td>
@@ -320,18 +320,18 @@
       <td><strong>0.3560</strong></td>
       <td>0.2885</td>
       <td>0.1380</td>
-      <td><strong>0.6718</strong></td>
-      <td><strong>0.6708</strong></td>
+      <td><u>0.6718</u></td>
+      <td><u>0.6708</u></td>
       <td>0.6693</td>
-      <td><strong>0.6693</strong></td>
-      <td><strong>0.6688</strong></td>
+      <td><u>0.6693</u></td>
+      <td><u>0.6688</u></td>
       <td><u>0.6723</u></td>
       <td>0.6688</td>
-      <td><strong>0.6688</strong></td>
-      <td><strong>0.6693</strong></td>
+      <td><u>0.6688</u></td>
+      <td><u>0.6693</u></td>
       <td>0.2024</td>
-      <td><strong>0.2657</strong></td>
-      <td><u>0.4238</u></td>
+      <td><u>0.2657</u></td>
+      <td>0.4238</td>
       <td>0.1204</td>
       <td>0.1685</td>
       <td>0.2336</td>
@@ -341,21 +341,21 @@
       <td>0.0875</td>
       <td>0.1750</td>
       <td>0.3404</td>
-      <td><strong>0.3307</strong></td>
+      <td><u>0.3307</u></td>
       <td>0.1717</td>
       <td><strong>0.3843</strong></td>
       <td>0.0885</td>
-      <td><strong>0.2763</strong></td>
+      <td><u>0.2763</u></td>
       <td>0.2242</td>
       <td>0.1815</td>
       <td>0.1563</td>
-      <td><u>0.3621</u></td>
-      <td><u>0.1806</u></td>
+      <td>0.3621</td>
+      <td>0.1806</td>
       <td><u>0.2174</u></td>
       <td>0.1599</td>
-      <td><u>0.2390</u></td>
+      <td>0.2390</td>
       <td>0.2579</td>
-      <td><strong>0.2570</strong></td>
+      <td><u>0.2570</u></td>
     </tr>
     <tr>
       <td>breadcrumbs</td>
@@ -416,14 +416,14 @@
       <td>0.1725</td>
       <td>0.1754</td>
       <td>0.2447</td>
-      <td><u>0.6698</u></td>
+      <td>0.6698</td>
       <td>0.5312</td>
       <td>0.6638</td>
       <td>0.5890</td>
       <td>0.5611</td>
       <td>0.1431</td>
       <td>0.6419</td>
-      <td><strong>0.6688</strong></td>
+      <td><u>0.6688</u></td>
       <td>0.4055</td>
       <td>0.1218</td>
       <td>0.1099</td>
@@ -435,7 +435,7 @@
       <td>0.1032</td>
       <td>0.1394</td>
       <td>0.1554</td>
-      <td><strong>0.3482</strong></td>
+      <td><u>0.3482</u></td>
       <td>0.3190</td>
       <td>0.2129</td>
       <td>0.0766</td>
@@ -465,15 +465,15 @@
       <td>0.2669</td>
       <td>0.1584</td>
       <td>0.6688</td>
-      <td><u>0.6703</u></td>
+      <td>0.6703</td>
       <td>0.6748</td>
-      <td><u>0.6688</u></td>
+      <td>0.6688</td>
       <td>0.3721</td>
       <td>0.2698</td>
       <td>0.6688</td>
-      <td><strong>0.6688</strong></td>
+      <td><u>0.6688</u></td>
       <td>0.6364</td>
-      <td><u>0.3594</u></td>
+      <td>0.3594</td>
       <td>0.1182</td>
       <td>0.2274</td>
       <td>0.1241</td>
@@ -485,7 +485,7 @@
       <td>0.1712</td>
       <td>0.1798</td>
       <td>0.3112</td>
-      <td><u>0.3207</u></td>
+      <td>0.3207</td>
       <td>0.0718</td>
       <td>0.2336</td>
       <td>0.1325</td>
@@ -506,7 +506,7 @@
       <td>0.3148</td>
       <td>0.3169</td>
       <td>0.3517</td>
-      <td><strong>0.2894</strong></td>
+      <td><u>0.2894</u></td>
       <td>0.2029</td>
       <td>0.3321</td>
       <td>0.1865</td>
@@ -519,10 +519,10 @@
       <td>0.3267</td>
       <td>0.4314</td>
       <td>0.6693</td>
-      <td><strong>0.6688</strong></td>
+      <td><u>0.6688</u></td>
       <td>0.5865</td>
       <td>0.3574</td>
-      <td><u>0.1543</u></td>
+      <td>0.1543</td>
       <td>0.1877</td>
       <td>0.1301</td>
       <td>0.1638</td>
@@ -532,12 +532,12 @@
       <td>0.1947</td>
       <td>0.1332</td>
       <td>0.3123</td>
-      <td><strong>0.3753</strong></td>
+      <td><u>0.3753</u></td>
       <td>0.2191</td>
       <td>0.0884</td>
       <td><u>0.3279</u></td>
       <td>0.1268</td>
-      <td><u>0.2542</u></td>
+      <td>0.2542</td>
       <td>0.3548</td>
       <td><u>0.2624</u></td>
       <td>0.3010</td>
@@ -554,7 +554,7 @@
       <td>0.3017</td>
       <td>0.3069</td>
       <td>0.3949</td>
-      <td><u>0.2742</u></td>
+      <td>0.2742</td>
       <td>0.1947</td>
       <td>0.2713</td>
       <td>0.1944</td>
@@ -567,19 +567,19 @@
       <td>0.6499</td>
       <td>0.1825</td>
       <td><strong>0.6718</strong></td>
-      <td><strong>0.6688</strong></td>
+      <td><u>0.6688</u></td>
       <td>0.5332</td>
       <td>0.3213</td>
       <td>0.1439</td>
       <td>0.2132</td>
       <td>0.1304</td>
       <td>0.1525</td>
-      <td><u>0.2485</u></td>
+      <td>0.2485</td>
       <td>0.1130</td>
       <td>0.1139</td>
       <td>0.1918</td>
       <td>0.1969</td>
-      <td><u>0.3379</u></td>
+      <td>0.3379</td>
       <td>0.3240</td>
       <td>0.2761</td>
       <td>0.0708</td>
@@ -610,20 +610,20 @@
       <td>0.2315</td>
       <td>0.1576</td>
       <td>0.0499</td>
-      <td><u>0.6793</u></td>
+      <td>0.6793</td>
       <td>0.1067</td>
       <td>0.3426</td>
       <td>0.1761</td>
       <td>0.2329</td>
-      <td><u>0.6384</u></td>
+      <td>0.6384</td>
       <td>0.3112</td>
-      <td><strong>0.3824</strong></td>
+      <td><u>0.3824</u></td>
       <td>0.1377</td>
       <td>0.2174</td>
-      <td><u>0.2638</u></td>
+      <td>0.2638</td>
       <td>0.1220</td>
       <td>0.1434</td>
-      <td><strong>0.2354</strong></td>
+      <td><u>0.2354</u></td>
       <td>0.0972</td>
       <td>0.1633</td>
       <td>0.1588</td>
@@ -632,66 +632,66 @@
       <td>0.2871</td>
       <td>0.1158</td>
       <td>0.2653</td>
-      <td><strong>0.2294</strong></td>
+      <td><u>0.2294</u></td>
       <td>0.1851</td>
       <td>0.2757</td>
       <td><strong>0.2659</strong></td>
       <td>0.1473</td>
       <td>0.2435</td>
-      <td><strong>0.2264</strong></td>
+      <td><u>0.2264</u></td>
       <td>0.1878</td>
-      <td><strong>0.2552</strong></td>
+      <td><u>0.2552</u></td>
       <td>0.1914</td>
       <td>0.1276</td>
-      <td><u>0.1932</u></td>
+      <td>0.1932</td>
     </tr>
     <tr>
       <td>my_merge</td>
       <td><strong>0.4469</strong></td>
       <td><strong>0.4516</strong></td>
       <td><strong>0.8536</strong></td>
-      <td>0.2567</td>
-      <td><u>0.2903</u></td>
+      <td><strong>0.4230</strong></td>
+      <td><strong>0.3023</strong></td>
       <td><strong>0.5861</strong></td>
-      <td>0.1947</td>
-      <td><strong>0.4417</strong></td>
-      <td><strong>0.5636</strong></td>
-      <td>0.6688</td>
-      <td>0.5461</td>
-      <td>0.6723</td>
-      <td>0.5776</td>
+      <td>0.1988</td>
+      <td><strong>0.4566</strong></td>
+      <td><strong>0.5767</strong></td>
+      <td><strong>0.6783</strong></td>
+      <td><strong>0.7027</strong></td>
+      <td><strong>0.7561</strong></td>
+      <td><strong>0.6758</strong></td>
+      <td><strong>0.7431</strong></td>
       <td>0.6504</td>
-      <td>0.1825</td>
+      <td>0.6678</td>
       <td><strong>0.6718</strong></td>
-      <td><strong>0.6688</strong></td>
-      <td>0.5332</td>
-      <td>0.3213</td>
-      <td>0.1441</td>
-      <td>0.2132</td>
-      <td>0.1302</td>
-      <td>0.1526</td>
-      <td>0.2484</td>
-      <td>0.1130</td>
-      <td>0.1139</td>
-      <td>0.1918</td>
-      <td>0.1969</td>
-      <td><u>0.3379</u></td>
-      <td>0.3240</td>
-      <td>0.2761</td>
-      <td>0.0708</td>
-      <td>0.1913</td>
-      <td>0.1328</td>
-      <td>0.2354</td>
-      <td><u>0.3745</u></td>
-      <td>0.2552</td>
-      <td>0.3010</td>
-      <td>0.1743</td>
-      <td>0.1554</td>
-      <td>0.1536</td>
-      <td>0.1662</td>
-      <td>0.1689</td>
-      <td>0.1321</td>
-      <td>0.1617</td>
+      <td><strong>0.6828</strong></td>
+      <td><strong>0.5461</strong></td>
+      <td><strong>0.5759</strong></td>
+      <td><strong>0.6657</strong></td>
+      <td><strong>0.3807</strong></td>
+      <td><u>0.2115</u></td>
+      <td><strong>0.4618</strong></td>
+      <td><strong>0.3144</strong></td>
+      <td><strong>0.2731</strong></td>
+      <td><strong>0.4464</strong></td>
+      <td><strong>0.5058</strong></td>
+      <td><strong>0.4553</strong></td>
+      <td><strong>0.5054</strong></td>
+      <td><strong>0.3537</strong></td>
+      <td><strong>0.3097</strong></td>
+      <td>0.3263</td>
+      <td><strong>0.3069</strong></td>
+      <td><strong>0.2839</strong></td>
+      <td>0.3561</td>
+      <td>0.1914</td>
+      <td>0.1734</td>
+      <td><strong>0.4726</strong></td>
+      <td><strong>0.2363</strong></td>
+      <td>0.1959</td>
+      <td><strong>0.4043</strong></td>
+      <td><u>0.2435</u></td>
+      <td><strong>0.3333</strong></td>
+      <td><strong>0.3235</strong></td>
     </tr>
   </tbody>
 </table>
@@ -736,9 +736,9 @@
       <td>0.4700</td>
       <td>0.6244</td>
       <td>0.2261</td>
-      <td><u>0.1772</u></td>
+      <td>0.1772</td>
       <td>0.1396</td>
-      <td><strong>0.2864</strong></td>
+      <td><u>0.2864</u></td>
       <td>0.1794</td>
       <td>0.2475</td>
       <td>0.2435</td>
@@ -751,16 +751,16 @@
       <td>0.1872</td>
       <td>0.1787</td>
       <td>0.5995</td>
-      <td><u>0.4841</u></td>
+      <td>0.4841</td>
       <td>0.6484</td>
-      <td><u>0.2650</u></td>
+      <td>0.2650</td>
       <td>0.1684</td>
-      <td><strong>0.2118</strong></td>
+      <td><u>0.2118</u></td>
       <td>0.1981</td>
       <td>0.1915</td>
       <td>0.1874</td>
       <td><strong>0.3477</strong></td>
-      <td><u>0.1989</u></td>
+      <td>0.1989</td>
       <td>0.1854</td>
     </tr>
     <tr>
@@ -769,14 +769,14 @@
       <td><u>0.2856</u></td>
       <td>0.2392</td>
       <td>0.6357</td>
-      <td><u>0.4841</u></td>
+      <td>0.4841</td>
       <td>0.6288</td>
       <td>0.2018</td>
-      <td><strong>0.2588</strong></td>
+      <td><u>0.2588</u></td>
       <td>0.1650</td>
       <td>0.2545</td>
-      <td><u>0.2245</u></td>
-      <td><strong>0.2537</strong></td>
+      <td>0.2245</td>
+      <td><u>0.2537</u></td>
       <td>0.2162</td>
       <td>0.1728</td>
       <td>0.1608</td>
@@ -791,7 +791,7 @@
       <td>0.5558</td>
       <td>0.1851</td>
       <td>0.1515</td>
-      <td><u>0.1859</u></td>
+      <td>0.1859</td>
       <td>0.1790</td>
       <td>0.1352</td>
       <td>0.1730</td>
@@ -822,18 +822,18 @@
       <td>0.3196</td>
       <td>0.2237</td>
       <td>0.2608</td>
-      <td><u>0.6707</u></td>
-      <td><strong>0.6702</strong></td>
-      <td><strong>0.6690</strong></td>
-      <td><strong>0.2973</strong></td>
+      <td>0.6707</td>
+      <td><u>0.6702</u></td>
+      <td><u>0.6690</u></td>
+      <td><u>0.2973</u></td>
       <td>0.1741</td>
       <td>0.1812</td>
       <td>0.2010</td>
-      <td><strong>0.2956</strong></td>
+      <td><u>0.2956</u></td>
       <td>0.1963</td>
       <td>0.2333</td>
       <td>0.1860</td>
-      <td><strong>0.2513</strong></td>
+      <td><u>0.2513</u></td>
     </tr>
     <tr>
       <td>breadcrumbs</td>
@@ -876,18 +876,18 @@
       <td>0.2989</td>
       <td>0.2306</td>
       <td>0.2052</td>
-      <td><strong>0.6713</strong></td>
+      <td><u>0.6713</u></td>
       <td>0.4369</td>
-      <td><u>0.6580</u></td>
+      <td>0.6580</td>
       <td>0.2350</td>
       <td>0.1560</td>
       <td>0.1520</td>
       <td>0.2207</td>
       <td>0.2087</td>
-      <td><u>0.2476</u></td>
+      <td>0.2476</td>
       <td>0.2309</td>
       <td>0.1506</td>
-      <td><u>0.2063</u></td>
+      <td>0.2063</td>
     </tr>
     <tr>
       <td>iso_c</td>
@@ -918,7 +918,7 @@
       <td>0.2261</td>
       <td>0.1771</td>
       <td>0.1396</td>
-      <td><u>0.2863</u></td>
+      <td>0.2863</td>
       <td>0.1793</td>
       <td>0.2475</td>
       <td>0.2435</td>
@@ -940,26 +940,26 @@
       <td>0.2227</td>
       <td>0.2301</td>
       <td>0.2189</td>
-      <td><strong>0.2231</strong></td>
+      <td><u>0.2231</u></td>
       <td>0.1707</td>
     </tr>
     <tr>
       <td>my_merge</td>
       <td><strong>0.5840</strong></td>
-      <td><strong>0.3777</strong></td>
-      <td><strong>0.4000</strong></td>
-      <td>0.6291</td>
-      <td>0.4702</td>
-      <td>0.6246</td>
-      <td>0.2262</td>
-      <td>0.1771</td>
-      <td>0.1396</td>
-      <td><u>0.2863</u></td>
-      <td>0.1794</td>
-      <td><u>0.2476</u></td>
-      <td>0.2435</td>
-      <td>0.1584</td>
-      <td>0.1542</td>
+      <td><strong>0.4371</strong></td>
+      <td><strong>0.4107</strong></td>
+      <td><strong>0.7124</strong></td>
+      <td><strong>0.6898</strong></td>
+      <td><strong>0.6741</strong></td>
+      <td><strong>0.5959</strong></td>
+      <td><strong>0.3513</strong></td>
+      <td><strong>0.3447</strong></td>
+      <td><strong>0.4888</strong></td>
+      <td><strong>0.3299</strong></td>
+      <td><strong>0.3156</strong></td>
+      <td>0.2791</td>
+      <td><strong>0.2788</strong></td>
+      <td><strong>0.3001</strong></td>
     </tr>
   </tbody>
 </table>
@@ -1034,7 +1034,7 @@
       <td><u>0.1374</u></td>
       <td>0.0830</td>
       <td>0.0710</td>
-      <td><u>0.1824</u></td>
+      <td><strong>0.1824</strong></td>
       <td>0.1374</td>
       <td><strong>0.1947</strong></td>
       <td>0.0830</td>
@@ -1042,7 +1042,7 @@
       <td>0.1097</td>
       <td><strong>0.6688</strong></td>
       <td><strong>0.6688</strong></td>
-      <td><strong>0.1112</strong></td>
+      <td><u>0.1112</u></td>
       <td><strong>0.6688</strong></td>
       <td><strong>0.6688</strong></td>
       <td><strong>0.6688</strong></td>
@@ -1055,7 +1055,7 @@
       <td>0.0895</td>
       <td>0.0913</td>
       <td>0.1008</td>
-      <td><strong>0.0913</strong></td>
+      <td><u>0.0913</u></td>
       <td><strong>0.2354</strong></td>
       <td>0.0785</td>
       <td>0.0785</td>
@@ -1082,7 +1082,7 @@
       <td><u>0.1374</u></td>
       <td>0.0909</td>
       <td>0.0909</td>
-      <td><u>0.1824</u></td>
+      <td><strong>0.1824</strong></td>
       <td>0.1374</td>
       <td>0.1374</td>
       <td>0.1824</td>
@@ -1097,7 +1097,7 @@
       <td>0.0339</td>
       <td>0.1014</td>
       <td>0.1370</td>
-      <td><u>0.1266</u></td>
+      <td>0.1266</td>
       <td>0.0512</td>
       <td>0.0913</td>
       <td>0.0934</td>
@@ -1130,7 +1130,7 @@
       <td><u>0.1374</u></td>
       <td>0.0830</td>
       <td>0.0710</td>
-      <td><u>0.1824</u></td>
+      <td><strong>0.1824</strong></td>
       <td>0.1374</td>
       <td><strong>0.1947</strong></td>
       <td>0.0713</td>
@@ -1138,7 +1138,7 @@
       <td>0.1097</td>
       <td><strong>0.6688</strong></td>
       <td><strong>0.6688</strong></td>
-      <td><strong>0.1112</strong></td>
+      <td><u>0.1112</u></td>
       <td><strong>0.6688</strong></td>
       <td><u>0.1112</u></td>
       <td><strong>0.6688</strong></td>
@@ -1151,7 +1151,7 @@
       <td>0.0895</td>
       <td>0.1171</td>
       <td><u>0.1171</u></td>
-      <td><strong>0.0913</strong></td>
+      <td><u>0.0913</u></td>
       <td><strong>0.2354</strong></td>
       <td>0.0707</td>
       <td>0.0785</td>
@@ -1178,7 +1178,7 @@
       <td>0.0751</td>
       <td>0.0909</td>
       <td><u>0.1824</u></td>
-      <td><u>0.1824</u></td>
+      <td><strong>0.1824</strong></td>
       <td>0.1374</td>
       <td>0.1292</td>
       <td>0.1824</td>
@@ -1186,20 +1186,20 @@
       <td>0.1097</td>
       <td><u>0.1112</u></td>
       <td>0.1097</td>
-      <td><strong>0.1112</strong></td>
+      <td><u>0.1112</u></td>
       <td><u>0.6185</u></td>
       <td>0.0329</td>
       <td><strong>0.6688</strong></td>
       <td>0.0334</td>
       <td>0.0902</td>
       <td>0.0931</td>
-      <td><strong>0.2081</strong></td>
+      <td><u>0.2081</u></td>
       <td>0.0678</td>
       <td><strong>0.2355</strong></td>
-      <td><u>0.1005</u></td>
+      <td>0.1005</td>
       <td>0.0525</td>
       <td>0.0891</td>
-      <td><u>0.0895</u></td>
+      <td>0.0895</td>
       <td>0.1843</td>
       <td><u>0.1173</u></td>
       <td>0.0273</td>
@@ -1227,7 +1227,7 @@
       <td>0.0909</td>
       <td>0.0710</td>
       <td>0.0830</td>
-      <td><u>0.1692</u></td>
+      <td>0.1692</td>
       <td>0.1374</td>
       <td><strong>0.2502</strong></td>
       <td>0.0115</td>
@@ -1243,7 +1243,7 @@
       <td><strong>0.1951</strong></td>
       <td>0.0583</td>
       <td><u>0.0885</u></td>
-      <td><u>0.1269</u></td>
+      <td>0.1269</td>
       <td>0.0897</td>
       <td>0.0913</td>
       <td>0.0525</td>
@@ -1274,7 +1274,7 @@
       <td><u>0.1374</u></td>
       <td>0.1374</td>
       <td>0.0713</td>
-      <td>0.0909</td>
+      <td><u>0.0909</u></td>
       <td>0.0710</td>
       <td><strong>0.1947</strong></td>
       <td>0.0909</td>
@@ -1292,7 +1292,7 @@
       <td>0.0678</td>
       <td>0.0870</td>
       <td>0.0622</td>
-      <td><strong>0.1429</strong></td>
+      <td><u>0.1429</u></td>
       <td>0.0895</td>
       <td><u>0.1171</u></td>
       <td>0.0679</td>
@@ -1302,7 +1302,7 @@
       <td>0.0450</td>
       <td>0.0603</td>
       <td>0.0497</td>
-      <td><u>0.1521</u></td>
+      <td>0.1521</td>
       <td>0.0450</td>
       <td>0.0557</td>
       <td><strong>0.1617</strong></td>
@@ -1330,7 +1330,7 @@
       <td>0.0145</td>
       <td>0.1097</td>
       <td><strong>0.6688</strong></td>
-      <td><u>0.0514</u></td>
+      <td>0.0514</td>
       <td>0.1097</td>
       <td><strong>0.6688</strong></td>
       <td><strong>0.6688</strong></td>
@@ -1350,7 +1350,7 @@
       <td>0.0785</td>
       <td><u>0.1521</u></td>
       <td><strong>0.2354</strong></td>
-      <td><strong>0.2354</strong></td>
+      <td><u>0.2354</u></td>
       <td><strong>0.2354</strong></td>
       <td><strong>0.1521</strong></td>
       <td><u>0.1267</u></td>
@@ -1371,14 +1371,14 @@
       <td>0.1692</td>
       <td>0.0909</td>
       <td>0.0830</td>
-      <td><u>0.1692</u></td>
+      <td>0.1692</td>
       <td><u>0.1692</u></td>
       <td><u>0.1950</u></td>
       <td><u>0.1112</u></td>
       <td>0.1097</td>
       <td><strong>0.6688</strong></td>
       <td><strong>0.6688</strong></td>
-      <td><strong>0.1112</strong></td>
+      <td><u>0.1112</u></td>
       <td><strong>0.6688</strong></td>
       <td><strong>0.6688</strong></td>
       <td><strong>0.6688</strong></td>
@@ -1391,14 +1391,14 @@
       <td>0.0895</td>
       <td><strong>0.2233</strong></td>
       <td>0.1008</td>
-      <td><strong>0.0913</strong></td>
+      <td><u>0.0913</u></td>
       <td><strong>0.2354</strong></td>
       <td>0.0785</td>
       <td>0.0785</td>
       <td>0.0785</td>
       <td>0.0798</td>
       <td><u>0.1521</u></td>
-      <td><strong>0.2354</strong></td>
+      <td><u>0.2354</u></td>
       <td><strong>0.2354</strong></td>
       <td>0.1097</td>
       <td>0.1258</td>
@@ -1418,7 +1418,7 @@
       <td><u>0.1374</u></td>
       <td>0.0713</td>
       <td>0.0710</td>
-      <td><u>0.1824</u></td>
+      <td><strong>0.1824</strong></td>
       <td><strong>0.1947</strong></td>
       <td>0.1374</td>
       <td>0.1692</td>
@@ -1426,7 +1426,7 @@
       <td>0.1097</td>
       <td><strong>0.6688</strong></td>
       <td><strong>0.6688</strong></td>
-      <td><strong>0.1112</strong></td>
+      <td><u>0.1112</u></td>
       <td>0.2419</td>
       <td><strong>0.6688</strong></td>
       <td><strong>0.6688</strong></td>
@@ -1466,7 +1466,7 @@
       <td><strong>0.1947</strong></td>
       <td><u>0.1824</u></td>
       <td><strong>0.1947</strong></td>
-      <td><u>0.1824</u></td>
+      <td><strong>0.1824</strong></td>
       <td>0.1374</td>
       <td><u>0.1692</u></td>
       <td>0.1374</td>
@@ -1474,7 +1474,7 @@
       <td><u>0.1112</u></td>
       <td><strong>0.6688</strong></td>
       <td><strong>0.6688</strong></td>
-      <td><strong>0.1112</strong></td>
+      <td><u>0.1112</u></td>
       <td><strong>0.6688</strong></td>
       <td><strong>0.6688</strong></td>
       <td><strong>0.6688</strong></td>
@@ -1487,7 +1487,7 @@
       <td>0.0895</td>
       <td>0.0913</td>
       <td>0.1010</td>
-      <td><strong>0.0913</strong></td>
+      <td><u>0.0913</u></td>
       <td>0.0798</td>
       <td>0.0785</td>
       <td>0.0785</td>
@@ -1522,7 +1522,7 @@
       <td><u>0.1112</u></td>
       <td><strong>0.6688</strong></td>
       <td><strong>0.6688</strong></td>
-      <td><strong>0.1112</strong></td>
+      <td><u>0.1112</u></td>
       <td><strong>0.6688</strong></td>
       <td><strong>0.6688</strong></td>
       <td><strong>0.6688</strong></td>
@@ -1535,7 +1535,7 @@
       <td>0.0895</td>
       <td><strong>0.2233</strong></td>
       <td>0.1008</td>
-      <td><strong>0.0913</strong></td>
+      <td><u>0.0913</u></td>
       <td><strong>0.2354</strong></td>
       <td>0.0785</td>
       <td>0.0785</td>
@@ -1583,14 +1583,14 @@
       <td>0.0895</td>
       <td><strong>0.2233</strong></td>
       <td><strong>0.2233</strong></td>
-      <td><strong>0.0913</strong></td>
+      <td><u>0.0913</u></td>
       <td><u>0.2353</u></td>
       <td><strong>0.2354</strong></td>
       <td><strong>0.2354</strong></td>
       <td>0.0785</td>
       <td>0.0578</td>
       <td><u>0.1521</u></td>
-      <td><strong>0.2354</strong></td>
+      <td><u>0.2354</u></td>
       <td><strong>0.2354</strong></td>
       <td><strong>0.1521</strong></td>
       <td><u>0.1267</u></td>
@@ -1606,46 +1606,46 @@
     <tr>
       <td>my_merge</td>
       <td><strong>0.1947</strong></td>
-      <td>0.1692</td>
+      <td>0.1374</td>
       <td><strong>0.1947</strong></td>
+      <td><u>0.1824</u></td>
       <td><strong>0.1947</strong></td>
+      <td><strong>0.1824</strong></td>
+      <td><u>0.1824</u></td>
       <td><strong>0.1947</strong></td>
-      <td><strong>0.1947</strong></td>
-      <td><strong>0.1947</strong></td>
-      <td><strong>0.1947</strong></td>
-      <td>0.1947</td>
-      <td><u>0.1112</u></td>
-      <td>0.1097</td>
-      <td><strong>0.6688</strong></td>
-      <td><strong>0.6688</strong></td>
-      <td><strong>0.1112</strong></td>
+      <td>0.1824</td>
       <td><strong>0.6688</strong></td>
       <td><strong>0.6688</strong></td>
       <td><strong>0.6688</strong></td>
       <td><strong>0.6688</strong></td>
-      <td>0.1102</td>
-      <td>0.1095</td>
-      <td>0.0913</td>
+      <td><strong>0.6688</strong></td>
+      <td><strong>0.6688</strong></td>
+      <td><strong>0.6688</strong></td>
+      <td><strong>0.6688</strong></td>
+      <td><strong>0.6688</strong></td>
       <td><strong>0.2233</strong></td>
-      <td>0.0525</td>
-      <td>0.0895</td>
-      <td>0.0913</td>
-      <td>0.1008</td>
-      <td><strong>0.0913</strong></td>
+      <td>0.1607</td>
+      <td><strong>0.3236</strong></td>
+      <td><strong>0.2233</strong></td>
+      <td><u>0.1716</u></td>
+      <td><strong>0.2233</strong></td>
+      <td><strong>0.2233</strong></td>
+      <td><strong>0.2233</strong></td>
+      <td><strong>0.1171</strong></td>
       <td><strong>0.2354</strong></td>
-      <td>0.0785</td>
-      <td>0.0785</td>
-      <td>0.0785</td>
-      <td>0.0798</td>
-      <td><u>0.1521</u></td>
-      <td>0.0798</td>
       <td><strong>0.2354</strong></td>
-      <td>0.1097</td>
+      <td><strong>0.2354</strong></td>
+      <td><strong>0.1521</strong></td>
+      <td>0.0483</td>
+      <td><strong>0.2354</strong></td>
+      <td><strong>0.2802</strong></td>
+      <td><strong>0.2354</strong></td>
+      <td>0.1434</td>
       <td>0.1051</td>
-      <td><strong>0.1734</strong></td>
-      <td><strong>0.1734</strong></td>
-      <td><strong>0.1734</strong></td>
-      <td>0.1051</td>
+      <td>0.1087</td>
+      <td>0.1087</td>
+      <td>0.1087</td>
+      <td>0.1087</td>
       <td><strong>0.1734</strong></td>
       <td>0.1087</td>
       <td>0.1051</td>
@@ -1691,7 +1691,7 @@
       <td>0.1122</td>
       <td>0.1384</td>
       <td>0.2966</td>
-      <td><strong>0.4830</strong></td>
+      <td><u>0.4830</u></td>
       <td><strong>0.6688</strong></td>
       <td>0.1037</td>
       <td>0.1218</td>
@@ -1723,11 +1723,11 @@
     </tr>
     <tr>
       <td>dare_linear</td>
-      <td>0.1756</td>
+      <td><u>0.1756</u></td>
       <td>0.1122</td>
       <td>0.1345</td>
       <td>0.2705</td>
-      <td><strong>0.4830</strong></td>
+      <td><u>0.4830</u></td>
       <td><u>0.4830</u></td>
       <td>0.1035</td>
       <td>0.0699</td>
@@ -1742,13 +1742,13 @@
     <tr>
       <td>dare_ties</td>
       <td>0.1096</td>
-      <td>0.1519</td>
+      <td><u>0.1519</u></td>
       <td>0.1497</td>
       <td>0.0908</td>
       <td>0.2798</td>
       <td>0.2451</td>
-      <td><u>0.1305</u></td>
-      <td><u>0.1346</u></td>
+      <td>0.1305</td>
+      <td>0.1346</td>
       <td>0.0770</td>
       <td>0.1096</td>
       <td>0.0946</td>
@@ -1780,7 +1780,7 @@
       <td>0.1565</td>
       <td>0.0999</td>
       <td>0.1189</td>
-      <td><strong>0.4825</strong></td>
+      <td><u>0.4825</u></td>
       <td>0.2638</td>
       <td>0.2971</td>
       <td>0.1003</td>
@@ -1802,29 +1802,29 @@
       <td>0.2766</td>
       <td>0.4630</td>
       <td>0.1031</td>
-      <td><strong>0.1444</strong></td>
-      <td><u>0.1574</u></td>
+      <td><u>0.1444</u></td>
+      <td>0.1574</td>
       <td><u>0.1516</u></td>
       <td><strong>0.1554</strong></td>
-      <td><strong>0.2077</strong></td>
+      <td><u>0.2077</u></td>
       <td>0.1384</td>
       <td>0.1363</td>
       <td>0.1363</td>
     </tr>
     <tr>
       <td>model_stock</td>
-      <td>0.1756</td>
+      <td><u>0.1756</u></td>
       <td>0.1144</td>
       <td>0.1778</td>
       <td>0.2966</td>
-      <td><strong>0.4830</strong></td>
+      <td><u>0.4830</u></td>
       <td><strong>0.6688</strong></td>
       <td>0.1276</td>
       <td>0.1218</td>
       <td>0.1385</td>
       <td>0.1308</td>
       <td>0.1035</td>
-      <td><u>0.1935</u></td>
+      <td>0.1935</td>
       <td><u>0.1575</u></td>
       <td>0.1291</td>
       <td>0.1479</td>
@@ -1850,10 +1850,10 @@
     <tr>
       <td>iso_c</td>
       <td><strong>0.1947</strong></td>
-      <td><u>0.1865</u></td>
+      <td><strong>0.1865</strong></td>
       <td>0.1480</td>
-      <td><u>0.2971</u></td>
-      <td><strong>0.4830</strong></td>
+      <td>0.2971</td>
+      <td><u>0.4830</u></td>
       <td><strong>0.6688</strong></td>
       <td>0.0991</td>
       <td>0.0699</td>
@@ -1870,8 +1870,8 @@
       <td>0.1575</td>
       <td>0.1190</td>
       <td>0.1384</td>
-      <td><u>0.2971</u></td>
-      <td><strong>0.4830</strong></td>
+      <td>0.2971</td>
+      <td><u>0.4830</u></td>
       <td><strong>0.6688</strong></td>
       <td>0.0906</td>
       <td>0.1218</td>
@@ -1889,34 +1889,34 @@
       <td>0.1405</td>
       <td>0.0752</td>
       <td>0.0908</td>
-      <td><u>0.4507</u></td>
+      <td>0.4507</td>
       <td><u>0.4830</u></td>
-      <td><strong>0.1394</strong></td>
+      <td><u>0.1394</u></td>
       <td>0.1218</td>
-      <td><strong>0.1793</strong></td>
+      <td><u>0.1793</u></td>
       <td><strong>0.2354</strong></td>
       <td>0.0961</td>
-      <td><strong>0.2077</strong></td>
+      <td><u>0.2077</u></td>
       <td>0.1300</td>
       <td>0.1135</td>
       <td>0.1363</td>
     </tr>
     <tr>
       <td>my_merge</td>
-      <td><u>0.1862</u></td>
-      <td><strong>0.1947</strong></td>
-      <td><strong>0.1947</strong></td>
-      <td>0.2966</td>
-      <td><strong>0.4830</strong></td>
+      <td><u>0.1756</u></td>
+      <td><strong>0.1865</strong></td>
+      <td><strong>0.1865</strong></td>
       <td><strong>0.6688</strong></td>
-      <td>0.1037</td>
-      <td>0.1218</td>
-      <td>0.0944</td>
-      <td>0.1308</td>
-      <td>0.1035</td>
-      <td>0.1416</td>
-      <td>0.1506</td>
-      <td>0.1506</td>
+      <td><strong>0.6688</strong></td>
+      <td><strong>0.6688</strong></td>
+      <td><strong>0.2359</strong></td>
+      <td><strong>0.2061</strong></td>
+      <td><strong>0.1879</strong></td>
+      <td><strong>0.2354</strong></td>
+      <td>0.1453</td>
+      <td><strong>0.2197</strong></td>
+      <td>0.1075</td>
+      <td>0.1303</td>
       <td>0.1252</td>
     </tr>
   </tbody>
@@ -1992,7 +1992,7 @@
       <td>0.1500</td>
       <td>0.0710</td>
       <td>0.0710</td>
-      <td><u>0.1824</u></td>
+      <td>0.1824</td>
       <td>0.1692</td>
       <td>0.0959</td>
       <td>0.0830</td>
@@ -2039,7 +2039,7 @@
       <td>0.1184</td>
       <td>0.0491</td>
       <td>0.0497</td>
-      <td><strong>0.1947</strong></td>
+      <td><u>0.1947</u></td>
       <td>0.1818</td>
       <td>0.1374</td>
       <td>0.1096</td>
@@ -2057,14 +2057,14 @@
       <td>0.1528</td>
       <td>0.1245</td>
       <td>0.1246</td>
-      <td><u>0.1196</u></td>
+      <td>0.1196</td>
       <td>0.1226</td>
       <td>0.1398</td>
       <td>0.0525</td>
       <td>0.0936</td>
-      <td><u>0.1455</u></td>
+      <td>0.1455</td>
       <td>0.0510</td>
-      <td><u>0.1612</u></td>
+      <td>0.1612</td>
       <td>0.1371</td>
       <td>0.1133</td>
       <td>0.0503</td>
@@ -2085,10 +2085,10 @@
       <td>dare_linear</td>
       <td>0.1692</td>
       <td><u>0.2447</u></td>
-      <td><strong>0.3052</strong></td>
+      <td><u>0.3052</u></td>
       <td>0.0854</td>
       <td>0.0710</td>
-      <td><u>0.1824</u></td>
+      <td>0.1824</td>
       <td>0.1692</td>
       <td>0.0816</td>
       <td>0.1652</td>
@@ -2102,14 +2102,14 @@
       <td>0.1117</td>
       <td>0.1526</td>
       <td>0.0879</td>
-      <td><u>0.1839</u></td>
+      <td>0.1839</td>
       <td>0.1884</td>
       <td>0.0584</td>
       <td>0.0525</td>
-      <td><u>0.1728</u></td>
+      <td>0.1728</td>
       <td>0.0376</td>
       <td>0.0744</td>
-      <td><u>0.0992</u></td>
+      <td>0.0992</td>
       <td>0.0500</td>
       <td>0.0578</td>
       <td>0.1167</td>
@@ -2135,7 +2135,7 @@
       <td>0.0830</td>
       <td>0.0628</td>
       <td>0.0710</td>
-      <td><strong>0.1947</strong></td>
+      <td><u>0.1947</u></td>
       <td>0.0909</td>
       <td><strong>0.1947</strong></td>
       <td>0.0816</td>
@@ -2153,7 +2153,7 @@
       <td>0.1279</td>
       <td>0.1148</td>
       <td>0.0512</td>
-      <td><strong>0.1200</strong></td>
+      <td><u>0.1200</u></td>
       <td>0.0997</td>
       <td>0.0512</td>
       <td>0.1663</td>
@@ -2161,7 +2161,7 @@
       <td>0.0487</td>
       <td>0.0505</td>
       <td>0.0630</td>
-      <td><u>0.1549</u></td>
+      <td>0.1549</td>
       <td>0.0578</td>
       <td>0.0496</td>
       <td>0.0475</td>
@@ -2169,7 +2169,7 @@
       <td>0.0902</td>
       <td>0.1743</td>
       <td>0.1321</td>
-      <td><u>0.1276</u></td>
+      <td>0.1276</td>
       <td>0.1051</td>
       <td>0.1141</td>
       <td>0.1168</td>
@@ -2179,10 +2179,10 @@
     </tr>
     <tr>
       <td>regmean</td>
-      <td><u>0.1880</u></td>
+      <td>0.1880</td>
       <td>0.1435</td>
       <td>0.1929</td>
-      <td><strong>0.1692</strong></td>
+      <td><u>0.1692</u></td>
       <td>0.0737</td>
       <td>0.1821</td>
       <td>0.1660</td>
@@ -2206,9 +2206,9 @@
       <td>0.1565</td>
       <td>0.0593</td>
       <td>0.0790</td>
-      <td><strong>0.1545</strong></td>
+      <td><u>0.1545</u></td>
       <td>0.0491</td>
-      <td><strong>0.1753</strong></td>
+      <td><u>0.1753</u></td>
       <td>0.0805</td>
       <td>0.0674</td>
       <td>0.0671</td>
@@ -2230,11 +2230,11 @@
       <td>0.0795</td>
       <td>0.0909</td>
       <td>0.1795</td>
-      <td><u>0.1216</u></td>
-      <td><strong>0.1947</strong></td>
+      <td>0.1216</td>
+      <td><u>0.1947</u></td>
       <td>0.1374</td>
       <td><strong>0.1947</strong></td>
-      <td><strong>0.1947</strong></td>
+      <td><u>0.1947</u></td>
       <td><strong>0.1938</strong></td>
       <td><strong>0.6688</strong></td>
       <td><u>0.6688</u></td>
@@ -2257,7 +2257,7 @@
       <td>0.1244</td>
       <td>0.0532</td>
       <td>0.0793</td>
-      <td><strong>0.2626</strong></td>
+      <td><u>0.2626</u></td>
       <td>0.0521</td>
       <td>0.0508</td>
       <td>0.1028</td>
@@ -2278,7 +2278,7 @@
       <td>0.1786</td>
       <td>0.1374</td>
       <td>0.0930</td>
-      <td><strong>0.1692</strong></td>
+      <td><u>0.1692</u></td>
       <td>0.0710</td>
       <td>0.0713</td>
       <td>0.1692</td>
@@ -2296,14 +2296,14 @@
       <td>0.0529</td>
       <td>0.1212</td>
       <td>0.0578</td>
-      <td><strong>0.1708</strong></td>
+      <td><u>0.1708</u></td>
       <td>0.0270</td>
       <td>0.1024</td>
-      <td><strong>0.2089</strong></td>
+      <td><u>0.2089</u></td>
       <td><u>0.2261</u></td>
       <td>0.0581</td>
       <td>0.0497</td>
-      <td><u>0.2546</u></td>
+      <td>0.2546</td>
       <td>0.0668</td>
       <td>0.0512</td>
       <td>0.0288</td>
@@ -2328,8 +2328,8 @@
       <td>0.1637</td>
       <td>0.0780</td>
       <td>0.0710</td>
-      <td><strong>0.1868</strong></td>
-      <td><u>0.1742</u></td>
+      <td><u>0.1868</u></td>
+      <td>0.1742</td>
       <td>0.0830</td>
       <td>0.0830</td>
       <td>0.6554</td>
@@ -2343,11 +2343,11 @@
       <td>0.1112</td>
       <td>0.0969</td>
       <td>0.1508</td>
-      <td><u>0.1988</u></td>
+      <td>0.1988</td>
       <td>0.0935</td>
       <td>0.0914</td>
-      <td><strong>0.1833</strong></td>
-      <td><u>0.1771</u></td>
+      <td><u>0.1833</u></td>
+      <td>0.1771</td>
       <td>0.0959</td>
       <td>0.0915</td>
       <td>0.1076</td>
@@ -2355,10 +2355,10 @@
       <td>0.0764</td>
       <td>0.0497</td>
       <td>0.0653</td>
-      <td><strong>0.1427</strong></td>
-      <td><strong>0.1503</strong></td>
+      <td><u>0.1427</u></td>
+      <td><u>0.1503</u></td>
       <td>0.2354</td>
-      <td><strong>0.1742</strong></td>
+      <td><u>0.1742</u></td>
       <td>0.1779</td>
       <td>0.1752</td>
       <td>0.1267</td>
@@ -2371,7 +2371,7 @@
     </tr>
     <tr>
       <td>from</td>
-      <td><strong>0.2207</strong></td>
+      <td><u>0.2207</u></td>
       <td>0.2227</td>
       <td>0.0970</td>
       <td>0.0833</td>
@@ -2389,15 +2389,15 @@
       <td><strong>0.6688</strong></td>
       <td><strong>0.6688</strong></td>
       <td><strong>0.6688</strong></td>
-      <td><u>0.1743</u></td>
-      <td><strong>0.2653</strong></td>
-      <td><strong>0.2048</strong></td>
-      <td><u>0.1248</u></td>
+      <td>0.1743</td>
+      <td><u>0.2653</u></td>
+      <td><u>0.2048</u></td>
+      <td>0.1248</td>
       <td>0.0979</td>
       <td>0.1676</td>
       <td>0.1164</td>
       <td>0.0566</td>
-      <td><strong>0.1187</strong></td>
+      <td><u>0.1187</u></td>
       <td>0.0694</td>
       <td>0.0565</td>
       <td>0.1057</td>
@@ -2423,8 +2423,8 @@
       <td>0.0833</td>
       <td>0.1374</td>
       <td>0.0704</td>
-      <td><u>0.1920</u></td>
-      <td><u>0.1824</u></td>
+      <td>0.1920</td>
+      <td>0.1824</td>
       <td>0.1394</td>
       <td>0.0830</td>
       <td>0.0830</td>
@@ -2469,12 +2469,12 @@
       <td>free_merge</td>
       <td>0.1692</td>
       <td>0.2327</td>
-      <td><u>0.1947</u></td>
+      <td>0.1947</td>
       <td>0.0710</td>
       <td>0.1836</td>
-      <td><u>0.1824</u></td>
+      <td>0.1824</td>
       <td>0.1652</td>
-      <td><u>0.1695</u></td>
+      <td>0.1695</td>
       <td>0.0830</td>
       <td><strong>0.6688</strong></td>
       <td><u>0.6688</u></td>
@@ -2485,7 +2485,7 @@
       <td>0.3810</td>
       <td><u>0.6643</u></td>
       <td>0.1112</td>
-      <td><strong>0.1748</strong></td>
+      <td><u>0.1748</u></td>
       <td>0.1064</td>
       <td>0.1463</td>
       <td>0.0525</td>
@@ -2500,7 +2500,7 @@
       <td>0.0497</td>
       <td><strong>0.1670</strong></td>
       <td>0.0574</td>
-      <td><u>0.1322</u></td>
+      <td>0.1322</td>
       <td>0.2354</td>
       <td>0.1254</td>
       <td>0.1213</td>
@@ -2509,7 +2509,7 @@
       <td><u>0.1959</u></td>
       <td>0.1087</td>
       <td>0.1734</td>
-      <td><u>0.1752</u></td>
+      <td>0.1752</td>
       <td>0.1572</td>
       <td>0.1617</td>
     </tr>
@@ -2518,12 +2518,12 @@
       <td>0.1692</td>
       <td>0.1374</td>
       <td>0.1380</td>
-      <td><strong>0.1692</strong></td>
+      <td><u>0.1692</u></td>
       <td>0.0608</td>
       <td>0.0909</td>
       <td>0.1692</td>
       <td>0.0889</td>
-      <td><u>0.1692</u></td>
+      <td>0.1692</td>
       <td>0.0334</td>
       <td>0.0135</td>
       <td>0.0574</td>
@@ -2543,17 +2543,17 @@
       <td>0.2225</td>
       <td>0.0912</td>
       <td>0.0497</td>
-      <td><strong>0.2737</strong></td>
+      <td><u>0.2737</u></td>
       <td>0.0546</td>
       <td>0.0453</td>
       <td>0.0649</td>
-      <td><u>0.1017</u></td>
+      <td>0.1017</td>
       <td>0.0767</td>
       <td><u>0.2386</u></td>
       <td>0.0497</td>
       <td><strong>0.2354</strong></td>
       <td>0.1258</td>
-      <td><strong>0.1482</strong></td>
+      <td><u>0.1482</u></td>
       <td>0.1339</td>
       <td>0.1267</td>
       <td><strong>0.2956</strong></td>
@@ -2563,51 +2563,51 @@
     </tr>
     <tr>
       <td>my_merge</td>
-      <td>0.1692</td>
-      <td>0.0836</td>
-      <td>0.1505</td>
-      <td>0.0710</td>
-      <td>0.0710</td>
+      <td><strong>0.2783</strong></td>
+      <td>0.1833</td>
+      <td><strong>0.4455</strong></td>
+      <td><strong>0.1824</strong></td>
+      <td><strong>0.3315</strong></td>
+      <td><strong>0.1915</strong></td>
       <td><u>0.1824</u></td>
-      <td>0.1692</td>
-      <td>0.0956</td>
-      <td>0.0830</td>
+      <td><strong>0.2385</strong></td>
+      <td><u>0.1733</u></td>
       <td><strong>0.6688</strong></td>
       <td><u>0.6688</u></td>
-      <td>0.0539</td>
-      <td>0.6504</td>
-      <td>0.5506</td>
-      <td>0.1097</td>
+      <td><strong>0.6688</strong></td>
+      <td><strong>0.6688</strong></td>
+      <td><strong>0.6688</strong></td>
+      <td><strong>0.6688</strong></td>
       <td>0.6608</td>
-      <td>0.3367</td>
-      <td>0.1112</td>
-      <td>0.1610</td>
-      <td>0.1506</td>
-      <td>0.1854</td>
-      <td>0.0525</td>
-      <td>0.0923</td>
-      <td>0.1683</td>
-      <td>0.1255</td>
-      <td>0.0613</td>
-      <td>0.0988</td>
-      <td>0.0983</td>
-      <td>0.0587</td>
-      <td>0.0963</td>
-      <td>0.0530</td>
-      <td><u>0.1426</u></td>
-      <td>0.0599</td>
-      <td>0.1274</td>
+      <td><strong>0.6688</strong></td>
+      <td><strong>0.6688</strong></td>
+      <td><strong>0.3559</strong></td>
+      <td><strong>0.2669</strong></td>
+      <td><strong>0.3772</strong></td>
+      <td><strong>0.2853</strong></td>
+      <td><strong>0.1325</strong></td>
+      <td><strong>0.2097</strong></td>
+      <td><strong>0.3202</strong></td>
+      <td>0.1604</td>
+      <td><strong>0.1646</strong></td>
+      <td><strong>0.3360</strong></td>
+      <td><strong>0.3817</strong></td>
+      <td><strong>0.3275</strong></td>
+      <td><strong>0.3575</strong></td>
+      <td>0.0636</td>
+      <td><strong>0.2919</strong></td>
+      <td><strong>0.3750</strong></td>
       <td>0.2354</td>
-      <td><u>0.1502</u></td>
-      <td>0.1339</td>
-      <td>0.1743</td>
-      <td>0.1267</td>
-      <td>0.1258</td>
-      <td>0.0988</td>
-      <td>0.1734</td>
+      <td><strong>0.1758</strong></td>
+      <td>0.1168</td>
+      <td>0.2075</td>
+      <td><strong>0.3001</strong></td>
+      <td>0.1950</td>
       <td>0.1087</td>
-      <td><u>0.2228</u></td>
-      <td><strong>0.2336</strong></td>
+      <td>0.2309</td>
+      <td><u>0.2120</u></td>
+      <td><strong>0.2606</strong></td>
+      <td>0.1653</td>
     </tr>
   </tbody>
 </table>
@@ -2651,15 +2651,15 @@
       <td>0.4638</td>
       <td>0.4369</td>
       <td>0.3696</td>
-      <td><u>0.1657</u></td>
+      <td>0.1657</td>
       <td>0.1043</td>
       <td>0.0952</td>
       <td>0.0844</td>
       <td>0.0852</td>
-      <td><u>0.1710</u></td>
+      <td>0.1710</td>
       <td>0.1450</td>
       <td>0.1327</td>
-      <td><strong>0.1884</strong></td>
+      <td><u>0.1884</u></td>
     </tr>
     <tr>
       <td>ties</td>
@@ -2673,15 +2673,15 @@
       <td>0.1223</td>
       <td>0.0953</td>
       <td>0.1192</td>
-      <td><u>0.1002</u></td>
+      <td>0.1002</td>
       <td>0.1597</td>
-      <td><strong>0.2001</strong></td>
+      <td><u>0.2001</u></td>
       <td>0.1306</td>
       <td>0.1018</td>
     </tr>
     <tr>
       <td>dare_linear</td>
-      <td><strong>0.2397</strong></td>
+      <td><u>0.2397</u></td>
       <td>0.1129</td>
       <td>0.1387</td>
       <td>0.2850</td>
@@ -2720,13 +2720,13 @@
       <td>0.1748</td>
       <td>0.1417</td>
       <td>0.1290</td>
-      <td><u>0.5114</u></td>
+      <td>0.5114</td>
       <td>0.3667</td>
-      <td><u>0.6658</u></td>
+      <td>0.6658</td>
       <td>0.1250</td>
       <td>0.0964</td>
       <td>0.0983</td>
-      <td><strong>0.1263</strong></td>
+      <td><u>0.1263</u></td>
       <td>0.0717</td>
       <td>0.1068</td>
       <td>0.1491</td>
@@ -2736,8 +2736,8 @@
     <tr>
       <td>fisher</td>
       <td>0.1166</td>
-      <td><strong>0.1512</strong></td>
-      <td><strong>0.1944</strong></td>
+      <td><u>0.1512</u></td>
+      <td><u>0.1944</u></td>
       <td>0.4780</td>
       <td>0.2042</td>
       <td>0.4820</td>
@@ -2745,7 +2745,7 @@
       <td>0.1072</td>
       <td>0.1424</td>
       <td>0.0856</td>
-      <td><strong>0.1218</strong></td>
+      <td><u>0.1218</u></td>
       <td>0.1222</td>
       <td>0.1611</td>
       <td>0.1315</td>
@@ -2761,7 +2761,7 @@
       <td>0.0607</td>
       <td>0.0773</td>
       <td>0.1000</td>
-      <td><strong>0.1644</strong></td>
+      <td><u>0.1644</u></td>
       <td>0.1237</td>
       <td>0.0483</td>
       <td>0.1219</td>
@@ -2778,11 +2778,11 @@
       <td>0.3079</td>
       <td>0.2735</td>
       <td>0.1488</td>
-      <td><u>0.1227</u></td>
+      <td>0.1227</td>
       <td>0.1215</td>
       <td>0.0893</td>
       <td>0.0859</td>
-      <td><strong>0.1867</strong></td>
+      <td><u>0.1867</u></td>
       <td>0.1599</td>
       <td><u>0.1809</u></td>
       <td>0.1641</td>
@@ -2793,24 +2793,24 @@
       <td>0.0781</td>
       <td>0.1405</td>
       <td>0.4695</td>
-      <td><strong>0.5121</strong></td>
+      <td><u>0.5121</u></td>
       <td><strong>0.6688</strong></td>
-      <td><strong>0.2148</strong></td>
-      <td><strong>0.1301</strong></td>
+      <td><u>0.2148</u></td>
+      <td><u>0.1301</u></td>
       <td>0.0972</td>
       <td>0.0772</td>
       <td>0.0798</td>
       <td>0.1485</td>
-      <td><u>0.1836</u></td>
+      <td>0.1836</td>
       <td>0.1743</td>
       <td>0.1776</td>
     </tr>
     <tr>
       <td>iso_c</td>
       <td>0.1234</td>
-      <td><u>0.1483</u></td>
+      <td>0.1483</td>
       <td>0.1018</td>
-      <td><strong>0.5709</strong></td>
+      <td><u>0.5709</u></td>
       <td>0.4529</td>
       <td>0.2306</td>
       <td>0.1084</td>
@@ -2821,15 +2821,15 @@
       <td>0.1081</td>
       <td>0.1417</td>
       <td>0.1527</td>
-      <td><u>0.1869</u></td>
+      <td>0.1869</td>
     </tr>
     <tr>
       <td>free_merge</td>
-      <td><u>0.1989</u></td>
+      <td>0.1989</td>
       <td>0.1457</td>
       <td>0.1392</td>
       <td>0.4630</td>
-      <td><u>0.4770</u></td>
+      <td>0.4770</td>
       <td>0.3855</td>
       <td>0.1425</td>
       <td>0.0980</td>
@@ -2845,14 +2845,14 @@
       <td>robustmerge</td>
       <td>0.1482</td>
       <td>0.1070</td>
-      <td><u>0.1425</u></td>
+      <td>0.1425</td>
       <td>0.0347</td>
       <td>0.2768</td>
       <td>0.1724</td>
       <td>0.0954</td>
       <td>0.0617</td>
-      <td><u>0.1438</u></td>
-      <td><u>0.1260</u></td>
+      <td>0.1438</td>
+      <td>0.1260</td>
       <td>0.0707</td>
       <td>0.1217</td>
       <td>0.1698</td>
@@ -2861,21 +2861,21 @@
     </tr>
     <tr>
       <td>my_merge</td>
-      <td>0.1345</td>
-      <td>0.1082</td>
-      <td>0.1160</td>
-      <td>0.4638</td>
-      <td>0.4369</td>
-      <td>0.3696</td>
-      <td><u>0.1657</u></td>
-      <td>0.1043</td>
-      <td>0.0952</td>
-      <td>0.0844</td>
-      <td>0.0852</td>
-      <td><u>0.1710</u></td>
-      <td>0.1450</td>
-      <td>0.1327</td>
-      <td><strong>0.1884</strong></td>
+      <td><strong>0.3023</strong></td>
+      <td><strong>0.2351</strong></td>
+      <td><strong>0.1981</strong></td>
+      <td><strong>0.6688</strong></td>
+      <td><strong>0.6688</strong></td>
+      <td><u>0.6662</u></td>
+      <td><strong>0.3333</strong></td>
+      <td><strong>0.2092</strong></td>
+      <td><strong>0.2151</strong></td>
+      <td><strong>0.3484</strong></td>
+      <td><strong>0.2377</strong></td>
+      <td><strong>0.2621</strong></td>
+      <td><strong>0.2081</strong></td>
+      <td>0.1782</td>
+      <td><strong>0.2126</strong></td>
     </tr>
   </tbody>
 </table>
@@ -2947,7 +2947,7 @@
       <td>avg</td>
       <td><strong>0.1947</strong></td>
       <td>0.1374</td>
-      <td><strong>0.1374</strong></td>
+      <td><u>0.1374</u></td>
       <td>0.0912</td>
       <td>0.1932</td>
       <td>0.0713</td>
@@ -2966,7 +2966,7 @@
       <td>0.0885</td>
       <td>0.1807</td>
       <td>0.0512</td>
-      <td><u>0.2291</u></td>
+      <td>0.2291</td>
       <td>0.0678</td>
       <td>0.0913</td>
       <td>0.0895</td>
@@ -2979,7 +2979,7 @@
       <td>0.0497</td>
       <td>0.0715</td>
       <td>0.1521</td>
-      <td><u>0.1526</u></td>
+      <td>0.1526</td>
       <td>0.1097</td>
       <td>0.1087</td>
       <td>0.1734</td>
@@ -2995,14 +2995,14 @@
       <td>ties</td>
       <td>0.0713</td>
       <td>0.0830</td>
-      <td><strong>0.1374</strong></td>
+      <td><u>0.1374</u></td>
       <td>0.0909</td>
-      <td><u>0.1947</u></td>
+      <td>0.1947</td>
       <td>0.0713</td>
       <td>0.0830</td>
       <td><u>0.1947</u></td>
       <td>0.1374</td>
-      <td><strong>0.1097</strong></td>
+      <td><u>0.1097</u></td>
       <td>0.1097</td>
       <td>0.0329</td>
       <td>0.1112</td>
@@ -3020,7 +3020,7 @@
       <td>0.0913</td>
       <td>0.0977</td>
       <td>0.0913</td>
-      <td><u>0.0998</u></td>
+      <td>0.0998</td>
       <td>0.0698</td>
       <td>0.0508</td>
       <td>0.0819</td>
@@ -3030,8 +3030,8 @@
       <td>0.1128</td>
       <td>0.1097</td>
       <td>0.0898</td>
-      <td><u>0.2156</u></td>
-      <td><strong>0.2031</strong></td>
+      <td>0.2156</td>
+      <td><u>0.2031</u></td>
       <td>0.1087</td>
       <td><strong>0.1734</strong></td>
       <td>0.1087</td>
@@ -3043,11 +3043,11 @@
       <td>dare_linear</td>
       <td><strong>0.1947</strong></td>
       <td>0.1374</td>
-      <td><strong>0.1374</strong></td>
+      <td><u>0.1374</u></td>
       <td>0.0921</td>
       <td>0.1850</td>
       <td>0.0713</td>
-      <td><strong>0.2154</strong></td>
+      <td><u>0.2154</u></td>
       <td><u>0.1947</u></td>
       <td>0.1374</td>
       <td>0.0329</td>
@@ -3080,7 +3080,7 @@
       <td>0.1734</td>
       <td>0.1734</td>
       <td>0.1761</td>
-      <td><u>0.1824</u></td>
+      <td>0.1824</td>
       <td>0.1051</td>
       <td><u>0.1734</u></td>
       <td>0.1285</td>
@@ -3091,14 +3091,14 @@
       <td>dare_ties</td>
       <td><strong>0.1947</strong></td>
       <td>0.0830</td>
-      <td><strong>0.1374</strong></td>
+      <td><u>0.1374</u></td>
       <td>0.0710</td>
-      <td><u>0.1947</u></td>
+      <td>0.1947</td>
       <td>0.0830</td>
       <td>0.0830</td>
       <td><u>0.1947</u></td>
       <td>0.1374</td>
-      <td><strong>0.1097</strong></td>
+      <td><u>0.1097</u></td>
       <td>0.1097</td>
       <td><strong>0.6688</strong></td>
       <td>0.1112</td>
@@ -3108,14 +3108,14 @@
       <td><strong>0.6688</strong></td>
       <td><strong>0.6688</strong></td>
       <td>0.0885</td>
-      <td><strong>0.2440</strong></td>
+      <td><u>0.2440</u></td>
       <td>0.0503</td>
       <td>0.0885</td>
       <td>0.0525</td>
       <td>0.0913</td>
       <td>0.1318</td>
       <td>0.1022</td>
-      <td><strong>0.1008</strong></td>
+      <td><u>0.1008</u></td>
       <td>0.0702</td>
       <td>0.1037</td>
       <td>0.1844</td>
@@ -3127,7 +3127,7 @@
       <td>0.1097</td>
       <td>0.1734</td>
       <td>0.1851</td>
-      <td><u>0.1788</u></td>
+      <td>0.1788</td>
       <td>0.1051</td>
       <td><strong>0.1734</strong></td>
       <td>0.1267</td>
@@ -3139,9 +3139,9 @@
       <td>regmean</td>
       <td>0.1374</td>
       <td>0.1374</td>
-      <td><strong>0.1374</strong></td>
-      <td><u>0.1824</u></td>
-      <td><u>0.1947</u></td>
+      <td><u>0.1374</u></td>
+      <td>0.1824</td>
+      <td>0.1947</td>
       <td>0.1374</td>
       <td>0.1412</td>
       <td><u>0.1947</u></td>
@@ -3156,8 +3156,8 @@
       <td>0.0329</td>
       <td><strong>0.6688</strong></td>
       <td>0.0885</td>
-      <td><u>0.2210</u></td>
-      <td><u>0.1137</u></td>
+      <td>0.2210</td>
+      <td>0.1137</td>
       <td>0.0895</td>
       <td>0.0512</td>
       <td>0.0913</td>
@@ -3179,7 +3179,7 @@
       <td>0.1204</td>
       <td>0.1051</td>
       <td>0.1060</td>
-      <td><strong>0.2471</strong></td>
+      <td><u>0.2471</u></td>
       <td>0.1051</td>
       <td><strong>0.1815</strong></td>
     </tr>
@@ -3187,10 +3187,10 @@
       <td>fisher</td>
       <td>0.1374</td>
       <td><u>0.2151</u></td>
-      <td><strong>0.1374</strong></td>
+      <td><u>0.1374</u></td>
       <td>0.1374</td>
-      <td><u>0.1947</u></td>
-      <td><u>0.1947</u></td>
+      <td>0.1947</td>
+      <td>0.1947</td>
       <td>0.1374</td>
       <td><u>0.1947</u></td>
       <td>0.1374</td>
@@ -3220,7 +3220,7 @@
       <td>0.0532</td>
       <td>0.0578</td>
       <td>0.0450</td>
-      <td><strong>0.2250</strong></td>
+      <td><u>0.2250</u></td>
       <td>0.0898</td>
       <td><strong>0.3082</strong></td>
       <td>0.1258</td>
@@ -3235,7 +3235,7 @@
       <td>breadcrumbs</td>
       <td><u>0.1751</u></td>
       <td>0.1374</td>
-      <td><strong>0.1374</strong></td>
+      <td><u>0.1374</u></td>
       <td>0.1692</td>
       <td>0.1692</td>
       <td>0.0710</td>
@@ -3258,16 +3258,16 @@
       <td>0.0882</td>
       <td><strong>0.2233</strong></td>
       <td><u>0.2233</u></td>
-      <td><u>0.2233</u></td>
+      <td>0.2233</td>
       <td>0.0512</td>
       <td><strong>0.2354</strong></td>
-      <td><strong>0.2354</strong></td>
+      <td><u>0.2354</u></td>
       <td><strong>0.2354</strong></td>
       <td><u>0.2354</u></td>
-      <td><u>0.1521</u></td>
-      <td><strong>0.2354</strong></td>
+      <td>0.1521</td>
+      <td><u>0.2354</u></td>
       <td>0.2458</td>
-      <td><strong>0.2354</strong></td>
+      <td><u>0.2354</u></td>
       <td>0.1521</td>
       <td><u>0.1995</u></td>
       <td>0.1267</td>
@@ -3283,8 +3283,8 @@
       <td>model_stock</td>
       <td>0.1374</td>
       <td>0.1374</td>
-      <td><strong>0.1374</strong></td>
-      <td><strong>0.1915</strong></td>
+      <td><u>0.1374</u></td>
+      <td><u>0.1915</u></td>
       <td>0.1692</td>
       <td>0.0713</td>
       <td>0.1824</td>
@@ -3312,7 +3312,7 @@
       <td>0.0647</td>
       <td>0.0788</td>
       <td>0.1295</td>
-      <td><strong>0.1527</strong></td>
+      <td><u>0.1527</u></td>
       <td>0.0497</td>
       <td><strong>0.2867</strong></td>
       <td>0.0544</td>
@@ -3331,9 +3331,9 @@
       <td>from</td>
       <td><strong>0.1947</strong></td>
       <td>0.1374</td>
-      <td><strong>0.1374</strong></td>
-      <td><u>0.1824</u></td>
-      <td><u>0.1947</u></td>
+      <td><u>0.1374</u></td>
+      <td>0.1824</td>
+      <td>0.1947</td>
       <td>0.0713</td>
       <td>0.1692</td>
       <td><u>0.1947</u></td>
@@ -3379,14 +3379,14 @@
       <td>iso_c</td>
       <td><strong>0.1947</strong></td>
       <td><strong>0.2257</strong></td>
-      <td><u>0.0088</u></td>
+      <td>0.0088</td>
       <td>0.0930</td>
-      <td><strong>0.2046</strong></td>
-      <td><strong>0.2189</strong></td>
-      <td><u>0.2026</u></td>
+      <td><u>0.2046</u></td>
+      <td><u>0.2189</u></td>
+      <td>0.2026</td>
       <td>0.1675</td>
-      <td><u>0.1400</u></td>
-      <td><u>0.0973</u></td>
+      <td>0.1400</td>
+      <td>0.0973</td>
       <td><u>0.1636</u></td>
       <td><strong>0.6688</strong></td>
       <td><u>0.6279</u></td>
@@ -3397,29 +3397,29 @@
       <td>0.2369</td>
       <td>0.0847</td>
       <td>0.1807</td>
-      <td><strong>0.1251</strong></td>
+      <td><u>0.1251</u></td>
       <td>0.2005</td>
-      <td><u>0.1065</u></td>
+      <td>0.1065</td>
       <td>0.0913</td>
       <td><strong>0.2405</strong></td>
       <td>0.1042</td>
-      <td><u>0.0959</u></td>
+      <td>0.0959</td>
       <td>0.0849</td>
       <td>0.1813</td>
       <td><u>0.1975</u></td>
       <td><strong>0.2862</strong></td>
       <td>0.0939</td>
-      <td><u>0.1379</u></td>
+      <td>0.1379</td>
       <td><u>0.2650</u></td>
       <td>0.1126</td>
-      <td><u>0.1865</u></td>
+      <td>0.1865</td>
       <td>0.1752</td>
       <td>0.1743</td>
       <td>0.1770</td>
       <td>0.1617</td>
       <td><u>0.1294</u></td>
       <td><strong>0.2282</strong></td>
-      <td><u>0.2093</u></td>
+      <td>0.2093</td>
       <td>0.1626</td>
       <td>0.1653</td>
     </tr>
@@ -3427,7 +3427,7 @@
       <td>free_merge</td>
       <td>0.0713</td>
       <td>0.1374</td>
-      <td><strong>0.1374</strong></td>
+      <td><u>0.1374</u></td>
       <td>0.0894</td>
       <td>0.0976</td>
       <td>0.0713</td>
@@ -3446,7 +3446,7 @@
       <td>0.1008</td>
       <td>0.1357</td>
       <td>0.0512</td>
-      <td><strong>0.2540</strong></td>
+      <td><u>0.2540</u></td>
       <td>0.0678</td>
       <td>0.0913</td>
       <td>0.0895</td>
@@ -3464,7 +3464,7 @@
       <td>0.1087</td>
       <td>0.1734</td>
       <td>0.1734</td>
-      <td><strong>0.1941</strong></td>
+      <td><u>0.1941</u></td>
       <td>0.1051</td>
       <td><u>0.1734</u></td>
       <td>0.1716</td>
@@ -3475,8 +3475,8 @@
       <td>robustmerge</td>
       <td>0.1374</td>
       <td>0.1374</td>
-      <td><strong>0.1374</strong></td>
-      <td><u>0.1824</u></td>
+      <td><u>0.1374</u></td>
+      <td>0.1824</td>
       <td>0.1692</td>
       <td>0.0710</td>
       <td>0.1690</td>
@@ -3495,19 +3495,19 @@
       <td>0.2041</td>
       <td>0.0512</td>
       <td>0.2233</td>
-      <td><strong>0.1179</strong></td>
+      <td><u>0.1179</u></td>
       <td>0.0913</td>
       <td><u>0.2233</u></td>
       <td><strong>0.2735</strong></td>
       <td>0.0913</td>
       <td>0.0571</td>
-      <td><u>0.2095</u></td>
+      <td>0.2095</td>
       <td><strong>0.2354</strong></td>
       <td>0.1925</td>
       <td>0.0497</td>
       <td>0.1030</td>
       <td>0.2354</td>
-      <td><strong>0.2354</strong></td>
+      <td><u>0.2354</u></td>
       <td>0.1521</td>
       <td><strong>0.2246</strong></td>
       <td>0.1267</td>
@@ -3522,49 +3522,49 @@
     <tr>
       <td>my_merge</td>
       <td><strong>0.1947</strong></td>
-      <td>0.1374</td>
-      <td><strong>0.1374</strong></td>
-      <td>0.0912</td>
-      <td>0.1932</td>
-      <td>0.0713</td>
-      <td>0.1824</td>
-      <td>0.1374</td>
-      <td>0.1374</td>
-      <td>0.0329</td>
+      <td>0.1842</td>
+      <td><strong>0.1947</strong></td>
+      <td><strong>0.2134</strong></td>
+      <td><strong>0.2061</strong></td>
+      <td><strong>0.2438</strong></td>
+      <td><strong>0.2184</strong></td>
+      <td><u>0.1947</u></td>
+      <td><u>0.1824</u></td>
       <td><strong>0.6688</strong></td>
       <td><strong>0.6688</strong></td>
       <td><strong>0.6688</strong></td>
       <td><strong>0.6688</strong></td>
-      <td><u>0.1112</u></td>
       <td><strong>0.6688</strong></td>
       <td><strong>0.6688</strong></td>
       <td><strong>0.6688</strong></td>
-      <td>0.0885</td>
-      <td>0.1807</td>
-      <td>0.0512</td>
-      <td>0.2289</td>
-      <td>0.0678</td>
-      <td>0.0913</td>
-      <td>0.0895</td>
-      <td>0.0555</td>
-      <td>0.0913</td>
-      <td>0.0578</td>
-      <td>0.0682</td>
-      <td>0.0785</td>
-      <td>0.0600</td>
-      <td>0.0497</td>
-      <td>0.0716</td>
-      <td>0.1521</td>
-      <td><u>0.1526</u></td>
-      <td>0.1097</td>
+      <td><strong>0.6688</strong></td>
+      <td><strong>0.6688</strong></td>
+      <td>0.0668</td>
+      <td><strong>0.3659</strong></td>
+      <td><strong>0.2233</strong></td>
+      <td><strong>0.2639</strong></td>
+      <td><strong>0.2081</strong></td>
+      <td><strong>0.2233</strong></td>
+      <td><u>0.2233</u></td>
+      <td><u>0.2421</u></td>
+      <td><strong>0.2182</strong></td>
+      <td><u>0.1521</u></td>
+      <td><strong>0.2890</strong></td>
+      <td><strong>0.2354</strong></td>
+      <td>0.1848</td>
+      <td><strong>0.1548</strong></td>
+      <td><strong>0.3096</strong></td>
+      <td>0.2354</td>
+      <td><strong>0.2704</strong></td>
+      <td><strong>0.3212</strong></td>
       <td>0.1087</td>
-      <td>0.1734</td>
-      <td>0.1761</td>
-      <td>0.1096</td>
-      <td>0.1051</td>
-      <td><u>0.1734</u></td>
-      <td>0.1734</td>
-      <td>0.1563</td>
+      <td><u>0.2534</u></td>
+      <td><strong>0.2084</strong></td>
+      <td><strong>0.2417</strong></td>
+      <td>0.1087</td>
+      <td>0.1617</td>
+      <td><strong>0.2875</strong></td>
+      <td>0.1078</td>
       <td>0.1096</td>
     </tr>
   </tbody>
@@ -3603,11 +3603,11 @@
   <tbody>
     <tr>
       <td>avg</td>
-      <td><u>0.1565</u></td>
+      <td>0.1565</td>
       <td>0.1186</td>
       <td>0.1524</td>
-      <td><u>0.4569</u></td>
-      <td><strong>0.4830</strong></td>
+      <td>0.4569</td>
+      <td><u>0.4830</u></td>
       <td><strong>0.6688</strong></td>
       <td>0.1068</td>
       <td>0.1294</td>
@@ -3639,10 +3639,10 @@
     </tr>
     <tr>
       <td>dare_linear</td>
-      <td><u>0.1565</u></td>
+      <td>0.1565</td>
       <td>0.1161</td>
-      <td><u>0.1825</u></td>
-      <td><u>0.4569</u></td>
+      <td>0.1825</td>
+      <td>0.4569</td>
       <td>0.2771</td>
       <td>0.4630</td>
       <td>0.1155</td>
@@ -3669,7 +3669,7 @@
       <td>0.1194</td>
       <td>0.0434</td>
       <td>0.1230</td>
-      <td><strong>0.1791</strong></td>
+      <td><u>0.1791</u></td>
       <td>0.1351</td>
       <td>0.1300</td>
     </tr>
@@ -3679,7 +3679,7 @@
       <td>0.1715</td>
       <td>0.1578</td>
       <td>0.2705</td>
-      <td><u>0.4630</u></td>
+      <td>0.4630</td>
       <td>0.4569</td>
       <td>0.1411</td>
       <td>0.0773</td>
@@ -3693,10 +3693,10 @@
     </tr>
     <tr>
       <td>fisher</td>
-      <td><strong>0.1633</strong></td>
-      <td><strong>0.1756</strong></td>
+      <td><u>0.1633</u></td>
+      <td><u>0.1756</u></td>
       <td>0.1565</td>
-      <td><strong>0.4582</strong></td>
+      <td><u>0.4582</u></td>
       <td>0.0652</td>
       <td>0.4718</td>
       <td>0.0814</td>
@@ -3717,12 +3717,12 @@
       <td>0.0647</td>
       <td>0.2771</td>
       <td>0.0715</td>
-      <td><u>0.1445</u></td>
-      <td><strong>0.1783</strong></td>
-      <td><u>0.1660</u></td>
+      <td>0.1445</td>
+      <td><u>0.1783</u></td>
+      <td>0.1660</td>
       <td><strong>0.2354</strong></td>
-      <td><strong>0.2077</strong></td>
-      <td><strong>0.2111</strong></td>
+      <td><u>0.2077</u></td>
+      <td><u>0.2111</u></td>
       <td>0.1450</td>
       <td>0.1312</td>
       <td>0.1653</td>
@@ -3732,7 +3732,7 @@
       <td>0.1374</td>
       <td>0.1440</td>
       <td>0.1715</td>
-      <td><u>0.4569</u></td>
+      <td>0.4569</td>
       <td>0.2771</td>
       <td>0.4825</td>
       <td>0.1110</td>
@@ -3747,10 +3747,10 @@
     </tr>
     <tr>
       <td>from</td>
-      <td><u>0.1565</u></td>
+      <td>0.1565</td>
       <td>0.1495</td>
       <td>0.1671</td>
-      <td><u>0.4569</u></td>
+      <td>0.4569</td>
       <td>0.2971</td>
       <td><strong>0.6688</strong></td>
       <td>0.1174</td>
@@ -3766,7 +3766,7 @@
     <tr>
       <td>iso_c</td>
       <td>0.1430</td>
-      <td><u>0.1722</u></td>
+      <td>0.1722</td>
       <td>0.1700</td>
       <td>0.3099</td>
       <td>0.2840</td>
@@ -3775,7 +3775,7 @@
       <td>0.1327</td>
       <td>0.1469</td>
       <td>0.1545</td>
-      <td><u>0.1727</u></td>
+      <td>0.1727</td>
       <td>0.1880</td>
       <td>0.1755</td>
       <td><strong>0.1731</strong></td>
@@ -3785,9 +3785,9 @@
       <td>free_merge</td>
       <td>0.1154</td>
       <td>0.0861</td>
-      <td><strong>0.1840</strong></td>
-      <td><u>0.4569</u></td>
-      <td><strong>0.4830</strong></td>
+      <td><u>0.1840</u></td>
+      <td>0.4569</td>
+      <td><u>0.4830</u></td>
       <td><strong>0.6688</strong></td>
       <td>0.0959</td>
       <td>0.1377</td>
@@ -3796,7 +3796,7 @@
       <td>0.0497</td>
       <td>0.1062</td>
       <td>0.1518</td>
-      <td><u>0.1575</u></td>
+      <td>0.1575</td>
       <td>0.1599</td>
     </tr>
     <tr>
@@ -3807,33 +3807,33 @@
       <td>0.2377</td>
       <td>0.2771</td>
       <td>0.0504</td>
-      <td><strong>0.1601</strong></td>
-      <td><u>0.1442</u></td>
-      <td><strong>0.1960</strong></td>
-      <td><u>0.1673</u></td>
+      <td><u>0.1601</u></td>
+      <td>0.1442</td>
+      <td><u>0.1960</u></td>
+      <td>0.1673</td>
       <td>0.1151</td>
-      <td><u>0.2077</u></td>
-      <td><u>0.1761</u></td>
+      <td>0.2077</td>
+      <td>0.1761</td>
       <td>0.1315</td>
       <td>0.1629</td>
     </tr>
     <tr>
       <td>my_merge</td>
-      <td><u>0.1565</u></td>
-      <td>0.1186</td>
-      <td>0.1524</td>
-      <td><u>0.4569</u></td>
-      <td><strong>0.4830</strong></td>
+      <td><strong>0.1912</strong></td>
+      <td><strong>0.2211</strong></td>
+      <td><strong>0.1985</strong></td>
       <td><strong>0.6688</strong></td>
-      <td>0.1068</td>
-      <td>0.1293</td>
-      <td>0.0787</td>
-      <td>0.0682</td>
-      <td>0.0605</td>
-      <td>0.1381</td>
-      <td>0.1527</td>
-      <td>0.1294</td>
-      <td>0.1465</td>
+      <td><strong>0.6688</strong></td>
+      <td><strong>0.6688</strong></td>
+      <td><strong>0.2187</strong></td>
+      <td><strong>0.2318</strong></td>
+      <td><strong>0.2279</strong></td>
+      <td><u>0.2255</u></td>
+      <td><strong>0.2164</strong></td>
+      <td><strong>0.2757</strong></td>
+      <td><strong>0.1902</strong></td>
+      <td><u>0.1707</u></td>
+      <td>0.1683</td>
     </tr>
   </tbody>
 </table>
@@ -3911,13 +3911,13 @@
       <td>0.0821</td>
       <td>0.1947</td>
       <td>0.0830</td>
-      <td><strong>0.1947</strong></td>
+      <td><u>0.1947</u></td>
       <td>0.1947</td>
       <td>0.1695</td>
       <td>0.6688</td>
       <td>0.6688</td>
       <td>0.6688</td>
-      <td><strong>0.6688</strong></td>
+      <td><u>0.6688</u></td>
       <td>0.6688</td>
       <td>0.6688</td>
       <td><strong>0.6688</strong></td>
@@ -3954,43 +3954,43 @@
     <tr>
       <td>ties</td>
       <td>0.2581</td>
-      <td><strong>0.3066</strong></td>
+      <td><u>0.3066</u></td>
       <td>0.1768</td>
-      <td><strong>0.2590</strong></td>
+      <td><u>0.2590</u></td>
       <td>0.3438</td>
       <td>0.0830</td>
       <td>0.1888</td>
-      <td><u>0.1964</u></td>
+      <td>0.1964</td>
       <td>0.1880</td>
       <td>0.6658</td>
       <td>0.6668</td>
-      <td><u>0.6703</u></td>
-      <td><strong>0.6688</strong></td>
-      <td><strong>0.6778</strong></td>
-      <td><u>0.6813</u></td>
+      <td>0.6703</td>
+      <td><u>0.6688</u></td>
+      <td><u>0.6778</u></td>
+      <td>0.6813</td>
       <td><strong>0.6688</strong></td>
       <td><strong>0.6688</strong></td>
       <td>0.1342</td>
       <td>0.0976</td>
-      <td><strong>0.4539</strong></td>
+      <td><u>0.4539</u></td>
       <td>0.3088</td>
       <td>0.1153</td>
       <td>0.1939</td>
       <td>0.1954</td>
       <td>0.1161</td>
       <td>0.1267</td>
-      <td><u>0.2754</u></td>
+      <td>0.2754</td>
       <td>0.1952</td>
       <td>0.2377</td>
       <td>0.4061</td>
       <td>0.2415</td>
-      <td><strong>0.2702</strong></td>
+      <td><u>0.2702</u></td>
       <td>0.1301</td>
-      <td><strong>0.2823</strong></td>
+      <td><u>0.2823</u></td>
       <td>0.1213</td>
       <td>0.1506</td>
       <td><u>0.1734</u></td>
-      <td>0.1563</td>
+      <td><u>0.1563</u></td>
       <td>0.1707</td>
       <td>0.1267</td>
       <td>0.1087</td>
@@ -4007,13 +4007,13 @@
       <td>0.0830</td>
       <td>0.1947</td>
       <td>0.0830</td>
-      <td><strong>0.1947</strong></td>
+      <td><u>0.1947</u></td>
       <td>0.1947</td>
       <td>0.1426</td>
       <td>0.6688</td>
       <td>0.6688</td>
       <td>0.6688</td>
-      <td><strong>0.6688</strong></td>
+      <td><u>0.6688</u></td>
       <td>0.6688</td>
       <td>0.6688</td>
       <td><strong>0.6688</strong></td>
@@ -4029,7 +4029,7 @@
       <td>0.0584</td>
       <td>0.2656</td>
       <td>0.2476</td>
-      <td><u>0.2721</u></td>
+      <td>0.2721</td>
       <td>0.3886</td>
       <td>0.0919</td>
       <td>0.0470</td>
@@ -4041,7 +4041,7 @@
       <td><strong>0.1734</strong></td>
       <td>0.1087</td>
       <td>0.1267</td>
-      <td>0.1411</td>
+      <td><u>0.1411</u></td>
       <td>0.1258</td>
       <td>0.1087</td>
       <td>0.1105</td>
@@ -4052,17 +4052,17 @@
       <td>0.2572</td>
       <td>0.2514</td>
       <td>0.2678</td>
-      <td><u>0.2219</u></td>
-      <td><strong>0.3870</strong></td>
+      <td>0.2219</td>
+      <td><u>0.3870</u></td>
       <td>0.0830</td>
       <td>0.1520</td>
       <td>0.1950</td>
       <td>0.1377</td>
-      <td><strong>0.6748</strong></td>
+      <td><u>0.6748</u></td>
       <td>0.6698</td>
-      <td><u>0.6703</u></td>
-      <td><strong>0.6688</strong></td>
-      <td><u>0.6773</u></td>
+      <td>0.6703</td>
+      <td><u>0.6688</u></td>
+      <td>0.6773</td>
       <td>0.6808</td>
       <td><strong>0.6688</strong></td>
       <td><strong>0.6688</strong></td>
@@ -4070,7 +4070,7 @@
       <td>0.1222</td>
       <td>0.4234</td>
       <td>0.2037</td>
-      <td><strong>0.1373</strong></td>
+      <td><u>0.1373</u></td>
       <td>0.1524</td>
       <td>0.1956</td>
       <td>0.1245</td>
@@ -4080,9 +4080,9 @@
       <td>0.2440</td>
       <td>0.4205</td>
       <td>0.2107</td>
-      <td><u>0.2649</u></td>
+      <td>0.2649</td>
       <td>0.1434</td>
-      <td><u>0.2810</u></td>
+      <td>0.2810</td>
       <td>0.1261</td>
       <td>0.1302</td>
       <td><u>0.1734</u></td>
@@ -4097,19 +4097,19 @@
     </tr>
     <tr>
       <td>regmean</td>
-      <td><u>0.2955</u></td>
-      <td><u>0.3005</u></td>
+      <td>0.2955</td>
+      <td>0.3005</td>
       <td>0.2260</td>
       <td>0.1692</td>
-      <td><u>0.3587</u></td>
-      <td><u>0.0851</u></td>
-      <td><u>0.1923</u></td>
+      <td>0.3587</td>
+      <td>0.0851</td>
+      <td>0.1923</td>
       <td>0.1947</td>
       <td>0.1850</td>
       <td>0.6683</td>
       <td>0.6653</td>
-      <td><strong>0.6793</strong></td>
-      <td><strong>0.6688</strong></td>
+      <td><u>0.6793</u></td>
+      <td><u>0.6688</u></td>
       <td>0.5870</td>
       <td>0.4000</td>
       <td><strong>0.6688</strong></td>
@@ -4117,22 +4117,22 @@
       <td>0.1935</td>
       <td>0.1644</td>
       <td>0.3479</td>
-      <td><u>0.3168</u></td>
-      <td><u>0.1307</u></td>
+      <td>0.3168</td>
+      <td>0.1307</td>
       <td>0.1714</td>
       <td>0.2751</td>
       <td>0.1021</td>
       <td>0.1784</td>
       <td>0.1377</td>
       <td><strong>0.3126</strong></td>
-      <td><strong>0.3069</strong></td>
-      <td><u>0.4210</u></td>
-      <td><strong>0.2958</strong></td>
+      <td><u>0.3069</u></td>
+      <td>0.4210</td>
+      <td><u>0.2958</u></td>
       <td>0.2492</td>
       <td><u>0.1435</u></td>
       <td>0.2464</td>
       <td>0.0920</td>
-      <td><strong>0.2175</strong></td>
+      <td><u>0.2175</u></td>
       <td>0.1716</td>
       <td><strong>0.1734</strong></td>
       <td>0.1069</td>
@@ -4154,10 +4154,10 @@
       <td>0.0909</td>
       <td>0.1947</td>
       <td>0.1956</td>
-      <td><u>0.6733</u></td>
-      <td><u>0.6713</u></td>
+      <td>0.6733</td>
+      <td>0.6713</td>
       <td>0.6698</td>
-      <td><strong>0.6688</strong></td>
+      <td><u>0.6688</u></td>
       <td>0.1112</td>
       <td>0.6688</td>
       <td><strong>0.6688</strong></td>
@@ -4168,9 +4168,9 @@
       <td>0.2177</td>
       <td>0.1021</td>
       <td>0.0667</td>
-      <td><strong>0.3571</strong></td>
+      <td><u>0.3571</u></td>
       <td>0.0895</td>
-      <td><strong>0.2489</strong></td>
+      <td><u>0.2489</u></td>
       <td>0.1007</td>
       <td>0.1595</td>
       <td>0.2035</td>
@@ -4205,7 +4205,7 @@
       <td>0.6688</td>
       <td>0.6688</td>
       <td>0.6688</td>
-      <td><strong>0.6688</strong></td>
+      <td><u>0.6688</u></td>
       <td>0.6688</td>
       <td>0.6594</td>
       <td><strong>0.6688</strong></td>
@@ -4247,23 +4247,23 @@
       <td>0.0713</td>
       <td>0.1947</td>
       <td>0.0830</td>
-      <td><strong>0.1947</strong></td>
+      <td><u>0.1947</u></td>
       <td>0.1947</td>
       <td>0.1947</td>
       <td>0.6688</td>
       <td>0.6688</td>
       <td>0.6688</td>
-      <td><strong>0.6688</strong></td>
+      <td><u>0.6688</u></td>
       <td>0.6688</td>
       <td>0.6683</td>
       <td><strong>0.6688</strong></td>
       <td><strong>0.6688</strong></td>
       <td>0.2738</td>
-      <td><u>0.2485</u></td>
+      <td>0.2485</td>
       <td>0.1215</td>
       <td>0.2663</td>
       <td>0.1239</td>
-      <td><strong>0.2059</strong></td>
+      <td><u>0.2059</u></td>
       <td>0.2233</td>
       <td>0.0661</td>
       <td>0.0607</td>
@@ -4289,42 +4289,42 @@
     </tr>
     <tr>
       <td>from</td>
-      <td><strong>0.3116</strong></td>
+      <td><u>0.3116</u></td>
       <td>0.2081</td>
       <td><u>0.2985</u></td>
       <td>0.0830</td>
       <td>0.3195</td>
       <td>0.0830</td>
       <td>0.1692</td>
-      <td><strong>0.1979</strong></td>
-      <td><u>0.2154</u></td>
+      <td><u>0.1979</u></td>
+      <td>0.2154</td>
       <td>0.6703</td>
-      <td><strong>0.6753</strong></td>
+      <td><u>0.6753</u></td>
       <td>0.6688</td>
-      <td><strong>0.6688</strong></td>
+      <td><u>0.6688</u></td>
       <td>0.6728</td>
-      <td><strong>0.6923</strong></td>
+      <td><u>0.6923</u></td>
       <td><strong>0.6688</strong></td>
       <td><strong>0.6688</strong></td>
       <td><u>0.5820</u></td>
       <td>0.1104</td>
-      <td><u>0.4478</u></td>
+      <td>0.4478</td>
       <td>0.1891</td>
       <td>0.0713</td>
-      <td><u>0.1973</u></td>
-      <td><u>0.2810</u></td>
-      <td><strong>0.2233</strong></td>
+      <td>0.1973</td>
+      <td>0.2810</td>
+      <td><u>0.2233</u></td>
       <td>0.0512</td>
-      <td><strong>0.3084</strong></td>
+      <td><u>0.3084</u></td>
       <td>0.1230</td>
       <td>0.1832</td>
-      <td><strong>0.4244</strong></td>
-      <td><u>0.2901</u></td>
+      <td><u>0.4244</u></td>
+      <td>0.2901</td>
       <td>0.2648</td>
       <td>0.1180</td>
       <td>0.2354</td>
-      <td><u>0.1719</u></td>
-      <td><u>0.1584</u></td>
+      <td>0.1719</td>
+      <td>0.1584</td>
       <td><u>0.1734</u></td>
       <td><strong>0.1734</strong></td>
       <td><u>0.1806</u></td>
@@ -4342,14 +4342,14 @@
       <td>0.1412</td>
       <td>0.0710</td>
       <td>0.1824</td>
-      <td><strong>0.1374</strong></td>
+      <td><u>0.1374</u></td>
       <td>0.0713</td>
       <td>0.0713</td>
       <td>0.1985</td>
       <td>0.6693</td>
       <td>0.5731</td>
       <td>0.6683</td>
-      <td><u>0.5406</u></td>
+      <td>0.5406</td>
       <td>0.0494</td>
       <td>0.0454</td>
       <td><u>0.6579</u></td>
@@ -4391,13 +4391,13 @@
       <td>0.0646</td>
       <td>0.1947</td>
       <td>0.0830</td>
-      <td><strong>0.1947</strong></td>
+      <td><u>0.1947</u></td>
       <td>0.1947</td>
-      <td><strong>0.3154</strong></td>
+      <td><u>0.3154</u></td>
       <td>0.6688</td>
       <td>0.6688</td>
       <td>0.6688</td>
-      <td><strong>0.6688</strong></td>
+      <td><u>0.6688</u></td>
       <td>0.6688</td>
       <td>0.6673</td>
       <td><strong>0.6688</strong></td>
@@ -4439,13 +4439,13 @@
       <td>0.1947</td>
       <td>0.1947</td>
       <td>0.0830</td>
-      <td><strong>0.1947</strong></td>
+      <td><u>0.1947</u></td>
       <td>0.1947</td>
       <td>0.1947</td>
       <td>0.6688</td>
       <td>0.6688</td>
       <td>0.6688</td>
-      <td><strong>0.6688</strong></td>
+      <td><u>0.6688</u></td>
       <td>0.6688</td>
       <td>0.6663</td>
       <td><strong>0.6688</strong></td>
@@ -4453,7 +4453,7 @@
       <td>0.1387</td>
       <td>0.2449</td>
       <td>0.1676</td>
-      <td><strong>0.3335</strong></td>
+      <td><u>0.3335</u></td>
       <td>0.0511</td>
       <td>0.0990</td>
       <td>0.2266</td>
@@ -4481,51 +4481,51 @@
     </tr>
     <tr>
       <td>my_merge</td>
-      <td>0.2675</td>
-      <td>0.2698</td>
-      <td><strong>0.3043</strong></td>
-      <td>0.0909</td>
-      <td>0.0830</td>
-      <td>0.0830</td>
-      <td>0.1374</td>
-      <td>0.1947</td>
-      <td>0.1672</td>
-      <td>0.6683</td>
-      <td>0.6688</td>
-      <td>0.6688</td>
-      <td>0.1426</td>
-      <td>0.1282</td>
-      <td>0.3257</td>
+      <td><strong>0.3321</strong></td>
+      <td><strong>0.3853</strong></td>
+      <td><strong>0.5870</strong></td>
+      <td><strong>0.3505</strong></td>
+      <td><strong>0.4087</strong></td>
+      <td><strong>0.6469</strong></td>
+      <td><strong>0.2248</strong></td>
+      <td><strong>0.4160</strong></td>
+      <td><strong>0.6457</strong></td>
+      <td><strong>0.6758</strong></td>
+      <td><strong>0.6873</strong></td>
+      <td><strong>0.7057</strong></td>
+      <td><strong>0.6693</strong></td>
+      <td><strong>0.6958</strong></td>
+      <td><strong>0.7172</strong></td>
       <td><strong>0.6688</strong></td>
       <td><strong>0.6688</strong></td>
-      <td><strong>0.6688</strong></td>
-      <td>0.1043</td>
-      <td>0.1154</td>
-      <td>0.1103</td>
-      <td>0.0683</td>
-      <td>0.0668</td>
-      <td>0.2276</td>
-      <td><u>0.2020</u></td>
-      <td><u>0.2431</u></td>
-      <td>0.2233</td>
-      <td>0.0810</td>
-      <td>0.2398</td>
-      <td>0.3731</td>
-      <td>0.0497</td>
-      <td>0.0919</td>
-      <td><strong>0.2594</strong></td>
-      <td>0.2354</td>
-      <td>0.0793</td>
-      <td>0.1092</td>
-      <td><u>0.1734</u></td>
-      <td><u>0.1617</u></td>
-      <td><strong>0.1950</strong></td>
-      <td>0.1222</td>
-      <td><u>0.1617</u></td>
-      <td>0.1258</td>
+      <td><strong>0.6678</strong></td>
+      <td><u>0.2672</u></td>
+      <td><strong>0.5527</strong></td>
+      <td><strong>0.6138</strong></td>
+      <td><strong>0.3737</strong></td>
+      <td><strong>0.4159</strong></td>
+      <td><strong>0.5417</strong></td>
+      <td><strong>0.3083</strong></td>
+      <td><strong>0.2785</strong></td>
+      <td><strong>0.3544</strong></td>
+      <td>0.2159</td>
+      <td><strong>0.3273</strong></td>
+      <td><strong>0.5620</strong></td>
+      <td><strong>0.3537</strong></td>
+      <td><strong>0.3274</strong></td>
+      <td><strong>0.3507</strong></td>
+      <td><strong>0.3136</strong></td>
+      <td><u>0.2244</u></td>
+      <td><strong>0.4559</strong></td>
+      <td>0.1473</td>
+      <td>0.1087</td>
+      <td><strong>0.2084</strong></td>
+      <td>0.1087</td>
+      <td>0.1186</td>
+      <td>0.1087</td>
       <td>0.1195</td>
-      <td>0.1617</td>
-      <td>0.1267</td>
+      <td>0.1087</td>
+      <td>0.1087</td>
     </tr>
   </tbody>
 </table>
@@ -4582,12 +4582,12 @@
     <tr>
       <td>ties</td>
       <td>0.2472</td>
-      <td><u>0.2286</u></td>
+      <td>0.2286</td>
       <td>0.1911</td>
       <td>0.6677</td>
-      <td><u>0.6760</u></td>
+      <td>0.6760</td>
       <td>0.4906</td>
-      <td><u>0.2868</u></td>
+      <td>0.2868</td>
       <td>0.1682</td>
       <td>0.1728</td>
       <td>0.2797</td>
@@ -4608,7 +4608,7 @@
       <td>0.2203</td>
       <td>0.1342</td>
       <td>0.1286</td>
-      <td><u>0.3028</u></td>
+      <td>0.3028</td>
       <td>0.0863</td>
       <td>0.1365</td>
       <td>0.1518</td>
@@ -4618,9 +4618,9 @@
     <tr>
       <td>dare_ties</td>
       <td>0.2588</td>
-      <td><strong>0.2306</strong></td>
+      <td><u>0.2306</u></td>
       <td>0.1616</td>
-      <td><strong>0.6717</strong></td>
+      <td><u>0.6717</u></td>
       <td>0.6756</td>
       <td>0.4934</td>
       <td>0.2498</td>
@@ -4629,7 +4629,7 @@
       <td>0.2796</td>
       <td>0.2063</td>
       <td>0.1791</td>
-      <td>0.1752</td>
+      <td><u>0.1752</u></td>
       <td>0.1204</td>
       <td>0.1441</td>
     </tr>
@@ -4642,11 +4642,11 @@
       <td>0.5520</td>
       <td>0.5104</td>
       <td>0.2764</td>
-      <td><strong>0.1924</strong></td>
+      <td><u>0.1924</u></td>
       <td>0.1394</td>
-      <td><strong>0.3468</strong></td>
-      <td><strong>0.2295</strong></td>
-      <td><u>0.1853</u></td>
+      <td><u>0.3468</u></td>
+      <td><u>0.2295</u></td>
+      <td>0.1853</td>
       <td>0.1506</td>
       <td><u>0.1423</u></td>
       <td>0.1087</td>
@@ -4656,10 +4656,10 @@
       <td>0.1819</td>
       <td>0.1384</td>
       <td>0.1604</td>
-      <td><u>0.6715</u></td>
+      <td>0.6715</td>
       <td>0.4830</td>
       <td>0.4828</td>
-      <td><strong>0.2910</strong></td>
+      <td><u>0.2910</u></td>
       <td>0.1753</td>
       <td>0.1463</td>
       <td>0.2397</td>
@@ -4691,12 +4691,12 @@
       <td>model_stock</td>
       <td>0.1689</td>
       <td>0.1163</td>
-      <td><u>0.1947</u></td>
+      <td>0.1947</td>
       <td>0.6688</td>
       <td>0.6687</td>
       <td>0.5372</td>
       <td>0.2121</td>
-      <td><u>0.1844</u></td>
+      <td>0.1844</td>
       <td>0.0661</td>
       <td>0.2550</td>
       <td>0.0861</td>
@@ -4710,16 +4710,16 @@
       <td>0.2727</td>
       <td>0.1618</td>
       <td>0.1942</td>
-      <td><u>0.6715</u></td>
-      <td><strong>0.6780</strong></td>
+      <td>0.6715</td>
+      <td><u>0.6780</u></td>
       <td><u>0.6399</u></td>
       <td>0.2491</td>
       <td>0.1832</td>
       <td><u>0.1943</u></td>
       <td>0.2435</td>
-      <td><u>0.2243</u></td>
-      <td><strong>0.1886</strong></td>
-      <td><u>0.1758</u></td>
+      <td>0.2243</td>
+      <td><u>0.1886</u></td>
+      <td><strong>0.1758</strong></td>
       <td>0.1360</td>
       <td>0.1264</td>
     </tr>
@@ -4745,7 +4745,7 @@
       <td>free_merge</td>
       <td>0.2145</td>
       <td>0.1141</td>
-      <td><strong>0.2349</strong></td>
+      <td><u>0.2349</u></td>
       <td>0.6688</td>
       <td>0.6683</td>
       <td>0.5623</td>
@@ -4763,7 +4763,7 @@
       <td>robustmerge</td>
       <td>0.1680</td>
       <td>0.1575</td>
-      <td><u>0.1947</u></td>
+      <td>0.1947</td>
       <td>0.6688</td>
       <td>0.6680</td>
       <td>0.4921</td>
@@ -4779,21 +4779,21 @@
     </tr>
     <tr>
       <td>my_merge</td>
-      <td><strong>0.2805</strong></td>
-      <td>0.0856</td>
-      <td>0.1664</td>
-      <td>0.6687</td>
-      <td>0.1988</td>
-      <td><strong>0.6688</strong></td>
-      <td>0.1100</td>
-      <td>0.1209</td>
-      <td><strong>0.2228</strong></td>
-      <td>0.2313</td>
-      <td>0.1337</td>
-      <td>0.1413</td>
-      <td><strong>0.1767</strong></td>
-      <td>0.1366</td>
-      <td>0.1360</td>
+      <td><strong>0.4348</strong></td>
+      <td><strong>0.4687</strong></td>
+      <td><strong>0.4288</strong></td>
+      <td><strong>0.6896</strong></td>
+      <td><strong>0.6941</strong></td>
+      <td><strong>0.6685</strong></td>
+      <td><strong>0.4779</strong></td>
+      <td><strong>0.4438</strong></td>
+      <td><strong>0.3137</strong></td>
+      <td><strong>0.3684</strong></td>
+      <td><strong>0.3439</strong></td>
+      <td><strong>0.3313</strong></td>
+      <td>0.1548</td>
+      <td>0.1120</td>
+      <td>0.1123</td>
     </tr>
   </tbody>
 </table>

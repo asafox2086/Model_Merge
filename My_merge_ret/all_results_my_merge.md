@@ -1,7 +1,7 @@
 # Experiment Master Tables
 
 - Layout: aligned with `result/all_results.md`.
-- Source output root: `outputs/custom_methods_codex_my_merge_small_a4, outputs/custom_methods_codex_my_merge_small_b5, outputs/custom_methods_codex_my_merge_vlm`.
+- Source output root: `/data/liyapeng_grp/program/MedMNISTMerge/outputs/custom_methods_codex_my_merge_small_a4, /data/liyapeng_grp/program/MedMNISTMerge/outputs/custom_methods_codex_my_merge_small_b5, /data/liyapeng_grp/program/MedMNISTMerge/outputs/custom_methods_codex_my_merge_vlm, /data/liyapeng_grp/program/MedMNISTMerge/outputs/my_merge_smoke_med_v4, /data/liyapeng_grp/program/MedMNISTMerge/outputs/my_merge_med_v4_bad_c3, /data/liyapeng_grp/program/MedMNISTMerge/outputs/my_merge_med_v4p4_specialist_probe, /data/liyapeng_grp/program/MedMNISTMerge/outputs/my_merge_med_v4p5_proto_vit_probe, /data/liyapeng_grp/program/MedMNISTMerge/outputs/my_merge_med_v4p6_proto_swin_probe, /data/liyapeng_grp/program/MedMNISTMerge/outputs/my_merge_med_v4p7_proto_vit_organc_probe, /data/liyapeng_grp/program/MedMNISTMerge/outputs/my_merge_med_v4p8_vit_clip_c3, /data/liyapeng_grp/program/MedMNISTMerge/outputs/my_merge_med_v5_focus_probe, /data/liyapeng_grp/program/MedMNISTMerge/outputs/my_merge_med_v5_domain_smoke_derma, /data/liyapeng_grp/program/MedMNISTMerge/outputs/my_merge_med_v5_domain_smoke_organc, /data/liyapeng_grp/program/MedMNISTMerge/outputs/my_merge_med_v5_domain_smoke_chao, /data/liyapeng_grp/program/MedMNISTMerge/outputs/custom_methods_my_merge_full_refresh_fast_20260510_164550`.
 - Values are filled from real `eval_summary.csv` results for `my_merge`; missing combinations are shown as `-`.
 
 ## Small
@@ -74,48 +74,48 @@
       <td>0.4469</td>
       <td>0.4516</td>
       <td>0.8536</td>
-      <td>0.2567</td>
-      <td>0.2903</td>
+      <td>0.4230</td>
+      <td>0.3023</td>
       <td>0.5861</td>
-      <td>0.1947</td>
-      <td>0.4417</td>
-      <td>0.5636</td>
-      <td>0.6688</td>
-      <td>0.5461</td>
-      <td>0.6723</td>
-      <td>0.5776</td>
+      <td>0.1988</td>
+      <td>0.4566</td>
+      <td>0.5767</td>
+      <td>0.6783</td>
+      <td>0.7027</td>
+      <td>0.7561</td>
+      <td>0.6758</td>
+      <td>0.7431</td>
       <td>0.6504</td>
-      <td>0.1825</td>
+      <td>0.6678</td>
       <td>0.6718</td>
-      <td>0.6688</td>
-      <td>0.5332</td>
-      <td>0.3213</td>
-      <td>0.1441</td>
-      <td>0.2132</td>
-      <td>0.1302</td>
-      <td>0.1526</td>
-      <td>0.2484</td>
-      <td>0.1130</td>
-      <td>0.1139</td>
-      <td>0.1918</td>
-      <td>0.1969</td>
-      <td>0.3379</td>
-      <td>0.3240</td>
-      <td>0.2761</td>
-      <td>0.0708</td>
-      <td>0.1913</td>
-      <td>0.1328</td>
-      <td>0.2354</td>
-      <td>0.3745</td>
-      <td>0.2552</td>
-      <td>0.3010</td>
-      <td>0.1743</td>
-      <td>0.1554</td>
-      <td>0.1536</td>
-      <td>0.1662</td>
-      <td>0.1689</td>
-      <td>0.1321</td>
-      <td>0.1617</td>
+      <td>0.6828</td>
+      <td>0.5461</td>
+      <td>0.5759</td>
+      <td>0.6657</td>
+      <td>0.3807</td>
+      <td>0.2115</td>
+      <td>0.4618</td>
+      <td>0.3144</td>
+      <td>0.2731</td>
+      <td>0.4464</td>
+      <td>0.5058</td>
+      <td>0.4553</td>
+      <td>0.5054</td>
+      <td>0.3537</td>
+      <td>0.3097</td>
+      <td>0.3263</td>
+      <td>0.3069</td>
+      <td>0.2839</td>
+      <td>0.3561</td>
+      <td>0.1914</td>
+      <td>0.1734</td>
+      <td>0.4726</td>
+      <td>0.2363</td>
+      <td>0.1959</td>
+      <td>0.4043</td>
+      <td>0.2435</td>
+      <td>0.3333</td>
+      <td>0.3235</td>
     </tr>
   </tbody>
 </table>
@@ -154,20 +154,20 @@
     <tr>
       <td>my_merge</td>
       <td>0.5840</td>
-      <td>0.3777</td>
-      <td>0.4000</td>
-      <td>0.6291</td>
-      <td>0.4702</td>
-      <td>0.6246</td>
-      <td>0.2262</td>
-      <td>0.1771</td>
-      <td>0.1396</td>
-      <td>0.2863</td>
-      <td>0.1794</td>
-      <td>0.2476</td>
-      <td>0.2435</td>
-      <td>0.1584</td>
-      <td>0.1542</td>
+      <td>0.4371</td>
+      <td>0.4107</td>
+      <td>0.7124</td>
+      <td>0.6898</td>
+      <td>0.6741</td>
+      <td>0.5959</td>
+      <td>0.3513</td>
+      <td>0.3447</td>
+      <td>0.4888</td>
+      <td>0.3299</td>
+      <td>0.3156</td>
+      <td>0.2791</td>
+      <td>0.2788</td>
+      <td>0.3001</td>
     </tr>
   </tbody>
 </table>
@@ -238,46 +238,46 @@
     <tr>
       <td>my_merge</td>
       <td>0.1947</td>
-      <td>0.1692</td>
+      <td>0.1374</td>
       <td>0.1947</td>
+      <td>0.1824</td>
       <td>0.1947</td>
+      <td>0.1824</td>
+      <td>0.1824</td>
       <td>0.1947</td>
-      <td>0.1947</td>
-      <td>0.1947</td>
-      <td>0.1947</td>
-      <td>0.1947</td>
-      <td>0.1112</td>
-      <td>0.1097</td>
-      <td>0.6688</td>
-      <td>0.6688</td>
-      <td>0.1112</td>
+      <td>0.1824</td>
       <td>0.6688</td>
       <td>0.6688</td>
       <td>0.6688</td>
       <td>0.6688</td>
-      <td>0.1102</td>
-      <td>0.1095</td>
-      <td>0.0913</td>
+      <td>0.6688</td>
+      <td>0.6688</td>
+      <td>0.6688</td>
+      <td>0.6688</td>
+      <td>0.6688</td>
       <td>0.2233</td>
-      <td>0.0525</td>
-      <td>0.0895</td>
-      <td>0.0913</td>
-      <td>0.1008</td>
-      <td>0.0913</td>
+      <td>0.1607</td>
+      <td>0.3236</td>
+      <td>0.2233</td>
+      <td>0.1716</td>
+      <td>0.2233</td>
+      <td>0.2233</td>
+      <td>0.2233</td>
+      <td>0.1171</td>
       <td>0.2354</td>
-      <td>0.0785</td>
-      <td>0.0785</td>
-      <td>0.0785</td>
-      <td>0.0798</td>
+      <td>0.2354</td>
+      <td>0.2354</td>
       <td>0.1521</td>
-      <td>0.0798</td>
+      <td>0.0483</td>
       <td>0.2354</td>
-      <td>0.1097</td>
+      <td>0.2802</td>
+      <td>0.2354</td>
+      <td>0.1434</td>
       <td>0.1051</td>
-      <td>0.1734</td>
-      <td>0.1734</td>
-      <td>0.1734</td>
-      <td>0.1051</td>
+      <td>0.1087</td>
+      <td>0.1087</td>
+      <td>0.1087</td>
+      <td>0.1087</td>
       <td>0.1734</td>
       <td>0.1087</td>
       <td>0.1051</td>
@@ -319,20 +319,20 @@
   <tbody>
     <tr>
       <td>my_merge</td>
-      <td>0.1862</td>
-      <td>0.1947</td>
-      <td>0.1947</td>
-      <td>0.2966</td>
-      <td>0.4830</td>
+      <td>0.1756</td>
+      <td>0.1865</td>
+      <td>0.1865</td>
       <td>0.6688</td>
-      <td>0.1037</td>
-      <td>0.1218</td>
-      <td>0.0944</td>
-      <td>0.1308</td>
-      <td>0.1035</td>
-      <td>0.1416</td>
-      <td>0.1506</td>
-      <td>0.1506</td>
+      <td>0.6688</td>
+      <td>0.6688</td>
+      <td>0.2359</td>
+      <td>0.2061</td>
+      <td>0.1879</td>
+      <td>0.2354</td>
+      <td>0.1453</td>
+      <td>0.2197</td>
+      <td>0.1075</td>
+      <td>0.1303</td>
       <td>0.1252</td>
     </tr>
   </tbody>
@@ -403,51 +403,51 @@
   <tbody>
     <tr>
       <td>my_merge</td>
-      <td>0.1692</td>
-      <td>0.0836</td>
-      <td>0.1505</td>
-      <td>0.0710</td>
-      <td>0.0710</td>
+      <td>0.2783</td>
+      <td>0.1833</td>
+      <td>0.4455</td>
       <td>0.1824</td>
-      <td>0.1692</td>
-      <td>0.0956</td>
-      <td>0.0830</td>
+      <td>0.3315</td>
+      <td>0.1915</td>
+      <td>0.1824</td>
+      <td>0.2385</td>
+      <td>0.1733</td>
       <td>0.6688</td>
       <td>0.6688</td>
-      <td>0.0539</td>
-      <td>0.6504</td>
-      <td>0.5506</td>
-      <td>0.1097</td>
+      <td>0.6688</td>
+      <td>0.6688</td>
+      <td>0.6688</td>
+      <td>0.6688</td>
       <td>0.6608</td>
-      <td>0.3367</td>
-      <td>0.1112</td>
-      <td>0.1610</td>
-      <td>0.1506</td>
-      <td>0.1854</td>
-      <td>0.0525</td>
-      <td>0.0923</td>
-      <td>0.1683</td>
-      <td>0.1255</td>
-      <td>0.0613</td>
-      <td>0.0988</td>
-      <td>0.0983</td>
-      <td>0.0587</td>
-      <td>0.0963</td>
-      <td>0.0530</td>
-      <td>0.1426</td>
-      <td>0.0599</td>
-      <td>0.1274</td>
+      <td>0.6688</td>
+      <td>0.6688</td>
+      <td>0.3559</td>
+      <td>0.2669</td>
+      <td>0.3772</td>
+      <td>0.2853</td>
+      <td>0.1325</td>
+      <td>0.2097</td>
+      <td>0.3202</td>
+      <td>0.1604</td>
+      <td>0.1646</td>
+      <td>0.3360</td>
+      <td>0.3817</td>
+      <td>0.3275</td>
+      <td>0.3575</td>
+      <td>0.0636</td>
+      <td>0.2919</td>
+      <td>0.3750</td>
       <td>0.2354</td>
-      <td>0.1502</td>
-      <td>0.1339</td>
-      <td>0.1743</td>
-      <td>0.1267</td>
-      <td>0.1258</td>
-      <td>0.0988</td>
-      <td>0.1734</td>
+      <td>0.1758</td>
+      <td>0.1168</td>
+      <td>0.2075</td>
+      <td>0.3001</td>
+      <td>0.1950</td>
       <td>0.1087</td>
-      <td>0.2228</td>
-      <td>0.2336</td>
+      <td>0.2309</td>
+      <td>0.2120</td>
+      <td>0.2606</td>
+      <td>0.1653</td>
     </tr>
   </tbody>
 </table>
@@ -485,21 +485,21 @@
   <tbody>
     <tr>
       <td>my_merge</td>
-      <td>0.1345</td>
-      <td>0.1082</td>
-      <td>0.1160</td>
-      <td>0.4638</td>
-      <td>0.4369</td>
-      <td>0.3696</td>
-      <td>0.1657</td>
-      <td>0.1043</td>
-      <td>0.0952</td>
-      <td>0.0844</td>
-      <td>0.0852</td>
-      <td>0.1710</td>
-      <td>0.1450</td>
-      <td>0.1327</td>
-      <td>0.1884</td>
+      <td>0.3023</td>
+      <td>0.2351</td>
+      <td>0.1981</td>
+      <td>0.6688</td>
+      <td>0.6688</td>
+      <td>0.6662</td>
+      <td>0.3333</td>
+      <td>0.2092</td>
+      <td>0.2151</td>
+      <td>0.3484</td>
+      <td>0.2377</td>
+      <td>0.2621</td>
+      <td>0.2081</td>
+      <td>0.1782</td>
+      <td>0.2126</td>
     </tr>
   </tbody>
 </table>
@@ -570,49 +570,49 @@
     <tr>
       <td>my_merge</td>
       <td>0.1947</td>
-      <td>0.1374</td>
-      <td>0.1374</td>
-      <td>0.0912</td>
-      <td>0.1932</td>
-      <td>0.0713</td>
+      <td>0.1842</td>
+      <td>0.1947</td>
+      <td>0.2134</td>
+      <td>0.2061</td>
+      <td>0.2438</td>
+      <td>0.2184</td>
+      <td>0.1947</td>
       <td>0.1824</td>
-      <td>0.1374</td>
-      <td>0.1374</td>
-      <td>0.0329</td>
       <td>0.6688</td>
       <td>0.6688</td>
       <td>0.6688</td>
       <td>0.6688</td>
-      <td>0.1112</td>
       <td>0.6688</td>
       <td>0.6688</td>
       <td>0.6688</td>
-      <td>0.0885</td>
-      <td>0.1807</td>
-      <td>0.0512</td>
-      <td>0.2289</td>
-      <td>0.0678</td>
-      <td>0.0913</td>
-      <td>0.0895</td>
-      <td>0.0555</td>
-      <td>0.0913</td>
-      <td>0.0578</td>
-      <td>0.0682</td>
-      <td>0.0785</td>
-      <td>0.0600</td>
-      <td>0.0497</td>
-      <td>0.0716</td>
+      <td>0.6688</td>
+      <td>0.6688</td>
+      <td>0.0668</td>
+      <td>0.3659</td>
+      <td>0.2233</td>
+      <td>0.2639</td>
+      <td>0.2081</td>
+      <td>0.2233</td>
+      <td>0.2233</td>
+      <td>0.2421</td>
+      <td>0.2182</td>
       <td>0.1521</td>
-      <td>0.1526</td>
-      <td>0.1097</td>
+      <td>0.2890</td>
+      <td>0.2354</td>
+      <td>0.1848</td>
+      <td>0.1548</td>
+      <td>0.3096</td>
+      <td>0.2354</td>
+      <td>0.2704</td>
+      <td>0.3212</td>
       <td>0.1087</td>
-      <td>0.1734</td>
-      <td>0.1761</td>
-      <td>0.1096</td>
-      <td>0.1051</td>
-      <td>0.1734</td>
-      <td>0.1734</td>
-      <td>0.1563</td>
+      <td>0.2534</td>
+      <td>0.2084</td>
+      <td>0.2417</td>
+      <td>0.1087</td>
+      <td>0.1617</td>
+      <td>0.2875</td>
+      <td>0.1078</td>
       <td>0.1096</td>
     </tr>
   </tbody>
@@ -651,21 +651,21 @@
   <tbody>
     <tr>
       <td>my_merge</td>
-      <td>0.1565</td>
-      <td>0.1186</td>
-      <td>0.1524</td>
-      <td>0.4569</td>
-      <td>0.4830</td>
+      <td>0.1912</td>
+      <td>0.2211</td>
+      <td>0.1985</td>
       <td>0.6688</td>
-      <td>0.1068</td>
-      <td>0.1293</td>
-      <td>0.0787</td>
-      <td>0.0682</td>
-      <td>0.0605</td>
-      <td>0.1381</td>
-      <td>0.1527</td>
-      <td>0.1294</td>
-      <td>0.1465</td>
+      <td>0.6688</td>
+      <td>0.6688</td>
+      <td>0.2187</td>
+      <td>0.2318</td>
+      <td>0.2279</td>
+      <td>0.2255</td>
+      <td>0.2164</td>
+      <td>0.2757</td>
+      <td>0.1902</td>
+      <td>0.1707</td>
+      <td>0.1683</td>
     </tr>
   </tbody>
 </table>
@@ -737,51 +737,51 @@
   <tbody>
     <tr>
       <td>my_merge</td>
-      <td>0.2675</td>
-      <td>0.2698</td>
-      <td>0.3043</td>
-      <td>0.0909</td>
-      <td>0.0830</td>
-      <td>0.0830</td>
-      <td>0.1374</td>
-      <td>0.1947</td>
-      <td>0.1672</td>
-      <td>0.6683</td>
+      <td>0.3321</td>
+      <td>0.3853</td>
+      <td>0.5870</td>
+      <td>0.3505</td>
+      <td>0.4087</td>
+      <td>0.6469</td>
+      <td>0.2248</td>
+      <td>0.4160</td>
+      <td>0.6457</td>
+      <td>0.6758</td>
+      <td>0.6873</td>
+      <td>0.7057</td>
+      <td>0.6693</td>
+      <td>0.6958</td>
+      <td>0.7172</td>
       <td>0.6688</td>
       <td>0.6688</td>
-      <td>0.1426</td>
-      <td>0.1282</td>
-      <td>0.3257</td>
-      <td>0.6688</td>
-      <td>0.6688</td>
-      <td>0.6688</td>
-      <td>0.1043</td>
-      <td>0.1154</td>
-      <td>0.1103</td>
-      <td>0.0683</td>
-      <td>0.0668</td>
-      <td>0.2276</td>
-      <td>0.2020</td>
-      <td>0.2431</td>
-      <td>0.2233</td>
-      <td>0.0810</td>
-      <td>0.2398</td>
-      <td>0.3731</td>
-      <td>0.0497</td>
-      <td>0.0919</td>
-      <td>0.2594</td>
-      <td>0.2354</td>
-      <td>0.0793</td>
-      <td>0.1092</td>
-      <td>0.1734</td>
-      <td>0.1617</td>
-      <td>0.1950</td>
-      <td>0.1222</td>
-      <td>0.1617</td>
-      <td>0.1258</td>
+      <td>0.6678</td>
+      <td>0.2672</td>
+      <td>0.5527</td>
+      <td>0.6138</td>
+      <td>0.3737</td>
+      <td>0.4159</td>
+      <td>0.5417</td>
+      <td>0.3083</td>
+      <td>0.2785</td>
+      <td>0.3544</td>
+      <td>0.2159</td>
+      <td>0.3273</td>
+      <td>0.5620</td>
+      <td>0.3537</td>
+      <td>0.3274</td>
+      <td>0.3507</td>
+      <td>0.3136</td>
+      <td>0.2244</td>
+      <td>0.4559</td>
+      <td>0.1473</td>
+      <td>0.1087</td>
+      <td>0.2084</td>
+      <td>0.1087</td>
+      <td>0.1186</td>
+      <td>0.1087</td>
       <td>0.1195</td>
-      <td>0.1617</td>
-      <td>0.1267</td>
+      <td>0.1087</td>
+      <td>0.1087</td>
     </tr>
   </tbody>
 </table>
@@ -819,21 +819,21 @@
   <tbody>
     <tr>
       <td>my_merge</td>
-      <td>0.2805</td>
-      <td>0.0856</td>
-      <td>0.1664</td>
-      <td>0.6687</td>
-      <td>0.1988</td>
-      <td>0.6688</td>
-      <td>0.1100</td>
-      <td>0.1209</td>
-      <td>0.2228</td>
-      <td>0.2313</td>
-      <td>0.1337</td>
-      <td>0.1413</td>
-      <td>0.1767</td>
-      <td>0.1366</td>
-      <td>0.1360</td>
+      <td>0.4348</td>
+      <td>0.4687</td>
+      <td>0.4288</td>
+      <td>0.6896</td>
+      <td>0.6941</td>
+      <td>0.6685</td>
+      <td>0.4779</td>
+      <td>0.4438</td>
+      <td>0.3137</td>
+      <td>0.3684</td>
+      <td>0.3439</td>
+      <td>0.3313</td>
+      <td>0.1548</td>
+      <td>0.1120</td>
+      <td>0.1123</td>
     </tr>
   </tbody>
 </table>

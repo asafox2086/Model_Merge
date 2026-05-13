@@ -102,6 +102,9 @@ def parse_args():
     p.add_argument('--fisher-max-batches', type=int, default=METHOD_DEFAULTS['fisher_max_batches'])
     p.add_argument('--regmean-max-batches', type=int, default=METHOD_DEFAULTS['regmean_max_batches'])
     p.add_argument('--regmean-max-dim', type=int, default=METHOD_DEFAULTS['regmean_max_dim'])
+    p.add_argument('--my-merge-stats-max-batches', type=int, default=-1)
+    p.add_argument('--my-merge-eval-max-batches', type=int, default=-1)
+    p.add_argument('--my-merge-bn-batches', type=int, default=-1)
     return p.parse_args()
 
 
@@ -194,6 +197,12 @@ def build_cfg(row, args):
         'regmean_max_batches': args.regmean_max_batches,
         'regmean_max_dim': args.regmean_max_dim,
     }
+    if args.my_merge_stats_max_batches >= 0:
+        cfg['my_merge_stats_max_batches'] = args.my_merge_stats_max_batches
+    if args.my_merge_eval_max_batches >= 0:
+        cfg['my_merge_eval_max_batches'] = args.my_merge_eval_max_batches
+    if args.my_merge_bn_batches >= 0:
+        cfg['my_merge_bn_batches'] = args.my_merge_bn_batches
     if item['task_type'] == 'small':
         cfg['model'] = item['model']
         cfg['batch_size'] = args.small_batch_size
