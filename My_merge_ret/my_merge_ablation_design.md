@@ -8,6 +8,24 @@
 
 这个命题天然不能迁移到自然语言处理，因为它依赖图像中的核质比、皮肤镜颜色/毛发伪影、CT 窗宽窗位、解剖固定位置、超声 speckle 与声影等物理-形态证据。
 
+## 论文方法写法：三个模块
+
+论文里不建议把代码里的所有开关都写成独立模块。`my_merge` 应该被概括为三个主模块：
+
+1. **Medical Prior Feature Extraction**：医学先验特征提取。针对不同医学模态提取核质比、病灶边界、颜色杂色、CT 软组织窗、空间解剖先验、超声 speckle/声影等医学证据。
+2. **Diagnostic-Aware Client Information Estimation**：诊断感知客户端信息估计。用医学显著性、类别稀缺性、困难样本 margin 和类别覆盖估计每个 client 在医学诊断上的有效信息量。
+3. **Medical Evidence Guided Fusion and Selection**：医学证据引导的融合与候选选择。根据 client 信息进行层级参数融合、类别级分类头融合，并在多个候选模型中选择医学验证分数最高的模型。
+
+代码里的 `no_rarity`、`no_focal`、`no_layerwise`、`no_residual`、`no_candidate_bank`、`no_calibration` 等不应在论文主方法里被写成很多模块，而应作为这三个模块内部的消融开关。
+
+目前代码也按这三个模块组织：
+
+| 论文模块 | 代码入口 | 主要输出 |
+| --- | --- | --- |
+| Medical Prior Feature Extraction | `_module1_medical_prior_feature_extraction` | 医学特征、特征均值、验证集 batch |
+| Diagnostic-Aware Client Information Estimation | `_module2_diagnostic_client_information_estimation` | 每个 client 的诊断信息向量、总体权重、医学形态权重、类别级权重 |
+| Medical Evidence Guided Fusion and Selection | `_module3_medical_evidence_guided_fusion_and_selection` | 候选模型池、候选验证分数、最终选择的 merged model |
+
 ## 医学问题与着手点
 
 这里的“找问题”不是泛泛地说某个模型弱，而是先判断每个医学数据集的判别证据来自哪里，再把这些证据变成模型融合时可使用的统计量。自然图像融合常用的参数平均、logit 平均或全局特征相似度并不会显式关心病灶边界、解剖位置、物理灰度窗和少数类风险，这正是医学专攻方法的切入点。
@@ -27,13 +45,52 @@
 
 给定 $K$ 个 client 模型参数 $\theta_1,\dots,\theta_K$，基础权重为 $\pi_k$。`my_merge` 不直接输出一次加权平均，而是先在验证集 $D_v=\{(x_i,y_i)\}_{i=1}^{N}$ 上提取医学特征 $\phi(x_i)$，再构造医学加权样本、client 可信度、类别级专家权重和多个候选融合模型。
 
-算法主线是：
+算法主线对应三个模块：
 
-1. 医学特征提取：根据数据集类型计算 $\phi(x)$，例如核质比、边界不规则、软组织窗对比、声影强度。
-2. 样本重要性：把医学显著性、类别稀缺和模态重点合成样本权重 $w_i$。
-3. Client 评分：用普通准确率、医学加权准确率、困难样本准确率和 margin/focal 指标得到 client 权重。
-4. 参数融合：早期层偏向医学形态可靠的 client，中后期层混合总体表现和医学表现，分类头按类别选专家。
-5. 候选选择：生成 `avg / morphology / morph_anchor / specialist_client / consensus / reference_delta / prototype_head`，再用医学验证分数选最终模型。
+1. **Medical Prior Feature Extraction**：根据数据集类型计算 $\phi(x)$，例如核质比、边界不规则、软组织窗对比、声影强度。
+2. **Diagnostic-Aware Client Information Estimation**：把医学显著性、类别稀缺、模态重点和预测 margin 合成 client 信息量，得到全局 client 权重、医学 client 权重和类别级专家权重。
+3. **Medical Evidence Guided Fusion and Selection**：用这些权重做层级参数融合和分类头融合，生成 `avg / morphology / morph_anchor / specialist_client / consensus / reference_delta / prototype_head` 等候选，再用医学验证分数选最终模型。
+
+## 客户端诊断信息理论
+
+这个方法的核心假设是：在医学联邦或多 client 场景里，每个 client 携带的“诊断信息”不同，不能只按样本数或普通验证准确率加权。
+
+这种差异主要来自四个方面：
+
+1. **类别信息不同**：某些 client 见过特定类别，尤其是少数类或恶性类；另一些 client 几乎没见过这些类别。
+2. **医学形态信息不同**：某些 client 对核质比、病灶边界、软组织窗、声影等医学关键样本更可靠。
+3. **困难样本信息不同**：普通准确率相近的 client，在低 margin、边界模糊、类别相似的困难病例上可能完全不同。
+4. **参数层信息不同**：早期层可能携带边界/纹理/染色信息，中后期层携带类别语义；同一个 client 不一定在所有层都最优。
+
+因此，`my_merge` 估计的不是一个标量 client quality，而是一组诊断信息：
+
+$$
+\mathcal{I}_k = \left(A_k, M_k, H_k, Q_k, F_k, \{G_{c,k}\}_{c=1}^{C}\right)
+$$
+
+其中 $A_k$ 是普通准确率，$M_k$ 是医学加权准确率，$H_k$ 是高医学重要性样本准确率，$Q_k$ 是 margin 置信度，$F_k$ 是困难样本 focal 分数，$G_{c,k}$ 是类别 $c$ 上的专家信息。
+
+换句话说，传统平均融合默认：
+
+$$
+\theta = \sum_k \pi_k\theta_k
+$$
+
+它只认为 client 的信息差异来自样本数 $\pi_k$。`my_merge` 则认为：
+
+$$
+\theta_l = \sum_k f_l(\mathcal{I}_k)\theta_{l,k}
+$$
+
+其中 $f_l(\cdot)$ 会随参数层 $l$ 和类别 $c$ 改变。早期层更依赖医学形态信息，中后期层混合总体诊断表现，分类头按类别选择专家 client。这就是本方法区别于普通模型融合的理论核心。
+
+`merge_result.json` 会记录每个 client 的诊断信息表 `client_diagnostic_information`。其中每个 client 的信息向量为：
+
+$$
+\left[A_k,\ M_k,\ H_k,\ Q_k,\ F_k\right]
+$$
+
+并同时保存三类权重：基础权重 `base_weight`、总体融合权重 `overall_weight`、医学形态融合权重 `morphology_weight`。
 
 ## 核心公式
 
@@ -125,25 +182,27 @@ $$
 
 不同数据集的 $a,b,c,d$ 不同。皮肤镜更重视 `balanced_acc`，超声更重视困难样本和边界样本，器官 CT 更重视医学形态权重。消融 `no_balanced_selection` 会弱化 `balanced_acc`。
 
-## 消融模块与算法含义
+## 消融开关与三个模块的关系
 
-`avg_only` 是控制组，输出 $\sum_k \pi_k\theta_k$，用于证明完整方法不是普通平均的换皮。
+以下内容是消融实验开关，不是论文主方法里的独立模块。它们分别用于验证三个主模块中的关键假设。
 
-`no_domain_preprocess` 关闭医学模态特征，退回通用边缘/对比度统计。如果这个消融掉分，说明医学物理先验确实在指导融合。
+`avg_only` 是控制组，输出 $\sum_k \pi_k\theta_k$，用于证明完整方法不是普通平均的换皮。它验证三个模块整体是否有增益。
 
-`no_rarity` 关闭 $r_c$。它主要检验皮肤镜和其他长尾医学类别中，少数类保护是否必要。
+`no_domain_preprocess` 关闭医学模态特征，退回通用边缘/对比度统计。如果这个消融掉分，说明 **Medical Prior Feature Extraction** 中的医学物理先验确实在指导融合。
 
-`no_focal` 关闭 $F_k$ 中的困难样本权重。它检验模型融合是否需要关注低 margin 的疑难病例。
+`no_rarity` 关闭 $r_c$。它主要检验 **Diagnostic-Aware Client Information Estimation** 是否需要保护皮肤镜和其他长尾医学类别中的少数类。
 
-`no_domain_focus` 令 $d_i=1$。它检验病灶边界、声影、空间先验、伪影负载这些模态重点样本是否应该影响 client 选择。
+`no_focal` 关闭 $F_k$ 中的困难样本权重。它检验 **Diagnostic-Aware Client Information Estimation** 是否需要关注低 margin 的疑难病例。
 
-`no_layerwise` 关闭早/中/晚层差异化。它检验医学证据是否只应该影响分类头，还是也应该影响边界、纹理、形状层。
+`no_domain_focus` 令 $d_i=1$。它检验 **Diagnostic-Aware Client Information Estimation** 是否应该把病灶边界、声影、空间先验、伪影负载这些模态重点样本纳入 client 信息估计。
 
-`no_residual` 关闭稀疏残差回注。它检验是否需要保留医学专家 client 中少量高置信结构，而不是把所有参数都平滑掉。
+`no_layerwise` 关闭早/中/晚层差异化。它检验 **Medical Evidence Guided Fusion and Selection** 是否应该让医学证据影响不同参数层，而不是只影响分类头。
 
-`no_candidate_bank` 关闭医学 anchor、专家 client、reference-delta、prototype head 和 consensus 候选。它检验医学影像是否需要“先生成多种合理融合，再用医学验证指标选择”，而不是固定一种融合公式。
+`no_residual` 关闭稀疏残差回注。它检验 **Medical Evidence Guided Fusion and Selection** 是否需要保留医学专家 client 中少量高置信结构，而不是把所有参数都平滑掉。
 
-`no_calibration` 关闭 BN 重校准和 head temperature。它检验后融合数值稳定性是否影响结果，尤其是 CNN 和 logit 爆炸风险。
+`no_candidate_bank` 关闭医学 anchor、专家 client、reference-delta、prototype head 和 consensus 候选。它检验 **Medical Evidence Guided Fusion and Selection** 是否需要“先生成多种合理融合，再用医学验证指标选择”，而不是固定一种融合公式。
+
+`no_calibration` 关闭 BN 重校准和 head temperature。它属于实现层面的稳定性消融，检验后融合数值稳定性是否影响结果，尤其是 CNN 和 logit 爆炸风险。
 
 ## 可消融组件
 
@@ -231,6 +290,77 @@ reports/ablation_summary.md
   --grid-root outputs/my_merge_ablation_grid_xxx \
   --baseline result/all_results.md \
   --dest outputs/my_merge_ablation_grid_xxx/reports/ablation_summary.md
+```
+
+## 诊断输出表与可视化
+
+现在 `run_all_avg_eval.py` 在 `method=my_merge` 时会自动导出两个额外报告：
+
+```text
+reports/my_merge_client_diagnostic_weights.csv
+reports/my_merge_client_diagnostic_weights.md
+reports/my_merge_visualization_index.csv
+reports/my_merge_visualization_index.md
+reports/visualizations/*.png
+```
+
+`my_merge_client_diagnostic_weights` 是 client 权重表。每一行对应一个源 client 模型，注明数据集、模型名、client 名称、候选选择结果，以及：
+
+| 表格列 | 公式符号 | 含义 | 实际用途 |
+| --- | --- | --- | --- |
+| `prior_weight_pi` | $\pi_k$ | 传统样本数或 equal prior 权重 | 作为所有 client 诊断评分的基础先验 |
+| `diagnostic_weight_alpha_all` | $\alpha_k^{all}$ | 由 $S_k^{all}$ 归一化得到的总体诊断权重 | 主要用于后期语义层、整体候选和专家 client 选择 |
+| `medical_weight_alpha_morph` | $\alpha_k^{morph}$ | 由 $S_k^{morph}$ 归一化得到的医学形态权重 | 主要用于早期形态层、医学 anchor 和医学形态融合 |
+| `acc_A` | $A_k$ | 普通验证准确率 | 进入 $S_k^{all}$ 和类别专家评分 |
+| `medical_acc_M` | $M_k$ | 医学样本加权准确率 | 进入 $S_k^{morph}$，表示 client 对医学关键样本是否可靠 |
+| `hard_acc_H` | $H_k$ | 高医学重要性样本准确率 | 进入 $S_k^{all}$ 和 $S_k^{morph}$，强调难病例表现 |
+| `margin_Q` | $Q_k$ | 真实类与最强错误类的 margin 置信度 | 进入 $S_k^{all}$ 和 $S_k^{morph}$，衡量预测稳定性 |
+| `focal_acc_F` | $F_k$ | focal-style 困难样本准确率 | 进入 $S_k^{all}$ 和 $S_k^{morph}$，强调低 margin 疑难样本 |
+
+表里不再展示中间调试分数，只展示真正进入公式的量。对应公式是：
+
+$$
+S_k^{all}=\pi_k(0.16+A_k+0.26Q_k+0.16H_k+0.18F_k)
+$$
+
+$$
+S_k^{morph}=\pi_k(0.10+0.82M_k+0.28H_k+0.16Q_k+0.24F_k)
+$$
+
+$$
+\alpha_k^{all}=\frac{S_k^{all}}{\sum_j S_j^{all}},\quad
+\alpha_k^{morph}=\frac{S_k^{morph}}{\sum_j S_j^{morph}}
+$$
+
+`my_merge_visualization_index` 是分类降维图索引表。每一行注明图像对应的数据集、模型、client 数、beta、seed 和 selected candidate。图中每个样本都是圆点，颜色是真实类别，红色描边表示错误分类样本。当前实现用 merged model 的 pre-logits 或 CLIP image features 做 PCA 二维可视化。
+
+如果运行时使用默认 `--delete-merged`，merged checkpoint 会被删除，权重表仍然会生成，但可视化表会标记 `checkpoint_missing`。如果需要画图，应这样运行：
+
+```bash
+.gpuenv/bin/python scripts/run_all_avg_eval.py \
+  --model-hub-root model_hub \
+  --data-root Med_data \
+  --output-root outputs/my_merge_with_diagnostics \
+  --device cuda:0 \
+  --task-type small \
+  --datasets bloodmnist_224 \
+  --small-models resnet \
+  --limit 1 \
+  --method my_merge \
+  --merge-weight-mode equal \
+  --no-delete-merged \
+  --my-merge-viz-max-batches 2
+```
+
+也可以对已有输出单独导出：
+
+```bash
+.gpuenv/bin/python scripts/generate_my_merge_diagnostics.py \
+  --output-root outputs/my_merge_with_diagnostics \
+  --data-root Med_data \
+  --device cuda:0 \
+  --split test \
+  --max-batches 2
 ```
 
 ## 如何解读

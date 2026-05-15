@@ -137,6 +137,11 @@ def parse_args():
         default='',
         help='Comma-separated my_merge components to disable, e.g. derma_hair,ct_window.',
     )
+    p.add_argument('--my-merge-export-diagnostics', action=argparse.BooleanOptionalAction, default=True)
+    p.add_argument('--my-merge-diagnostics-plot', action=argparse.BooleanOptionalAction, default=True)
+    p.add_argument('--my-merge-viz-split', type=str, default='test')
+    p.add_argument('--my-merge-viz-max-batches', type=int, default=2)
+    p.add_argument('--my-merge-viz-max-plots', type=int, default=0)
     return p.parse_args()
 
 
@@ -423,6 +428,28 @@ def main():
             )
             print(f'[{ts()}] fail ({idx}/{len(manifest)}) {label} | {exc}')
     print(f'[{ts()}] batch done | output_root={args.output_root}')
+    if args.method == 'my_merge' and args.my_merge_export_diagnostics:
+        try:
+            from generate_my_merge_diagnostics import build_diagnostics
+
+            diagnostics = build_diagnostics(
+                output_root=args.output_root,
+                data_root=args.data_root,
+                device=args.device,
+                split=args.my_merge_viz_split,
+                batch_size=args.small_batch_size if args.task_type != 'vlm' else args.vlm_batch_size,
+                num_workers=0,
+                max_batches=args.my_merge_viz_max_batches,
+                make_plots=args.my_merge_diagnostics_plot,
+                max_plots=args.my_merge_viz_max_plots,
+            )
+            print(
+                f"[{ts()}] my_merge diagnostics exported | "
+                f"weights={diagnostics['weights_md']} | "
+                f"visualizations={diagnostics.get('visualization_md', '')}"
+            )
+        except Exception as exc:
+            print(f'[{ts()}] my_merge diagnostics export failed | {exc}')
 
 
 if __name__ == '__main__':

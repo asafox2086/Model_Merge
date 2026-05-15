@@ -109,6 +109,21 @@ COMPONENT_ALIASES = {
     "ultrasound_edge_shadow": "ultrasound_shadow",
 }
 
+METHOD_MODULES = {
+    "module_1": {
+        "name": "Medical Prior Feature Extraction",
+        "purpose": "Extract modality-specific medical evidence such as N:C ratio, lesion border, CT window contrast, and ultrasound shadow.",
+    },
+    "module_2": {
+        "name": "Diagnostic-Aware Client Information Estimation",
+        "purpose": "Estimate how much clinically useful information each client contributes for morphology, hard cases, margins, and classes.",
+    },
+    "module_3": {
+        "name": "Medical Evidence Guided Fusion and Selection",
+        "purpose": "Fuse parameters and select candidates using diagnostic client information rather than only sample counts.",
+    },
+}
+
 
 def _normalize_scores(values, fallback):
     scores = torch.as_tensor(values, dtype=torch.float32)
@@ -634,6 +649,23 @@ def _collect_split_batches(meta, cfg, split):
     return batches, torch.cat(feature_chunks, dim=0), torch.cat(labels, dim=0)
 
 
+def _module1_medical_prior_feature_extraction(meta, cfg):
+    batches, features, labels = _collect_split_batches(meta, cfg, split=cfg.get("stats_split", "val"))
+    names = _feature_names(meta)
+    feature_summary = {
+        names[idx] if idx < len(names) else f"feature_{idx}": float(features[:, idx].mean().item())
+        for idx in range(features.shape[1])
+    }
+    return {
+        "module_name": METHOD_MODULES["module_1"]["name"],
+        "batches": batches,
+        "features": features,
+        "labels": labels,
+        "feature_names": names,
+        "feature_summary": feature_summary,
+    }
+
+
 def _evaluate_client_predictions(meta, checkpoint, batches, cfg):
     device = torch.device(cfg.get("stats_device", cfg.get("device", "cpu")))
     runtime = build_runtime(
@@ -774,6 +806,61 @@ def _client_scores(meta, checkpoints, batches, features, labels, cfg, base_weigh
     morph_weights = _normalize_scores(morph_scores, fallback=base_weights)
     class_weights = [_normalize_scores(class_scores[cls_idx], fallback=morph_weights) for cls_idx in range(num_classes)]
     return overall_weights, morph_weights, torch.stack(class_weights, dim=0), client_summaries
+
+
+def _module2_diagnostic_client_information_estimation(
+    meta,
+    checkpoints,
+    batches,
+    features,
+    labels,
+    cfg,
+    base_weights,
+):
+    overall_weights, morph_weights, class_weights, client_summaries = _client_scores(
+        meta,
+        checkpoints,
+        batches,
+        features,
+        labels,
+        cfg,
+        base_weights,
+    )
+    client_information = []
+    for client_idx, summary in enumerate(client_summaries):
+        client_meta = meta["clients"][client_idx] if client_idx < len(meta.get("clients", [])) else {}
+        row = {
+            "client_index": int(client_idx),
+            "client_name": client_meta.get("checkpoint", f"client_{client_idx}.pt"),
+            "seen_classes": [int(cls) for cls in client_meta.get("classes", [])],
+            "base_weight": float(base_weights[client_idx]),
+            "overall_weight": float(overall_weights[client_idx].item()),
+            "morphology_weight": float(morph_weights[client_idx].item()),
+            "ordinary_accuracy": float(summary["overall_acc"]),
+            "medical_weighted_accuracy": float(summary["morph_acc"]),
+            "hard_case_accuracy": float(summary["hard_acc"]),
+            "margin_confidence": float(summary["margin_score"]),
+            "focal_hard_case_accuracy": float(summary["focal_acc"]),
+            "overall_score": float(summary["overall_score"]),
+            "morphology_score": float(summary["morph_score"]),
+        }
+        row["diagnostic_information_vector"] = [
+            row["ordinary_accuracy"],
+            row["medical_weighted_accuracy"],
+            row["hard_case_accuracy"],
+            row["margin_confidence"],
+            row["focal_hard_case_accuracy"],
+        ]
+        client_information.append(row)
+    return {
+        "module_name": METHOD_MODULES["module_2"]["name"],
+        "overall_weights": overall_weights,
+        "morphology_weights": morph_weights,
+        "class_weights": class_weights,
+        "client_summaries": client_summaries,
+        "client_diagnostic_information": client_information,
+        "theory": "Each client carries different diagnostic information; fusion weights depend on morphology, hard cases, margins, and class-level expertise rather than only sample counts.",
+    }
 
 
 def _find_classifier_keys(state_dict, num_classes):
@@ -1451,6 +1538,103 @@ def _choose_candidate(meta, candidate_metrics, cfg=None):
     return max(candidate_metrics.items(), key=key_fn)[0]
 
 
+def _module3_medical_evidence_guided_fusion_and_selection(
+    state_dicts,
+    base_merged,
+    meta,
+    cfg,
+    prior_output,
+    client_info,
+):
+    batches = prior_output["batches"]
+    features = prior_output["features"]
+    labels = prior_output["labels"]
+    overall_weights = client_info["overall_weights"]
+    morph_weights = client_info["morphology_weights"]
+    class_weights = client_info["class_weights"]
+    client_summaries = client_info["client_summaries"]
+
+    morphology_merged = _layerwise_merge(
+        state_dicts,
+        overall_weights=overall_weights,
+        morph_weights=morph_weights,
+        class_weights=class_weights,
+        num_classes=int(meta["num_classes"]),
+        meta=meta,
+        cfg=cfg,
+    )
+    specialist_idx = None
+    reference_delta = None
+    if _component_enabled(cfg, "reference_delta_candidate") and _model_family(meta) in {"transformer", "vlm"}:
+        reference_delta = _build_reference_delta_candidate(
+            state_dicts,
+            overall_weights=overall_weights,
+            morph_weights=morph_weights,
+            class_weights=class_weights,
+            num_classes=int(meta["num_classes"]),
+            meta=meta,
+            cfg=cfg,
+        )
+
+    base_candidate = _prepare_candidate(meta, base_merged, cfg)
+    morphology_candidate = _prepare_candidate(meta, morphology_merged, cfg)
+    candidate_pool = {
+        "avg": base_candidate,
+        "morphology": morphology_candidate,
+    }
+    if _component_enabled(cfg, "morph_anchor_candidate"):
+        morphology_anchor = _build_morphology_anchor_candidate(
+            state_dicts,
+            morph_weights=morph_weights,
+            class_weights=class_weights,
+            num_classes=int(meta["num_classes"]),
+            meta=meta,
+        )
+        candidate_pool["morph_anchor"] = _prepare_candidate(meta, morphology_anchor, cfg)
+    if _component_enabled(cfg, "specialist_candidate"):
+        specialist_candidate_state, specialist_idx = _build_specialist_client_candidate(
+            state_dicts,
+            client_summaries=client_summaries,
+            meta=meta,
+        )
+        candidate_pool["specialist_client"] = _prepare_candidate(meta, specialist_candidate_state, cfg)
+    if _component_enabled(cfg, "consensus_candidate"):
+        alpha = _merge_profile(meta)["candidate_alpha"]
+        consensus_candidate = _prepare_candidate(
+            meta,
+            _interpolate_state_dicts(base_candidate, morphology_candidate, alpha=alpha),
+            cfg,
+        )
+        candidate_pool["consensus"] = consensus_candidate
+    if reference_delta is not None:
+        candidate_pool["reference_delta"] = _prepare_candidate(meta, reference_delta, cfg)
+    prototype_candidate_state = None
+    if _component_enabled(cfg, "prototype_head_candidate"):
+        prototype_candidate_state = _build_prototype_head_candidate(
+            base_merged,
+            meta=meta,
+            batches=batches,
+            labels=labels,
+            features=features,
+            cfg=cfg,
+        )
+    if prototype_candidate_state is not None:
+        candidate_pool["prototype_head"] = _prepare_candidate(meta, prototype_candidate_state, cfg)
+
+    candidate_metrics = {
+        name: _evaluate_merged_state(meta, candidate_state, cfg, split=cfg.get("stats_split", "val"))
+        for name, candidate_state in candidate_pool.items()
+    }
+    selected_name = _choose_candidate(meta, candidate_metrics, cfg=cfg)
+    return candidate_pool[selected_name], {
+        "module_name": METHOD_MODULES["module_3"]["name"],
+        "candidate_pool": sorted(candidate_pool.keys()),
+        "candidate_metrics": candidate_metrics,
+        "selected_candidate": selected_name,
+        "specialist_client_index": None if specialist_idx is None else int(specialist_idx),
+    }
+
+
 def merge_my_merge(state_dicts, weights, meta=None, checkpoints=None, cfg=None):
     if meta is None or checkpoints is None or cfg is None or not _is_medical_image_task(meta):
         merged_state_dict, normalized_weights = average_state_dicts(state_dicts, weights)
@@ -1466,122 +1650,58 @@ def merge_my_merge(state_dicts, weights, meta=None, checkpoints=None, cfg=None):
         return base_merged, {
             "implementation": "medical_modality_specific_boundary_cascade_merge_v5_ablation_avg_only",
             "medical_only": True,
+            "method_modules": METHOD_MODULES,
             "ablation_config": ablation_config,
             "selected_candidate": "avg",
             "base_weights": [float(x) for x in base_weights],
             "normalized_weights": base_weights,
         }
     try:
-        batches, features, labels = _collect_split_batches(meta, cfg, split=cfg.get("stats_split", "val"))
-        overall_weights, morph_weights, class_weights, client_summaries = _client_scores(
+        prior_output = _module1_medical_prior_feature_extraction(meta, cfg)
+        client_info = _module2_diagnostic_client_information_estimation(
             meta,
             checkpoints,
-            batches,
-            features,
-            labels,
+            prior_output["batches"],
+            prior_output["features"],
+            prior_output["labels"],
             cfg,
             base_weights,
         )
-        morphology_merged = _layerwise_merge(
+        merged_state_dict, fusion_info = _module3_medical_evidence_guided_fusion_and_selection(
             state_dicts,
-            overall_weights=overall_weights,
-            morph_weights=morph_weights,
-            class_weights=class_weights,
-            num_classes=int(meta["num_classes"]),
-            meta=meta,
-            cfg=cfg,
+            base_merged,
+            meta,
+            cfg,
+            prior_output,
+            client_info,
         )
-        specialist_idx = None
-        reference_delta = None
-        if _component_enabled(cfg, "reference_delta_candidate") and _model_family(meta) in {"transformer", "vlm"}:
-            reference_delta = _build_reference_delta_candidate(
-                state_dicts,
-                overall_weights=overall_weights,
-                morph_weights=morph_weights,
-                class_weights=class_weights,
-                num_classes=int(meta["num_classes"]),
-                meta=meta,
-                cfg=cfg,
-            )
-
-        base_candidate = _prepare_candidate(meta, base_merged, cfg)
-        morphology_candidate = _prepare_candidate(meta, morphology_merged, cfg)
-        candidate_pool = {
-            "avg": base_candidate,
-            "morphology": morphology_candidate,
-        }
-        if _component_enabled(cfg, "morph_anchor_candidate"):
-            morphology_anchor = _build_morphology_anchor_candidate(
-                state_dicts,
-                morph_weights=morph_weights,
-                class_weights=class_weights,
-                num_classes=int(meta["num_classes"]),
-                meta=meta,
-            )
-            candidate_pool["morph_anchor"] = _prepare_candidate(meta, morphology_anchor, cfg)
-        if _component_enabled(cfg, "specialist_candidate"):
-            specialist_candidate_state, specialist_idx = _build_specialist_client_candidate(
-                state_dicts,
-                client_summaries=client_summaries,
-                meta=meta,
-            )
-            candidate_pool["specialist_client"] = _prepare_candidate(meta, specialist_candidate_state, cfg)
-        if _component_enabled(cfg, "consensus_candidate"):
-            alpha = _merge_profile(meta)["candidate_alpha"]
-            consensus_candidate = _prepare_candidate(
-                meta,
-                _interpolate_state_dicts(base_candidate, morphology_candidate, alpha=alpha),
-                cfg,
-            )
-            candidate_pool["consensus"] = consensus_candidate
-        if reference_delta is not None:
-            candidate_pool["reference_delta"] = _prepare_candidate(meta, reference_delta, cfg)
-        prototype_candidate_state = None
-        if _component_enabled(cfg, "prototype_head_candidate"):
-            prototype_candidate_state = _build_prototype_head_candidate(
-                base_merged,
-                meta=meta,
-                batches=batches,
-                labels=labels,
-                features=features,
-                cfg=cfg,
-            )
-        if prototype_candidate_state is not None:
-            candidate_pool["prototype_head"] = _prepare_candidate(meta, prototype_candidate_state, cfg)
-        candidate_metrics = {
-            name: _evaluate_merged_state(meta, candidate_state, cfg, split=cfg.get("stats_split", "val"))
-            for name, candidate_state in candidate_pool.items()
-        }
-        selected_name = _choose_candidate(meta, candidate_metrics, cfg=cfg)
-        merged_state_dict = candidate_pool[selected_name]
-
-        names = _feature_names(meta)
-        feature_summary = {
-            names[idx] if idx < len(names) else f"feature_{idx}": float(features[:, idx].mean().item())
-            for idx in range(features.shape[1])
-        }
 
         return merged_state_dict, {
             "implementation": "medical_modality_specific_boundary_cascade_merge_v5",
             "medical_only": True,
+            "method_modules": METHOD_MODULES,
             "ablation_config": ablation_config,
             "modality": meta.get("dataset"),
             "model_family": _model_family(meta),
             "base_weights": [float(x) for x in base_weights],
-            "overall_weights": [float(x) for x in overall_weights.tolist()],
-            "morphology_weights": [float(x) for x in morph_weights.tolist()],
-            "class_weights": [[float(v) for v in row] for row in class_weights.tolist()],
-            "client_summaries": client_summaries,
-            "specialist_client_index": None if specialist_idx is None else int(specialist_idx),
-            "feature_summary": feature_summary,
-            "candidate_pool": sorted(candidate_pool.keys()),
-            "candidate_metrics": candidate_metrics,
-            "selected_candidate": selected_name,
+            "overall_weights": [float(x) for x in client_info["overall_weights"].tolist()],
+            "morphology_weights": [float(x) for x in client_info["morphology_weights"].tolist()],
+            "class_weights": [[float(v) for v in row] for row in client_info["class_weights"].tolist()],
+            "client_summaries": client_info["client_summaries"],
+            "client_diagnostic_information": client_info["client_diagnostic_information"],
+            "client_information_theory": client_info["theory"],
+            "specialist_client_index": fusion_info["specialist_client_index"],
+            "feature_summary": prior_output["feature_summary"],
+            "feature_names": prior_output["feature_names"],
+            "candidate_pool": fusion_info["candidate_pool"],
+            "candidate_metrics": fusion_info["candidate_metrics"],
+            "selected_candidate": fusion_info["selected_candidate"],
         }
     except Exception as exc:
         return base_merged, {
             "implementation": "medical_modality_specific_boundary_cascade_merge_fallback",
             "medical_only": True,
+            "method_modules": METHOD_MODULES,
             "ablation_config": ablation_config,
             "fallback_reason": str(exc),
             "normalized_weights": base_weights,
