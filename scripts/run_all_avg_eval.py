@@ -293,6 +293,25 @@ def update_status_row(path, status_rows, row):
     save_status_rows(path, status_rows)
 
 
+def append_csv_row(path, row, fields):
+    path = Path(path)
+    path.parent.mkdir(parents=True, exist_ok=True)
+    exists = path.exists() and path.stat().st_size > 0
+    with path.open('a', newline='', encoding='utf-8') as f:
+        writer = csv.DictWriter(f, fieldnames=fields, extrasaction='ignore')
+        if not exists:
+            writer.writeheader()
+        writer.writerow({field: row.get(field, '') for field in fields})
+
+
+def count_existing_ok_plots(output_root):
+    viz_csv = Path(output_root) / 'reports' / 'my_merge_visualization_index.csv'
+    if not viz_csv.exists() or viz_csv.stat().st_size == 0:
+        return 0
+    with viz_csv.open('r', newline='', encoding='utf-8') as f:
+        return sum(1 for row in csv.DictReader(f) if row.get('status') == 'ok')
+
+
 def build_status_row(cfg, *, status, eval_json='', merged_deleted='', seconds='', test_acc='', test_loss='', error=''):
     return {
         'status': status,
@@ -367,6 +386,7 @@ def main():
     status_csv = Path(args.output_root) / 'reports' / 'batch_status.csv'
     status_rows = load_status_rows(status_csv)
     save_json(Path(args.output_root) / 'reports' / 'batch_config.json', vars(args))
+    incremental_plot_count = count_existing_ok_plots(args.output_root)
 
     print(f'[{ts()}] batch start | tasks={len(manifest)} | output_root={args.output_root} | method={args.method}')
     for idx, row in enumerate(manifest, start=1):
@@ -395,6 +415,37 @@ def main():
             print(f'[{ts()}] start ({idx}/{len(manifest)}) {label}')
             merge_info = run_merge(cfg)
             payload, eval_path = run_evaluate(cfg, merged_dir=merge_info['merged_dir'])
+            if (
+                args.method == 'my_merge'
+                and args.my_merge_export_diagnostics
+                and args.my_merge_diagnostics_plot
+                and (args.my_merge_viz_max_plots <= 0 or incremental_plot_count < args.my_merge_viz_max_plots)
+            ):
+                try:
+                    from generate_my_merge_diagnostics import VIZ_FIELDS, build_visualization
+
+                    merge_payload = load_json(merge_info['merge_result_path'])
+                    viz_row = build_visualization(
+                        payload=merge_payload,
+                        result_path=Path(merge_info['merge_result_path']),
+                        output_root=args.output_root,
+                        data_root=args.data_root,
+                        split=args.my_merge_viz_split,
+                        device=args.device,
+                        batch_size=args.small_batch_size if cfg['task_type'] == 'small' else args.vlm_batch_size,
+                        num_workers=0,
+                        max_batches=args.my_merge_viz_max_batches,
+                        plot_subdir='diagnostic_figures',
+                    )
+                    append_csv_row(
+                        Path(args.output_root) / 'reports' / 'my_merge_visualization_index.csv',
+                        viz_row,
+                        VIZ_FIELDS,
+                    )
+                    if viz_row.get('status') == 'ok':
+                        incremental_plot_count += 1
+                except Exception as exc:
+                    print(f'[{ts()}] incremental my_merge visualization failed ({idx}/{len(manifest)}) {label} | {exc}')
             merged_ckpt = Path(merge_info['merged_checkpoint'])
             removed = False
             if args.delete_merged and merged_ckpt.exists():

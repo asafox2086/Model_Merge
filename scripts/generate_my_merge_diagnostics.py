@@ -116,6 +116,14 @@ def safe_float(value):
         return str(value)
 
 
+def load_csv_rows(path):
+    path = Path(path)
+    if not path.exists() or path.stat().st_size == 0:
+        return []
+    with path.open("r", encoding="utf-8", newline="") as f:
+        return list(csv.DictReader(f))
+
+
 def build_weight_rows(payload):
     base = case_fields(payload)
     method_info = payload.get("method_info", {})
@@ -462,6 +470,11 @@ def compact_case_key(row):
     )
 
 
+def payload_case_key(payload):
+    base = case_fields(payload)
+    return compact_case_key(base)
+
+
 def format_client_weight_summary(rows):
     chunks = []
     for row in sorted(rows, key=lambda item: int(item.get("client_index", 0) or 0)):
@@ -602,6 +615,13 @@ def build_diagnostics(
 
     weight_rows = []
     viz_rows = []
+    viz_csv = report_dir / "my_merge_visualization_index.csv"
+    existing_viz_rows = load_csv_rows(viz_csv) if make_plots else []
+    existing_viz_lookup = {
+        compact_case_key(row): row
+        for row in existing_viz_rows
+        if row.get("status") == "ok"
+    }
     plot_count = 0
     for result_path in result_paths:
         payload = load_json(result_path)
@@ -609,18 +629,22 @@ def build_diagnostics(
             continue
         weight_rows.extend(build_weight_rows(payload))
         if make_plots and (max_plots <= 0 or plot_count < max_plots):
-            row = build_visualization(
-                payload=payload,
-                result_path=result_path,
-                output_root=output_root,
-                data_root=data_root,
-                split=split,
-                device=torch.device(device),
-                batch_size=batch_size,
-                num_workers=num_workers,
-                max_batches=max_batches,
-                plot_subdir=plot_subdir,
-            )
+            key = payload_case_key(payload)
+            if key in existing_viz_lookup:
+                row = existing_viz_lookup[key]
+            else:
+                row = build_visualization(
+                    payload=payload,
+                    result_path=result_path,
+                    output_root=output_root,
+                    data_root=data_root,
+                    split=split,
+                    device=torch.device(device),
+                    batch_size=batch_size,
+                    num_workers=num_workers,
+                    max_batches=max_batches,
+                    plot_subdir=plot_subdir,
+                )
             viz_rows.append(row)
             if row["status"] == "ok":
                 plot_count += 1
@@ -629,7 +653,6 @@ def build_diagnostics(
 
     weights_csv = report_dir / "my_merge_client_diagnostic_weights.csv"
     weights_md = report_dir / "my_merge_client_diagnostic_weights.md"
-    viz_csv = report_dir / "my_merge_visualization_index.csv"
     viz_md = report_dir / "my_merge_visualization_index.md"
     combined_csv = report_dir / "my_merge_weight_visualization_table.csv"
     combined_md = report_dir / "my_merge_weight_visualization_table.md"
