@@ -52,6 +52,47 @@ ABLATION_PRESETS = {
         "ultrasound_diffusion",
         "ultrasound_shadow",
     },
+    "no_medical_prior": {
+        "domain_features",
+        "derma_color",
+        "derma_hair",
+        "ct_window",
+        "ct_spatial",
+        "ultrasound_diffusion",
+        "ultrasound_shadow",
+    },
+    "no_client_information": {
+        "diagnostic_client_information",
+        "class_rarity",
+        "focal_weight",
+        "domain_focus",
+    },
+    "no_diagnostic_information": {
+        "diagnostic_client_information",
+        "class_rarity",
+        "focal_weight",
+        "domain_focus",
+    },
+    "no_fusion_selection": {
+        "layerwise_merge",
+        "sparse_residual",
+        "morph_anchor_candidate",
+        "specialist_candidate",
+        "reference_delta_candidate",
+        "prototype_head_candidate",
+        "consensus_candidate",
+        "candidate_selection",
+    },
+    "no_medical_fusion_selection": {
+        "layerwise_merge",
+        "sparse_residual",
+        "morph_anchor_candidate",
+        "specialist_candidate",
+        "reference_delta_candidate",
+        "prototype_head_candidate",
+        "consensus_candidate",
+        "candidate_selection",
+    },
     "no_rarity": {"class_rarity"},
     "no_focal": {"focal_weight"},
     "no_domain_focus": {"domain_focus"},
@@ -78,6 +119,7 @@ ABLATION_PRESETS = {
         "ct_spatial",
         "ultrasound_diffusion",
         "ultrasound_shadow",
+        "diagnostic_client_information",
         "class_rarity",
         "focal_weight",
         "domain_focus",
@@ -230,6 +272,7 @@ def _ablation_config(cfg):
         "ct_spatial",
         "ultrasound_diffusion",
         "ultrasound_shadow",
+        "diagnostic_client_information",
         "class_rarity",
         "focal_weight",
         "domain_focus",
@@ -817,6 +860,51 @@ def _module2_diagnostic_client_information_estimation(
     cfg,
     base_weights,
 ):
+    if not _component_enabled(cfg, "diagnostic_client_information"):
+        base_tensor = torch.as_tensor(base_weights, dtype=torch.float32)
+        num_classes = int(meta["num_classes"])
+        class_weights = torch.stack([base_tensor.clone() for _ in range(num_classes)], dim=0)
+        client_information = []
+        for client_idx, weight in enumerate(base_weights):
+            client_meta = meta["clients"][client_idx] if client_idx < len(meta.get("clients", [])) else {}
+            client_information.append(
+                {
+                    "client_index": int(client_idx),
+                    "client_name": client_meta.get("checkpoint", f"client_{client_idx}.pt"),
+                    "seen_classes": [int(cls) for cls in client_meta.get("classes", [])],
+                    "base_weight": float(weight),
+                    "overall_weight": float(weight),
+                    "morphology_weight": float(weight),
+                    "ordinary_accuracy": 0.0,
+                    "medical_weighted_accuracy": 0.0,
+                    "hard_case_accuracy": 0.0,
+                    "margin_confidence": 0.0,
+                    "focal_hard_case_accuracy": 0.0,
+                    "overall_score": float(weight),
+                    "morphology_score": float(weight),
+                    "diagnostic_information_vector": [0.0, 0.0, 0.0, 0.0, 0.0],
+                }
+            )
+        return {
+            "module_name": METHOD_MODULES["module_2"]["name"],
+            "overall_weights": base_tensor,
+            "morphology_weights": base_tensor,
+            "class_weights": class_weights,
+            "client_summaries": [
+                {
+                    "overall_acc": 0.0,
+                    "morph_acc": 0.0,
+                    "hard_acc": 0.0,
+                    "margin_score": 0.0,
+                    "focal_acc": 0.0,
+                    "overall_score": float(weight),
+                    "morph_score": float(weight),
+                }
+                for weight in base_weights
+            ],
+            "client_diagnostic_information": client_information,
+            "theory": "Diagnostic client information ablated; fusion falls back to prior client weights.",
+        }
     overall_weights, morph_weights, class_weights, client_summaries = _client_scores(
         meta,
         checkpoints,

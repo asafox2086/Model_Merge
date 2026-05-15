@@ -21,7 +21,7 @@ DATASETS="${DATASETS:-bloodmnist_224 dermamnist_224 organcmnist_224 organsmnist_
 SMALL_MODELS="${SMALL_MODELS:-resnet convnext vit_t swin_tiny}"
 CLIP_MODELS="${CLIP_MODELS:-openai/clip-vit-base-patch32}"
 TASK_TYPES="${TASK_TYPES:-small vlm}"
-ABLATIONS="${ABLATIONS:-full no_domain_preprocess no_rarity no_focal no_domain_focus no_layerwise no_residual no_candidate_bank no_calibration avg_only}"
+ABLATIONS="${ABLATIONS:-full no_medical_prior no_client_information no_fusion_selection avg_only}"
 LIMIT="${LIMIT:-0}"
 NUM_WORKERS="${NUM_WORKERS:-4}"
 STATS_BATCH_SIZE="${STATS_BATCH_SIZE:-32}"
@@ -30,6 +30,11 @@ VLM_BATCH_SIZE="${VLM_BATCH_SIZE:-64}"
 MY_MERGE_STATS_MAX_BATCHES="${MY_MERGE_STATS_MAX_BATCHES:-4}"
 MY_MERGE_EVAL_MAX_BATCHES="${MY_MERGE_EVAL_MAX_BATCHES:-2}"
 MY_MERGE_BN_BATCHES="${MY_MERGE_BN_BATCHES:-4}"
+DELETE_MERGED="${DELETE_MERGED:-true}"
+MY_MERGE_EXPORT_DIAGNOSTICS="${MY_MERGE_EXPORT_DIAGNOSTICS:-true}"
+MY_MERGE_DIAGNOSTICS_PLOT="${MY_MERGE_DIAGNOSTICS_PLOT:-false}"
+MY_MERGE_VIZ_MAX_BATCHES="${MY_MERGE_VIZ_MAX_BATCHES:-1}"
+MY_MERGE_VIZ_MAX_PLOTS="${MY_MERGE_VIZ_MAX_PLOTS:-0}"
 
 read -r -a DATASET_ARGS <<< "$DATASETS"
 read -r -a SMALL_MODEL_ARGS <<< "$SMALL_MODELS"
@@ -50,6 +55,11 @@ mkdir -p "$OUTPUT_ROOT/reports"
   echo "my_merge_stats_max_batches=$MY_MERGE_STATS_MAX_BATCHES"
   echo "my_merge_eval_max_batches=$MY_MERGE_EVAL_MAX_BATCHES"
   echo "my_merge_bn_batches=$MY_MERGE_BN_BATCHES"
+  echo "delete_merged=$DELETE_MERGED"
+  echo "my_merge_export_diagnostics=$MY_MERGE_EXPORT_DIAGNOSTICS"
+  echo "my_merge_diagnostics_plot=$MY_MERGE_DIAGNOSTICS_PLOT"
+  echo "my_merge_viz_max_batches=$MY_MERGE_VIZ_MAX_BATCHES"
+  echo "my_merge_viz_max_plots=$MY_MERGE_VIZ_MAX_PLOTS"
 } > "$OUTPUT_ROOT/reports/ablation_grid_config.txt"
 
 for ablation in "${ABLATION_ARGS[@]}"; do
@@ -72,7 +82,24 @@ for ablation in "${ABLATION_ARGS[@]}"; do
       --my-merge-stats-max-batches "$MY_MERGE_STATS_MAX_BATCHES"
       --my-merge-eval-max-batches "$MY_MERGE_EVAL_MAX_BATCHES"
       --my-merge-bn-batches "$MY_MERGE_BN_BATCHES"
+      --my-merge-viz-max-batches "$MY_MERGE_VIZ_MAX_BATCHES"
+      --my-merge-viz-max-plots "$MY_MERGE_VIZ_MAX_PLOTS"
     )
+    if [[ "$DELETE_MERGED" == "true" ]]; then
+      common_args+=(--delete-merged)
+    else
+      common_args+=(--no-delete-merged)
+    fi
+    if [[ "$MY_MERGE_EXPORT_DIAGNOSTICS" == "true" ]]; then
+      common_args+=(--my-merge-export-diagnostics)
+    else
+      common_args+=(--no-my-merge-export-diagnostics)
+    fi
+    if [[ "$MY_MERGE_DIAGNOSTICS_PLOT" == "true" ]]; then
+      common_args+=(--my-merge-diagnostics-plot)
+    else
+      common_args+=(--no-my-merge-diagnostics-plot)
+    fi
     if [[ "$LIMIT" != "0" ]]; then
       common_args+=(--limit "$LIMIT")
     fi
@@ -90,5 +117,10 @@ done
   --grid-root "$OUTPUT_ROOT" \
   --baseline result/all_results.md \
   --dest "$OUTPUT_ROOT/reports/ablation_summary.md"
+
+"$PYTHON" scripts/generate_ablation_combined_results_table.py \
+  --base result/all_results.md \
+  --grid-root "$OUTPUT_ROOT" \
+  --dest "$OUTPUT_ROOT/reports/all_results_ablation_combined.md"
 
 echo "Ablation grid finished: $OUTPUT_ROOT"

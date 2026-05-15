@@ -58,6 +58,21 @@ VIZ_FIELDS = [
     "note",
 ]
 
+COMBINED_FIELDS = [
+    "task_type",
+    "dataset",
+    "model",
+    "clip_model",
+    "num_clients",
+    "beta",
+    "seed",
+    "selected_candidate",
+    "client_weights",
+    "plot_path",
+    "status",
+    "image",
+]
+
 
 def parse_args():
     p = argparse.ArgumentParser("Export my_merge client weights and classification PCA plots")
@@ -69,6 +84,7 @@ def parse_args():
     p.add_argument("--num-workers", type=int, default=0)
     p.add_argument("--max-batches", type=int, default=2, help="0 means all batches")
     p.add_argument("--max-plots", type=int, default=0, help="0 means no plot limit")
+    p.add_argument("--plot-subdir", default="diagnostic_figures", help="Subdirectory under reports/ for PCA images")
     p.add_argument("--no-plots", action="store_true", help="Only export client diagnostic weights")
     return p.parse_args()
 
@@ -433,7 +449,81 @@ def visualization_row(payload, split, embedding_source, plot_path, status, num_s
     return row
 
 
-def build_visualization(payload, result_path, output_root, data_root, split, device, batch_size, num_workers, max_batches):
+def compact_case_key(row):
+    return (
+        row.get("task_type", ""),
+        row.get("dataset", ""),
+        row.get("model", ""),
+        row.get("clip_model", ""),
+        str(row.get("num_clients", "")),
+        str(row.get("beta", "")),
+        str(row.get("seed", "")),
+        row.get("selected_candidate", ""),
+    )
+
+
+def format_client_weight_summary(rows):
+    chunks = []
+    for row in sorted(rows, key=lambda item: int(item.get("client_index", 0) or 0)):
+        client = row.get("client_name") or f"client_{row.get('client_index', '')}"
+        chunks.append(
+            (
+                f"{client}: "
+                f"pi={row.get('prior_weight_pi', '')}, "
+                f"alpha_all={row.get('diagnostic_weight_alpha_all', '')}, "
+                f"alpha_morph={row.get('medical_weight_alpha_morph', '')}, "
+                f"A={row.get('acc_A', '')}, "
+                f"M={row.get('medical_acc_M', '')}, "
+                f"H={row.get('hard_acc_H', '')}, "
+                f"Q={row.get('margin_Q', '')}, "
+                f"F={row.get('focal_acc_F', '')}"
+            )
+        )
+    return "<br>".join(chunks)
+
+
+def build_combined_rows(weight_rows, viz_rows):
+    weight_groups = {}
+    for row in weight_rows:
+        weight_groups.setdefault(compact_case_key(row), []).append(row)
+    viz_lookup = {compact_case_key(row): row for row in viz_rows}
+
+    combined = []
+    for key in sorted(weight_groups.keys()):
+        first = weight_groups[key][0]
+        viz = viz_lookup.get(key, {})
+        image_path = viz.get("plot_path", "") if viz.get("status") == "ok" else ""
+        combined.append(
+            {
+                "task_type": first.get("task_type", ""),
+                "dataset": first.get("dataset", ""),
+                "model": first.get("model", ""),
+                "clip_model": first.get("clip_model", ""),
+                "num_clients": first.get("num_clients", ""),
+                "beta": first.get("beta", ""),
+                "seed": first.get("seed", ""),
+                "selected_candidate": first.get("selected_candidate", ""),
+                "client_weights": format_client_weight_summary(weight_groups[key]),
+                "plot_path": viz.get("plot_path", ""),
+                "status": viz.get("status", "not_plotted"),
+                "image": image_path,
+            }
+        )
+    return combined
+
+
+def build_visualization(
+    payload,
+    result_path,
+    output_root,
+    data_root,
+    split,
+    device,
+    batch_size,
+    num_workers,
+    max_batches,
+    plot_subdir,
+):
     checkpoint_path = Path(payload.get("merged_checkpoint", ""))
     if not checkpoint_path.exists():
         return visualization_row(
@@ -476,7 +566,7 @@ def build_visualization(payload, result_path, output_root, data_root, split, dev
             selected,
         ]
         image_name = "__".join(sanitize_name(part) for part in name_parts) + ".png"
-        rel_plot_path = Path("visualizations") / image_name
+        rel_plot_path = Path(plot_subdir) / image_name
         abs_plot_path = Path(output_root) / "reports" / rel_plot_path
         title = " / ".join(str(part) for part in name_parts[:3] if part)
         plot_embeddings(coords, labels, preds, meta, title, abs_plot_path)
@@ -503,6 +593,7 @@ def build_diagnostics(
     max_batches=2,
     make_plots=True,
     max_plots=0,
+    plot_subdir="diagnostic_figures",
 ):
     output_root = Path(output_root)
     report_dir = output_root / "reports"
@@ -528,6 +619,7 @@ def build_diagnostics(
                 batch_size=batch_size,
                 num_workers=num_workers,
                 max_batches=max_batches,
+                plot_subdir=plot_subdir,
             )
             viz_rows.append(row)
             if row["status"] == "ok":
@@ -539,6 +631,8 @@ def build_diagnostics(
     weights_md = report_dir / "my_merge_client_diagnostic_weights.md"
     viz_csv = report_dir / "my_merge_visualization_index.csv"
     viz_md = report_dir / "my_merge_visualization_index.md"
+    combined_csv = report_dir / "my_merge_weight_visualization_table.csv"
+    combined_md = report_dir / "my_merge_weight_visualization_table.md"
 
     save_csv(weights_csv, weight_rows)
     write_markdown(
@@ -574,11 +668,25 @@ def build_diagnostics(
             image_field="image",
         )
 
+    combined_rows = build_combined_rows(weight_rows, viz_rows)
+    save_csv(combined_csv, combined_rows)
+    write_markdown(
+        combined_md,
+        "my_merge Weight and PCA Visualization Table",
+        "Each row is one dataset/model/case. `client_weights` summarizes the diagnostic weights used by the fusion formula; the image column shows the corresponding PCA classification visualization when a checkpoint was available.",
+        combined_rows,
+        COMBINED_FIELDS,
+        image_field="image",
+        max_rows=300,
+    )
+
     return {
         "weights_csv": str(weights_csv),
         "weights_md": str(weights_md),
         "visualization_csv": str(viz_csv) if make_plots else "",
         "visualization_md": str(viz_md) if make_plots else "",
+        "combined_csv": str(combined_csv),
+        "combined_md": str(combined_md),
         "num_weight_rows": len(weight_rows),
         "num_visualization_rows": len(viz_rows),
     }
@@ -596,6 +704,7 @@ def main():
         max_batches=args.max_batches,
         make_plots=not args.no_plots,
         max_plots=args.max_plots,
+        plot_subdir=args.plot_subdir,
     )
     for key, value in result.items():
         print(f"{key}: {value}")
