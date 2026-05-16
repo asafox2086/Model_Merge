@@ -1,0 +1,7 @@
+task_type,dataset,model,clip_model,num_clients,beta,seed,selected_candidate,split,embedding_source,num_samples,plot_path,status,note
+small,bloodmnist_224,convnext,,3,0.0,42,avg,test,model_pre_logits,128,diagnostic_figures/small__bloodmnist_224__convnext__c3__b0.0__s42__avg.png,ok,
+small,bloodmnist_224,convnext,,3,0.01,42,avg,test,model_pre_logits,128,diagnostic_figures/small__bloodmnist_224__convnext__c3__b0.01__s42__avg.png,ok,
+small,bloodmnist_224,convnext,,3,0.1,42,morphology,test,model_pre_logits,128,diagnostic_figures/small__bloodmnist_224__convnext__c3__b0.1__s42__morphology.png,ok,
+small,bloodmnist_224,convnext,,5,0.0,42,morphology,test,model_pre_logits,128,diagnostic_figures/small__bloodmnist_224__convnext__c5__b0.0__s42__morphology.png,ok,
+small,bloodmnist_224,convnext,,5,0.01,42,morphology,test,model_pre_logits,128,diagnostic_figures/small__bloodmnist_224__convnext__c5__b0.01__s42__morphology.png,ok,
+small,bloodmnist_224,convnext,,5,0.1,42,morphology,test,model_pre_logits,128,diagnostic_figures/small__bloodmnist_224__convnext__c5__b0.1__s42__morphology.png,ok,

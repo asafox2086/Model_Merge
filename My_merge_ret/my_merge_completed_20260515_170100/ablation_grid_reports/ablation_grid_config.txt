@@ -1,0 +1,16 @@
+output_root=/data/liyapeng_grp/program/MedMNISTMerge/outputs/my_merge_ablation_three_module_full_20260515_170100
+device=cuda:0
+datasets=bloodmnist_224 dermamnist_224 organcmnist_224 organsmnist_224 chaoshengmnist_224
+small_models=resnet convnext vit_t swin_tiny
+clip_models=openai/clip-vit-base-patch32
+task_types=small vlm
+ablations=full no_medical_prior no_client_information no_fusion_selection avg_only
+limit=0
+my_merge_stats_max_batches=1
+my_merge_eval_max_batches=1
+my_merge_bn_batches=0
+delete_merged=true
+my_merge_export_diagnostics=true
+my_merge_diagnostics_plot=true
+my_merge_viz_max_batches=1
+my_merge_viz_max_plots=60
