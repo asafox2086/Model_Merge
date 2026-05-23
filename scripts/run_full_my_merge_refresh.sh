@@ -176,11 +176,11 @@ fi
   "${ROOT_DIR}/outputs/my_merge_med_v5_domain_smoke_organc" \
   "${ROOT_DIR}/outputs/my_merge_med_v5_domain_smoke_chao" \
   "${OUTPUT_ROOT}" \
-  --dest "${ROOT_DIR}/My_merge_ret/all_results_my_merge.md"
+  --dest "${ROOT_DIR}/My_merge_ret/reports/all_results_my_merge.md"
 
 "${PYTHON_BIN}" "${ROOT_DIR}/scripts/generate_combined_results_table.py" \
   --base "${ROOT_DIR}/result/all_results.md" \
-  --mine "${ROOT_DIR}/My_merge_ret/all_results_my_merge.md" \
-  --dest "${ROOT_DIR}/My_merge_ret/all_results_combined.md"
+  --mine "${ROOT_DIR}/My_merge_ret/reports/all_results_my_merge.md" \
+  --dest "${ROOT_DIR}/My_merge_ret/汇总表.md"
 
 echo "[$(date +%F\ %T)] my_merge full refresh done"

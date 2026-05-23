@@ -9,7 +9,6 @@ from pathlib import Path
 
 ABLATIONS = [
     "full",
-    "no_medical_prior",
     "no_client_information",
     "no_fusion_selection",
     "avg_only",

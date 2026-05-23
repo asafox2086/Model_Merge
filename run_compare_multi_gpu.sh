@@ -4,6 +4,8 @@ set -euo pipefail
 source "$(cd "$(dirname "$0")" && pwd)/scripts/multi_gpu_common.sh"
 
 FORMAL_METHODS=( ${FORMAL_METHODS:-${FORMAL_METHODS_DEFAULT[*]}} )
+FORMAL_TASK_TYPES=( ${FORMAL_TASK_TYPES:-small vlm} )
+FORMAL_EXTRA_ARGS="${FORMAL_EXTRA_ARGS:-}"
 
 LOG_ROOT="${LOG_ROOT:-${ROOT_DIR}/logs/${RUN_TAG}/formal_compare}"
 OUTPUT_ROOT="${OUTPUT_ROOT:-${ROOT_DIR}/outputs/formal_compare_${RUN_TAG}}"
@@ -21,9 +23,19 @@ RESUME_ARGS=()
 DELETE_ARGS=()
 build_boolean_flag_args "${RESUME_FLAG}" "--resume" "--no-resume" RESUME_ARGS
 build_boolean_flag_args "${DELETE_FLAG}" "--delete-merged" "--no-delete-merged" DELETE_ARGS
+read -r -a FORMAL_EXTRA_ARGS_ARRAY <<< "${FORMAL_EXTRA_ARGS}"
 validate_methods "${FORMAL_METHODS[@]}"
 
-prepare_reference_cache "all"
+case " ${FORMAL_TASK_TYPES[*]} " in
+  *" small "*)
+    prepare_reference_cache "small"
+    ;;
+esac
+case " ${FORMAL_TASK_TYPES[*]} " in
+  *" vlm "*)
+    prepare_reference_cache "vlm"
+    ;;
+esac
 
 run_job() {
   local task_type="$1"
@@ -48,6 +60,9 @@ run_job() {
 
   build_method_args "${method}" method_args
   cmd+=( "${method_args[@]}" )
+  if (( ${#FORMAL_EXTRA_ARGS_ARRAY[@]} > 0 )); then
+    cmd+=( "${FORMAL_EXTRA_ARGS_ARRAY[@]}" )
+  fi
 
   if [[ "${task_type}" == "small" ]]; then
     cmd+=(--small-batch-size "${SMALL_BATCH_SIZE}" --vlm-batch-size 1 --datasets "${DATASETS[@]}" --small-models "${SMALL_MODELS[@]}")
@@ -65,22 +80,25 @@ run_job() {
 }
 
 JOBS=()
-for method in "${FORMAL_METHODS[@]}"; do
-  JOBS+=( "small|${method}" )
-done
-for method in "${FORMAL_METHODS[@]}"; do
-  JOBS+=( "vlm|${method}" )
+for task_type in "${FORMAL_TASK_TYPES[@]}"; do
+  for method in "${FORMAL_METHODS[@]}"; do
+    JOBS+=( "${task_type}|${method}" )
+  done
 done
 
 echo "[$(date +%F\ %T)] RUN_TAG=${RUN_TAG}"
 echo "[$(date +%F\ %T)] GPUs=${GPU_IDS}"
 echo "[$(date +%F\ %T)] device=${DEVICE}"
+echo "[$(date +%F\ %T)] task_types=${FORMAL_TASK_TYPES[*]}"
 echo "[$(date +%F\ %T)] datasets=${DATASETS[*]}"
 echo "[$(date +%F\ %T)] small_models=${SMALL_MODELS[*]}"
 echo "[$(date +%F\ %T)] clip_models=${CLIP_MODELS[*]}"
 echo "[$(date +%F\ %T)] methods=${FORMAL_METHODS[*]}"
 echo "[$(date +%F\ %T)] logs=${LOG_ROOT}"
 echo "[$(date +%F\ %T)] outputs=${OUTPUT_ROOT}"
+if (( ${#FORMAL_EXTRA_ARGS_ARRAY[@]} )); then
+  echo "[$(date +%F\ %T)] formal_extra_args=${FORMAL_EXTRA_ARGS}"
+fi
 echo "[$(date +%F\ %T)] HF_ENDPOINT=${HF_ENDPOINT:-<unset>}"
 echo "[$(date +%F\ %T)] HF_LOCAL_FILES_ONLY=${HF_LOCAL_FILES_ONLY}"
 echo "[$(date +%F\ %T)] HF_HUB_OFFLINE=${HF_HUB_OFFLINE:-<unset>}"

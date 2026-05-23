@@ -13,4 +13,9 @@ python3 scripts/generate_my_merge_master_table.py \
   outputs/custom_methods_codex_my_merge_small_a4 \
   outputs/custom_methods_codex_my_merge_small_b5 \
   outputs/custom_methods_codex_my_merge_vlm \
-  --dest My_merge_ret/all_results_my_merge.md
+  --dest My_merge_ret/reports/all_results_my_merge.md
+
+python3 scripts/generate_combined_results_table.py \
+  --base result/all_results.md \
+  --mine My_merge_ret/reports/all_results_my_merge.md \
+  --dest My_merge_ret/汇总表.md

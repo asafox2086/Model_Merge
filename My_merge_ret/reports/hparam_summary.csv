@@ -1,0 +1,5 @@
+setting,stats,eval,bn,mean_acc,num_rows
+stats1_eval1_bn0,1,1,0,0.44180546213607697,36
+stats2_eval1_bn0,2,1,0,0.44180546213607697,36
+stats4_eval2_bn1,4,2,1,0.44180546213607697,36
+stats4_eval4_bn2,4,4,2,0.44180546213607697,36

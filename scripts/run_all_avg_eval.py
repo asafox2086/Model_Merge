@@ -135,10 +135,10 @@ def parse_args():
         '--my-merge-disable',
         type=str,
         default='',
-        help='Comma-separated my_merge components to disable, e.g. derma_hair,ct_window.',
+        help='Comma-separated my_merge components to disable, e.g. diagnostic_evidence,class_rarity.',
     )
     p.add_argument('--my-merge-export-diagnostics', action=argparse.BooleanOptionalAction, default=True)
-    p.add_argument('--my-merge-diagnostics-plot', action=argparse.BooleanOptionalAction, default=True)
+    p.add_argument('--my-merge-diagnostics-plot', action=argparse.BooleanOptionalAction, default=False)
     p.add_argument('--my-merge-viz-split', type=str, default='test')
     p.add_argument('--my-merge-viz-max-batches', type=int, default=2)
     p.add_argument('--my-merge-viz-max-plots', type=int, default=0)

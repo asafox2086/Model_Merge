@@ -1,7 +1,7 @@
 # Experiment Master Tables With my_merge Ablations
 
 - Base table: `result/all_results.md`.
-- my_merge ablation source: `/data/liyapeng_grp/program/MedMNISTMerge/outputs/my_merge_ablation_three_module_full_20260515_170100`.
+- my_merge ablation source: `outputs/my_merge_ablation_three_module_full_20260515_170100`.
 - Row labels state which module is missing. `M1` = Medical Prior Feature Extraction, `M2` = Diagnostic-Aware Client Information Estimation, `M3` = Medical Evidence Guided Fusion and Selection.
 - Highlight rule: highest value is bold, second-highest distinct value is underlined.
 

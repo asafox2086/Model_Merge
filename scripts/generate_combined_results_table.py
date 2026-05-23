@@ -177,7 +177,7 @@ def build_output(base_intro, merged_tables):
     lines = [
         "# Experiment Master Tables",
         "",
-        "- Combined from `result/all_results.md` and `My_merge_ret/all_results_my_merge.md`.",
+        "- Combined from `result/all_results.md` and the generated my_merge result table.",
         "- Original values are preserved; this file only adds `my_merge` as a new row.",
         "- Highlight rule: highest value in each column is `<strong>bold</strong>`, second-highest distinct value is `<u>underlined</u>`.",
         "",
