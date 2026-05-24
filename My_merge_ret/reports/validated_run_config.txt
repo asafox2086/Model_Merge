@@ -1,4 +1,4 @@
-run_tag=my_merge_two_module_split_20260521_195108
+run_tag=my_merge_full_weights_20260523_171624
 gpu_ids=0 1
 datasets=bloodmnist_224 dermamnist_224 organcmnist_224 organsmnist_224 chaoshengmnist_224
 small_models=resnet convnext vit_t swin_tiny
@@ -15,7 +15,7 @@ my_merge_export_diagnostics=true
 my_merge_diagnostics_plot=false
 my_merge_viz_max_batches=1
 my_merge_viz_max_plots=0
-output_root=/data/liyapeng_grp/program/MedMNISTMerge/outputs/my_merge_two_module_split_20260521_195108
-repro_output_root=/data/liyapeng_grp/program/MedMNISTMerge/outputs/my_merge_two_module_split_20260521_195108/reproduction
-my_merge_output_root=/data/liyapeng_grp/program/MedMNISTMerge/outputs/my_merge_two_module_split_20260521_195108/my_merge_ablation_grid
-log_root=/data/liyapeng_grp/program/MedMNISTMerge/logs/my_merge_two_module_split_20260521_195108
+output_root=/data/liyapeng_grp/program/MedMNISTMerge/outputs/my_merge_full_weights_20260523_171624
+repro_output_root=/data/liyapeng_grp/program/MedMNISTMerge/outputs/my_merge_full_weights_20260523_171624/reproduction
+my_merge_output_root=/data/liyapeng_grp/program/MedMNISTMerge/outputs/my_merge_full_weights_20260523_171624/my_merge_ablation_grid
+log_root=/data/liyapeng_grp/program/MedMNISTMerge/logs/my_merge_full_weights_20260523_171624

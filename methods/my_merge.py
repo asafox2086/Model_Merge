@@ -1,5 +1,4 @@
 from collections import OrderedDict
-
 import torch
 import torch.nn.functional as F
 
@@ -1449,7 +1448,7 @@ def merge_my_merge(state_dicts, weights, meta=None, checkpoints=None, cfg=None):
         )
 
         return merged_state_dict, {
-            "implementation": "medical_evidence_two_module_merge_v6",
+            "implementation": "medical_evidence_two_module_posthoc_merge_v7",
             "medical_only": True,
             "method_modules": METHOD_MODULES,
             "ablation_config": ablation_config,
@@ -1472,7 +1471,7 @@ def merge_my_merge(state_dicts, weights, meta=None, checkpoints=None, cfg=None):
         }
     except Exception as exc:
         return base_merged, {
-            "implementation": "medical_evidence_two_module_merge_fallback",
+            "implementation": "medical_evidence_two_module_posthoc_merge_fallback",
             "medical_only": True,
             "method_modules": METHOD_MODULES,
             "ablation_config": ablation_config,
