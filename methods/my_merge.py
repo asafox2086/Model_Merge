@@ -120,6 +120,37 @@ def _blend_scores(primary, secondary, blend=0.7):
     return _normalize_scores(mixed, fallback=secondary)
 
 
+def _stable_evidence_weights(values, fallback, temperature=0.70, floor=0.015):
+    scores = torch.as_tensor(values, dtype=torch.float32)
+    fallback = torch.as_tensor(fallback, dtype=torch.float32)
+    if scores.numel() == 0:
+        return fallback
+    scores = torch.nan_to_num(scores, nan=0.0, posinf=0.0, neginf=0.0)
+    scores = torch.clamp(scores, min=EPS)
+    logits = torch.log(scores)
+    logits = logits - logits.mean()
+    scale = torch.clamp(logits.abs().median(), min=0.25)
+    probs = torch.softmax(logits / (float(temperature) * scale + EPS), dim=0)
+    if floor > 0.0:
+        probs = (1.0 - float(floor)) * probs + float(floor) * fallback
+    return _normalize_scores(probs, fallback=fallback)
+
+
+def _weight_entropy(weights):
+    probs = torch.as_tensor(weights, dtype=torch.float32)
+    probs = _normalize_scores(probs, fallback=torch.ones_like(probs) / max(1, probs.numel()))
+    return -torch.sum(probs * torch.log(probs + EPS))
+
+
+def _evidence_concentration(weights):
+    probs = torch.as_tensor(weights, dtype=torch.float32)
+    if probs.numel() <= 1:
+        return 0.0
+    entropy = _weight_entropy(probs)
+    max_entropy = torch.log(torch.tensor(float(probs.numel()), dtype=torch.float32))
+    return float(torch.clamp(1.0 - entropy / (max_entropy + EPS), min=0.0, max=1.0).item())
+
+
 def _is_small_med_task(meta):
     return meta.get("task_type") == "small"
 
@@ -858,7 +889,15 @@ def _merge_classifier_rows(values, class_weights, profile, fallback_weights):
     stacked = torch.stack([value.detach().float() for value in values], dim=0)
     anchor_rows = _weighted_average_for_key(list(stacked), fallback_weights)
     sharpened = torch.stack(
-        [_normalize_scores(row.pow(profile["class_power"]), fallback=fallback_weights) for row in class_weights],
+        [
+            _stable_evidence_weights(
+                row.pow(profile["class_power"]),
+                fallback=fallback_weights,
+                temperature=0.58,
+                floor=0.02,
+            )
+            for row in class_weights
+        ],
         dim=0,
     )
     topk = min(int(profile["class_topk"]), sharpened.shape[1])
@@ -889,6 +928,70 @@ def _merge_classifier_rows(values, class_weights, profile, fallback_weights):
         row = row * torch.clamp(anchor_norm / row_norm, min=0.45, max=1.15)
         template[cls_idx] = row
     return template.to(dtype=values[0].dtype)
+
+
+def _routed_layer_weights(group, overall_weights, morph_weights, profile, meta):
+    consensus = _stable_evidence_weights(0.58 * morph_weights + 0.42 * overall_weights, fallback=overall_weights)
+    if group == "early":
+        base = _stable_evidence_weights(morph_weights, fallback=consensus, temperature=0.62, floor=0.018)
+        anchor_strength = profile["early_anchor"]
+    elif group == "late":
+        base = _stable_evidence_weights(overall_weights, fallback=consensus, temperature=0.72, floor=0.018)
+        anchor_strength = profile["late_anchor"]
+    else:
+        base = consensus
+        anchor_strength = profile["mid_anchor"]
+
+    concentration = _evidence_concentration(base)
+    anchor_idx = int(torch.argmax(base).item())
+    anchor = F.one_hot(torch.tensor(anchor_idx), num_classes=base.numel()).float()
+    routed = (1.0 - anchor_strength * concentration) * base + (anchor_strength * concentration) * anchor
+    return _stable_evidence_weights(routed, fallback=base, temperature=0.85, floor=0.012)
+
+
+def _direct_evidence_routed_merge(state_dicts, overall_weights, morph_weights, class_weights, num_classes, meta, cfg=None):
+    profile = _merge_profile(meta)
+    use_layerwise = _component_enabled(cfg, "layerwise_merge")
+    use_residual = _component_enabled(cfg, "sparse_residual")
+    consensus = _stable_evidence_weights(0.58 * morph_weights + 0.42 * overall_weights, fallback=overall_weights)
+
+    merged = OrderedDict()
+    routing_summary = {"early": [], "mid": [], "late": [], "classifier": []}
+    for key in state_dicts[0].keys():
+        values = [sd[key] for sd in state_dicts]
+        first = values[0]
+        if not torch.is_floating_point(first):
+            anchor_idx = int(torch.argmax(consensus).item())
+            merged[key] = values[anchor_idx].detach().clone()
+            continue
+        if _is_classifier_tensor(key, first, num_classes):
+            merged[key] = _merge_classifier_rows(values, class_weights, profile, consensus)
+            routing_summary["classifier"].append(key)
+            continue
+
+        group = _param_group(key, meta)
+        if use_layerwise:
+            weights = _routed_layer_weights(group, overall_weights, morph_weights, profile, meta)
+            reinject_keep = profile[f"{group}_residual_keep"]
+            reinject_scale = profile[f"{group}_residual_scale"]
+        else:
+            weights = consensus
+            reinject_keep = 0.0
+            reinject_scale = 0.0
+        if not use_residual:
+            reinject_keep = 0.0
+            reinject_scale = 0.0
+        merged_value = _weighted_average_for_key(values, weights)
+        merged[key] = _sparse_residual_reinjection(
+            merged_value,
+            values,
+            primary_weights=weights,
+            secondary_weights=consensus,
+            keep_ratio=reinject_keep,
+            scale=reinject_scale,
+        )
+        routing_summary[group].append(key)
+    return merged, routing_summary
 
 
 def _build_morphology_anchor_candidate(state_dicts, morph_weights, class_weights, num_classes, meta):
@@ -1310,9 +1413,26 @@ def _module2_medical_evidence_guided_fusion_and_selection(
     overall_weights = client_info["overall_weights"]
     morph_weights = client_info["morphology_weights"]
     class_weights = client_info["class_weights"]
-    client_summaries = client_info["client_summaries"]
 
-    morphology_merged = _layerwise_merge(
+    if not any(_component_enabled(cfg, name) for name in MODULE2_COMPONENTS):
+        selected_state = _prepare_candidate(
+            meta,
+            base_merged,
+            cfg,
+            apply_bn=False,
+            apply_head_temperature=True,
+        )
+        return selected_state, {
+            "module_name": METHOD_MODULES["module_2"]["name"],
+            "fusion_rule": "module2_disabled_average_fallback",
+            "candidate_pool": ["avg"],
+            "candidate_metrics": {},
+            "selected_candidate": "avg",
+            "specialist_client_index": None,
+            "routing_summary": {},
+        }
+
+    routed_state, routing_summary = _direct_evidence_routed_merge(
         state_dicts,
         overall_weights=overall_weights,
         morph_weights=morph_weights,
@@ -1321,93 +1441,21 @@ def _module2_medical_evidence_guided_fusion_and_selection(
         meta=meta,
         cfg=cfg,
     )
-    specialist_idx = None
-    reference_delta = None
-    if _component_enabled(cfg, "reference_delta_candidate") and _model_family(meta) in {"transformer", "vlm"}:
-        reference_delta = _build_reference_delta_candidate(
-            state_dicts,
-            overall_weights=overall_weights,
-            morph_weights=morph_weights,
-            class_weights=class_weights,
-            num_classes=int(meta["num_classes"]),
-            meta=meta,
-            cfg=cfg,
-        )
-
-    base_candidate = _prepare_candidate(meta, base_merged, cfg, apply_head_temperature=False)
-    morphology_candidate = _prepare_candidate(meta, morphology_merged, cfg, apply_head_temperature=False)
-    candidate_pool = {
-        "avg": base_candidate,
-        "morphology": morphology_candidate,
-    }
-    if _component_enabled(cfg, "morph_anchor_candidate"):
-        morphology_anchor = _build_morphology_anchor_candidate(
-            state_dicts,
-            morph_weights=morph_weights,
-            class_weights=class_weights,
-            num_classes=int(meta["num_classes"]),
-            meta=meta,
-        )
-        candidate_pool["morph_anchor"] = _prepare_candidate(meta, morphology_anchor, cfg, apply_head_temperature=False)
-    if _component_enabled(cfg, "specialist_candidate"):
-        specialist_candidate_state, specialist_idx = _build_specialist_client_candidate(
-            state_dicts,
-            client_summaries=client_summaries,
-            meta=meta,
-        )
-        candidate_pool["specialist_client"] = _prepare_candidate(
-            meta,
-            specialist_candidate_state,
-            cfg,
-            apply_head_temperature=False,
-        )
-    if _component_enabled(cfg, "consensus_candidate"):
-        alpha = _merge_profile(meta)["candidate_alpha"]
-        consensus_candidate = _prepare_candidate(
-            meta,
-            _interpolate_state_dicts(base_candidate, morphology_candidate, alpha=alpha),
-            cfg,
-            apply_head_temperature=False,
-        )
-        candidate_pool["consensus"] = consensus_candidate
-    if reference_delta is not None:
-        candidate_pool["reference_delta"] = _prepare_candidate(meta, reference_delta, cfg, apply_head_temperature=False)
-    prototype_candidate_state = None
-    if _component_enabled(cfg, "prototype_head_candidate"):
-        prototype_candidate_state = _build_prototype_head_candidate(
-            base_merged,
-            meta=meta,
-            batches=batches,
-            labels=labels,
-            features=features,
-            cfg=cfg,
-        )
-    if prototype_candidate_state is not None:
-        candidate_pool["prototype_head"] = _prepare_candidate(
-            meta,
-            prototype_candidate_state,
-            cfg,
-            apply_head_temperature=False,
-        )
-
-    candidate_metrics = {
-        name: _evaluate_merged_state(meta, candidate_state, cfg, split=cfg.get("stats_split", "val"))
-        for name, candidate_state in candidate_pool.items()
-    }
-    selected_name = _choose_candidate(meta, candidate_metrics, cfg=cfg)
     selected_state = _prepare_candidate(
         meta,
-        candidate_pool[selected_name],
+        routed_state,
         cfg,
         apply_bn=False,
         apply_head_temperature=True,
     )
     return selected_state, {
         "module_name": METHOD_MODULES["module_2"]["name"],
-        "candidate_pool": sorted(candidate_pool.keys()),
-        "candidate_metrics": candidate_metrics,
-        "selected_candidate": selected_name,
-        "specialist_client_index": None if specialist_idx is None else int(specialist_idx),
+        "fusion_rule": "direct_evidence_routed_fusion",
+        "candidate_pool": ["evidence_routed"],
+        "candidate_metrics": {},
+        "selected_candidate": "evidence_routed",
+        "specialist_client_index": None,
+        "routing_summary": {name: len(keys) for name, keys in routing_summary.items()},
     }
 
 
@@ -1468,6 +1516,8 @@ def merge_my_merge(state_dicts, weights, meta=None, checkpoints=None, cfg=None):
             "candidate_pool": fusion_info["candidate_pool"],
             "candidate_metrics": fusion_info["candidate_metrics"],
             "selected_candidate": fusion_info["selected_candidate"],
+            "fusion_rule": fusion_info.get("fusion_rule", ""),
+            "routing_summary": fusion_info.get("routing_summary", {}),
         }
     except Exception as exc:
         return base_merged, {
