@@ -2,6 +2,81 @@
 
 生成时间：2026-05-31
 
+## 0. 2026-05-31 晚间更新
+
+本轮工作的目标是修复 `chaoshengmnist_224` 超声数据集上 `my_merge` 退化到 avg 的问题，同时保证其他医学图像数据集不出现大面积回退。
+
+### 0.1 已确认的数据使用方式
+
+`my_merge` 的统计、候选选择和权重估计走 `utils.runtime.build_runtime`，默认 `stats_split=val`。`fisher/regmean` 的统计也走同一个 runtime 入口。`avg` 在 merge 阶段不读数据，但所有方法最终 eval 都走 `test`。
+
+因此当前结果差异不是由于 `my_merge` 偷看 test 或数据读取标准不同造成的。后续不要用 test 做选择、调参或特殊回退。
+
+### 0.2 关键问题与修复
+
+问题 1：`_use_sign_consistent_delta` 的 gate 过窄。
+
+- 坏例：`outputs/codex_current_probe_20260531_190252`
+- `chaoshengmnist_224 / convnext / clients=3 / beta=0`
+- `my_merge` 与 `avg` 都是 `0.105121`
+- `candidate_pool=['avg']`
+
+修复：
+
+- 小型医学图像任务统一允许构造 `sign_consistent_delta` 和 `avg_sign_blend_0p25`。
+- 仍然限制在医学图像数据集集合中，不扩展到 NLP。
+
+问题 2：只靠 sign/blend 不足以修复所有超声格子。
+
+- `chaoshengmnist_224 / convnext / clients=7 / beta=0.01`
+- 诊断候选 test probe 显示 `avg`、`sign_consistent_delta`、`avg_sign_blend_0p25` 都是 `0.105121`
+- 历史可用结果 `0.161725` 来自 M1 诊断权重融合路径
+
+修复：
+
+- 恢复轻量版 `medical_weighted_fusion`，但只作为 M2 候选池中的一个候选。
+- 不恢复旧的 anchor、specialist、prototype、稀疏残差等复杂模块。
+- 最终仍由 `val` 候选评分选择，避免把 weighted fusion 写成无条件主路径。
+
+问题 3：候选评分和最终输出路径不一致。
+
+- 恢复 weighted candidate 后，`organsmnist_224 / resnet / clients=3 / beta=0` 一度掉到 `0.360145`
+- 原因是候选评分用未 BN recalibration 的 state，但最终输出会 BN recalibration
+
+修复：
+
+- 每个候选先按最终路径做 BN recalibration。
+- 再用同一批 `val` batch 评分。
+- 选中的 state 已经是 prepared state，最终阶段不重复 recalibration。
+
+### 0.3 当前代码 smoke 结果
+
+超声关键格子，来源 `outputs/codex_bn_aligned_ultrasound_20260531_2040`：
+
+| dataset | model | clients | beta | selected | test acc |
+|---|---|---:|---:|---|---:|
+| chaoshengmnist_224 | convnext | 3 | 0.0 | avg_sign_blend_0p25 | 0.173405 |
+| chaoshengmnist_224 | convnext | 5 | 0.01 | medical_weighted_fusion | 0.173405 |
+| chaoshengmnist_224 | convnext | 7 | 0.01 | medical_weighted_fusion | 0.161725 |
+
+非超声代表格子，来源 `outputs/codex_bn_aligned_cross_dataset_20260531_2055`：
+
+| dataset | model | clients | beta | selected | test acc |
+|---|---|---:|---:|---|---:|
+| bloodmnist_224 | resnet | 3 | 0.0 | avg_sign_blend_0p25 | 0.552470 |
+| dermamnist_224 | resnet | 3 | 0.0 | avg_sign_blend_0p25 | 0.673815 |
+| organcmnist_224 | resnet | 3 | 0.0 | medical_weighted_fusion | 0.487463 |
+| organsmnist_224 | resnet | 3 | 0.0 | avg | 0.507534 |
+
+### 0.4 接手后优先事项
+
+下一步不要直接全量。建议顺序：
+
+1. 跑更完整的 `chaoshengmnist_224 / convnext` 小网格：`(3,0)`, `(3,0.01)`, `(3,0.1)`, `(5,0)`, `(5,0.01)`, `(5,0.1)`, `(7,0)`, `(7,0.01)`, `(7,0.1)`。
+2. 如果超声稳定，再跑其他数据集同等 smoke。
+3. 如果发现个别格子回退，优先看 `candidate_pool`、`candidate_metrics`、`selected_candidate` 和 BN 后 val 分数，不要先加新模块。
+4. 当前候选 BN 对齐会增加 merge 时间；如果全量太慢，可以考虑引入单独的候选 BN batch 参数，但不要改变 val/test 边界。
+
 ## 1. 用户要求复述
 
 这次工作的核心不是继续堆功能，而是把 `my_merge` 做成一个可信、简洁、可复现的医学图像模型融合方法。用户明确要求如下。
@@ -184,7 +259,7 @@
 
 这轮相对稳定，说明“保守候选 + val 选择”的方向有价值。
 
-### 4.3 当前代码还有不稳定点
+### 4.3 2026-05-31 晚间已修复的不稳定点
 
 目录：
 
@@ -196,12 +271,15 @@
   - clients=3, beta=0.0
   - clients=5, beta=0.01
   - clients=7, beta=0.01
-- 说明当前 `_use_sign_consistent_delta` 触发条件或候选加入逻辑还没有完全稳定。
+- 这轮现在作为历史坏例保留。2026-05-31 晚间已经定位为两类问题：
+  - `_use_sign_consistent_delta` gate 过窄，导致候选池只剩 `avg`。
+  - `clients=7,beta=0.01` 需要 M1 诊断权重融合候选，仅靠 sign/blend 不够。
 
 下一位接手时，应优先对比：
 
 - `outputs/my_merge_probe_validated_select_20260531_150416`
 - `outputs/my_merge_chaosheng_convnext_signfix2_20260531_150557`
+- `outputs/codex_bn_aligned_ultrasound_20260531_2040`
 
 重点检查每个 `meta.json` 里的：
 
@@ -214,16 +292,12 @@
 
 ## 5. 当前运行状态
 
-检查时没有发现新的 `my_merge` 全量训练/融合任务在跑。
-
-只看到一个旧监控进程：
-
-- `python3 scripts/monitor_my_merge_progress.py --root outputs/my_merge_ablation_three_module_full_20260515_170100 ...`
+2026-05-31 晚间最终检查时没有发现后台 Python 实验进程在跑。
 
 如需接着跑，先再次检查进程，避免重复任务：
 
 ```bash
-ps -eo pid,ppid,stat,pcpu,pmem,cmd | rg 'my_merge|run_merge|run_all_avg_eval|python'
+ps -ww -C python -C python3 -o pid,ppid,stat,etime,pcpu,pmem,args
 ```
 
 代码语法检查已通过：
@@ -234,20 +308,7 @@ python3 -m py_compile methods/my_merge.py merge.py scripts/run_all_avg_eval.py
 
 ## 6. 下一步建议
 
-### 第一步：修稳 M2 候选逻辑
-
-当前最可疑的是 `_use_sign_consistent_delta` 触发条件过窄或过宽。
-
-建议优先尝试：
-
-- 不写数据集特判。
-- 对所有医学图像格子都构造 `avg`、`sign_consistent_delta`、`avg_sign_blend_0p25` 候选。
-- 只用 `val` 选择候选。
-- 如果算力太高，再加通用的、与数据集名称无关的门控，例如 label coverage、client specialization、val loss 改善阈值。
-
-这样比靠复杂触发条件更透明，也更符合“合法看数据”。
-
-### 第二步：只跑超声小 probe
+### 第一步：跑完整超声小 probe
 
 先不要跑全量。
 
@@ -255,12 +316,12 @@ python3 -m py_compile methods/my_merge.py merge.py scripts/run_all_avg_eval.py
 
 - `chaoshengmnist_224`
 - `convnext`
-- clients/beta 关键格子：`(3,0)`, `(5,0)`, `(5,0.01)`, `(5,0.1)`, `(7,0)`, `(7,0.01)`, `(7,0.1)`
+- clients/beta 关键格子：`(3,0)`, `(3,0.01)`, `(3,0.1)`, `(5,0)`, `(5,0.01)`, `(5,0.1)`, `(7,0)`, `(7,0.01)`, `(7,0.1)`
 - `num_workers=0`
 - 单 GPU
 - `stats_split=val`
 - `my_merge_stats_max_batches=16`
-- `my_merge_bn_batches=1` 或更低成本配置先 smoke
+- `my_merge_bn_batches=4`
 
 目标：
 
@@ -268,7 +329,7 @@ python3 -m py_compile methods/my_merge.py merge.py scripts/run_all_avg_eval.py
 - full 至少不低于 avg/已有方法太多，并尽量超过。
 - 消融中 M1、M2 要有可见贡献。
 
-### 第三步：再跑普通数据集 smoke
+### 第二步：再跑普通数据集 smoke
 
 超声稳定后，再跑普通医学图像数据集小规模检查：
 
@@ -282,7 +343,7 @@ python3 -m py_compile methods/my_merge.py merge.py scripts/run_all_avg_eval.py
 - 不能大面积下降。
 - 少数格子没超过可以接受，但不能为了超声把其他数据集改坏。
 
-### 第四步：清理主方法长度
+### 第三步：清理主方法长度
 
 用户明确要求 `my_merge` 像正常方法，不要近 2000 行。
 

@@ -12,7 +12,6 @@ from .common import build_task_matrix, disjoint_merge, elect_sign, mask_smallest
 
 EPS = 1e-8
 DEFAULT_STATS_MAX_BATCHES = 16
-DEFAULT_EVAL_MAX_BATCHES = 2
 DEFAULT_BN_BATCHES = 4
 CLIP_IMAGE_MEAN = (0.48145466, 0.4578275, 0.40821073)
 CLIP_IMAGE_STD = (0.26862954, 0.26130258, 0.27577711)
@@ -222,20 +221,7 @@ def _client_specialization_ratio(meta):
 def _use_sign_consistent_delta(meta, cfg):
     if not _component_enabled(cfg, "sign_consistent_delta"):
         return False
-    if meta.get("task_type") != "small":
-        return False
-    clients = meta.get("clients", [])
-    num_clients = len(clients)
-    num_classes = max(1, int(meta.get("num_classes", 1)))
-    if num_clients < max(4, int(0.75 * float(num_classes))):
-        return False
-    total_client_classes = sum(len(set(client.get("classes", []))) for client in clients)
-    near_disjoint_partition = total_client_classes <= int(1.05 * float(num_classes))
-    return near_disjoint_partition and _client_specialization_ratio(meta) <= 0.18
-
-
-def _is_small_med_task(meta):
-    return meta.get("task_type") == "small"
+    return meta.get("task_type") == "small" and _is_medical_image_task(meta)
 
 
 def _is_medical_image_task(meta):
@@ -953,14 +939,10 @@ def _medical_consensus_weights(overall_weights, morph_weights, base_weights):
     return _normalize_scores(consensus, fallback=base_weights)
 
 
-def _layer_fusion_weights(group, base_weights, overall_weights, morph_weights, consensus_weights, cfg):
+def _layer_fusion_weights(group, base_weights, overall_weights, morph_weights, consensus_weights):
     base_weights = torch.as_tensor(base_weights, dtype=torch.float32)
     overall_weights = torch.as_tensor(overall_weights, dtype=torch.float32)
     morph_weights = torch.as_tensor(morph_weights, dtype=torch.float32)
-    if not _component_enabled(cfg, "medical_weighted_fusion"):
-        return base_weights
-    if not _component_enabled(cfg, "layerwise_merge"):
-        return consensus_weights
     if group == "early":
         return _normalize_scores(0.70 * base_weights + 0.30 * morph_weights, fallback=base_weights)
     if group == "late":
@@ -968,9 +950,7 @@ def _layer_fusion_weights(group, base_weights, overall_weights, morph_weights, c
     return _normalize_scores(0.45 * base_weights + 0.55 * consensus_weights, fallback=base_weights)
 
 
-def _classifier_fusion_weights(cls_idx, class_weights, consensus_weights, cfg):
-    if not _component_enabled(cfg, "classwise_head"):
-        return consensus_weights
+def _classifier_fusion_weights(cls_idx, class_weights, consensus_weights):
     row_weights = class_weights[cls_idx]
     return _normalize_scores(0.45 * row_weights + 0.55 * consensus_weights, fallback=consensus_weights)
 
@@ -984,13 +964,12 @@ def _medical_weighted_state_merge(
     class_weights,
     num_classes,
     meta,
-    cfg=None,
 ):
     consensus = _medical_consensus_weights(overall_weights, morph_weights, base_weights)
     merged = OrderedDict()
     routing_summary = {"early": 0, "mid": 0, "late": 0, "classifier": 0}
     group_weights = {
-        group: _layer_fusion_weights(group, base_weights, overall_weights, morph_weights, consensus, cfg)
+        group: _layer_fusion_weights(group, base_weights, overall_weights, morph_weights, consensus)
         for group in ("early", "mid", "late")
     }
 
@@ -1001,15 +980,12 @@ def _medical_weighted_state_merge(
             merged[key] = base_merged[key].detach().clone()
             continue
         if _is_classifier_tensor(key, first, num_classes):
-            if first.ndim == 1:
-                out = first.detach().clone().float().zero_()
-                for cls_idx in range(first.shape[0]):
-                    row_weights = _classifier_fusion_weights(cls_idx, class_weights, consensus, cfg)
+            out = first.detach().clone().float().zero_()
+            for cls_idx in range(first.shape[0]):
+                row_weights = _classifier_fusion_weights(cls_idx, class_weights, consensus)
+                if first.ndim == 1:
                     out[cls_idx] = _weighted_average_for_key([value[cls_idx] for value in values], row_weights)
-            else:
-                out = first.detach().clone().float().zero_()
-                for cls_idx in range(first.shape[0]):
-                    row_weights = _classifier_fusion_weights(cls_idx, class_weights, consensus, cfg)
+                else:
                     out[cls_idx] = _weighted_average_for_key([value[cls_idx] for value in values], row_weights)
             merged[key] = out.to(dtype=first.dtype)
             routing_summary["classifier"] += 1
@@ -1101,6 +1077,10 @@ def _validated_standard_checkpoint_merge(
     state_dicts,
     base_merged,
     base_weights,
+    overall_weights,
+    morph_weights,
+    class_weights,
+    num_classes,
     meta,
     cfg,
     batches,
@@ -1111,6 +1091,21 @@ def _validated_standard_checkpoint_merge(
 ):
     candidates = OrderedDict()
     candidates["avg"] = base_merged
+    candidate_traces = {}
+
+    if _component_enabled(cfg, "medical_weighted_fusion"):
+        weighted_state, weighted_trace = _medical_weighted_state_merge(
+            state_dicts,
+            base_merged,
+            base_weights,
+            overall_weights,
+            morph_weights,
+            class_weights,
+            num_classes,
+            meta,
+        )
+        candidates["medical_weighted_fusion"] = weighted_state
+        candidate_traces["medical_weighted_fusion"] = weighted_trace
 
     if _use_sign_consistent_delta(meta, cfg) and reference_state is not None and reference_param_names is not None:
         sign_state = _medical_sign_consistent_delta_merge(
@@ -1134,10 +1129,19 @@ def _validated_standard_checkpoint_merge(
         }
 
     candidate_metrics = {}
+    prepared_candidates = {}
     best_name = None
     best_key = None
     for name, candidate_state in candidates.items():
-        metrics = _evaluate_candidate_on_batches(meta, candidate_state, cfg, batches, features, labels)
+        prepared_state = _prepare_candidate(
+            meta,
+            candidate_state,
+            cfg,
+            apply_bn=_component_enabled(cfg, "bn_recalibration"),
+            batches=batches,
+        )
+        prepared_candidates[name] = prepared_state
+        metrics = _evaluate_candidate_on_batches(meta, prepared_state, cfg, batches, features, labels)
         candidate_metrics[name] = metrics
         rank_key = (metrics["selection_score"], metrics["val_acc"], -metrics["val_loss"])
         if best_key is None or rank_key > best_key:
@@ -1145,13 +1149,20 @@ def _validated_standard_checkpoint_merge(
             best_name = name
 
     selected_name = best_name or "avg"
-    return candidates[selected_name], {
+    selected_trace = candidate_traces.get(selected_name, {})
+    routing_summary = {"validated_candidates": len(candidates)}
+    routing_summary.update(selected_trace.get("routing_summary", {}))
+    return prepared_candidates.get(selected_name, candidates[selected_name]), {
         "selected_candidate": selected_name,
         "candidate_pool": list(candidates.keys()),
         "candidate_metrics": candidate_metrics,
-        "fusion_weights": [float(x) for x in torch.as_tensor(base_weights, dtype=torch.float32).tolist()],
-        "group_weights": {},
-        "routing_summary": {"validated_candidates": len(candidates)},
+        "fusion_weights": selected_trace.get(
+            "fusion_weights",
+            [float(x) for x in torch.as_tensor(base_weights, dtype=torch.float32).tolist()],
+        ),
+        "group_weights": selected_trace.get("group_weights", {}),
+        "routing_summary": routing_summary,
+        "candidates_prepared": True,
     }
 
 
@@ -1226,7 +1237,6 @@ def _module2_medical_evidence_guided_fusion_and_selection(
         evidence_reliability = float(torch.clamp(features[:, 6].mean(), min=0.0, max=1.0).item())
     else:
         evidence_reliability = 1.0
-    evidence_support_gate = float(client_info.get("evidence_support_gate", 1.0))
 
     if not _component_enabled(cfg, "medical_weighted_fusion"):
         selected_state = base_merged
@@ -1238,6 +1248,10 @@ def _module2_medical_evidence_guided_fusion_and_selection(
             state_dicts,
             base_merged,
             base_weights,
+            overall_weights,
+            morph_weights,
+            class_weights,
+            num_classes,
             meta=meta,
             cfg=cfg,
             batches=batches,
@@ -1253,7 +1267,7 @@ def _module2_medical_evidence_guided_fusion_and_selection(
         meta,
         selected_state,
         cfg,
-        apply_bn=_component_enabled(cfg, "bn_recalibration"),
+        apply_bn=_component_enabled(cfg, "bn_recalibration") and not merge_trace.get("candidates_prepared", False),
         batches=batches,
     )
     return selected_state, {
