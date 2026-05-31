@@ -15,13 +15,13 @@ MODEL_HUB_ROOT="${MODEL_HUB_ROOT:-${ROOT_DIR}/model_hub}"
 DATA_ROOT="${DATA_ROOT:-${ROOT_DIR}/Med_data}"
 
 RUN_TAG="${RUN_TAG:-$(date +%Y%m%d_%H%M%S)}"
-GPU_IDS="${GPU_IDS:-0 1 2}"
+GPU_IDS="${GPU_IDS:-0}"
 DEVICE="${DEVICE:-cuda:0}"
 
-NUM_WORKERS="${NUM_WORKERS:-4}"
+NUM_WORKERS="${NUM_WORKERS:-0}"
 STATS_NUM_WORKERS="${STATS_NUM_WORKERS:-0}"
-SMALL_BATCH_SIZE="${SMALL_BATCH_SIZE:-128}"
-VLM_BATCH_SIZE="${VLM_BATCH_SIZE:-64}"
+SMALL_BATCH_SIZE="${SMALL_BATCH_SIZE:-64}"
+VLM_BATCH_SIZE="${VLM_BATCH_SIZE:-32}"
 
 DENSITY="${DENSITY:-0.5}"
 DARE_SEED="${DARE_SEED:-42}"
@@ -50,6 +50,10 @@ FORMAL_METHODS_DEFAULT=( avg ties dare_linear dare_ties regmean fisher breadcrum
 ALL_SUPPORTED_METHODS=( avg ties dare_linear dare_ties regmean fisher breadcrumbs model_stock from iso_c iso_cts free_merge robustmerge adamerging my_merge my_method )
 
 export TOKENIZERS_PARALLELISM="false"
+export OMP_NUM_THREADS="${OMP_NUM_THREADS:-1}"
+export MKL_NUM_THREADS="${MKL_NUM_THREADS:-1}"
+export OPENBLAS_NUM_THREADS="${OPENBLAS_NUM_THREADS:-1}"
+export NUMEXPR_NUM_THREADS="${NUMEXPR_NUM_THREADS:-1}"
 
 REPRO_MODE="${REPRO_MODE:-1}"
 case "${REPRO_MODE,,}" in
@@ -77,7 +81,14 @@ build_method_args() {
   local -n out_ref="$2"
   out_ref=(--merge-weight-mode equal)
   case "${method}" in
-    avg|ties|breadcrumbs|model_stock|from|iso_c|free_merge|robustmerge|my_method|my_merge)
+    avg|ties|breadcrumbs|model_stock|from|iso_c|free_merge|robustmerge|my_method)
+      ;;
+    my_merge)
+      out_ref+=(
+        --stats-split "${STATS_SPLIT}"
+        --stats-batch-size "${STATS_BATCH_SIZE}"
+        --stats-num-workers "${STATS_NUM_WORKERS}"
+      )
       ;;
     dare_linear|dare_ties)
       out_ref+=(--density "${DENSITY}" --dare-seed "${DARE_SEED}")

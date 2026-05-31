@@ -18,6 +18,14 @@ if (( GPU_COUNT == 0 )); then
   echo "GPU_IDS is empty" >&2
   exit 1
 fi
+MAX_PARALLEL_JOBS="${MAX_PARALLEL_JOBS:-1}"
+if (( MAX_PARALLEL_JOBS < 1 )); then
+  MAX_PARALLEL_JOBS=1
+fi
+if (( GPU_COUNT > MAX_PARALLEL_JOBS )); then
+  GPU_ARRAY=("${GPU_ARRAY[@]:0:${MAX_PARALLEL_JOBS}}")
+  GPU_COUNT="${#GPU_ARRAY[@]}"
+fi
 
 read -r -a CUSTOM_EXTRA_ARGS_ARRAY <<< "${CUSTOM_EXTRA_ARGS}"
 
@@ -89,6 +97,8 @@ done
 
 echo "[$(date +%F\ %T)] RUN_TAG=${RUN_TAG}"
 echo "[$(date +%F\ %T)] GPUs=${GPU_IDS}"
+echo "[$(date +%F\ %T)] active GPUs=${GPU_ARRAY[*]}"
+echo "[$(date +%F\ %T)] max_parallel_jobs=${MAX_PARALLEL_JOBS}"
 echo "[$(date +%F\ %T)] device=${DEVICE}"
 echo "[$(date +%F\ %T)] task_types=${TASK_TYPES[*]}"
 echo "[$(date +%F\ %T)] custom_methods=${CUSTOM_METHODS[*]}"

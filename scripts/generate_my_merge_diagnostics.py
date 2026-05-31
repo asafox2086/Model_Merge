@@ -39,6 +39,8 @@ WEIGHT_FIELDS = [
     "hard_acc_H",
     "margin_Q",
     "focal_acc_F",
+    "class_coverage_gate",
+    "evidence_reliability",
 ]
 
 VIZ_FIELDS = [
@@ -145,6 +147,8 @@ def build_weight_rows(payload):
                     "hard_acc_H": safe_float(item.get("hard_case_accuracy", "")),
                     "margin_Q": safe_float(item.get("margin_confidence", "")),
                     "focal_acc_F": safe_float(item.get("focal_hard_case_accuracy", "")),
+                    "class_coverage_gate": safe_float(item.get("class_coverage_gate", "")),
+                    "evidence_reliability": safe_float(item.get("evidence_reliability", "")),
                 }
             )
             rows.append(row)

@@ -9,7 +9,7 @@ REPRO_TAG="${REPRO_TAG:-codex_full_repro_20260507}"
 DATASETS="${DATASETS:-bloodmnist_224 dermamnist_224 organcmnist_224 organsmnist_224 chaoshengmnist_224}"
 SMALL_MODELS="${SMALL_MODELS:-resnet convnext vit_t swin_tiny}"
 CLIP_MODELS="${CLIP_MODELS:-openai/clip-vit-base-patch32}"
-GPU_IDS="${GPU_IDS:-0 1}"
+GPU_IDS="${GPU_IDS:-0}"
 
 while pgrep -f "${REPRO_TAG}|run_compare_multi_gpu.sh" >/dev/null; do
   sleep 60
@@ -18,6 +18,10 @@ done
 env \
   RUN_TAG="${RUN_TAG}" \
   GPU_IDS="${GPU_IDS}" \
+  MAX_PARALLEL_JOBS="${MAX_PARALLEL_JOBS:-1}" \
+  NUM_WORKERS="${NUM_WORKERS:-0}" \
+  SMALL_BATCH_SIZE="${SMALL_BATCH_SIZE:-64}" \
+  VLM_BATCH_SIZE="${VLM_BATCH_SIZE:-32}" \
   DATASETS="${DATASETS}" \
   SMALL_MODELS="${SMALL_MODELS}" \
   CLIP_MODELS="${CLIP_MODELS}" \

@@ -2,7 +2,6 @@ __pycache__/
 *.pyc
 outputs/
 model_hub/
-methods/
 *.log
 logs/
 
@@ -12,3 +11,6 @@ logs/
 Med_data/
 result/
 reference_cache/
+methods/*
+!methods/__init__.py
+!methods/my_merge_extra.py

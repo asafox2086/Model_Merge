@@ -10,14 +10,19 @@ if [[ ! -x "${PYTHON_BIN}" ]]; then
 fi
 
 RUN_TAG="${RUN_TAG:-my_merge_full_refresh_$(date +%Y%m%d_%H%M%S)}"
-GPU_IDS="${GPU_IDS:-0 1}"
+GPU_IDS="${GPU_IDS:-0}"
 DATASETS="${DATASETS:-bloodmnist_224 dermamnist_224 organcmnist_224 organsmnist_224 chaoshengmnist_224}"
 SMALL_MODELS="${SMALL_MODELS:-resnet convnext vit_t swin_tiny}"
 CLIP_MODELS="${CLIP_MODELS:-openai/clip-vit-base-patch32}"
 OUTPUT_ROOT="${OUTPUT_ROOT:-${ROOT_DIR}/outputs/custom_methods_${RUN_TAG}}"
 LOG_ROOT="${LOG_ROOT:-${ROOT_DIR}/logs/${RUN_TAG}}"
-NUM_WORKERS_SPLIT="${NUM_WORKERS_SPLIT:-2}"
-MY_MERGE_STATS_MAX_BATCHES="${MY_MERGE_STATS_MAX_BATCHES:-2}"
+NUM_WORKERS_SPLIT="${NUM_WORKERS_SPLIT:-0}"
+STATS_SPLIT="${STATS_SPLIT:-val}"
+STATS_BATCH_SIZE="${STATS_BATCH_SIZE:-32}"
+STATS_NUM_WORKERS="${STATS_NUM_WORKERS:-${NUM_WORKERS_SPLIT}}"
+SMALL_BATCH_SIZE="${SMALL_BATCH_SIZE:-64}"
+VLM_BATCH_SIZE="${VLM_BATCH_SIZE:-32}"
+MY_MERGE_STATS_MAX_BATCHES="${MY_MERGE_STATS_MAX_BATCHES:-1}"
 MY_MERGE_EVAL_MAX_BATCHES="${MY_MERGE_EVAL_MAX_BATCHES:-1}"
 MY_MERGE_BN_BATCHES="${MY_MERGE_BN_BATCHES:-1}"
 
@@ -32,6 +37,9 @@ echo "[$(date +%F\ %T)] DATASETS=${DATASETS}"
 echo "[$(date +%F\ %T)] SMALL_MODELS=${SMALL_MODELS}"
 echo "[$(date +%F\ %T)] CLIP_MODELS=${CLIP_MODELS}"
 echo "[$(date +%F\ %T)] NUM_WORKERS_SPLIT=${NUM_WORKERS_SPLIT}"
+echo "[$(date +%F\ %T)] STATS_SPLIT=${STATS_SPLIT}"
+echo "[$(date +%F\ %T)] STATS_BATCH_SIZE=${STATS_BATCH_SIZE}"
+echo "[$(date +%F\ %T)] STATS_NUM_WORKERS=${STATS_NUM_WORKERS}"
 echo "[$(date +%F\ %T)] MY_MERGE_STATS_MAX_BATCHES=${MY_MERGE_STATS_MAX_BATCHES}"
 echo "[$(date +%F\ %T)] MY_MERGE_EVAL_MAX_BATCHES=${MY_MERGE_EVAL_MAX_BATCHES}"
 echo "[$(date +%F\ %T)] MY_MERGE_BN_BATCHES=${MY_MERGE_BN_BATCHES}"
@@ -68,6 +76,10 @@ export HF_LOCAL_FILES_ONLY="${HF_LOCAL_FILES_ONLY:-1}"
 export HF_HUB_OFFLINE="${HF_HUB_OFFLINE:-1}"
 export TRANSFORMERS_OFFLINE="${TRANSFORMERS_OFFLINE:-1}"
 export TOKENIZERS_PARALLELISM=false
+export OMP_NUM_THREADS="${OMP_NUM_THREADS:-1}"
+export MKL_NUM_THREADS="${MKL_NUM_THREADS:-1}"
+export OPENBLAS_NUM_THREADS="${OPENBLAS_NUM_THREADS:-1}"
+export NUMEXPR_NUM_THREADS="${NUMEXPR_NUM_THREADS:-1}"
 
 run_small_job() {
   local model_name="$1"
@@ -84,12 +96,15 @@ run_small_job() {
       --output-root "${job_output}" \
       --device cuda:0 \
       --num-workers "${NUM_WORKERS_SPLIT}" \
+      --stats-split "${STATS_SPLIT}" \
+      --stats-batch-size "${STATS_BATCH_SIZE}" \
+      --stats-num-workers "${STATS_NUM_WORKERS}" \
       --task-type small \
       --method my_merge \
       --resume \
       --delete-merged \
       --merge-weight-mode equal \
-      --small-batch-size 128 \
+      --small-batch-size "${SMALL_BATCH_SIZE}" \
       --vlm-batch-size 1 \
       --my-merge-stats-max-batches "${MY_MERGE_STATS_MAX_BATCHES}" \
       --my-merge-eval-max-batches "${MY_MERGE_EVAL_MAX_BATCHES}" \
@@ -116,13 +131,16 @@ run_vlm_job() {
       --output-root "${job_output}" \
       --device cuda:0 \
       --num-workers "${NUM_WORKERS_SPLIT}" \
+      --stats-split "${STATS_SPLIT}" \
+      --stats-batch-size "${STATS_BATCH_SIZE}" \
+      --stats-num-workers "${STATS_NUM_WORKERS}" \
       --task-type vlm \
       --method my_merge \
       --resume \
       --delete-merged \
       --merge-weight-mode equal \
       --small-batch-size 1 \
-      --vlm-batch-size 64 \
+      --vlm-batch-size "${VLM_BATCH_SIZE}" \
       --my-merge-stats-max-batches "${MY_MERGE_STATS_MAX_BATCHES}" \
       --my-merge-eval-max-batches "${MY_MERGE_EVAL_MAX_BATCHES}" \
       --my-merge-bn-batches "${MY_MERGE_BN_BATCHES}" \
@@ -132,26 +150,21 @@ run_vlm_job() {
   } >> "${job_log}" 2>&1
 }
 
-pids=()
 job_idx=0
+fail=0
 for model_name in "${SMALL_MODEL_ARRAY[@]}"; do
   gpu_id="${GPU_ARRAY[$((job_idx % ${#GPU_ARRAY[@]}))]}"
-  run_small_job "${model_name}" "${gpu_id}" &
-  pids+=("$!")
+  if ! run_small_job "${model_name}" "${gpu_id}"; then
+    fail=1
+  fi
   job_idx=$((job_idx + 1))
 done
 for clip_model in "${CLIP_MODEL_ARRAY[@]}"; do
   gpu_id="${GPU_ARRAY[$((job_idx % ${#GPU_ARRAY[@]}))]}"
-  run_vlm_job "${clip_model}" "${gpu_id}" &
-  pids+=("$!")
-  job_idx=$((job_idx + 1))
-done
-
-fail=0
-for pid in "${pids[@]}"; do
-  if ! wait "${pid}"; then
+  if ! run_vlm_job "${clip_model}" "${gpu_id}"; then
     fail=1
   fi
+  job_idx=$((job_idx + 1))
 done
 
 if (( fail != 0 )); then

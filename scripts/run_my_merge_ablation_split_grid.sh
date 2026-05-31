@@ -9,11 +9,12 @@ OUTPUT_ROOT="${OUTPUT_ROOT:-${ROOT_DIR}/outputs/my_merge_split_${ABLATION}_$(dat
 LOG_ROOT="${LOG_ROOT:-${ROOT_DIR}/logs/my_merge_split_${ABLATION}_$(date +%Y%m%d_%H%M%S)}"
 MY_MERGE_STATS_MAX_BATCHES="${MY_MERGE_STATS_MAX_BATCHES:-1}"
 MY_MERGE_EVAL_MAX_BATCHES="${MY_MERGE_EVAL_MAX_BATCHES:-1}"
-MY_MERGE_BN_BATCHES="${MY_MERGE_BN_BATCHES:-0}"
+MY_MERGE_BN_BATCHES="${MY_MERGE_BN_BATCHES:-1}"
 MY_MERGE_EXPORT_DIAGNOSTICS="${MY_MERGE_EXPORT_DIAGNOSTICS:-true}"
 MY_MERGE_DIAGNOSTICS_PLOT="${MY_MERGE_DIAGNOSTICS_PLOT:-false}"
 MY_MERGE_VIZ_MAX_BATCHES="${MY_MERGE_VIZ_MAX_BATCHES:-1}"
 MY_MERGE_VIZ_MAX_PLOTS="${MY_MERGE_VIZ_MAX_PLOTS:-0}"
+MAX_PARALLEL_JOBS="${MAX_PARALLEL_JOBS:-1}"
 
 mkdir -p "${OUTPUT_ROOT}/reports" "${LOG_ROOT}"
 
@@ -22,6 +23,13 @@ GPU_COUNT="${#GPU_ARRAY[@]}"
 if (( GPU_COUNT == 0 )); then
   echo "GPU_IDS is empty" >&2
   exit 1
+fi
+if (( MAX_PARALLEL_JOBS < 1 )); then
+  MAX_PARALLEL_JOBS=1
+fi
+if (( GPU_COUNT > MAX_PARALLEL_JOBS )); then
+  GPU_ARRAY=("${GPU_ARRAY[@]:0:${MAX_PARALLEL_JOBS}}")
+  GPU_COUNT="${#GPU_ARRAY[@]}"
 fi
 
 RESUME_ARGS=()
@@ -41,6 +49,9 @@ case " ${TASK_TYPES[*]} " in
 esac
 
 diagnostic_args=(
+  --stats-split "${STATS_SPLIT}"
+  --stats-batch-size "${STATS_BATCH_SIZE}"
+  --stats-num-workers "${STATS_NUM_WORKERS}"
   --my-merge-ablation "${ABLATION}"
   --my-merge-stats-max-batches "${MY_MERGE_STATS_MAX_BATCHES}"
   --my-merge-eval-max-batches "${MY_MERGE_EVAL_MAX_BATCHES}"
@@ -139,10 +150,18 @@ esac
   echo "log_root=${LOG_ROOT}"
   echo "ablation=${ABLATION}"
   echo "gpu_ids=${GPU_IDS}"
+  echo "active_gpu_ids=${GPU_ARRAY[*]}"
+  echo "max_parallel_jobs=${MAX_PARALLEL_JOBS}"
   echo "task_types=${TASK_TYPES[*]}"
   echo "datasets=${DATASETS[*]}"
   echo "small_models=${SMALL_MODELS[*]}"
   echo "clip_models=${CLIP_MODELS[*]}"
+  echo "num_workers=${NUM_WORKERS}"
+  echo "stats_split=${STATS_SPLIT}"
+  echo "stats_batch_size=${STATS_BATCH_SIZE}"
+  echo "stats_num_workers=${STATS_NUM_WORKERS}"
+  echo "small_batch_size=${SMALL_BATCH_SIZE}"
+  echo "vlm_batch_size=${VLM_BATCH_SIZE}"
   echo "my_merge_stats_max_batches=${MY_MERGE_STATS_MAX_BATCHES}"
   echo "my_merge_eval_max_batches=${MY_MERGE_EVAL_MAX_BATCHES}"
   echo "my_merge_bn_batches=${MY_MERGE_BN_BATCHES}"
