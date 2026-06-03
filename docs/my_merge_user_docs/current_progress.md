@@ -369,3 +369,108 @@ GPU 正式全量计划：
 - 相对 2026-06-01 旧版 full：`wins/ties/losses = 1/17/0`，平均 delta `+0.000050`。
 - 刚才的坏例 `dermamnist_224 / convnext / clients=3 / beta=0.01` 已从坏版 `0.109726` 回到 `0.668828`，与旧版 full 持平。
 - 超声 `chaoshengmnist_224 / convnext` 基本无变化，只有 `clients=5 / beta=0.01` 从旧版 `0.172507` 到 `0.173405`，其余持平。因此当前修复解决了负优化 bug，但还没有证明能改善超声主问题。
+
+## 2026-06-03 超声 profile 改造尝试与回删记录
+
+用户提出 M1/M2 在超声上可能把 speckle 噪声当作诊断证据，导致 M1 gate 和 M2 delta/soup 放大噪声。代码核对后确认这些风险在当前实现中存在：
+
+- M1 `_generic_medical_features` 使用 Sobel、局部对比和局部方差，缺少 speckle-aware 去噪，也没有声影/强回声证据。
+- M1 focal 权重固定为 `(1 - margin)^1.35`，超声低 margin 时容易无差别抬高 hard/focal 权重。
+- M2 sign-delta 只用全局 `preserve_density=0.5`，没有区分浅层纹理层和深层语义层。
+- M2 selection score 固定 `0.85 * val_acc + 0.15 * val_medical_acc - 0.001 * val_loss`，top-2 soup 只做分数守门，未考虑两个 checkpoint 的权重距离。
+
+尝试过的 v9 代码改动：
+
+- M1 特征从 7 维扩展到 11 维，新增 `speckle_noise`、`acoustic_shadow`、`hyperechoic_response`、`ultrasound_profile`。
+- 超声 profile 不是用 `dataset == chaoshengmnist_224` 触发，而是由图像边缘残差和 Lee-like despeckle 后的 speckle 估计得到；profile 高时降低 Sobel/局部方差的主导性，增加声束方向衰减和强回声响应。
+- M1 scoring 根据 `ultrasound_profile` 自动降低 evidence floor、降低 focal 幂次和 focal 占比、提高 diagnostic weight softmax temperature，并加重未见类别惩罚。
+- M2 selection score 根据 `ultrasound_profile` 把 `val_medical_acc` 权重从 `0.15` 逐步提高到最高 `0.40`。
+- M2 在 `ultrasound_profile >= 0.35` 时加入 `sign_ultrasound_sparse` 和 `sign_ultrasound_balanced` 两个层级稀疏候选：浅层更激进裁剪，深层保留更高密度。
+- Guarded Soup 在 profile 高时要求至少 `+0.003` 的 selection score 增益，并限制 top-2 候选的相对权重距离不超过 `0.08`。
+
+验证结果：
+
+- 路径：`outputs/codex_my_merge_v9_ultrasound_smoke_20260603_1200/full_convnext_critical`。
+- 范围：`dermamnist_224`、`chaoshengmnist_224`，`convnext`，共 18 个格子。
+- 状态：18/18 OK，但相对 v8 guarded smoke 明显负优化。
+- 代表坏例：`dermamnist_224 / convnext / clients=3 / beta=0.01` 从 v8 的 `0.668828` 掉到 `0.109726`。
+- 相对 v8 guarded：`wins/ties/losses = 0/1/17`，平均 delta `-0.031061`。
+
+失败原因：
+
+- 图像统计 profile 触发方向错误：`chaoshengmnist_224` 的 `ultrasound_profile` 只有约 `0.022`，没有触发超声分支；`dermamnist_224` 反而达到约 `0.519`，错误触发超声分支。
+- 这说明用当前的边缘残差和 Lee-like despeckle 统计去识别“超声物理特性”不可靠，会把皮肤镜纹理误当作 speckle。
+- 层级稀疏和更严 soup guard 的想法本身仍可作为后续方向，但必须先有可靠的医学域证据；不能建立在误触发 profile 上。
+
+处理结论：
+
+- v9 的 `speckle_noise`、`acoustic_shadow`、`hyperechoic_response`、`ultrasound_profile`、`sign_ultrasound_sparse`、`sign_ultrasound_balanced` 已从代码删除。
+- 当前代码回到 v8 guarded：保留 delta reference 修复、M1 医学共识权重注入 sign-delta、guarded top-2 soup。
+- 后续若继续做超声专用优化，优先用可验证的 ultrasound-only 数据增强/验证协议或明确的成像元信息，不再用这版图像统计 profile 作为 gate。
+
+## 2026-06-03 可控超声单独处理开关
+
+用户允许对 `chaoshengmnist_224` 单独处理，但要求可控、可关闭，并验证是否有效。
+
+本步设计：
+
+- 新增显式开关 `my_merge_ultrasound_specialist`，默认关闭。
+- 批量脚本新增 `--my-merge-ultrasound-specialist` / `--no-my-merge-ultrasound-specialist`。
+- 开关只有在 `meta["dataset"] == "chaoshengmnist_224"` 时生效；其他医学数据集即使传入开关也不走超声分支。
+- 不改数据读取、不改 split、不看 test 做选择，仍然只用 `val` 选择候选，`test` 只做最终评估。
+- 超声开关打开且未显式传 `my_merge_stats_max_batches` 时，M1/M2 统计默认使用全量 `val`，避免只看前 16 个 batch 时类别覆盖不足；仍可通过命令行覆盖。
+- 不再引入 v9 的图像统计 `ultrasound_profile`，避免把 `dermamnist_224` 误判为超声。
+
+本步代码策略：
+
+- M1：超声开关打开时，对 hard/focal 权重和 M1 权重 softmax 做轻度平滑，减少 speckle/低 margin 样本无差别放大。
+- M2：增加保守候选 `ultrasound_avg_weighted_blend_0p5`、`ultrasound_avg_weighted_blend_0p75`、`ultrasound_avg_sign_blend_0p10`，让 val 可以在 avg、医学加权、轻量 sign 注入之间选择。
+- M2：超声开关打开时默认禁用 top-2 soup，避免小验证集近分数候选直接平均造成测试回退。
+- M2 selection score：超声开关打开时默认把 `val_medical_acc` 权重从 `0.15` 降到 `0.08`，更偏向普通 val acc，减少通用医学证据在超声噪声上的误导。
+
+待验证：
+
+- 先跑 `chaoshengmnist_224 / convnext` smoke，对比 v8 guarded。
+- 如果没有明显负优化，再跑 `chaoshengmnist_224` 45 格 full。
+
+convnext smoke 结果：
+
+- 路径：`outputs/codex_my_merge_ultrasound_specialist_convnext_20260603`。
+- 范围：`chaoshengmnist_224 / convnext`，9 个格子。
+- 状态：9/9 OK。
+- 相对 v8 guarded convnext smoke：`wins/ties/losses = 0/9/0`，平均 delta `0.0`。
+- 相对 `result/all_results.md` formal best：`wins/ties/losses = 7/0/2`，平均 delta `-0.00129`。
+- 具体结果：`c3_b0=0.173405`、`c3_b0.01=0.173405`、`c3_b0.1=0.173405`、`c5_b0=0.173405`、`c5_b0.01=0.173405`、`c5_b0.1=0.173405`、`c7_b0=0.173405`、`c7_b0.01=0.161725`、`c7_b0.1=0.161725`。
+- 结论：开关生效但 convnext 不改善；未见 v9 那种负优化。继续跑 `chaoshengmnist_224` 45 格，检查其他架构是否受益。
+
+45 格 formal 对齐验证：
+
+- 路径：`outputs/codex_my_merge_ultrasound_specialist_chaosheng45_20260603`。
+- 说明：本次命令实际按 manifest 跑了 81 格，其中 45 格与 `result/all_results.md` formal 表对齐；主结论只统计这 45 格。
+- 相对 v8 guarded 当前 full：`wins/ties/losses = 21/17/7`，平均 delta `+0.011720`。
+- 相对 `result/all_results.md` formal best：`wins/ties/losses = 29/0/16`，平均 delta `+0.015833`。
+- 旧 v8 guarded 在同一 45 格上相对 formal best 是 `20/0/25`，平均 delta `+0.004112`；因此超声开关把 formal best 对比从 20 胜提升到 29 胜，平均优势增加约 `+0.01172`。
+
+按模型分解：
+
+| model | mean specialist | mean v8 | mean formal best | vs v8 W/T/L | vs best W/T/L | delta vs best |
+|---|---:|---:|---:|---:|---:|---:|
+| resnet | 0.414196 | 0.372567 | 0.307178 | 7/0/2 | 9/0/0 | +0.107018 |
+| convnext | 0.170810 | 0.170710 | 0.172100 | 1/8/0 | 7/0/2 | -0.001290 |
+| vit_t | 0.200559 | 0.195168 | 0.229711 | 5/0/4 | 4/0/5 | -0.029152 |
+| swin_tiny | 0.237796 | 0.225117 | 0.217744 | 7/2/0 | 7/0/2 | +0.020051 |
+| clip-vit-base-patch32 | 0.161925 | 0.163123 | 0.179389 | 1/7/1 | 2/0/7 | -0.017464 |
+
+候选选择分布：
+
+- `medical_weighted_fusion`：11/45。
+- `avg`：9/45。
+- `sign_consistent_delta`：8/45。
+- `ultrasound_avg_weighted_blend_0p75`：6/45。
+- `ultrasound_avg_weighted_blend_0p5`：6/45。
+- `avg_sign_blend_0p25`：5/45。
+
+补充：
+
+- 额外 manifest 模型也跑完：`densenet` mean `0.453729`、`efficientnet` mean `0.454228`、`mobilenet` mean `0.360387`、`resnet34` mean `0.426375`。这些不在 `result/all_results.md` formal 表中，暂不纳入论文主对比。
+- 结论：这个可控超声分支有价值，应该保留开关；它改善了 formal 对齐 45 格的总体结果，但 `vit_t` 和 `clip-vit` 仍低于现有 best，需要后续专门分析。

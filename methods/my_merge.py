@@ -17,6 +17,8 @@ DEFAULT_RELIABILITY_THRESHOLD = 0.10
 DEFAULT_SEPARATION_THRESHOLD = 0.05
 DEFAULT_SOUP_SCORE_MARGIN = 0.05
 DEFAULT_SOUP_MIN_SCORE_DELTA = 0.0
+DEFAULT_ULTRASOUND_SELECTION_MEDICAL_WEIGHT = 0.08
+DEFAULT_ULTRASOUND_SOUP_MIN_SCORE_DELTA = 0.005
 CLIP_IMAGE_MEAN = (0.48145466, 0.4578275, 0.40821073)
 CLIP_IMAGE_STD = (0.26862954, 0.26130258, 0.27577711)
 
@@ -98,7 +100,7 @@ METHOD_MODULES = {
     },
     "module_2": {
         "name": "Validated Conservative Checkpoint Fusion",
-        "purpose": "Fuse client deltas with medical evidence, inject M1 consensus into sign-consistent deltas, and use validation-guided top-2 soup when candidates are statistically close.",
+        "purpose": "Fuse client deltas with medical evidence, inject M1 consensus into sign-consistent deltas, and use guarded validation soup when candidates are statistically close.",
     },
 }
 
@@ -341,6 +343,13 @@ def _component_enabled(cfg, name, default=True):
     return default and name not in _disabled_components(cfg)
 
 
+def _ultrasound_specialist_enabled(meta, cfg):
+    cfg = cfg or {}
+    if meta is None or meta.get("dataset") != "chaoshengmnist_224":
+        return False
+    return _parse_bool(cfg.get("my_merge_ultrasound_specialist", False), default=False)
+
+
 def _ablation_config(cfg):
     components = [
         "image_space",
@@ -535,6 +544,8 @@ def _resolve_max_batches(meta, cfg, cfg_key, default_value):
     raw = cfg.get(cfg_key, None)
     if raw not in (None, ""):
         return int(raw)
+    if cfg_key == "my_merge_stats_max_batches" and _ultrasound_specialist_enabled(meta, cfg):
+        return int(cfg.get("my_merge_ultrasound_stats_max_batches", 0) or 0)
     family = _model_family(meta)
     if family in {"transformer", "vlm"}:
         return 0
@@ -598,17 +609,28 @@ def _evaluate_client_predictions(meta, checkpoint, batches, cfg):
 def _client_scores(meta, checkpoints, batches, features, labels, cfg, base_weights):
     num_clients = len(checkpoints)
     num_classes = int(meta["num_classes"])
+    ultrasound_specialist = _ultrasound_specialist_enabled(meta, cfg)
     evidence_reliability = _evidence_reliability_from_features(features)
     metadata_prior = _metadata_prior_weights(meta, base_weights)
     support_gate = _evidence_support_gate(labels, num_classes)
     label_coverage = _label_coverage_ratio(labels, num_classes)
-    evidence_floor = 0.30 if label_coverage >= 0.50 else 0.0
-    class_floor = 0.15 if label_coverage >= 0.50 else 0.0
+    if ultrasound_specialist:
+        evidence_floor = 0.18 if label_coverage >= 0.50 else 0.0
+        class_floor = 0.10 if label_coverage >= 0.50 else 0.0
+        hard_quantile = 0.70
+        focal_power = float(cfg.get("my_merge_ultrasound_focal_power", 0.95) or 0.95)
+        focal_max = float(cfg.get("my_merge_ultrasound_focal_max", 2.0) or 2.0)
+    else:
+        evidence_floor = 0.30 if label_coverage >= 0.50 else 0.0
+        class_floor = 0.15 if label_coverage >= 0.50 else 0.0
+        hard_quantile = 0.60
+        focal_power = 1.35
+        focal_max = 2.5
     evidence_gate = max(evidence_floor, support_gate) if labels.numel() > 0 else 0.0
     class_gate = max(class_floor, support_gate) if labels.numel() > 0 else 0.0
     sample_importance = _medical_sample_weights(meta, features, labels, num_classes, cfg=cfg)
     class_rarity = _class_rarity_weights(labels, num_classes, meta, cfg=cfg, evidence_reliability=evidence_reliability)
-    hard_mask = sample_importance >= torch.quantile(sample_importance, q=0.60)
+    hard_mask = sample_importance >= torch.quantile(sample_importance, q=hard_quantile)
     use_focal = _component_enabled(cfg, "focal_weight")
 
     overall_scores = []
@@ -643,7 +665,7 @@ def _client_scores(meta, checkpoints, batches, features, labels, cfg, base_weigh
         hard_acc = float(correct[hard_mask].mean().item()) if torch.any(hard_mask) else overall_acc
         margin_score = float((margin * sample_importance).sum().item() / sample_importance.sum().item())
         if use_focal:
-            focal_weight = sample_importance * torch.clamp((1.0 - margin).pow(1.35) + 0.25, min=0.25, max=2.5)
+            focal_weight = sample_importance * torch.clamp((1.0 - margin).pow(focal_power) + 0.25, min=0.25, max=focal_max)
         else:
             focal_weight = sample_importance
         focal_acc = float((correct * focal_weight).sum().item() / (focal_weight.sum().item() + EPS))
@@ -699,8 +721,8 @@ def _client_scores(meta, checkpoints, batches, features, labels, cfg, base_weigh
         overall_scores,
         fallback=metadata_prior,
         evidence_reliability=evidence_reliability,
-        temperature=0.78,
-        floor=0.025,
+        temperature=1.02 if ultrasound_specialist else 0.78,
+        floor=0.04 if ultrasound_specialist else 0.025,
     )
     overall_weights = _normalize_scores(
         (1.0 - evidence_gate) * metadata_prior + evidence_gate * overall_weights,
@@ -710,8 +732,8 @@ def _client_scores(meta, checkpoints, batches, features, labels, cfg, base_weigh
         morph_scores,
         fallback=metadata_prior,
         evidence_reliability=evidence_reliability,
-        temperature=0.72,
-        floor=0.025,
+        temperature=0.98 if ultrasound_specialist else 0.72,
+        floor=0.04 if ultrasound_specialist else 0.025,
     )
     morph_weights = _normalize_scores(
         (1.0 - evidence_gate) * metadata_prior + evidence_gate * morph_weights,
@@ -723,8 +745,8 @@ def _client_scores(meta, checkpoints, batches, features, labels, cfg, base_weigh
             class_scores[cls_idx],
             fallback=morph_weights,
             evidence_reliability=evidence_reliability,
-            temperature=0.84,
-            floor=0.05,
+            temperature=1.05 if ultrasound_specialist else 0.84,
+            floor=0.08 if ultrasound_specialist else 0.05,
         )
         cls_weight = _normalize_scores(
             (1.0 - class_gate) * morph_weights + class_gate * cls_weight,
@@ -1033,9 +1055,9 @@ def _medical_delta_weighted_state_merge(
     }
 
 
-def _medical_sign_consistent_delta_merge(state_dicts, base_merged, base_state, param_keys, weights):
+def _medical_sign_consistent_delta_merge(state_dicts, base_merged, base_state, param_keys, weights, preserve_density=0.5):
     task_matrix, base_vector = build_task_matrix(state_dicts, base_state, param_keys)
-    trimmed = mask_smallest_magnitude(task_matrix, preserve_density=0.5)
+    trimmed = mask_smallest_magnitude(task_matrix, preserve_density=preserve_density)
     elected_sign = elect_sign(trimmed)
     merged_delta = disjoint_merge(trimmed, elected_sign, weights=weights)
     merged_vector = base_vector + merged_delta
@@ -1056,6 +1078,23 @@ def _blend_state_dicts(left, right, right_weight):
         else:
             merged[key] = left_value.detach().clone()
     return merged
+
+
+def _selection_score_from_metrics(meta, cfg, val_acc, val_medical_acc, val_loss):
+    medical_weight = _selection_medical_weight(meta, cfg)
+    ordinary_weight = 1.0 - medical_weight
+    return ordinary_weight * val_acc + medical_weight * val_medical_acc - 0.001 * val_loss
+
+
+def _selection_medical_weight(meta, cfg):
+    if _ultrasound_specialist_enabled(meta, cfg):
+        medical_weight = float(
+            cfg.get("my_merge_ultrasound_selection_medical_weight", DEFAULT_ULTRASOUND_SELECTION_MEDICAL_WEIGHT)
+            or DEFAULT_ULTRASOUND_SELECTION_MEDICAL_WEIGHT
+        )
+    else:
+        medical_weight = 0.15
+    return max(0.0, min(1.0, medical_weight))
 
 
 def _evaluate_candidate_on_batches(meta, state_dict, cfg, batches, features, labels):
@@ -1095,12 +1134,13 @@ def _evaluate_candidate_on_batches(meta, state_dict, cfg, batches, features, lab
     val_acc = correct / float(total)
     val_medical_acc = weighted_correct / max(weighted_total, EPS)
     val_loss = loss_sum / float(total)
-    selection_score = 0.85 * val_acc + 0.15 * val_medical_acc - 0.001 * val_loss
+    selection_score = _selection_score_from_metrics(meta, cfg, val_acc, val_medical_acc, val_loss)
     return {
         "val_acc": float(val_acc),
         "val_medical_acc": float(val_medical_acc),
         "val_loss": float(val_loss),
         "selection_score": float(selection_score),
+        "selection_medical_weight": float(_selection_medical_weight(meta, cfg)),
     }
 
 
@@ -1120,6 +1160,7 @@ def _validated_standard_checkpoint_merge(
     reference_state=None,
     reference_param_names=None,
 ):
+    ultrasound_specialist = _ultrasound_specialist_enabled(meta, cfg)
     candidates = OrderedDict()
     candidates["avg"] = base_merged
     candidate_traces = {}
@@ -1139,6 +1180,19 @@ def _validated_standard_checkpoint_merge(
         )
         candidates["medical_weighted_fusion"] = weighted_state
         candidate_traces["medical_weighted_fusion"] = weighted_trace
+        if ultrasound_specialist:
+            for blend_weight in (0.50, 0.75):
+                blend_name = f"ultrasound_avg_weighted_blend_{str(blend_weight).replace('.', 'p')}"
+                candidates[blend_name] = _blend_state_dicts(base_merged, weighted_state, right_weight=blend_weight)
+                candidate_traces[blend_name] = {
+                    **weighted_trace,
+                    "routing_summary": {
+                        **weighted_trace.get("routing_summary", {}),
+                        "ultrasound_specialist": True,
+                        "blend_source": "medical_weighted_fusion",
+                        "blend_right_weight": blend_weight,
+                    },
+                }
 
     if _use_sign_consistent_delta(meta, cfg) and reference_state is not None and reference_param_names is not None:
         sign_state = _medical_sign_consistent_delta_merge(
@@ -1160,6 +1214,16 @@ def _validated_standard_checkpoint_merge(
             **sign_trace,
             "routing_summary": {"sign_delta_weight_source": "medical_consensus", "blend_right_weight": 0.25},
         }
+        if ultrasound_specialist:
+            candidates["ultrasound_avg_sign_blend_0p10"] = _blend_state_dicts(base_merged, sign_state, right_weight=0.10)
+            candidate_traces["ultrasound_avg_sign_blend_0p10"] = {
+                **sign_trace,
+                "routing_summary": {
+                    "sign_delta_weight_source": "medical_consensus",
+                    "blend_right_weight": 0.10,
+                    "ultrasound_specialist": True,
+                },
+            }
 
     if not _component_enabled(cfg, "validated_selection") or len(candidates) == 1:
         return base_merged, {
@@ -1201,7 +1265,10 @@ def _validated_standard_checkpoint_merge(
         second_name = ranked_names[1]
         score_gap = float(candidate_metrics[top_name]["selection_score"] - candidate_metrics[second_name]["selection_score"])
         soup_margin = float(cfg.get("my_merge_soup_score_margin", DEFAULT_SOUP_SCORE_MARGIN) or DEFAULT_SOUP_SCORE_MARGIN)
-        if score_gap <= soup_margin:
+        allow_soup = True
+        if ultrasound_specialist:
+            allow_soup = _parse_bool(cfg.get("my_merge_ultrasound_allow_soup", False), default=False)
+        if allow_soup and score_gap <= soup_margin:
             soup_name = f"top2_soup:{top_name}+{second_name}"
             soup_state = _blend_state_dicts(prepared_candidates[top_name], prepared_candidates[second_name], right_weight=0.5)
             prepared_candidates[soup_name] = soup_state
@@ -1210,7 +1277,8 @@ def _validated_standard_checkpoint_merge(
             candidate_metrics[soup_name] = soup_metrics
             top_score = float(candidate_metrics[top_name]["selection_score"])
             soup_score = float(soup_metrics["selection_score"])
-            min_delta = float(cfg.get("my_merge_soup_min_score_delta", DEFAULT_SOUP_MIN_SCORE_DELTA) or DEFAULT_SOUP_MIN_SCORE_DELTA)
+            default_min_delta = DEFAULT_ULTRASOUND_SOUP_MIN_SCORE_DELTA if ultrasound_specialist else DEFAULT_SOUP_MIN_SCORE_DELTA
+            min_delta = float(cfg.get("my_merge_soup_min_score_delta", default_min_delta) or default_min_delta)
             soup_accepted = soup_score + EPS >= top_score + min_delta
             if soup_accepted:
                 selected_name = soup_name
@@ -1239,6 +1307,12 @@ def _validated_standard_checkpoint_merge(
     selected_trace = candidate_traces.get(selected_name, {})
     routing_summary = {"validated_candidates": len(candidates)}
     routing_summary.update(selected_trace.get("routing_summary", {}))
+    if ultrasound_specialist:
+        routing_summary["ultrasound_specialist"] = True
+        routing_summary["ultrasound_soup_allowed"] = _parse_bool(
+            cfg.get("my_merge_ultrasound_allow_soup", False),
+            default=False,
+        )
     if soup_trace:
         routing_summary["selected_by_top2_soup"] = bool(soup_trace.get("soup_accepted", False))
     return prepared_candidates.get(selected_name, candidates[selected_name]), {
@@ -1416,12 +1490,17 @@ def merge_my_merge(state_dicts, weights, meta=None, checkpoints=None, cfg=None):
             reference_param_names=reference_param_names,
         )
 
+        ultrasound_specialist_enabled = _ultrasound_specialist_enabled(meta, cfg)
+        implementation = "medical_evidence_two_module_posthoc_merge_v8_delta_soup_guarded"
+        if ultrasound_specialist_enabled:
+            implementation = f"{implementation}_ultrasound_specialist"
         return merged_state_dict, {
-            "implementation": "medical_evidence_two_module_posthoc_merge_v8_delta_soup_guarded",
+            "implementation": implementation,
             "medical_only": True,
             "method_modules": METHOD_MODULES,
             "ablation_config": ablation_config,
             "modality": meta.get("dataset"),
+            "ultrasound_specialist_enabled": ultrasound_specialist_enabled,
             "model_family": _model_family(meta),
             "base_weights": [float(x) for x in base_weights],
             "metadata_prior_weights": [

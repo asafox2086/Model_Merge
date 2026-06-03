@@ -125,6 +125,9 @@ def parse_args():
     p.add_argument('--my-merge-stats-max-batches', type=int, default=-1)
     p.add_argument('--my-merge-eval-max-batches', type=int, default=-1)
     p.add_argument('--my-merge-bn-batches', type=int, default=-1)
+    p.add_argument('--my-merge-ultrasound-specialist', action=argparse.BooleanOptionalAction, default=False)
+    p.add_argument('--my-merge-ultrasound-allow-soup', action=argparse.BooleanOptionalAction, default=False)
+    p.add_argument('--my-merge-ultrasound-selection-medical-weight', type=float, default=-1.0)
     p.add_argument(
         '--my-merge-ablation',
         type=str,
@@ -240,6 +243,12 @@ def build_cfg(row, args):
         cfg['my_merge_eval_max_batches'] = args.my_merge_eval_max_batches
     if args.my_merge_bn_batches >= 0:
         cfg['my_merge_bn_batches'] = args.my_merge_bn_batches
+    if args.my_merge_ultrasound_specialist:
+        cfg['my_merge_ultrasound_specialist'] = args.my_merge_ultrasound_specialist
+    if args.my_merge_ultrasound_allow_soup:
+        cfg['my_merge_ultrasound_allow_soup'] = args.my_merge_ultrasound_allow_soup
+    if args.my_merge_ultrasound_selection_medical_weight >= 0:
+        cfg['my_merge_ultrasound_selection_medical_weight'] = args.my_merge_ultrasound_selection_medical_weight
     if args.my_merge_ablation:
         cfg['my_merge_ablation'] = args.my_merge_ablation
     if args.my_merge_disable:

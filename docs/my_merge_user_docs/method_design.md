@@ -66,6 +66,8 @@ M1 使用或围绕这些医学图像证据：
 - 不按数据集名称硬编码参数。
 - 权重不能被证据噪声过度放大。
 
+当前 M1 证据包括前景面积、边界强度、局部对比度、纹理异质性、形状紧致性、诊断显著性和证据可靠性。2026-06-03 曾尝试加入 `speckle_noise`、`acoustic_shadow`、`hyperechoic_response`、`ultrasound_profile`，但 smoke 证明该 profile 会在 `dermamnist_224` 误触发、在 `chaoshengmnist_224` 不触发，造成明显负优化，因此已从代码删除。
+
 ### M2：验证集驱动的保守 checkpoint 融合
 
 输入：
@@ -94,6 +96,8 @@ M1 使用或围绕这些医学图像证据：
 
 - 对归一化权重而言，`reference + sum_i w_i * (client_i - reference)` 与直接 `sum_i w_i * client_i` 在数学上等价。因此“delta 写法”本身不是万能改进；真正有行为差异的改动是：M1 医学共识权重进入 `sign_consistent_delta`，以及 M2 从单一 winner 转为接近候选的 guarded top-2 soup。
 - delta helper 必须避免原地修改 `reference_state`；2026-06-03 的 smoke 已经证明 reference 污染会让 `medical_weighted_fusion` 变成负优化。
+- 超声 profile 改造已经按 smoke 结果删除。后续不能只凭图像统计 profile 给某个数据集开特殊路径；必须先证明医学域证据能正确识别目标模态，并且不能在其他医学数据集上误触发。
+- 可控超声单独处理通过 `my_merge_ultrasound_specialist` 开关启用，默认关闭。该分支只对 `chaoshengmnist_224` 生效，不改数据读取和 test 使用方式；主要做全量 val 统计、M1 权重平滑、M2 保守候选扩展、默认禁用超声 top-2 soup，以及降低 selection score 中通用医学加权准确率的占比。
 - gate 默认从更保守的高阈值降低为 `DEFAULT_RELIABILITY_THRESHOLD=0.10`、`DEFAULT_SEPARATION_THRESHOLD=0.05`，让医学证据在弱但稳定时也能影响 M1 权重。
 
 当前应避免的旧设计：
