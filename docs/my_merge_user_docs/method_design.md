@@ -78,16 +78,23 @@ M1 使用或围绕这些医学图像证据：
 当前候选方向：
 
 - `avg`：普通平均融合。
-- `medical_weighted_fusion`：使用 M1 估计出的医学图像客户端可靠性做轻量加权融合。
-- `sign_consistent_delta`：符号一致的 delta 融合。
-- `avg_sign_blend_0p25`：平均融合与 sign delta 的小比例混合。
+- `medical_weighted_fusion`：使用 M1 估计出的医学图像客户端可靠性做轻量加权融合；实现上以 reference checkpoint 为原点写成 delta 融合。
+- `sign_consistent_delta`：符号一致的 delta 融合，delta 合并权重使用 M1 的 `overall_weights` 和 `morphology_weights` 形成的医学共识权重，而不是无脑基础权重。
+- `avg_sign_blend_0p25`：平均融合与 sign delta 的小比例混合，同样继承医学共识权重。
+- `top2_soup:*`：当验证集上前两名候选分数接近时，对两个候选做 0.5/0.5 soup，并重新在同一 val 批次上评估；只有 soup 的 `selection_score` 不低于当前第一名时才接管。
 
 选择规则：
 
 - 每个候选先按最终输出路径做同样的 BN recalibration。
 - 在 `val` 上计算候选表现。
-- 用验证指标选择候选。
+- 用验证指标排序候选；如果前两名分数差不超过默认 `0.05`，构造 top-2 soup，再用同一验证指标做保守接收。
 - 最终只在 `test` 上做一次评估。
+
+实现备注：
+
+- 对归一化权重而言，`reference + sum_i w_i * (client_i - reference)` 与直接 `sum_i w_i * client_i` 在数学上等价。因此“delta 写法”本身不是万能改进；真正有行为差异的改动是：M1 医学共识权重进入 `sign_consistent_delta`，以及 M2 从单一 winner 转为接近候选的 guarded top-2 soup。
+- delta helper 必须避免原地修改 `reference_state`；2026-06-03 的 smoke 已经证明 reference 污染会让 `medical_weighted_fusion` 变成负优化。
+- gate 默认从更保守的高阈值降低为 `DEFAULT_RELIABILITY_THRESHOLD=0.10`、`DEFAULT_SEPARATION_THRESHOLD=0.05`，让医学证据在弱但稳定时也能影响 M1 权重。
 
 当前应避免的旧设计：
 
@@ -137,4 +144,4 @@ M2: 只在 val 上选择候选
 - 超声任务上 sign/blend 候选被过窄 gate 误杀。
 - 候选评分没有经过与最终输出一致的 BN recalibration，导致 `val` 选择和最终 checkpoint 表现不一致。
 
-当前局部 smoke 已经覆盖超声关键坏例和部分非超声数据集，坏例不再只退回 `avg`。剩余风险是完整小网格和全量实验还没有跑完，仍需要用全量结果确认：超声是否稳定提升，以及其他医学图像数据集是否没有大面积回退。
+2026-06-02 新一轮改动后，`full/no_client_information/no_fusion_selection/avg_only` 的 2026-06-01 全量结果已作为旧版本基线。下一步需要先跑小规模 smoke，确认医学共识 sign-delta 和 top-2 soup 是否改善超声与已知坏例，再决定是否重跑全量。

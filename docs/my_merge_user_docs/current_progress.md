@@ -318,3 +318,54 @@ GPU 正式全量计划：
 - 不要把方法重新写成联邦学习。
 - 不要继续堆新模块掩盖负优化。
 - 不要开高并发让服务器过载。
+
+## 2026-06-02 M1/M2 改造记录
+
+用户提出的新方向包括：M1 从绝对空间层级加权转向 delta 空间权重，M2 从单候选硬筛选转向 top-2 soup，并把 M1 医学权重注入 sign-delta。
+
+本轮代码改动：
+
+- `methods/my_merge.py` 增加 `DEFAULT_RELIABILITY_THRESHOLD=0.10`、`DEFAULT_SEPARATION_THRESHOLD=0.05`，降低 M1 权重 gate。
+- `medical_weighted_fusion` 的实现改成 `_medical_delta_weighted_state_merge`，以 reference checkpoint 为原点融合 delta。
+- `sign_consistent_delta` 不再使用 `base_weights`，改用 `_medical_consensus_weights(overall_weights, morph_weights, base_weights)`。
+- M2 候选排序后，如果前两名 `selection_score` 差距不超过 `0.05`，生成并选择 `top2_soup:<候选1>+<候选2>`。
+- 实现版本标记更新为 `medical_evidence_two_module_posthoc_merge_v8_delta_soup`。
+
+判断记录：
+
+- 单纯把归一化加权平均写成 `reference + sum_i w_i * delta_i` 在数学上等价于直接加权平均，不应把它当成必然提升点。
+- 本轮真正可能改变结果的点是：M1 医学共识权重进入 sign-delta，以及 M2 由单一 winner 改为接近候选的 top-2 soup。
+
+验证记录：
+
+- 2026-06-02 00:48 CST：`py_compile` 通过：`methods/my_merge.py merge.py scripts/run_all_avg_eval.py`。
+
+## 2026-06-03 smoke 结果与修复记录
+
+改版后第一次 GPU smoke 因用户中断只完成了 `convnext` 的 12/18 个格子，`vit_t` 和 `swin_tiny` 未跑完。有效格子相对 2026-06-01 旧版 full：10 个持平、1 个小幅提升、1 个严重下降。
+
+严重下降格子：
+
+- `dermamnist_224 / convnext / clients=3 / beta=0.01`：旧版 test acc `0.668828`，新版 smoke test acc `0.109726`。
+- 旧版该格子选择 `medical_weighted_fusion`，其 val acc 为 `0.687500`。
+- 新版该格子选择 `top2_soup:avg+avg_sign_blend_0p25`，且新版 `medical_weighted_fusion` 的 val acc 掉到 `0.103516`。
+
+定位结论：
+
+- `_weighted_delta_for_key` 使用 `reference_value.detach().float().zero_()` 会在 float32 reference tensor 上原地清零，污染 `reference_state`。这会破坏后续候选，尤其是 sign-delta，也会让 delta 版本的 `medical_weighted_fusion` 行为不可信。
+- top-2 soup 原逻辑在前两名接近时无条件接管，即使 soup 自己的 `selection_score` 低于第一名，也会被选中。这不符合保守验证模块的目标。
+
+本步修复：
+
+- `_weighted_delta_for_key` 改为 `torch.zeros_like(reference_float)` 新建累加张量，不再修改 reference。
+- top-2 soup 仍会被构造和评估，但只有 `soup.selection_score >= top.selection_score + my_merge_soup_min_score_delta` 时才选中；默认 `my_merge_soup_min_score_delta=0.0`。
+- 实现版本标记更新为 `medical_evidence_two_module_posthoc_merge_v8_delta_soup_guarded`。
+
+修复后 smoke：
+
+- 路径：`outputs/codex_my_merge_v8_guarded_smoke_20260603_0025/full_convnext_critical`。
+- 范围：`dermamnist_224`、`chaoshengmnist_224`，`convnext`，共 18 个格子。
+- 状态：18/18 OK。
+- 相对 2026-06-01 旧版 full：`wins/ties/losses = 1/17/0`，平均 delta `+0.000050`。
+- 刚才的坏例 `dermamnist_224 / convnext / clients=3 / beta=0.01` 已从坏版 `0.109726` 回到 `0.668828`，与旧版 full 持平。
+- 超声 `chaoshengmnist_224 / convnext` 基本无变化，只有 `clients=5 / beta=0.01` 从旧版 `0.172507` 到 `0.173405`，其余持平。因此当前修复解决了负优化 bug，但还没有证明能改善超声主问题。

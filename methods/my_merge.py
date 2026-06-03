@@ -13,6 +13,10 @@ from .common import build_task_matrix, disjoint_merge, elect_sign, mask_smallest
 EPS = 1e-8
 DEFAULT_STATS_MAX_BATCHES = 16
 DEFAULT_BN_BATCHES = 4
+DEFAULT_RELIABILITY_THRESHOLD = 0.10
+DEFAULT_SEPARATION_THRESHOLD = 0.05
+DEFAULT_SOUP_SCORE_MARGIN = 0.05
+DEFAULT_SOUP_MIN_SCORE_DELTA = 0.0
 CLIP_IMAGE_MEAN = (0.48145466, 0.4578275, 0.40821073)
 CLIP_IMAGE_STD = (0.26862954, 0.26130258, 0.27577711)
 
@@ -94,7 +98,7 @@ METHOD_MODULES = {
     },
     "module_2": {
         "name": "Validated Conservative Checkpoint Fusion",
-        "purpose": "Select among avg, sign-consistent delta, and a small avg/sign blend on validation evidence; no layer routing, head routing, anchor forcing, or residual injection.",
+        "purpose": "Fuse client deltas with medical evidence, inject M1 consensus into sign-consistent deltas, and use validation-guided top-2 soup when candidates are statistically close.",
     },
 }
 
@@ -165,8 +169,9 @@ def _score_separation(scores):
 
 
 def _diagnostic_weight_gate(scores, evidence_reliability):
-    reliability_gate = max(0.0, min(1.0, (float(evidence_reliability) - 0.35) / 0.65))
-    separation_gate = max(0.0, min(1.0, _score_separation(scores) / 0.35))
+    reliability_denom = max(EPS, 1.0 - DEFAULT_RELIABILITY_THRESHOLD)
+    reliability_gate = max(0.0, min(1.0, (float(evidence_reliability) - DEFAULT_RELIABILITY_THRESHOLD) / reliability_denom))
+    separation_gate = max(0.0, min(1.0, _score_separation(scores) / max(EPS, DEFAULT_SEPARATION_THRESHOLD)))
     return reliability_gate * separation_gate
 
 
@@ -932,6 +937,14 @@ def _weighted_average_for_key(values, weight_tensor):
     return out
 
 
+def _weighted_delta_for_key(values, reference_value, weight_tensor):
+    reference_float = reference_value.detach().float()
+    out = torch.zeros_like(reference_float)
+    for value, weight in zip(values, weight_tensor):
+        out.add_(value.detach().float() - reference_float, alpha=float(weight.item()))
+    return out
+
+
 def _medical_consensus_weights(overall_weights, morph_weights, base_weights):
     base_weights = torch.as_tensor(base_weights, dtype=torch.float32)
     consensus = 0.50 * torch.as_tensor(overall_weights, dtype=torch.float32)
@@ -955,9 +968,10 @@ def _classifier_fusion_weights(cls_idx, class_weights, consensus_weights):
     return _normalize_scores(0.45 * row_weights + 0.55 * consensus_weights, fallback=consensus_weights)
 
 
-def _medical_weighted_state_merge(
+def _medical_delta_weighted_state_merge(
     state_dicts,
     base_merged,
+    reference_state,
     base_weights,
     overall_weights,
     morph_weights,
@@ -979,26 +993,43 @@ def _medical_weighted_state_merge(
         if not torch.is_floating_point(first):
             merged[key] = base_merged[key].detach().clone()
             continue
+        reference_value = reference_state.get(key) if reference_state is not None else None
+        use_delta = (
+            reference_value is not None
+            and torch.is_floating_point(reference_value)
+            and tuple(reference_value.shape) == tuple(first.shape)
+        )
         if _is_classifier_tensor(key, first, num_classes):
             out = first.detach().clone().float().zero_()
+            if use_delta:
+                out = reference_value.detach().clone().float()
             for cls_idx in range(first.shape[0]):
                 row_weights = _classifier_fusion_weights(cls_idx, class_weights, consensus)
-                if first.ndim == 1:
-                    out[cls_idx] = _weighted_average_for_key([value[cls_idx] for value in values], row_weights)
+                row_values = [value[cls_idx] for value in values]
+                if use_delta:
+                    row_ref = reference_value[cls_idx]
+                    out[cls_idx] = (row_ref.detach().float() + _weighted_delta_for_key(row_values, row_ref, row_weights)).to(
+                        dtype=out.dtype
+                    )
                 else:
-                    out[cls_idx] = _weighted_average_for_key([value[cls_idx] for value in values], row_weights)
+                    out[cls_idx] = _weighted_average_for_key(row_values, row_weights)
             merged[key] = out.to(dtype=first.dtype)
             routing_summary["classifier"] += 1
             continue
 
         group = _param_group(key, meta)
-        merged[key] = _weighted_average_for_key(values, group_weights[group])
+        if use_delta:
+            delta = _weighted_delta_for_key(values, reference_value, group_weights[group])
+            merged[key] = (reference_value.detach().float() + delta).to(dtype=first.dtype)
+        else:
+            merged[key] = _weighted_average_for_key(values, group_weights[group])
         routing_summary[group] += 1
 
     return merged, {
         "fusion_weights": [float(x) for x in consensus.tolist()],
         "group_weights": {group: [float(x) for x in weights.tolist()] for group, weights in group_weights.items()},
         "routing_summary": routing_summary,
+        "delta_space": reference_state is not None,
     }
 
 
@@ -1092,11 +1123,13 @@ def _validated_standard_checkpoint_merge(
     candidates = OrderedDict()
     candidates["avg"] = base_merged
     candidate_traces = {}
+    consensus_weights = _medical_consensus_weights(overall_weights, morph_weights, base_weights)
 
     if _component_enabled(cfg, "medical_weighted_fusion"):
-        weighted_state, weighted_trace = _medical_weighted_state_merge(
+        weighted_state, weighted_trace = _medical_delta_weighted_state_merge(
             state_dicts,
             base_merged,
+            reference_state,
             base_weights,
             overall_weights,
             morph_weights,
@@ -1113,10 +1146,20 @@ def _validated_standard_checkpoint_merge(
             base_merged,
             reference_state,
             reference_param_names,
-            torch.as_tensor(base_weights, dtype=torch.float32).tolist(),
+            consensus_weights.tolist(),
         )
         candidates["sign_consistent_delta"] = sign_state
         candidates["avg_sign_blend_0p25"] = _blend_state_dicts(base_merged, sign_state, right_weight=0.25)
+        sign_trace = {
+            "fusion_weights": [float(x) for x in consensus_weights.tolist()],
+            "group_weights": {},
+            "routing_summary": {"sign_delta_weight_source": "medical_consensus"},
+        }
+        candidate_traces["sign_consistent_delta"] = sign_trace
+        candidate_traces["avg_sign_blend_0p25"] = {
+            **sign_trace,
+            "routing_summary": {"sign_delta_weight_source": "medical_consensus", "blend_right_weight": 0.25},
+        }
 
     if not _component_enabled(cfg, "validated_selection") or len(candidates) == 1:
         return base_merged, {
@@ -1132,6 +1175,7 @@ def _validated_standard_checkpoint_merge(
     prepared_candidates = {}
     best_name = None
     best_key = None
+    rank_keys = {}
     for name, candidate_state in candidates.items():
         prepared_state = _prepare_candidate(
             meta,
@@ -1144,14 +1188,59 @@ def _validated_standard_checkpoint_merge(
         metrics = _evaluate_candidate_on_batches(meta, prepared_state, cfg, batches, features, labels)
         candidate_metrics[name] = metrics
         rank_key = (metrics["selection_score"], metrics["val_acc"], -metrics["val_loss"])
+        rank_keys[name] = rank_key
         if best_key is None or rank_key > best_key:
             best_key = rank_key
             best_name = name
 
     selected_name = best_name or "avg"
+    soup_trace = {}
+    ranked_names = sorted(rank_keys, key=lambda item: rank_keys[item], reverse=True)
+    if len(ranked_names) >= 2:
+        top_name = ranked_names[0]
+        second_name = ranked_names[1]
+        score_gap = float(candidate_metrics[top_name]["selection_score"] - candidate_metrics[second_name]["selection_score"])
+        soup_margin = float(cfg.get("my_merge_soup_score_margin", DEFAULT_SOUP_SCORE_MARGIN) or DEFAULT_SOUP_SCORE_MARGIN)
+        if score_gap <= soup_margin:
+            soup_name = f"top2_soup:{top_name}+{second_name}"
+            soup_state = _blend_state_dicts(prepared_candidates[top_name], prepared_candidates[second_name], right_weight=0.5)
+            prepared_candidates[soup_name] = soup_state
+            candidates[soup_name] = soup_state
+            soup_metrics = _evaluate_candidate_on_batches(meta, soup_state, cfg, batches, features, labels)
+            candidate_metrics[soup_name] = soup_metrics
+            top_score = float(candidate_metrics[top_name]["selection_score"])
+            soup_score = float(soup_metrics["selection_score"])
+            min_delta = float(cfg.get("my_merge_soup_min_score_delta", DEFAULT_SOUP_MIN_SCORE_DELTA) or DEFAULT_SOUP_MIN_SCORE_DELTA)
+            soup_accepted = soup_score + EPS >= top_score + min_delta
+            if soup_accepted:
+                selected_name = soup_name
+            soup_trace = {
+                "soup_components": [top_name, second_name],
+                "soup_score_gap": score_gap,
+                "soup_score_margin": soup_margin,
+                "soup_right_weight": 0.5,
+                "soup_selection_score": soup_score,
+                "top_selection_score": top_score,
+                "soup_min_score_delta": min_delta,
+                "soup_accepted": soup_accepted,
+            }
+            candidate_traces[soup_name] = {
+                "fusion_weights": [
+                    float(x)
+                    for x in torch.as_tensor(
+                        candidate_traces.get(top_name, {}).get("fusion_weights", consensus_weights.tolist()),
+                        dtype=torch.float32,
+                    ).tolist()
+                ],
+                "group_weights": candidate_traces.get(top_name, {}).get("group_weights", {}),
+                "routing_summary": {"top2_soup": soup_trace},
+            }
+
     selected_trace = candidate_traces.get(selected_name, {})
     routing_summary = {"validated_candidates": len(candidates)}
     routing_summary.update(selected_trace.get("routing_summary", {}))
+    if soup_trace:
+        routing_summary["selected_by_top2_soup"] = bool(soup_trace.get("soup_accepted", False))
     return prepared_candidates.get(selected_name, candidates[selected_name]), {
         "selected_candidate": selected_name,
         "candidate_pool": list(candidates.keys()),
@@ -1315,7 +1404,7 @@ def merge_my_merge(state_dicts, weights, meta=None, checkpoints=None, cfg=None):
         )
         reference_state = None
         reference_param_names = None
-        if _use_sign_consistent_delta(meta, cfg):
+        if _component_enabled(cfg, "medical_weighted_fusion") or _use_sign_consistent_delta(meta, cfg):
             reference_state, reference_param_names = build_reference_bundle(meta, device="cpu")
         merged_state_dict, fusion_info = _module2_medical_evidence_guided_fusion_and_selection(
             state_dicts,
@@ -1328,7 +1417,7 @@ def merge_my_merge(state_dicts, weights, meta=None, checkpoints=None, cfg=None):
         )
 
         return merged_state_dict, {
-            "implementation": "medical_evidence_two_module_posthoc_merge_v7",
+            "implementation": "medical_evidence_two_module_posthoc_merge_v8_delta_soup_guarded",
             "medical_only": True,
             "method_modules": METHOD_MODULES,
             "ablation_config": ablation_config,
