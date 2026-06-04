@@ -127,7 +127,6 @@ def parse_args():
     p.add_argument('--my-merge-bn-batches', type=int, default=-1)
     p.add_argument('--my-merge-ultrasound-specialist', action=argparse.BooleanOptionalAction, default=False)
     p.add_argument('--my-merge-ultrasound-allow-soup', action=argparse.BooleanOptionalAction, default=False)
-    p.add_argument('--my-merge-ultrasound-robust-selection', action=argparse.BooleanOptionalAction, default=None)
     p.add_argument('--my-merge-ultrasound-sparse-sign', action=argparse.BooleanOptionalAction, default=None)
     p.add_argument('--my-merge-ultrasound-sparse-sign-density', type=float, default=-1.0)
     p.add_argument('--my-merge-ultrasound-selection-medical-weight', type=float, default=-1.0)
@@ -250,8 +249,6 @@ def build_cfg(row, args):
         cfg['my_merge_ultrasound_specialist'] = args.my_merge_ultrasound_specialist
     if args.my_merge_ultrasound_allow_soup:
         cfg['my_merge_ultrasound_allow_soup'] = args.my_merge_ultrasound_allow_soup
-    if args.my_merge_ultrasound_robust_selection is not None:
-        cfg['my_merge_ultrasound_robust_selection'] = args.my_merge_ultrasound_robust_selection
     if args.my_merge_ultrasound_sparse_sign is not None:
         cfg['my_merge_ultrasound_sparse_sign'] = args.my_merge_ultrasound_sparse_sign
     if args.my_merge_ultrasound_sparse_sign_density >= 0:

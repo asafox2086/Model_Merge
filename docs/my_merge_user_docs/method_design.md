@@ -100,7 +100,9 @@ M1 使用或围绕这些医学图像证据：
 - 可控超声单独处理通过 `my_merge_ultrasound_specialist` 开关启用，默认关闭。该分支只对 `chaoshengmnist_224` 生效，不改数据读取和 test 使用方式；主要做全量 val 统计、M1 权重平滑、M2 保守候选扩展、默认禁用超声 top-2 soup，以及降低 selection score 中通用医学加权准确率的占比。
 - 曾尝试在超声 M1 证据前加入 `my_merge_ultrasound_denoise_evidence`：只处理 M1 形态证据灰度图，不改模型 forward、候选验证和 test 图像。45 格消融相对当前 sparse-only 基线为 `5/29/11`、mean delta `-0.000419`，因此已删除代码和 CLI，不属于当前方法。
 - 曾尝试用局部梯度方向一致性做超声 M1 噪声感知 reliability，不改超参数、不改图像输入。45 格消融相对当前 sparse-only 基线为 `9/20/16`、mean delta `-0.004213`，且 `resnet` 明显受损，因此已删除代码，不属于当前方法。
+- 曾尝试超声 robust validation selection：把 val 按 even/odd 拆分并用较差子集 score 排序。45 格消融相对 head repair 为 `4/39/2`、mean delta `-0.000060`，属于收益不足且轻微负优化，已删除代码和 CLI。
 - 当前保留超声 head prior repair：在 M2 候选评估中，对有 classifier bias 的候选用 val 标签先验 `pi` 和候选平均预测先验 `p_hat` 做 `bias += log(pi) - log(p_hat)`，再作为独立候选进入同一 validation selection。45 格消融相对当前 sparse-only 基线 `27/18/0`、mean delta `+0.036658`，相对 formal best `37/0/8`、mean delta `+0.055405`，因此保留。
+- 曾做 `avg + head prior repair` 受控消融，用来验证超声收益是否只来自分类头先验修正。45 格相对当前 full headrepair sparse 为 `0/17/28`、mean delta `-0.042568`，平均 accuracy `0.234062` 低于 full 的 `0.276630`；该实验说明当前 M1/M2 候选池在超声上仍有实际选择价值。该 ablation 开关已删除，只保留实验记录。
 - 超声子项只保留 `my_merge_ultrasound_sparse_sign` 可控开关：它新增稀疏 sign-delta 候选，不替换原候选；45 格消融显示 sparse-only 相对当前超声基线 `3/42/0`、mean delta `+0.002915`，因此在超声分支下默认开启。`my_merge_ultrasound_early_detox` 曾尝试让 `medical_weighted_fusion` 的 early 层回到 base prior，但单独消融相对当前超声基线 `7/29/9`、mean delta `-0.000599`，已从代码和 CLI 删除，只在进度文档中保留失败记录。
 - gate 默认从更保守的高阈值降低为 `DEFAULT_RELIABILITY_THRESHOLD=0.10`、`DEFAULT_SEPARATION_THRESHOLD=0.05`，让医学证据在弱但稳定时也能影响 M1 权重。
 

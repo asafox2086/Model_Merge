@@ -593,3 +593,14 @@ convnext smoke 结果：
 - vs head_repair: n=45 W/T/L=4/39/2, mean_delta=-0.000060。
 - vs formal best: n=45 W/T/L=37/0/8, mean_delta=0.055345。
 - 汇总表：`outputs/codex_my_merge_ultrasound_headrepair_robustselect_chaosheng45_20260603/reports/robustselect_summary.md`，明细：`outputs/codex_my_merge_ultrasound_headrepair_robustselect_chaosheng45_20260603/reports/robustselect_vs_headrepair.csv`。
+- 结论：相对 head repair 是轻微负优化，且收益不足以抵消复杂度；已删除 robust selection 排序逻辑和 CLI，只保留 head prior repair 与 sparse sign。
+
+## 2026-06-04 Ultrasound Avg HeadRepair Only Summary
+
+- candidate: `outputs/codex_my_merge_ultrasound_avg_headrepair_chaosheng45_20260604`。
+- vs full_headrepair_sparse: n=45 W/T/L=0/17/28, mean_delta=-0.042568。
+- vs sparse_only: n=45 W/T/L=11/14/20, mean_delta=-0.005910。
+- vs formal best: n=45 W/T/L=27/0/18, mean_delta=0.012838。
+- 已写入总汇总表：`My_merge_ret/汇总表.md`。对比报告：`outputs/codex_my_merge_ultrasound_avg_headrepair_chaosheng45_20260604/reports/avg_headrepair_vs_full_headrepair.md`，明细：`outputs/codex_my_merge_ultrasound_avg_headrepair_chaosheng45_20260604/reports/avg_headrepair_vs_full_headrepair.csv`。
+- 平均 accuracy 为 `0.234062`，低于 full headrepair sparse 的 `0.276630`。
+- 结论：`avg + head prior repair` 不能替代当前 full candidate bank；M1/M2 候选在超声上仍提供有效选择空间。该受控 ablation 只用于验证假设，负优化后已从代码中删除，不进入最终方法。

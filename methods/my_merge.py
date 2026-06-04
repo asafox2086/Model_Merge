@@ -1355,7 +1355,7 @@ def _validated_standard_checkpoint_merge(
         prepared_candidates[name] = prepared_state
         metrics = _evaluate_candidate_on_batches(meta, prepared_state, cfg, batches, features, labels)
         candidate_metrics[name] = metrics
-        rank_key = _candidate_rank_key(meta, cfg, metrics)
+        rank_key = (metrics["selection_score"], metrics["val_acc"], -metrics["val_loss"])
         rank_keys[name] = rank_key
         if best_key is None or rank_key > best_key:
             best_key = rank_key
@@ -1368,7 +1368,7 @@ def _validated_standard_checkpoint_merge(
                 prepared_candidates[repair_name] = repaired_state
                 repair_metrics = _evaluate_candidate_on_batches(meta, repaired_state, cfg, batches, features, labels)
                 candidate_metrics[repair_name] = repair_metrics
-                repair_key = _candidate_rank_key(meta, cfg, repair_metrics)
+                repair_key = (repair_metrics["selection_score"], repair_metrics["val_acc"], -repair_metrics["val_loss"])
                 rank_keys[repair_name] = repair_key
                 source_trace = candidate_traces.get(name, {})
                 candidate_traces[repair_name] = {
@@ -1441,7 +1441,6 @@ def _validated_standard_checkpoint_merge(
         routing_summary["ultrasound_specialist"] = True
         routing_summary["ultrasound_sparse_sign"] = _ultrasound_sparse_sign_enabled(meta, cfg)
         routing_summary["ultrasound_sparse_sign_density"] = _ultrasound_sparse_sign_density(cfg)
-        routing_summary["ultrasound_robust_selection"] = _ultrasound_robust_selection_enabled(meta, cfg)
         routing_summary["ultrasound_soup_allowed"] = _parse_bool(
             cfg.get("my_merge_ultrasound_allow_soup", False),
             default=False,
@@ -1634,7 +1633,6 @@ def merge_my_merge(state_dicts, weights, meta=None, checkpoints=None, cfg=None):
             "ablation_config": ablation_config,
             "modality": meta.get("dataset"),
             "ultrasound_specialist_enabled": ultrasound_specialist_enabled,
-            "ultrasound_robust_selection_enabled": _ultrasound_robust_selection_enabled(meta, cfg),
             "ultrasound_sparse_sign_enabled": _ultrasound_sparse_sign_enabled(meta, cfg),
             "ultrasound_sparse_sign_density": _ultrasound_sparse_sign_density(cfg),
             "model_family": _model_family(meta),
