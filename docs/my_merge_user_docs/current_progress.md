@@ -604,3 +604,72 @@ convnext smoke 结果：
 - 已写入总汇总表：`My_merge_ret/汇总表.md`。对比报告：`outputs/codex_my_merge_ultrasound_avg_headrepair_chaosheng45_20260604/reports/avg_headrepair_vs_full_headrepair.md`，明细：`outputs/codex_my_merge_ultrasound_avg_headrepair_chaosheng45_20260604/reports/avg_headrepair_vs_full_headrepair.csv`。
 - 平均 accuracy 为 `0.234062`，低于 full headrepair sparse 的 `0.276630`。
 - 结论：`avg + head prior repair` 不能替代当前 full candidate bank；M1/M2 候选在超声上仍提供有效选择空间。该受控 ablation 只用于验证假设，负优化后已从代码中删除，不进入最终方法。
+
+## 2026-06-04 近年模型融合论文调研后的下一步候选
+
+调研依据：
+
+- Model Soups (ICML 2022)：验证集上表现好的 checkpoint 做贪婪/均匀 soup，通常比只选单模型更稳。
+- Fisher Merging (NeurIPS 2022)：用参数后验/Fisher 重要性做加权平均，适合解释“哪些参数不能随便平均”。
+- Git Re-Basin (2022)、ZipIt (2023)、FedMA (ICLR 2020)：核心问题是神经元/通道排列对齐；这和超声 CNN/ConvNeXt 塌缩高度相关。
+- TIES-Merging (NeurIPS 2023)、DARE (2023)、DELLA (2024)、Breadcrumbs (ECCV 2024)：通过稀疏 delta、符号一致或随机 drop/rescale 降低任务向量干扰。
+- RegMean (ICLR 2023)、AdaMerging (ICLR 2024)：用激活统计或无监督目标学习 layer-wise/task-wise 融合系数。
+
+结合当前事实后的优先级：
+
+1. Greedy Client-Subset Soup + Head Repair。对每个设置枚举或贪婪选择客户端子集，先做子集 avg，再做 head prior repair，用同一 val selection 选最终候选。理由：当前 `avg+headrepair` 低于 full，但 full 里大量收益来自“避开坏候选/坏客户端”的选择空间；子集 soup 是最小、最可控的扩展。
+2. Activation/Channel Alignment for CNN。只对 `resnet/convnext` 先试，用超声 val feature map 做通道相关性匹配，再平均对应层；目标是解决 permutation/channel mismatch，而不是再调医学特征。风险是架构适配成本高，先做单模型族 smoke。
+3. Head Weight Repair。现有 head prior repair 只修 bias；下一步可冻结 backbone，用 val 特征对 classifier weight+bias 做闭式 ridge/prototype 修复。它是医学图像分类头校准，不是 NLP 通用融合；但会更依赖 val labels，必须严格对照 avg 同等处理。
+4. Low-Dim AdaMerging。只学习少量 layer group/client 系数，不学习全参数；目标函数用 val loss 或 entropy，带强正则和早停。该方向比调 temperature 更合理，但有小验证集过拟合风险。
+5. DELLA/DARE Random Sparse Delta Bank。把当前固定 `sparse_sign_density=0.20` 扩展为少量随机 magnitude-drop 候选，由 val 选择。它成本低，但更像工程增强，优先级低于子集 soup 和通道对齐。
+
+明确不优先：
+
+- 继续在 M1 上做超声 speckle 降噪或边缘特征堆叠。已有 denoise/noise-aware 45 格负优化。
+- 直接把 top-2 soup 默认打开。超声上权重空间差异大时 soup 可能破坏特征。
+- 大规模搜索超参数。当前收益瓶颈更像错位/坏客户端/头塌缩，不是阈值没调好。
+
+## 2026-06-04 超声 Client-Subset Soup 预实验
+
+动机：
+
+- 近年 Model Soups / greedy soup 的核心启发是：不要只做单一平均，应该让验证集在多个可解释 checkpoint soup 中选择。
+- 当前 `avg+headrepair` 负优化，而 full headrepair 的收益来自候选选择空间，说明超声上存在坏客户端或坏方向；排除部分客户端可能比继续调 M1 特征更直接。
+- 本轮不调超参数，不看 test 单格写规则。候选只来自客户端子集平均：drop-one 子集，以及按 M1 `overall/morph/consensus` 取 top-k 的子集。所有候选继续走同一个 val selection 和 head prior repair。
+
+ResNet 9 格 smoke：
+
+- 输出：`outputs/codex_my_merge_ultrasound_subset_soup_resnet9_20260604`。
+- 相对当前 full headrepair sparse：`6/3/0`，mean delta `+0.038834`，无负格。
+- 相对 formal best：`9/0/0`，mean delta `+0.202156`。
+- 新增候选实际被选中：`ultrasound_head_prior_repair:ultrasound_subset_top2_overall` 5 次，`ultrasound_subset_top2_overall` 1 次。
+- 结论：该方向有事实信号，进入 45 格全量验证。若全量负优化或只在 resnet 上成立，后续需要收窄到 top2 overall 或直接删除。
+
+## 2026-06-04 Ultrasound Subset Soup Summary
+
+- candidate: `outputs/codex_my_merge_ultrasound_subset_soup_chaosheng45_20260604`。
+- vs full_headrepair_sparse: n=45 W/T/L=20/25/0, mean_delta=0.017390。
+- vs formal best: n=45 W/T/L=39/0/6, mean_delta=0.072796。
+- 汇总表：`outputs/codex_my_merge_ultrasound_subset_soup_chaosheng45_20260604/reports/subset_soup_vs_full_headrepair.md`，明细：`outputs/codex_my_merge_ultrasound_subset_soup_chaosheng45_20260604/reports/subset_soup_vs_full_headrepair.csv`。
+
+## 2026-06-04 论文调研后的实现收敛
+
+调研记录：
+
+- Model Soups, ICML 2022, https://arxiv.org/abs/2203.05482 。可借鉴点是：验证集上表现好的 checkpoint 不必只选一个，可以做 soup；但超声 top-2 权重 soup 已被设置为默认禁用，因为权重空间差异大时容易破坏特征。当前采用的是更保守的 client-subset soup，让验证集在多个子集平均 checkpoint 中选择。
+- TIES-Merging, NeurIPS 2023, https://arxiv.org/abs/2306.01708 ；DARE, 2023, https://arxiv.org/abs/2311.03099 ；DELLA, 2024, https://arxiv.org/abs/2406.11617 。共同启发是减少 task delta 干扰，保留高置信方向。当前保留的超声 sparse sign candidate 属于这一类，45 格相对旧超声分支无负格提升。
+- Git Re-Basin, 2022, https://arxiv.org/abs/2209.04836 ；ZipIt, 2023, https://arxiv.org/abs/2305.03053 。核心启发是通道/神经元错位会让普通权重平均失败。当前未贸然加入通道匹配模块，因为跨 ResNet/ConvNeXt/ViT/CLIP 适配成本高，且需要单独 smoke 证明。
+- RegMean, ICLR 2023, https://openreview.net/forum?id=KelmQq0t3u ；AdaMerging, ICLR 2024, https://arxiv.org/abs/2310.02575 。启发是用激活统计或验证目标估计融合系数。当前只把这个思想落到低风险的验证集候选选择上，没有做大规模可学习系数搜索，避免小验证集过拟合。
+
+基于数据的取舍：
+
+- 全量 subset soup 的收益来自 `top2_overall`、少量 `top3_overall` 和 drop-one 子集。被选候选统计显示 `ultrasound_head_prior_repair:ultrasound_subset_top2_overall` 11 次，`ultrasound_subset_top2_overall` 3 次，`top3_overall` 相关 3 次，drop-one 相关 12 次。
+- `morph/consensus` top-k subset 候选没有作为最终候选出现。按“无用模块删除”的原则，代码已裁剪为只保留 drop-one 和 M1 overall top-k。
+- 超声 specialist 下 `my_merge_ultrasound_subset_soup` 现在默认开启；可以通过 `--no-my-merge-ultrasound-subset-soup` 关闭，便于继续做受控消融。
+
+裁剪后 smoke：
+
+- 输出：`outputs/codex_my_merge_ultrasound_subset_pruned_resnet9_20260604`。
+- 相对 full headrepair sparse：`6/3/0`，mean delta `+0.038834`。
+- 相对 formal best：`9/0/0`，mean delta `+0.202156`。
+- 候选选择与 full subset 的 ResNet 9 格一致，说明删掉 morph/consensus top-k 没有损失这部分收益。

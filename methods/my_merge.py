@@ -20,6 +20,7 @@ DEFAULT_SOUP_MIN_SCORE_DELTA = 0.0
 DEFAULT_ULTRASOUND_SELECTION_MEDICAL_WEIGHT = 0.08
 DEFAULT_ULTRASOUND_SOUP_MIN_SCORE_DELTA = 0.005
 DEFAULT_ULTRASOUND_SPARSE_SIGN_DENSITY = 0.20
+DEFAULT_ULTRASOUND_SUBSET_SOUP = True
 CLIP_IMAGE_MEAN = (0.48145466, 0.4578275, 0.40821073)
 CLIP_IMAGE_STD = (0.26862954, 0.26130258, 0.27577711)
 
@@ -360,6 +361,20 @@ def _ultrasound_sparse_sign_enabled(meta, cfg):
 def _ultrasound_sparse_sign_density(cfg):
     density = float((cfg or {}).get("my_merge_ultrasound_sparse_sign_density", DEFAULT_ULTRASOUND_SPARSE_SIGN_DENSITY))
     return max(0.05, min(0.5, density))
+
+
+def _ultrasound_subset_soup_enabled(meta, cfg):
+    if not _ultrasound_specialist_enabled(meta, cfg):
+        return False
+    cfg = cfg or {}
+    if "my_merge_ultrasound_subset_soup" in cfg:
+        return _parse_bool(cfg.get("my_merge_ultrasound_subset_soup"), default=DEFAULT_ULTRASOUND_SUBSET_SOUP)
+    labels = {label.lower().replace("-", "_") for label in _ablation_labels(cfg)}
+    if "no_ultrasound_subset_soup" in labels:
+        return False
+    if "ultrasound_subset_soup" in labels:
+        return True
+    return DEFAULT_ULTRASOUND_SUBSET_SOUP
 
 
 def _ablation_config(cfg):
@@ -1104,6 +1119,59 @@ def _blend_state_dicts(left, right, right_weight):
     return merged
 
 
+def _subset_average_state_dict(state_dicts, base_weights, subset):
+    subset = tuple(int(idx) for idx in subset)
+    subset_states = [state_dicts[idx] for idx in subset]
+    subset_weights = [float(torch.as_tensor(base_weights, dtype=torch.float32)[idx].item()) for idx in subset]
+    return average_state_dicts(subset_states, subset_weights)[0]
+
+
+def _subset_trace(base_weights, subset, source):
+    num_clients = len(base_weights)
+    raw = torch.zeros(num_clients, dtype=torch.float32)
+    for idx in subset:
+        raw[int(idx)] = float(torch.as_tensor(base_weights, dtype=torch.float32)[int(idx)].item())
+    weights = _normalize_scores(raw, fallback=torch.ones(num_clients, dtype=torch.float32) / max(1, num_clients))
+    return {
+        "fusion_weights": [float(x) for x in weights.tolist()],
+        "group_weights": {},
+        "routing_summary": {
+            "ultrasound_subset_soup": True,
+            "subset_source": source,
+            "subset_indices": [int(idx) for idx in subset],
+            "subset_size": len(subset),
+        },
+    }
+
+
+def _add_ultrasound_subset_candidates(candidates, candidate_traces, state_dicts, base_weights, overall_weights, morph_weights):
+    num_clients = len(state_dicts)
+    if num_clients < 3:
+        return
+
+    base_weights_t = torch.as_tensor(base_weights, dtype=torch.float32)
+    overall_scores = torch.as_tensor(overall_weights, dtype=torch.float32)
+
+    seen = set()
+
+    def add_subset(name, subset, source):
+        subset = tuple(sorted(int(idx) for idx in subset))
+        if len(subset) < 2 or len(subset) >= num_clients or subset in seen:
+            return
+        seen.add(subset)
+        candidates[name] = _subset_average_state_dict(state_dicts, base_weights_t, subset)
+        candidate_traces[name] = _subset_trace(base_weights_t, subset, source)
+
+    all_indices = tuple(range(num_clients))
+    for drop_idx in all_indices:
+        add_subset(f"ultrasound_subset_drop_client{drop_idx}", [idx for idx in all_indices if idx != drop_idx], "drop_one")
+
+    max_topk = min(4, num_clients - 1)
+    order = torch.argsort(overall_scores, descending=True).tolist()
+    for k in range(2, max_topk + 1):
+        add_subset(f"ultrasound_subset_top{k}_overall", order[:k], "topk_overall")
+
+
 def _selection_score_from_metrics(meta, cfg, val_acc, val_medical_acc, val_loss):
     medical_weight = _selection_medical_weight(meta, cfg)
     ordinary_weight = 1.0 - medical_weight
@@ -1237,6 +1305,16 @@ def _validated_standard_checkpoint_merge(
     candidates["avg"] = base_merged
     candidate_traces = {}
     consensus_weights = _medical_consensus_weights(overall_weights, morph_weights, base_weights)
+
+    if _ultrasound_subset_soup_enabled(meta, cfg):
+        _add_ultrasound_subset_candidates(
+            candidates,
+            candidate_traces,
+            state_dicts,
+            base_weights,
+            overall_weights,
+            morph_weights,
+        )
 
     if _component_enabled(cfg, "medical_weighted_fusion"):
         weighted_state, weighted_trace = _medical_delta_weighted_state_merge(
@@ -1439,6 +1517,7 @@ def _validated_standard_checkpoint_merge(
     routing_summary.update(selected_trace.get("routing_summary", {}))
     if ultrasound_specialist:
         routing_summary["ultrasound_specialist"] = True
+        routing_summary["ultrasound_subset_soup"] = _ultrasound_subset_soup_enabled(meta, cfg)
         routing_summary["ultrasound_sparse_sign"] = _ultrasound_sparse_sign_enabled(meta, cfg)
         routing_summary["ultrasound_sparse_sign_density"] = _ultrasound_sparse_sign_density(cfg)
         routing_summary["ultrasound_soup_allowed"] = _parse_bool(
@@ -1633,6 +1712,7 @@ def merge_my_merge(state_dicts, weights, meta=None, checkpoints=None, cfg=None):
             "ablation_config": ablation_config,
             "modality": meta.get("dataset"),
             "ultrasound_specialist_enabled": ultrasound_specialist_enabled,
+            "ultrasound_subset_soup_enabled": _ultrasound_subset_soup_enabled(meta, cfg),
             "ultrasound_sparse_sign_enabled": _ultrasound_sparse_sign_enabled(meta, cfg),
             "ultrasound_sparse_sign_density": _ultrasound_sparse_sign_density(cfg),
             "model_family": _model_family(meta),

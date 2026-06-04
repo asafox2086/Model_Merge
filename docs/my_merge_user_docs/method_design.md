@@ -83,6 +83,7 @@ M1 使用或围绕这些医学图像证据：
 - `medical_weighted_fusion`：使用 M1 估计出的医学图像客户端可靠性做轻量加权融合；实现上以 reference checkpoint 为原点写成 delta 融合。
 - `sign_consistent_delta`：符号一致的 delta 融合，delta 合并权重使用 M1 的 `overall_weights` 和 `morphology_weights` 形成的医学共识权重，而不是无脑基础权重。
 - `avg_sign_blend_0p25`：平均融合与 sign delta 的小比例混合，同样继承医学共识权重。
+- `ultrasound_subset_*`：仅在 `chaoshengmnist_224 + my_merge_ultrasound_specialist` 下启用。候选只保留 drop-one 子集和按 M1 `overall_weights` 排序的 top-k 子集；全量实验中没有被选中的 `morph/consensus` top-k 子集已从默认候选池删除。
 - `top2_soup:*`：当验证集上前两名候选分数接近时，对两个候选做 0.5/0.5 soup，并重新在同一 val 批次上评估；只有 soup 的 `selection_score` 不低于当前第一名时才接管。
 
 选择规则：
@@ -103,6 +104,7 @@ M1 使用或围绕这些医学图像证据：
 - 曾尝试超声 robust validation selection：把 val 按 even/odd 拆分并用较差子集 score 排序。45 格消融相对 head repair 为 `4/39/2`、mean delta `-0.000060`，属于收益不足且轻微负优化，已删除代码和 CLI。
 - 当前保留超声 head prior repair：在 M2 候选评估中，对有 classifier bias 的候选用 val 标签先验 `pi` 和候选平均预测先验 `p_hat` 做 `bias += log(pi) - log(p_hat)`，再作为独立候选进入同一 validation selection。45 格消融相对当前 sparse-only 基线 `27/18/0`、mean delta `+0.036658`，相对 formal best `37/0/8`、mean delta `+0.055405`，因此保留。
 - 曾做 `avg + head prior repair` 受控消融，用来验证超声收益是否只来自分类头先验修正。45 格相对当前 full headrepair sparse 为 `0/17/28`、mean delta `-0.042568`，平均 accuracy `0.234062` 低于 full 的 `0.276630`；该实验说明当前 M1/M2 候选池在超声上仍有实际选择价值。该 ablation 开关已删除，只保留实验记录。
+- 当前保留超声 client-subset soup：依据 Model Soups 的验证集候选选择思想，但不启用不受控 top-2 权重 soup，而是新增可解释的客户端子集平均候选。45 格全量相对 full headrepair sparse 为 `20/25/0`、mean delta `+0.017390`，相对 formal best 为 `39/0/6`、mean delta `+0.072796`。代码默认开启，但可用 `--no-my-merge-ultrasound-subset-soup` 关闭。全量统计显示收益主要来自 `top2_overall` 和 drop-one 子集，因此已删除没有实际选择贡献的 `morph/consensus` top-k subset 候选。
 - 超声子项只保留 `my_merge_ultrasound_sparse_sign` 可控开关：它新增稀疏 sign-delta 候选，不替换原候选；45 格消融显示 sparse-only 相对当前超声基线 `3/42/0`、mean delta `+0.002915`，因此在超声分支下默认开启。`my_merge_ultrasound_early_detox` 曾尝试让 `medical_weighted_fusion` 的 early 层回到 base prior，但单独消融相对当前超声基线 `7/29/9`、mean delta `-0.000599`，已从代码和 CLI 删除，只在进度文档中保留失败记录。
 - gate 默认从更保守的高阈值降低为 `DEFAULT_RELIABILITY_THRESHOLD=0.10`、`DEFAULT_SEPARATION_THRESHOLD=0.05`，让医学证据在弱但稳定时也能影响 M1 权重。
 
