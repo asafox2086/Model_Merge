@@ -19,6 +19,7 @@ DEFAULT_SOUP_SCORE_MARGIN = 0.05
 DEFAULT_SOUP_MIN_SCORE_DELTA = 0.0
 DEFAULT_ULTRASOUND_SELECTION_MEDICAL_WEIGHT = 0.08
 DEFAULT_ULTRASOUND_SOUP_MIN_SCORE_DELTA = 0.005
+DEFAULT_ULTRASOUND_SPARSE_SIGN_DENSITY = 0.20
 CLIP_IMAGE_MEAN = (0.48145466, 0.4578275, 0.40821073)
 CLIP_IMAGE_STD = (0.26862954, 0.26130258, 0.27577711)
 
@@ -348,6 +349,17 @@ def _ultrasound_specialist_enabled(meta, cfg):
     if meta is None or meta.get("dataset") != "chaoshengmnist_224":
         return False
     return _parse_bool(cfg.get("my_merge_ultrasound_specialist", False), default=False)
+
+
+def _ultrasound_sparse_sign_enabled(meta, cfg):
+    if not _ultrasound_specialist_enabled(meta, cfg):
+        return False
+    return _parse_bool((cfg or {}).get("my_merge_ultrasound_sparse_sign", True), default=True)
+
+
+def _ultrasound_sparse_sign_density(cfg):
+    density = float((cfg or {}).get("my_merge_ultrasound_sparse_sign_density", DEFAULT_ULTRASOUND_SPARSE_SIGN_DENSITY))
+    return max(0.05, min(0.5, density))
 
 
 def _ablation_config(cfg):
@@ -901,6 +913,18 @@ def _is_classifier_tensor(key, tensor, num_classes):
     return any(token in key for token in ("fc", "classifier", "head", "proj"))
 
 
+def _classifier_bias_keys(state_dict, num_classes):
+    keys = []
+    for key, tensor in state_dict.items():
+        if not torch.is_floating_point(tensor):
+            continue
+        if tensor.ndim == 1 and tensor.shape[0] == num_classes and any(
+            token in key for token in ("fc", "classifier", "head", "proj")
+        ):
+            keys.append(key)
+    return keys
+
+
 def _param_group(key, meta):
     family = _model_family(meta)
     if family == "cnn":
@@ -1144,6 +1168,54 @@ def _evaluate_candidate_on_batches(meta, state_dict, cfg, batches, features, lab
     }
 
 
+def _class_prior_from_labels(labels, num_classes):
+    counts = torch.bincount(labels.detach().cpu().long().view(-1), minlength=num_classes).float()
+    prior = counts.clamp_min(EPS)
+    return prior / prior.sum().clamp_min(EPS)
+
+
+def _ultrasound_head_prior_repair(meta, state_dict, cfg, batches, labels):
+    if not _ultrasound_specialist_enabled(meta, cfg):
+        return None, {}
+    num_classes = int(meta["num_classes"])
+    bias_keys = _classifier_bias_keys(state_dict, num_classes)
+    if not bias_keys:
+        return None, {}
+
+    device = torch.device(cfg.get("stats_device", cfg.get("device", "cpu")))
+    model, forward_fn = _build_model_forward_only(meta, cfg, device)
+    model.load_state_dict(state_dict, strict=True)
+    model.eval()
+
+    pred_sum = torch.zeros(num_classes, dtype=torch.float32)
+    total = 0
+    with torch.no_grad():
+        for x, _ in batches:
+            x = x.to(device, non_blocking=True)
+            logits = forward_fn(model, x).detach().float().cpu()
+            pred_sum += torch.softmax(logits, dim=1).sum(dim=0)
+            total += int(logits.shape[0])
+    if total <= 0:
+        return None, {}
+
+    predicted_prior = (pred_sum / float(total)).clamp_min(EPS)
+    predicted_prior = predicted_prior / predicted_prior.sum().clamp_min(EPS)
+    target_prior = _class_prior_from_labels(labels, num_classes)
+    bias_offset = torch.log(target_prior) - torch.log(predicted_prior)
+
+    repaired = OrderedDict()
+    for key, value in state_dict.items():
+        if key in bias_keys:
+            repaired[key] = (value.detach().float().cpu() + bias_offset).to(dtype=value.dtype)
+        else:
+            repaired[key] = value.detach().clone()
+    return repaired, {
+        "classifier_bias_keys": bias_keys,
+        "target_prior": [float(x) for x in target_prior.tolist()],
+        "predicted_prior": [float(x) for x in predicted_prior.tolist()],
+    }
+
+
 def _validated_standard_checkpoint_merge(
     state_dicts,
     base_merged,
@@ -1224,6 +1296,38 @@ def _validated_standard_checkpoint_merge(
                     "ultrasound_specialist": True,
                 },
             }
+            if _ultrasound_sparse_sign_enabled(meta, cfg):
+                sparse_density = _ultrasound_sparse_sign_density(cfg)
+                density_label = str(sparse_density).replace(".", "p")
+                sparse_name = f"ultrasound_sign_sparse_{density_label}"
+                sparse_sign_state = _medical_sign_consistent_delta_merge(
+                    state_dicts,
+                    base_merged,
+                    reference_state,
+                    reference_param_names,
+                    consensus_weights.tolist(),
+                    preserve_density=sparse_density,
+                )
+                sparse_trace = {
+                    "fusion_weights": [float(x) for x in consensus_weights.tolist()],
+                    "group_weights": {},
+                    "routing_summary": {
+                        "sign_delta_weight_source": "medical_consensus",
+                        "ultrasound_specialist": True,
+                        "sparse_sign_density": sparse_density,
+                    },
+                }
+                candidates[sparse_name] = sparse_sign_state
+                candidate_traces[sparse_name] = sparse_trace
+                sparse_blend_name = f"ultrasound_avg_sparse_sign_blend_0p10_{density_label}"
+                candidates[sparse_blend_name] = _blend_state_dicts(base_merged, sparse_sign_state, right_weight=0.10)
+                candidate_traces[sparse_blend_name] = {
+                    **sparse_trace,
+                    "routing_summary": {
+                        **sparse_trace["routing_summary"],
+                        "blend_right_weight": 0.10,
+                    },
+                }
 
     if not _component_enabled(cfg, "validated_selection") or len(candidates) == 1:
         return base_merged, {
@@ -1240,7 +1344,7 @@ def _validated_standard_checkpoint_merge(
     best_name = None
     best_key = None
     rank_keys = {}
-    for name, candidate_state in candidates.items():
+    for name, candidate_state in list(candidates.items()):
         prepared_state = _prepare_candidate(
             meta,
             candidate_state,
@@ -1251,11 +1355,37 @@ def _validated_standard_checkpoint_merge(
         prepared_candidates[name] = prepared_state
         metrics = _evaluate_candidate_on_batches(meta, prepared_state, cfg, batches, features, labels)
         candidate_metrics[name] = metrics
-        rank_key = (metrics["selection_score"], metrics["val_acc"], -metrics["val_loss"])
+        rank_key = _candidate_rank_key(meta, cfg, metrics)
         rank_keys[name] = rank_key
         if best_key is None or rank_key > best_key:
             best_key = rank_key
             best_name = name
+        if ultrasound_specialist:
+            repaired_state, repair_trace = _ultrasound_head_prior_repair(meta, prepared_state, cfg, batches, labels)
+            if repaired_state is not None:
+                repair_name = f"ultrasound_head_prior_repair:{name}"
+                candidates[repair_name] = repaired_state
+                prepared_candidates[repair_name] = repaired_state
+                repair_metrics = _evaluate_candidate_on_batches(meta, repaired_state, cfg, batches, features, labels)
+                candidate_metrics[repair_name] = repair_metrics
+                repair_key = _candidate_rank_key(meta, cfg, repair_metrics)
+                rank_keys[repair_name] = repair_key
+                source_trace = candidate_traces.get(name, {})
+                candidate_traces[repair_name] = {
+                    "fusion_weights": source_trace.get(
+                        "fusion_weights",
+                        [float(x) for x in torch.as_tensor(base_weights, dtype=torch.float32).tolist()],
+                    ),
+                    "group_weights": source_trace.get("group_weights", {}),
+                    "routing_summary": {
+                        **source_trace.get("routing_summary", {}),
+                        "ultrasound_head_prior_repair": repair_trace,
+                        "head_prior_repair_source": name,
+                    },
+                }
+                if best_key is None or repair_key > best_key:
+                    best_key = repair_key
+                    best_name = repair_name
 
     selected_name = best_name or "avg"
     soup_trace = {}
@@ -1309,6 +1439,9 @@ def _validated_standard_checkpoint_merge(
     routing_summary.update(selected_trace.get("routing_summary", {}))
     if ultrasound_specialist:
         routing_summary["ultrasound_specialist"] = True
+        routing_summary["ultrasound_sparse_sign"] = _ultrasound_sparse_sign_enabled(meta, cfg)
+        routing_summary["ultrasound_sparse_sign_density"] = _ultrasound_sparse_sign_density(cfg)
+        routing_summary["ultrasound_robust_selection"] = _ultrasound_robust_selection_enabled(meta, cfg)
         routing_summary["ultrasound_soup_allowed"] = _parse_bool(
             cfg.get("my_merge_ultrasound_allow_soup", False),
             default=False,
@@ -1501,6 +1634,9 @@ def merge_my_merge(state_dicts, weights, meta=None, checkpoints=None, cfg=None):
             "ablation_config": ablation_config,
             "modality": meta.get("dataset"),
             "ultrasound_specialist_enabled": ultrasound_specialist_enabled,
+            "ultrasound_robust_selection_enabled": _ultrasound_robust_selection_enabled(meta, cfg),
+            "ultrasound_sparse_sign_enabled": _ultrasound_sparse_sign_enabled(meta, cfg),
+            "ultrasound_sparse_sign_density": _ultrasound_sparse_sign_density(cfg),
             "model_family": _model_family(meta),
             "base_weights": [float(x) for x in base_weights],
             "metadata_prior_weights": [

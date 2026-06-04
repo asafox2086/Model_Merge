@@ -474,3 +474,122 @@ convnext smoke 结果：
 
 - 额外 manifest 模型也跑完：`densenet` mean `0.453729`、`efficientnet` mean `0.454228`、`mobilenet` mean `0.360387`、`resnet34` mean `0.426375`。这些不在 `result/all_results.md` formal 表中，暂不纳入论文主对比。
 - 结论：这个可控超声分支有价值，应该保留开关；它改善了 formal 对齐 45 格的总体结果，但 `vit_t` 和 `clip-vit` 仍低于现有 best，需要后续专门分析。
+
+## 2026-06-03 超声分支 M2 受控增强预注册
+
+用户提出三条后续建议：early layer detox、hard sparsification、提高 selection medical weight。为避免“面向 test 结果编程”，本轮先固定实验协议再跑数据。
+
+预注册规则：
+
+- 数据读取、`val/test` split、最终 test 评估路径不变。
+- 只在 `my_merge_ultrasound_specialist=True` 且 `dataset == chaoshengmnist_224` 时启用新增子项。
+- 不按单个 test 格子写特判，不根据某个 beta/client 结果改规则。
+- 主指标只看与 `result/all_results.md` 对齐的 45 格：相对当前超声分支基线、相对 v8 guarded、相对 formal best 的 W/T/L 和 mean delta。
+- 保留标准：45 格 mean delta 相对当前超声分支不能下降；不能出现某个 formal 模型族明显崩塌；新增候选必须在 val 选择中有实际被选中或至少不伤害总体。
+- 若新增项负优化，保留实验记录；无实际价值的代码路径直接删除，避免后续误用。
+
+待试改动：
+
+- Early Layer Detox：超声分支下 `medical_weighted_fusion` 的 early 层使用 `base_weights`，不再混入 `morph_weights`。
+- Sparse Sign Candidate：新增超声稀疏 sign-delta 候选，默认 `preserve_density=0.20`，只作为候选进入 val 选择，不替换现有 sign。
+- Selection Medical Weight：暂不直接固定为 `0.40/0.50`。先跑结构改动；如需要，再用已有参数 `--my-merge-ultrasound-selection-medical-weight` 做显式小网格。
+
+受控消融结果：
+
+| variant | path | vs current ultrasound baseline | vs v8 guarded | vs formal best | decision |
+|---|---|---:|---:|---:|---|
+| current ultrasound baseline | `outputs/codex_my_merge_ultrasound_specialist_chaosheng45_20260603` | 0/45/0, +0.000000 | 21/17/7, +0.011720 | 29/0/16, +0.015833 | baseline |
+| early detox only | `outputs/codex_my_merge_ultrasound_early_detox_only_chaosheng45_20260603` | 7/29/9, -0.000599 | 20/17/8, +0.011121 | 27/0/18, +0.015234 | removed |
+| early detox + sparse sign | `outputs/codex_my_merge_ultrasound_detox_sparse_chaosheng45_20260603` | 10/26/9, +0.002316 | 21/17/7, +0.014036 | 27/0/18, +0.018149 | not default because early detox hurts some cells |
+| sparse sign only | `outputs/codex_my_merge_ultrasound_sparse_only_chaosheng45_20260603` | 3/42/0, +0.002915 | 22/17/6, +0.014635 | 29/0/16, +0.018748 | default on |
+
+事实结论：
+
+- 建议一 Early Layer Detox 的直觉有道理，但 45 格消融不支持保留；它单独相对当前超声分支 mean delta 为 `-0.000599`，且 W/T/L 为 `7/29/9`。按“无用模块直接删除”的原则，已移除代码和 CLI 开关，只保留本实验记录。
+- 建议二 Sparse Sign Candidate 有事实支持；sparse-only 相对当前超声分支 `3/42/0`，没有 loss cell，mean delta `+0.002915`。
+- Sparse candidate 被实际选中：`ultrasound_avg_sparse_sign_blend_0p10_0p2` 3/45，`ultrasound_sign_sparse_0p2` 2/45，不是无效候选。
+- 当前默认策略改为：超声分支下保留 `my_merge_ultrasound_sparse_sign=True`；不再提供 early detox 开关。
+- 建议三 Selection Medical Weight 暂未固定调高；因为当前 sparse-only 已经带来无负优化提升，且通用 morphology 权重在超声上仍可能被 speckle 误导。若继续试，只做显式参数扫描，不把 `0.40/0.50` 写死。
+
+## 2026-06-03 超声 M1 证据降噪预注册
+
+用户追问“能不能先处理掉噪声，然后再扔进 M1 学习依据”。当前判断：
+
+- 这个方向有价值，但必须限定在 M1 证据提取阶段，不能改变模型训练/验证/test 图像输入，否则会破坏与 `avg` 等方法的数据口径一致性。
+- 不能把它写成 test 特判；只在 `my_merge_ultrasound_specialist=True` 且 `dataset == chaoshengmnist_224` 时启用，并提供显式开关。
+- 不引入复杂新模块。先做轻量、确定性的 log-domain edge-preserving smoothing：先把超声强度做 log 压缩，使乘性 speckle 更接近加性扰动；再用 5x5 Gaussian 平滑，并用 Sobel 边缘作为保护门控，边缘处少平滑、同质区域多平滑。
+- M1 仍输出相同 7 维特征，不改后续融合接口。降噪只改变这些特征的估计来源；候选模型的 val/test forward 仍使用原图。
+- 若后续 45 格消融显示负优化，删除代码而不是保留无效模块。
+
+实现状态：
+
+- 曾短暂实现 `my_merge_ultrasound_denoise_evidence`，只在超声 specialist 分支下生效：超声分支先生成 denoised gray，再提取同样 7 维 M1 证据。
+- 真实 45 格输出：`outputs/codex_my_merge_ultrasound_denoise_sparse_chaosheng45_20260603`。
+- 相对当前 sparse-only 基线：`5/29/11`，mean delta `-0.000419`。分模型看，`resnet` 为 `1/3/5, -0.001398`，`swin_tiny` 为 `1/6/2, -0.000799`，`vit_t` 为 `3/3/3, +0.000200`，VLM 为 `0/8/1, -0.000100`，`convnext` 不变。
+- 相对 formal best：`30/0/15`，mean delta `+0.018328`，低于 sparse-only 的 `+0.018748`。
+- 结论：这版轻量 log-domain edge-preserving smoothing 不能作为有效改进；按“无用模块直接删除”的规则，已删除代码、CLI 和 trace，只保留本失败记录。
+
+## 2026-06-03 超声 M1 噪声感知可靠性预注册
+
+用户指出“既然问题是噪声，为什么降噪失败”。新的判断：
+
+- 像素平滑会同时削弱 speckle 和真实高频诊断结构，失败不代表噪声假设错，而是“先降噪再提证据”太粗。
+- 本轮不再调 temperature、floor、focal power 等超参数。
+- 只加入一个结构性判据：局部梯度方向一致性。真实解剖边界通常在局部窗口内方向更一致；随机 speckle 的梯度方向更杂乱。
+- M1 仍在原图上提 `edge/local_contrast/texture`，不替换输入图；只用方向一致性对 evidence reliability 和 diagnostic salience 打折。
+- 若 45 格相对当前 sparse-only 基线不提升，删除代码，只保留失败记录。
+
+实验结果：
+
+- 真实 45 格输出：`outputs/codex_my_merge_ultrasound_noiseaware_sparse_chaosheng45_20260603`。
+- 相对当前 sparse-only 基线：`9/20/16`，mean delta `-0.004213`。
+- 相对未加 sparse 的超声 specialist 基线：`11/19/15`，mean delta `-0.001298`。
+- 相对 formal best：`25/0/20`，mean delta `+0.014535`，明显低于 sparse-only 的 `+0.018748`。
+- 分模型相对 sparse-only：`convnext 0/9/0, +0.000000`；`clip-vit 2/7/0, +0.002496`；`resnet 1/1/7, -0.018668`；`swin_tiny 2/2/5, -0.004293`；`vit_t 4/1/4, -0.000599`。
+- 结论：方向一致性把 evidence reliability 压得过低，M1 更频繁选错 `medical_weighted_fusion` 相关候选，尤其伤害 `resnet`。该分支已删除，只保留本失败记录。
+
+## 2026-06-03 超声 Head Prior Repair 预注册
+
+动机：
+
+- 当前超声结果里不少格子反复落在 `0.173405` 附近，像类别先验/分类头塌缩，而不是 backbone 彻底不可用。
+- 本轮不调任何 temperature、floor、density、focal 等超参数。
+
+实现规则：
+
+- 只在超声 specialist 分支下新增 M2 候选，不改变基础候选。
+- 对每个已准备好的候选，在 val 上计算平均预测概率 `p_hat`，用 val 标签分布 `pi` 做标准 prior correction：对 classifier bias 加 `log(pi) - log(p_hat)`。
+- 只处理 state_dict 里形状为 `[num_classes]` 且名称属于 `fc/classifier/head/proj` 的 bias；没有 classifier bias 的候选自动跳过。
+- 所有修正候选仍通过同一个 val selection 选择，最终 test 只评估被选候选。
+- 若 45 格相对当前 sparse-only 基线不提升，删除代码，只保留失败记录。
+
+实验结果：
+
+- 真实 45 格输出：`outputs/codex_my_merge_ultrasound_headrepair_sparse_chaosheng45_20260603`。
+- 相对当前 sparse-only 基线：`27/18/0`，mean delta `+0.036658`，无 loss cell。
+- 相对未加 sparse 的超声 specialist 基线：`27/18/0`，mean delta `+0.039573`。
+- 相对 formal best：`37/0/8`，mean delta `+0.055405`。
+- 分模型相对 sparse-only：`convnext 2/7/0, +0.002596`；`clip-vit 0/9/0, +0.000000`；`resnet 9/0/0, +0.049216`；`swin_tiny 7/2/0, +0.035240`；`vit_t 9/0/0, +0.096236`。
+- 候选选择：head repair 候选被选中 `31/45`，其中 `ultrasound_head_prior_repair:medical_weighted_fusion` 13 次、`:sign_consistent_delta` 6 次、`:ultrasound_sign_sparse_0p2` 4 次、`:avg` 4 次。
+- 结论：该分支明确正向，保留。它解释了之前大量 `0.173405` 类别塌缩现象；超声问题至少有一部分来自分类头/类别先验，而不是 M1 图像噪声。
+
+## 2026-06-03 超声 Robust Validation Selection 预注册
+
+动机：
+
+- head repair 强正向后，剩余风险主要是 M2 在 val 上选到不稳定候选。
+- 本轮不使用图像扰动，不调 selection 权重，不新增阈值。
+
+实现规则：
+
+- 在同一次 candidate val forward 里，除了全量 val 指标，同时按样本全局序号拆成 even/odd 两个确定性子集。
+- 每个子集单独计算 `selection_score`。
+- 超声分支候选排序不再只看全量 `selection_score`，而是先看 `min(even_score, odd_score)`，再用全量 `selection_score`、`val_acc`、`-val_loss` 做后续排序。
+- 若 45 格相对 head-repair 基线不提升，删除该排序规则，只保留 head repair。
+
+## 2026-06-04 Ultrasound Robust Selection Summary
+
+- candidate: `outputs/codex_my_merge_ultrasound_headrepair_robustselect_chaosheng45_20260603`。
+- vs head_repair: n=45 W/T/L=4/39/2, mean_delta=-0.000060。
+- vs formal best: n=45 W/T/L=37/0/8, mean_delta=0.055345。
+- 汇总表：`outputs/codex_my_merge_ultrasound_headrepair_robustselect_chaosheng45_20260603/reports/robustselect_summary.md`，明细：`outputs/codex_my_merge_ultrasound_headrepair_robustselect_chaosheng45_20260603/reports/robustselect_vs_headrepair.csv`。
