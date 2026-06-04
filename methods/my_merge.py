@@ -21,6 +21,8 @@ DEFAULT_ULTRASOUND_SELECTION_MEDICAL_WEIGHT = 0.08
 DEFAULT_ULTRASOUND_SOUP_MIN_SCORE_DELTA = 0.005
 DEFAULT_ULTRASOUND_SPARSE_SIGN_DENSITY = 0.20
 DEFAULT_ULTRASOUND_SUBSET_SOUP = True
+DEFAULT_ADAPTIVE_CANDIDATES = False
+DEFAULT_ADAPTIVE_SPARSE_SIGN_DENSITY = 0.20
 CLIP_IMAGE_MEAN = (0.48145466, 0.4578275, 0.40821073)
 CLIP_IMAGE_STD = (0.26862954, 0.26130258, 0.27577711)
 
@@ -352,24 +354,53 @@ def _ultrasound_specialist_enabled(meta, cfg):
     return _parse_bool(cfg.get("my_merge_ultrasound_specialist", False), default=False)
 
 
-def _ultrasound_sparse_sign_enabled(meta, cfg):
-    if not _ultrasound_specialist_enabled(meta, cfg):
+def _adaptive_candidates_enabled(meta, cfg):
+    cfg = cfg or {}
+    if meta is None or not _is_medical_image_task(meta):
         return False
-    return _parse_bool((cfg or {}).get("my_merge_ultrasound_sparse_sign", True), default=True)
+    if "my_merge_adaptive_candidates" in cfg:
+        return _parse_bool(cfg.get("my_merge_adaptive_candidates"), default=DEFAULT_ADAPTIVE_CANDIDATES)
+    labels = {label.lower().replace("-", "_") for label in _ablation_labels(cfg)}
+    if "no_adaptive_candidates" in labels:
+        return False
+    if "adaptive_candidates" in labels:
+        return True
+    return DEFAULT_ADAPTIVE_CANDIDATES
+
+
+def _medical_extra_candidates_enabled(meta, cfg):
+    return _ultrasound_specialist_enabled(meta, cfg) or _adaptive_candidates_enabled(meta, cfg)
+
+
+def _ultrasound_sparse_sign_enabled(meta, cfg):
+    if not _medical_extra_candidates_enabled(meta, cfg):
+        return False
+    cfg = cfg or {}
+    if _adaptive_candidates_enabled(meta, cfg) and "my_merge_adaptive_sparse_sign" in cfg:
+        return _parse_bool(cfg.get("my_merge_adaptive_sparse_sign"), default=True)
+    return _parse_bool(cfg.get("my_merge_ultrasound_sparse_sign", True), default=True)
 
 
 def _ultrasound_sparse_sign_density(cfg):
-    density = float((cfg or {}).get("my_merge_ultrasound_sparse_sign_density", DEFAULT_ULTRASOUND_SPARSE_SIGN_DENSITY))
+    cfg = cfg or {}
+    default_density = DEFAULT_ADAPTIVE_SPARSE_SIGN_DENSITY if _parse_bool(cfg.get("my_merge_adaptive_candidates", False), default=False) else DEFAULT_ULTRASOUND_SPARSE_SIGN_DENSITY
+    density = float(cfg.get("my_merge_ultrasound_sparse_sign_density", cfg.get("my_merge_adaptive_sparse_sign_density", default_density)))
     return max(0.05, min(0.5, density))
 
 
 def _ultrasound_subset_soup_enabled(meta, cfg):
-    if not _ultrasound_specialist_enabled(meta, cfg):
+    if not _medical_extra_candidates_enabled(meta, cfg):
         return False
     cfg = cfg or {}
+    if _adaptive_candidates_enabled(meta, cfg) and "my_merge_adaptive_subset_soup" in cfg:
+        return _parse_bool(cfg.get("my_merge_adaptive_subset_soup"), default=True)
     if "my_merge_ultrasound_subset_soup" in cfg:
         return _parse_bool(cfg.get("my_merge_ultrasound_subset_soup"), default=DEFAULT_ULTRASOUND_SUBSET_SOUP)
     labels = {label.lower().replace("-", "_") for label in _ablation_labels(cfg)}
+    if "no_adaptive_subset_soup" in labels:
+        return False
+    if "adaptive_subset_soup" in labels:
+        return True
     if "no_ultrasound_subset_soup" in labels:
         return False
     if "ultrasound_subset_soup" in labels:
@@ -1144,7 +1175,7 @@ def _subset_trace(base_weights, subset, source):
     }
 
 
-def _add_ultrasound_subset_candidates(candidates, candidate_traces, state_dicts, base_weights, overall_weights, morph_weights):
+def _add_ultrasound_subset_candidates(candidates, candidate_traces, state_dicts, base_weights, overall_weights, name_prefix="ultrasound_subset"):
     num_clients = len(state_dicts)
     if num_clients < 3:
         return
@@ -1162,14 +1193,10 @@ def _add_ultrasound_subset_candidates(candidates, candidate_traces, state_dicts,
         candidates[name] = _subset_average_state_dict(state_dicts, base_weights_t, subset)
         candidate_traces[name] = _subset_trace(base_weights_t, subset, source)
 
-    all_indices = tuple(range(num_clients))
-    for drop_idx in all_indices:
-        add_subset(f"ultrasound_subset_drop_client{drop_idx}", [idx for idx in all_indices if idx != drop_idx], "drop_one")
-
     max_topk = min(4, num_clients - 1)
     order = torch.argsort(overall_scores, descending=True).tolist()
     for k in range(2, max_topk + 1):
-        add_subset(f"ultrasound_subset_top{k}_overall", order[:k], "topk_overall")
+        add_subset(f"{name_prefix}_top{k}_overall", order[:k], "topk_overall")
 
 
 def _selection_score_from_metrics(meta, cfg, val_acc, val_medical_acc, val_loss):
@@ -1243,7 +1270,7 @@ def _class_prior_from_labels(labels, num_classes):
 
 
 def _ultrasound_head_prior_repair(meta, state_dict, cfg, batches, labels):
-    if not _ultrasound_specialist_enabled(meta, cfg):
+    if not _medical_extra_candidates_enabled(meta, cfg):
         return None, {}
     num_classes = int(meta["num_classes"])
     bias_keys = _classifier_bias_keys(state_dict, num_classes)
@@ -1301,6 +1328,8 @@ def _validated_standard_checkpoint_merge(
     reference_param_names=None,
 ):
     ultrasound_specialist = _ultrasound_specialist_enabled(meta, cfg)
+    extra_candidates = _medical_extra_candidates_enabled(meta, cfg)
+    adaptive_candidates = _adaptive_candidates_enabled(meta, cfg)
     candidates = OrderedDict()
     candidates["avg"] = base_merged
     candidate_traces = {}
@@ -1313,7 +1342,7 @@ def _validated_standard_checkpoint_merge(
             state_dicts,
             base_weights,
             overall_weights,
-            morph_weights,
+            name_prefix="adaptive_subset" if adaptive_candidates and not ultrasound_specialist else "ultrasound_subset",
         )
 
     if _component_enabled(cfg, "medical_weighted_fusion"):
@@ -1330,19 +1359,6 @@ def _validated_standard_checkpoint_merge(
         )
         candidates["medical_weighted_fusion"] = weighted_state
         candidate_traces["medical_weighted_fusion"] = weighted_trace
-        if ultrasound_specialist:
-            for blend_weight in (0.50, 0.75):
-                blend_name = f"ultrasound_avg_weighted_blend_{str(blend_weight).replace('.', 'p')}"
-                candidates[blend_name] = _blend_state_dicts(base_merged, weighted_state, right_weight=blend_weight)
-                candidate_traces[blend_name] = {
-                    **weighted_trace,
-                    "routing_summary": {
-                        **weighted_trace.get("routing_summary", {}),
-                        "ultrasound_specialist": True,
-                        "blend_source": "medical_weighted_fusion",
-                        "blend_right_weight": blend_weight,
-                    },
-                }
 
     if _use_sign_consistent_delta(meta, cfg) and reference_state is not None and reference_param_names is not None:
         sign_state = _medical_sign_consistent_delta_merge(
@@ -1353,31 +1369,24 @@ def _validated_standard_checkpoint_merge(
             consensus_weights.tolist(),
         )
         candidates["sign_consistent_delta"] = sign_state
-        candidates["avg_sign_blend_0p25"] = _blend_state_dicts(base_merged, sign_state, right_weight=0.25)
         sign_trace = {
             "fusion_weights": [float(x) for x in consensus_weights.tolist()],
             "group_weights": {},
             "routing_summary": {"sign_delta_weight_source": "medical_consensus"},
         }
         candidate_traces["sign_consistent_delta"] = sign_trace
-        candidate_traces["avg_sign_blend_0p25"] = {
-            **sign_trace,
-            "routing_summary": {"sign_delta_weight_source": "medical_consensus", "blend_right_weight": 0.25},
-        }
-        if ultrasound_specialist:
-            candidates["ultrasound_avg_sign_blend_0p10"] = _blend_state_dicts(base_merged, sign_state, right_weight=0.10)
-            candidate_traces["ultrasound_avg_sign_blend_0p10"] = {
+        if not extra_candidates:
+            candidates["avg_sign_blend_0p25"] = _blend_state_dicts(base_merged, sign_state, right_weight=0.25)
+            candidate_traces["avg_sign_blend_0p25"] = {
                 **sign_trace,
-                "routing_summary": {
-                    "sign_delta_weight_source": "medical_consensus",
-                    "blend_right_weight": 0.10,
-                    "ultrasound_specialist": True,
-                },
+                "routing_summary": {"sign_delta_weight_source": "medical_consensus", "blend_right_weight": 0.25},
             }
+        if extra_candidates:
             if _ultrasound_sparse_sign_enabled(meta, cfg):
                 sparse_density = _ultrasound_sparse_sign_density(cfg)
                 density_label = str(sparse_density).replace(".", "p")
-                sparse_name = f"ultrasound_sign_sparse_{density_label}"
+                sparse_prefix = "adaptive_sign_sparse" if adaptive_candidates and not ultrasound_specialist else "ultrasound_sign_sparse"
+                sparse_name = f"{sparse_prefix}_{density_label}"
                 sparse_sign_state = _medical_sign_consistent_delta_merge(
                     state_dicts,
                     base_merged,
@@ -1391,21 +1400,13 @@ def _validated_standard_checkpoint_merge(
                     "group_weights": {},
                     "routing_summary": {
                         "sign_delta_weight_source": "medical_consensus",
-                        "ultrasound_specialist": True,
+                        "adaptive_candidates": bool(adaptive_candidates),
+                        "ultrasound_specialist": bool(ultrasound_specialist),
                         "sparse_sign_density": sparse_density,
                     },
                 }
                 candidates[sparse_name] = sparse_sign_state
                 candidate_traces[sparse_name] = sparse_trace
-                sparse_blend_name = f"ultrasound_avg_sparse_sign_blend_0p10_{density_label}"
-                candidates[sparse_blend_name] = _blend_state_dicts(base_merged, sparse_sign_state, right_weight=0.10)
-                candidate_traces[sparse_blend_name] = {
-                    **sparse_trace,
-                    "routing_summary": {
-                        **sparse_trace["routing_summary"],
-                        "blend_right_weight": 0.10,
-                    },
-                }
 
     if not _component_enabled(cfg, "validated_selection") or len(candidates) == 1:
         return base_merged, {
@@ -1438,10 +1439,11 @@ def _validated_standard_checkpoint_merge(
         if best_key is None or rank_key > best_key:
             best_key = rank_key
             best_name = name
-        if ultrasound_specialist:
+        if extra_candidates:
             repaired_state, repair_trace = _ultrasound_head_prior_repair(meta, prepared_state, cfg, batches, labels)
             if repaired_state is not None:
-                repair_name = f"ultrasound_head_prior_repair:{name}"
+                repair_prefix = "head_prior_repair" if adaptive_candidates and not ultrasound_specialist else "ultrasound_head_prior_repair"
+                repair_name = f"{repair_prefix}:{name}"
                 candidates[repair_name] = repaired_state
                 prepared_candidates[repair_name] = repaired_state
                 repair_metrics = _evaluate_candidate_on_batches(meta, repaired_state, cfg, batches, features, labels)
@@ -1457,7 +1459,7 @@ def _validated_standard_checkpoint_merge(
                     "group_weights": source_trace.get("group_weights", {}),
                     "routing_summary": {
                         **source_trace.get("routing_summary", {}),
-                        "ultrasound_head_prior_repair": repair_trace,
+                        "head_prior_repair": repair_trace,
                         "head_prior_repair_source": name,
                     },
                 }
@@ -1474,7 +1476,7 @@ def _validated_standard_checkpoint_merge(
         score_gap = float(candidate_metrics[top_name]["selection_score"] - candidate_metrics[second_name]["selection_score"])
         soup_margin = float(cfg.get("my_merge_soup_score_margin", DEFAULT_SOUP_SCORE_MARGIN) or DEFAULT_SOUP_SCORE_MARGIN)
         allow_soup = True
-        if ultrasound_specialist:
+        if extra_candidates:
             allow_soup = _parse_bool(cfg.get("my_merge_ultrasound_allow_soup", False), default=False)
         if allow_soup and score_gap <= soup_margin:
             soup_name = f"top2_soup:{top_name}+{second_name}"
@@ -1515,8 +1517,9 @@ def _validated_standard_checkpoint_merge(
     selected_trace = candidate_traces.get(selected_name, {})
     routing_summary = {"validated_candidates": len(candidates)}
     routing_summary.update(selected_trace.get("routing_summary", {}))
-    if ultrasound_specialist:
-        routing_summary["ultrasound_specialist"] = True
+    if extra_candidates:
+        routing_summary["adaptive_candidates"] = bool(adaptive_candidates)
+        routing_summary["ultrasound_specialist"] = bool(ultrasound_specialist)
         routing_summary["ultrasound_subset_soup"] = _ultrasound_subset_soup_enabled(meta, cfg)
         routing_summary["ultrasound_sparse_sign"] = _ultrasound_sparse_sign_enabled(meta, cfg)
         routing_summary["ultrasound_sparse_sign_density"] = _ultrasound_sparse_sign_density(cfg)
@@ -1702,9 +1705,12 @@ def merge_my_merge(state_dicts, weights, meta=None, checkpoints=None, cfg=None):
         )
 
         ultrasound_specialist_enabled = _ultrasound_specialist_enabled(meta, cfg)
+        adaptive_candidates_enabled = _adaptive_candidates_enabled(meta, cfg)
         implementation = "medical_evidence_two_module_posthoc_merge_v8_delta_soup_guarded"
         if ultrasound_specialist_enabled:
             implementation = f"{implementation}_ultrasound_specialist"
+        if adaptive_candidates_enabled:
+            implementation = f"{implementation}_adaptive_candidates"
         return merged_state_dict, {
             "implementation": implementation,
             "medical_only": True,
@@ -1712,6 +1718,7 @@ def merge_my_merge(state_dicts, weights, meta=None, checkpoints=None, cfg=None):
             "ablation_config": ablation_config,
             "modality": meta.get("dataset"),
             "ultrasound_specialist_enabled": ultrasound_specialist_enabled,
+            "adaptive_candidates_enabled": adaptive_candidates_enabled,
             "ultrasound_subset_soup_enabled": _ultrasound_subset_soup_enabled(meta, cfg),
             "ultrasound_sparse_sign_enabled": _ultrasound_sparse_sign_enabled(meta, cfg),
             "ultrasound_sparse_sign_density": _ultrasound_sparse_sign_density(cfg),

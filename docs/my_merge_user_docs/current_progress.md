@@ -673,3 +673,54 @@ ResNet 9 格 smoke：
 - 相对 full headrepair sparse：`6/3/0`，mean delta `+0.038834`。
 - 相对 formal best：`9/0/0`，mean delta `+0.202156`。
 - 候选选择与 full subset 的 ResNet 9 格一致，说明删掉 morph/consensus top-k 没有损失这部分收益。
+
+## 2026-06-04 超声候选池二次裁剪
+
+用户指出候选池太大、太杂，不像一个好的方法。按最近 45 格 full subset soup 的 `selected_candidate` 做统计：
+
+- 0 次被选中但大量进入候选池：`avg_sign_blend_0p25`、`ultrasound_avg_sign_blend_0p10`、`ultrasound_avg_sparse_sign_blend_0p10_0p2`、裸 `medical_weighted_fusion`、裸 `sign_consistent_delta`、`ultrasound_avg_weighted_blend_0p5/0p75`。
+- 真正带来正 delta 的主要是 `ultrasound_subset_top2_overall` 及其 head-repair 版本；少量收益来自 `top3_overall` 和旧版 `drop_client*`。
+- `drop_client*` 的编号没有医学含义，而且很多只是和 `top-k overall` 等价但因为生成顺序被命名成 drop-one。因此不再保留编号枚举。
+
+代码裁剪：
+
+- 超声候选池只保留：`avg`、`medical_weighted_fusion`、`sign_consistent_delta`、`ultrasound_sign_sparse_0p2`、`ultrasound_subset_top{k}_overall`。
+- 删除超声分支的所有 blend 候选：`ultrasound_avg_weighted_blend_*`、`avg_sign_blend_0p25`、`ultrasound_avg_sign_blend_0p10`、`ultrasound_avg_sparse_sign_blend_*`。
+- 删除 `ultrasound_subset_drop_client*` 枚举；只保留有语义的 M1 overall top-k 子集。
+- Head prior repair 仍作为统一校准步骤作用在剩余候选上。
+
+验证：
+
+- 输出：`outputs/codex_my_merge_ultrasound_candidate_prune_resnet9_20260604`。
+- 相对 full headrepair sparse：`6/3/0`，mean delta `+0.038834`。
+- 相对 formal best：`9/0/0`，mean delta `+0.202156`。
+- ResNet 9 格 accuracy 与裁剪前一致。
+- 候选池规模从裁剪前 ResNet smoke 的均值 `31.33` 降到 `12.67`，候选池结构明显更干净。
+
+## 2026-06-04 去掉 Chaosheng 数据集特判的测试
+
+动机：
+
+- 用户指出当前设计把 `chaoshengmnist_224` 和其他数据集割裂，容易被质疑是数据集特判。
+- 本轮先做两个对照：完全不开超声 specialist 的通用版，以及不看数据集名的统一 adaptive candidate 版。
+
+完全无特殊待遇：
+
+- 命令不传 `--my-merge-ultrasound-specialist`，也不传 adaptive 开关。
+- 输出：`outputs/codex_my_merge_no_special_chaosheng_resnet9_20260604`。
+- 候选池均值：`4.44`，主要只在 `medical_weighted_fusion` 和 `sign_consistent_delta` 中选择。
+- 相对精简 specialist：`0/0/9`，mean delta `-0.088350`。
+- 相对 formal best：`9/0/0`，mean delta `+0.113807`。
+- 结论：完全去掉额外候选后，超声 ResNet 9 格明显下降，说明提升不是普通 M1/M2 自然产生的。
+
+统一 adaptive candidate 版：
+
+- 新增开关：`--my-merge-adaptive-candidates`。
+- 该开关只判断是否是医学图像任务，不判断 `dataset == chaoshengmnist_224`。
+- 输出：`outputs/codex_my_merge_adaptive_candidates_chaosheng_resnet9_20260604`。
+- 候选命名变为 `adaptive_subset_top{k}_overall`、`adaptive_sign_sparse_0p2`、`head_prior_repair:*`，不再带 `ultrasound_` 前缀。
+- 候选池均值：`12.67`，与精简 specialist 一致。
+- 相对完全无特殊待遇：`9/0/0`，mean delta `+0.087052`。
+- 相对精简 specialist：`1/6/2`，mean delta `-0.001298`，只有 c3 的两个格子轻微下降，c5/c7 核心收益完全保住。
+- 相对 formal best：`9/0/0`，mean delta `+0.200859`。
+- 结论：可以把“超声特判”改写成统一医学 adaptive candidate 机制。至少 ResNet 9 格上，`chaoshengmnist_224` 没有数据集名特殊待遇时仍基本保留收益。
