@@ -724,3 +724,87 @@ ResNet 9 格 smoke：
 - 相对精简 specialist：`1/6/2`，mean delta `-0.001298`，只有 c3 的两个格子轻微下降，c5/c7 核心收益完全保住。
 - 相对 formal best：`9/0/0`，mean delta `+0.200859`。
 - 结论：可以把“超声特判”改写成统一医学 adaptive candidate 机制。至少 ResNet 9 格上，`chaoshengmnist_224` 没有数据集名特殊待遇时仍基本保留收益。
+
+## 2026-06-04 非超声 adaptive candidates 负优化检查
+
+目的：
+
+- 检查 `--my-merge-adaptive-candidates` 放到非超声医学数据集后是否造成负优化。
+- 本轮先跑 `resnet`，数据集为 `bloodmnist_224`、`dermamnist_224`、`organcmnist_224`、`organsmnist_224`，clients `{3,5,7}`，beta `{0,0.01,0.1}`，共 36 格。
+
+输出：
+
+- 默认 my_merge：`outputs/codex_my_merge_adaptive_check_default_resnet36_20260604`。
+- adaptive candidates：`outputs/codex_my_merge_adaptive_check_adaptive_resnet36_20260604`。
+
+总体结果：
+
+- W/T/L：`33/1/2`。
+- 默认 mean acc：`0.493506`。
+- adaptive mean acc：`0.575111`。
+- mean delta：`+0.081606`。
+- 候选池均值：`12.67`，候选类型仍是 `avg`、`medical_weighted_fusion`、`sign_consistent_delta`、`adaptive_sign_sparse_0p2`、`adaptive_subset_top{k}_overall` 及其 `head_prior_repair:*`。
+
+分数据集：
+
+| dataset | W/T/L | mean delta |
+| --- | ---: | ---: |
+| `bloodmnist_224` | 9/0/0 | +0.148625 |
+| `dermamnist_224` | 9/0/0 | +0.019839 |
+| `organcmnist_224` | 9/0/0 | +0.089433 |
+| `organsmnist_224` | 6/1/2 | +0.068527 |
+
+负优化格：
+
+| dataset | model | clients | beta | default | adaptive | delta |
+| --- | --- | ---: | ---: | ---: | ---: | ---: |
+| `organsmnist_224` | `resnet` | 3 | 0.01 | 0.447264 | 0.413277 | -0.033987 |
+| `organsmnist_224` | `resnet` | 7 | 0.0 | 0.327291 | 0.314376 | -0.012915 |
+
+结论：
+
+- 在非超声 ResNet 36 格上，adaptive candidates 总体显著正向，不是大面积负优化。
+- 但它不是无损模块：`organsmnist_224` 有 2 个负格。因此不能贸然默认开启；更稳妥的论文/代码设计是继续保留显式开关，或增加“repair/subset 接受门控”，只有 adaptive 候选在 val 上超过基础候选一定 margin 时才接管。
+
+## 2026-06-04 汇总表覆盖旧 my_merge 全量消融数据
+
+用户要求：
+
+- 更新 `My_merge_ret/汇总表.md`，覆盖旧的 `my_merge` 及其消融数据。
+
+数据来源确认：
+
+- 采用最新完整全量消融源：`outputs/codex_my_merge_full_gpu_20260601_1400/my_merge_ablation_grid`。
+- 该源包含 4 个 ablation：`full`、`no_client_information`、`no_fusion_selection`、`avg_only`。
+- 每个 ablation 覆盖 5 个模型表，每个模型 45 格，共 `225` 条 eval 结果；4 个 ablation 共 `900` 条 eval 结果。
+- 另一个目录 `outputs/codex_my_merge_full_cpu_20260601_0924/my_merge_ablation_grid` 虽然配置写了全量，但实际只完成了 `full/small_resnet`，因此没有作为覆盖源。
+
+覆盖方式：
+
+- 保留 `My_merge_ret/汇总表.md` 顶部的 2026-06-04 Chaosheng 控制实验区块和 smoke 记录。
+- 从 `## Ablation Rows` 开始，用 GPU 全量目录生成的 `reports/all_results_ablation_combined.md` 整段替换旧表。
+- 同步更新：
+  - `My_merge_ret/reports/all_results_ablation_combined.md`
+  - `My_merge_ret/reports/ablation_summary.md`
+  - `My_merge_ret/reports/validated_run_config.txt`
+
+校验：
+
+- `My_merge_ret/汇总表.md` 从 `## Ablation Rows` 开始与源文件 `outputs/codex_my_merge_full_gpu_20260601_1400/my_merge_ablation_grid/reports/all_results_ablation_combined.md` 完全一致。
+- `My_merge_ret/reports/all_results_ablation_combined.md` 与源文件二进制一致。
+- 解析表结构正常：外层 `汇总表.md` 共 15 张表，其中顶部 Chaosheng 控制区 5 张，标准全量区 10 张。
+- 一个明确变化样例：`Small/resnet/bloodmnist_224/c3_b0` 的 `my_merge full` 从旧表 `0.4607` 覆盖为最新 `0.5525`。
+
+最新全量消融摘要：
+
+| ablation | rows | mean_acc | delta_vs_full | delta_vs_best_original | W/T/L |
+| --- | ---: | ---: | ---: | ---: | ---: |
+| `full` | 225 | 0.3124 | 0.0000 | -0.0079 | 54/56/115 |
+| `no_client_information` | 225 | 0.2731 | -0.0393 | -0.0472 | 35/39/151 |
+| `no_fusion_selection` | 225 | 0.2227 | -0.0897 | -0.0976 | 4/33/188 |
+| `avg_only` | 225 | 0.2273 | -0.0851 | -0.0930 | 0/35/190 |
+
+解释：
+
+- 下方标准全量表现在已经是 6/1 GPU 全量消融数据，不再沿用 5/23 的旧 `my_merge` 表。
+- 顶部 Chaosheng 6/4 控制实验区块是额外的超声专项对照，不用 6/1 全量覆盖；它用于记录后续超声候选池和 adaptive candidate 的受控实验。

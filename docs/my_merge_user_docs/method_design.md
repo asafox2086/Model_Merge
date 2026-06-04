@@ -83,7 +83,7 @@ M1 使用或围绕这些医学图像证据：
 - `medical_weighted_fusion`：使用 M1 估计出的医学图像客户端可靠性做轻量加权融合；实现上以 reference checkpoint 为原点写成 delta 融合。
 - `sign_consistent_delta`：符号一致的 delta 融合，delta 合并权重使用 M1 的 `overall_weights` 和 `morphology_weights` 形成的医学共识权重，而不是无脑基础权重。
 - `avg_sign_blend_0p25`：平均融合与 sign delta 的小比例混合，同样继承医学共识权重。该候选只保留在非超声通用分支；超声 45 格里该类 blend 候选 0 次被选中，已从超声分支删除。
-- `ultrasound_subset_top{k}_overall`：仅在 `chaoshengmnist_224 + my_merge_ultrasound_specialist` 下启用。候选只保留按 M1 `overall_weights` 排序得到的 top-k 客户端子集，`k=2..min(4, n-1)`。旧版枚举的 `drop_client*`、`morph/consensus top-k` 已删除，避免候选池变成无语义编号搜索。
+- `adaptive_subset_top{k}_overall` / `ultrasound_subset_top{k}_overall`：按 M1 `overall_weights` 排序得到的 top-k 客户端子集，`k=2..min(4, n-1)`。推荐论文叙事使用统一的 `adaptive_subset` 版本，它只要求 `--my-merge-adaptive-candidates`，不判断具体数据集；旧版 `ultrasound_subset` 仅保留为兼容实验开关。旧版枚举的 `drop_client*`、`morph/consensus top-k` 已删除，避免候选池变成无语义编号搜索。
 - `top2_soup:*`：当验证集上前两名候选分数接近时，对两个候选做 0.5/0.5 soup，并重新在同一 val 批次上评估；只有 soup 的 `selection_score` 不低于当前第一名时才接管。
 
 选择规则：
@@ -98,13 +98,14 @@ M1 使用或围绕这些医学图像证据：
 - 对归一化权重而言，`reference + sum_i w_i * (client_i - reference)` 与直接 `sum_i w_i * client_i` 在数学上等价。因此“delta 写法”本身不是万能改进；真正有行为差异的改动是：M1 医学共识权重进入 `sign_consistent_delta`，以及 M2 从单一 winner 转为接近候选的 guarded top-2 soup。
 - delta helper 必须避免原地修改 `reference_state`；2026-06-03 的 smoke 已经证明 reference 污染会让 `medical_weighted_fusion` 变成负优化。
 - 超声 profile 改造已经按 smoke 结果删除。后续不能只凭图像统计 profile 给某个数据集开特殊路径；必须先证明医学域证据能正确识别目标模态，并且不能在其他医学数据集上误触发。
-- 可控超声单独处理通过 `my_merge_ultrasound_specialist` 开关启用，默认关闭。该分支只对 `chaoshengmnist_224` 生效，不改数据读取和 test 使用方式；主要做全量 val 统计、M1 权重平滑、M2 保守候选扩展、默认禁用超声 top-2 soup，以及降低 selection score 中通用医学加权准确率的占比。
+- 旧版可控超声单独处理通过 `my_merge_ultrasound_specialist` 开关启用，默认关闭。该分支只对 `chaoshengmnist_224` 生效，不改数据读取和 test 使用方式；它作为历史实验开关保留，但最终方法应优先采用不看数据集名的 `my_merge_adaptive_candidates`。
+- 统一 adaptive candidate 通过 `my_merge_adaptive_candidates` 开关启用，默认关闭。它只判断是否为医学图像任务，不判断具体数据集。启用后，所有医学数据集都使用同一套候选触发逻辑：M1 overall top-k 子集、sparse sign delta、head prior repair；候选仍用同一个 validation selection 选择。非超声 ResNet 36 格 smoke 显示总体 `33/1/2`、mean delta `+0.081606`，但 `organsmnist_224` 有 2 个负格，因此该机制暂不应无条件默认开启。
 - 曾尝试在超声 M1 证据前加入 `my_merge_ultrasound_denoise_evidence`：只处理 M1 形态证据灰度图，不改模型 forward、候选验证和 test 图像。45 格消融相对当前 sparse-only 基线为 `5/29/11`、mean delta `-0.000419`，因此已删除代码和 CLI，不属于当前方法。
 - 曾尝试用局部梯度方向一致性做超声 M1 噪声感知 reliability，不改超参数、不改图像输入。45 格消融相对当前 sparse-only 基线为 `9/20/16`、mean delta `-0.004213`，且 `resnet` 明显受损，因此已删除代码，不属于当前方法。
 - 曾尝试超声 robust validation selection：把 val 按 even/odd 拆分并用较差子集 score 排序。45 格消融相对 head repair 为 `4/39/2`、mean delta `-0.000060`，属于收益不足且轻微负优化，已删除代码和 CLI。
 - 当前保留超声 head prior repair：在 M2 候选评估中，对有 classifier bias 的候选用 val 标签先验 `pi` 和候选平均预测先验 `p_hat` 做 `bias += log(pi) - log(p_hat)`，再作为独立候选进入同一 validation selection。45 格消融相对当前 sparse-only 基线 `27/18/0`、mean delta `+0.036658`，相对 formal best `37/0/8`、mean delta `+0.055405`，因此保留。
 - 曾做 `avg + head prior repair` 受控消融，用来验证超声收益是否只来自分类头先验修正。45 格相对当前 full headrepair sparse 为 `0/17/28`、mean delta `-0.042568`，平均 accuracy `0.234062` 低于 full 的 `0.276630`；该实验说明当前 M1/M2 候选池在超声上仍有实际选择价值。该 ablation 开关已删除，只保留实验记录。
-- 当前保留超声 client-subset soup：依据 Model Soups 的验证集候选选择思想，但不启用不受控 top-2 权重 soup，而是新增可解释的客户端 top-k 子集平均候选。旧版 45 格全量相对 full headrepair sparse 为 `20/25/0`、mean delta `+0.017390`，相对 formal best 为 `39/0/6`、mean delta `+0.072796`。随后按候选选择频次裁剪，删除所有 0 次被选中的 blend 候选和无语义 `drop_client*` 枚举；裁剪后 ResNet 9 格 smoke 仍为 `6/3/0`、mean delta `+0.038834`，候选池均值从 `31.33` 降到 `12.67`。
+- 当前保留 adaptive client-subset soup：依据 Model Soups 的验证集候选选择思想，但不启用不受控 top-2 权重 soup，而是新增可解释的客户端 top-k 子集平均候选。旧版超声 45 格全量相对 full headrepair sparse 为 `20/25/0`、mean delta `+0.017390`，相对 formal best 为 `39/0/6`、mean delta `+0.072796`。随后按候选选择频次裁剪，删除所有 0 次被选中的 blend 候选和无语义 `drop_client*` 枚举；裁剪后 ResNet 9 格 smoke 仍为 `6/3/0`、mean delta `+0.038834`，候选池均值从 `31.33` 降到 `12.67`。进一步去掉 `chaoshengmnist_224` 特判，改用 `--my-merge-adaptive-candidates` 后，ResNet 9 格相对完全无特殊待遇为 `9/0/0`、mean delta `+0.087052`，相对精简 specialist 为 `1/6/2`、mean delta `-0.001298`。非超声 ResNet 36 格总体正向但非无损，下一步若要默认化，需要加保守接管门控。
 - 超声子项只保留 `my_merge_ultrasound_sparse_sign` 可控开关：它新增稀疏 sign-delta 候选，不替换原候选；45 格消融显示 sparse-only 相对当前超声基线 `3/42/0`、mean delta `+0.002915`，因此在超声分支下默认开启。旧版 `ultrasound_avg_sparse_sign_blend_0p10_0p2` 在后续 full subset 候选池中 0 次被选中，已删除。`my_merge_ultrasound_early_detox` 曾尝试让 `medical_weighted_fusion` 的 early 层回到 base prior，但单独消融相对当前超声基线 `7/29/9`、mean delta `-0.000599`，已从代码和 CLI 删除，只在进度文档中保留失败记录。
 - gate 默认从更保守的高阈值降低为 `DEFAULT_RELIABILITY_THRESHOLD=0.10`、`DEFAULT_SEPARATION_THRESHOLD=0.05`，让医学证据在弱但稳定时也能影响 M1 权重。
 
