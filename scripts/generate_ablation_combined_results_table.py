@@ -1,7 +1,6 @@
 #!/usr/bin/env python3
 import argparse
 import csv
-import json
 from copy import deepcopy
 from pathlib import Path
 
@@ -11,23 +10,15 @@ from generate_my_merge_master_table import CLIENT_AVG_GROUPS, SETTINGS, SMALL_DA
 
 ABLATION_LABELS = {
     "full": "my_merge full (none missing)",
-    "avg_only": "my_merge avg_only (-M1,-M2)",
+    "avg_only": "my_merge avg_only (-M1,-M2,-M3)",
     "no_diagnostic_evidence": "my_merge -M1 diagnostic_evidence",
-    "no_domain_preprocess": "my_merge -M1 diagnostic_info",
-    "no_modality_features": "my_merge -M1 diagnostic_info",
-    "no_medical_preprocess": "my_merge -M1 diagnostic_info",
-    "no_medical_prior": "my_merge -M1 diagnostic_info",
     "no_client_information": "my_merge -M1 client_info",
     "no_diagnostic_information": "my_merge -M1 client_info",
-    "no_rarity": "my_merge -M1 class_rarity",
-    "no_focal": "my_merge -M1 focal_weight",
-    "no_domain_focus": "my_merge -M1 domain_focus",
     "no_fusion_selection": "my_merge -M2 fusion_select",
     "no_medical_fusion_selection": "my_merge -M2 fusion_select",
-    "no_balanced_selection": "my_merge -M2 balanced_select",
-    "no_layerwise": "my_merge -M2 layerwise",
-    "no_residual": "my_merge -M2 residual",
-    "no_candidate_bank": "my_merge -M2 candidate_bank",
+    "no_adaptive_candidates": "my_merge -M3 adaptive",
+    "no_adaptive_candidate_generation": "my_merge -M3 adaptive",
+    "no_m3": "my_merge -M3 adaptive",
     "no_calibration": "my_merge -M2 calibration",
 }
 
@@ -52,11 +43,6 @@ def discover_eval_csvs(grid_root):
     return sorted(path for path in paths if path.is_file())
 
 
-def discover_merge_jsons(grid_root):
-    grid_root = Path(grid_root)
-    return sorted(path for path in grid_root.glob("*/*/merged/**/merge_result.json") if path.is_file())
-
-
 def load_lookup(grid_root):
     lookup = {}
     ablations = []
@@ -79,151 +65,9 @@ def load_lookup(grid_root):
                     float(row["beta"]),
                 )
                 lookup[key] = float(row["test_acc"])
+    if "avg_only" not in ablations:
+        ablations.append("avg_only")
     return lookup, sorted(ablations, key=ablation_sort_key)
-
-
-def safe_float(value):
-    try:
-        return float(value)
-    except (TypeError, ValueError):
-        return None
-
-
-def fmt_weight(value):
-    value = safe_float(value)
-    return "-" if value is None else f"{value:.4f}"
-
-
-def load_weight_rows(grid_root):
-    rows = []
-    for json_path in discover_merge_jsons(Path(grid_root)):
-        try:
-            payload = json.loads(json_path.read_text(encoding="utf-8"))
-        except Exception:
-            continue
-        if payload.get("method") != "my_merge":
-            continue
-        try:
-            ablation = json_path.relative_to(grid_root).parts[0]
-        except Exception:
-            ablation = "unknown"
-        method_info = payload.get("method_info", {})
-        client_info = method_info.get("client_diagnostic_information", [])
-        base = {
-            "ablation": ablation,
-            "task_type": payload.get("task_type", ""),
-            "dataset": payload.get("dataset", ""),
-            "model": payload.get("model") or payload.get("clip_model", ""),
-            "num_clients": int(float(payload.get("num_clients", 0) or 0)),
-            "beta": float(payload.get("beta", 0.0) or 0.0),
-            "seed": payload.get("seed", ""),
-            "selected_candidate": method_info.get("selected_candidate", ""),
-        }
-        if client_info:
-            for item in client_info:
-                row = dict(base)
-                row.update(
-                    {
-                        "client_index": int(item.get("client_index", 0) or 0),
-                        "client_name": item.get("client_name", ""),
-                        "prior_weight_pi": safe_float(item.get("base_weight")),
-                        "diagnostic_weight_alpha_all": safe_float(item.get("overall_weight")),
-                        "medical_weight_alpha_morph": safe_float(item.get("morphology_weight")),
-                    }
-                )
-                rows.append(row)
-        else:
-            weights = method_info.get("base_weights", method_info.get("normalized_weights", []))
-            source_clients = payload.get("source_clients", [])
-            for client_idx, weight in enumerate(weights):
-                row = dict(base)
-                row.update(
-                    {
-                        "client_index": int(client_idx),
-                        "client_name": source_clients[client_idx] if client_idx < len(source_clients) else f"client_{client_idx}.pt",
-                        "prior_weight_pi": safe_float(weight),
-                        "diagnostic_weight_alpha_all": None,
-                        "medical_weight_alpha_morph": None,
-                    }
-                )
-                rows.append(row)
-    return rows
-
-
-def case_sort_key(row):
-    return (
-        ablation_sort_key(row.get("ablation", "")),
-        row.get("task_type", ""),
-        row.get("dataset", ""),
-        row.get("model", ""),
-        int(row.get("num_clients", 0) or 0),
-        float(row.get("beta", 0.0) or 0.0),
-        int(row.get("client_index", 0) or 0),
-    )
-
-
-def summarize_weight_rows(weight_rows):
-    grouped = {}
-    for row in weight_rows:
-        grouped.setdefault(row["ablation"], []).append(row)
-    summaries = []
-    for ablation in sorted(grouped, key=ablation_sort_key):
-        group = grouped[ablation]
-        pi_values = [row["prior_weight_pi"] for row in group if row["prior_weight_pi"] is not None]
-        alpha_all_values = [row["diagnostic_weight_alpha_all"] for row in group if row["diagnostic_weight_alpha_all"] is not None]
-        alpha_morph_values = [row["medical_weight_alpha_morph"] for row in group if row["medical_weight_alpha_morph"] is not None]
-        delta_all = [
-            abs(row["diagnostic_weight_alpha_all"] - row["prior_weight_pi"])
-            for row in group
-            if row["diagnostic_weight_alpha_all"] is not None and row["prior_weight_pi"] is not None
-        ]
-        delta_morph = [
-            abs(row["medical_weight_alpha_morph"] - row["prior_weight_pi"])
-            for row in group
-            if row["medical_weight_alpha_morph"] is not None and row["prior_weight_pi"] is not None
-        ]
-        summaries.append(
-            {
-                "ablation": ablation,
-                "rows": len(group),
-                "mean_pi": sum(pi_values) / len(pi_values) if pi_values else None,
-                "mean_alpha_all": sum(alpha_all_values) / len(alpha_all_values) if alpha_all_values else None,
-                "mean_alpha_morph": sum(alpha_morph_values) / len(alpha_morph_values) if alpha_morph_values else None,
-                "mean_abs_delta_all": sum(delta_all) / len(delta_all) if delta_all else None,
-                "mean_abs_delta_morph": sum(delta_morph) / len(delta_morph) if delta_morph else None,
-            }
-        )
-    return summaries
-
-
-def build_weight_sections(weight_rows):
-    if not weight_rows:
-        return [
-            "## Weight Analysis",
-            "",
-            "- No `merge_result.json` weight records were found. Re-run my_merge with diagnostics enabled.",
-            "",
-        ]
-
-    lines = [
-        "## Weight Analysis",
-        "",
-        "- Weight details are generated from `merge_result.json`; they are not manually filled.",
-        "- Full per-client weights are kept outside this master table to preserve readability.",
-        "- Deep analysis: `reports/client_weight_analysis.md`.",
-        "- Raw detail CSV: `reports/client_weight_detail.csv`.",
-        "",
-        "### Average Weight Change",
-        "",
-        "| ablation | rows | mean_pi | mean_alpha_all | mean_alpha_morph | mean_abs_delta_all | mean_abs_delta_morph |",
-        "| --- | ---: | ---: | ---: | ---: | ---: | ---: |",
-    ]
-    for item in summarize_weight_rows(weight_rows):
-        lines.append(
-            f"| `{item['ablation']}` | {item['rows']} | {fmt_weight(item['mean_pi'])} | {fmt_weight(item['mean_alpha_all'])} | {fmt_weight(item['mean_alpha_morph'])} | {fmt_weight(item['mean_abs_delta_all'])} | {fmt_weight(item['mean_abs_delta_morph'])} |"
-        )
-    lines.append("")
-    return lines
 
 
 def ablation_sort_key(name):
@@ -231,17 +75,9 @@ def ablation_sort_key(name):
         "full",
         "no_client_information",
         "no_fusion_selection",
+        "no_adaptive_candidates",
         "avg_only",
         "no_diagnostic_evidence",
-        "no_medical_prior",
-        "no_domain_preprocess",
-        "no_rarity",
-        "no_focal",
-        "no_domain_focus",
-        "no_layerwise",
-        "no_residual",
-        "no_candidate_bank",
-        "no_balanced_selection",
         "no_calibration",
     ]
     return (order.index(name) if name in order else len(order), name)
@@ -274,7 +110,14 @@ def client_average_values(lookup, ablation, task_type, model_name):
     return [fmt(value) for value in values]
 
 
-def ablation_rows_for_table(lookup, ablations, section, model_name, kind):
+def baseline_avg_values(base_table):
+    for row in base_table["rows"]:
+        if row.get("method") == "avg":
+            return list(row["values"])
+    return []
+
+
+def ablation_rows_for_table(base_table, lookup, ablations, section, model_name, kind):
     task_type = "small" if section == "Small" else "vlm"
     rows = []
     for ablation in ablations:
@@ -282,6 +125,8 @@ def ablation_rows_for_table(lookup, ablations, section, model_name, kind):
             values = raw_values(lookup, ablation, task_type, model_name)
         else:
             values = client_average_values(lookup, ablation, task_type, model_name)
+        if ablation == "avg_only" and all(value == "-" for value in values):
+            values = baseline_avg_values(base_table)
         if all(value == "-" for value in values):
             continue
         rows.append(
@@ -298,7 +143,7 @@ def merge_tables_with_ablations(base_tables, lookup, ablations):
     for key, base_table in base_tables.items():
         section, model_name, kind = key
         rows = deepcopy(base_table["rows"])
-        rows.extend(ablation_rows_for_table(lookup, ablations, section, model_name, kind))
+        rows.extend(ablation_rows_for_table(base_table, lookup, ablations, section, model_name, kind))
         merged[key] = {
             "header_lines": base_table["header_lines"],
             "footer_lines": base_table["footer_lines"],
@@ -307,13 +152,13 @@ def merge_tables_with_ablations(base_tables, lookup, ablations):
     return merged
 
 
-def build_output(merged_tables, grid_root, ablations, weight_rows):
+def build_output(merged_tables, grid_root, ablations):
     lines = [
         "# Experiment Master Tables With my_merge Ablations",
         "",
         f"- Base table: `result/all_results.md`.",
         f"- my_merge ablation source: `{grid_root}`.",
-        "- Row labels state which module is missing. `M1` = Diagnostic Evidence Client Information Estimation, `M2` = Medical Evidence Guided Fusion and Selection.",
+        "- Row labels state which module is missing. `M1` = Diagnostic Evidence Client Information, `M2` = Medical Checkpoint Fusion, `M3` = Adaptive Candidate Validation.",
         "- Highlight rule: highest value is bold, second-highest distinct value is underlined.",
         "",
         "## Ablation Rows",
@@ -326,7 +171,6 @@ def build_output(merged_tables, grid_root, ablations, weight_rows):
         missing = label.split(" ", 2)[-1]
         lines.append(f"| `{label}` | `{missing}` |")
     lines.append("")
-    lines.extend(build_weight_sections(weight_rows))
 
     current_section = None
     current_model = None
@@ -361,9 +205,8 @@ def main():
     _intro, base_tables = parse_tables(Path(args.base))
     grid_root = Path(args.grid_root)
     lookup, ablations = load_lookup(grid_root)
-    weight_rows = load_weight_rows(grid_root)
     merged = merge_tables_with_ablations(base_tables, lookup, ablations)
-    content = build_output(merged, args.grid_root, ablations, weight_rows)
+    content = build_output(merged, args.grid_root, ablations)
     dest = Path(args.dest)
     dest.parent.mkdir(parents=True, exist_ok=True)
     dest.write_text(content, encoding="utf-8")

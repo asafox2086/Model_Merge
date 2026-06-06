@@ -11,6 +11,7 @@ ABLATIONS = [
     "full",
     "no_client_information",
     "no_fusion_selection",
+    "no_adaptive_candidates",
     "avg_only",
 ]
 

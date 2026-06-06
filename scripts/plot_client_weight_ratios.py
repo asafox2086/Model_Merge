@@ -11,6 +11,7 @@ ABLATION_LABELS = {
     "full": "Full",
     "no_client_information": "-M1",
     "no_fusion_selection": "-M2",
+    "no_adaptive_candidates": "-M3",
     "avg_only": "Avg",
 }
 DATASET_LABELS = {

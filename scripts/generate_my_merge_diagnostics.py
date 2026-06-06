@@ -36,9 +36,7 @@ WEIGHT_FIELDS = [
     "medical_weight_alpha_morph",
     "acc_A",
     "medical_acc_M",
-    "hard_acc_H",
     "margin_Q",
-    "focal_acc_F",
     "class_coverage_gate",
     "evidence_reliability",
 ]
@@ -144,9 +142,7 @@ def build_weight_rows(payload):
                     "medical_weight_alpha_morph": safe_float(item.get("morphology_weight", "")),
                     "acc_A": safe_float(item.get("ordinary_accuracy", "")),
                     "medical_acc_M": safe_float(item.get("medical_weighted_accuracy", "")),
-                    "hard_acc_H": safe_float(item.get("hard_case_accuracy", "")),
                     "margin_Q": safe_float(item.get("margin_confidence", "")),
-                    "focal_acc_F": safe_float(item.get("focal_hard_case_accuracy", "")),
                     "class_coverage_gate": safe_float(item.get("class_coverage_gate", "")),
                     "evidence_reliability": safe_float(item.get("evidence_reliability", "")),
                 }
@@ -168,9 +164,7 @@ def build_weight_rows(payload):
                 "medical_weight_alpha_morph": "",
                 "acc_A": "",
                 "medical_acc_M": "",
-                "hard_acc_H": "",
                 "margin_Q": "",
-                "focal_acc_F": "",
             }
         )
         rows.append(row)
@@ -491,9 +485,7 @@ def format_client_weight_summary(rows):
                 f"alpha_morph={row.get('medical_weight_alpha_morph', '')}, "
                 f"A={row.get('acc_A', '')}, "
                 f"M={row.get('medical_acc_M', '')}, "
-                f"H={row.get('hard_acc_H', '')}, "
-                f"Q={row.get('margin_Q', '')}, "
-                f"F={row.get('focal_acc_F', '')}"
+                f"Q={row.get('margin_Q', '')}"
             )
         )
     return "<br>".join(chunks)

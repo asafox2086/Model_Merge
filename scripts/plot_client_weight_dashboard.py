@@ -8,7 +8,7 @@ import matplotlib.pyplot as plt
 from matplotlib import gridspec
 
 
-ABLATION_ORDER = ["full", "no_client_information", "no_fusion_selection", "avg_only"]
+ABLATION_ORDER = ["full", "no_client_information", "no_fusion_selection", "no_adaptive_candidates", "avg_only"]
 DATASET_LABELS = {
     "bloodmnist_224": "Blood",
     "dermamnist_224": "Derma",
@@ -20,12 +20,14 @@ ABLATION_LABELS = {
     "full": "Full",
     "no_client_information": "-M1",
     "no_fusion_selection": "-M2",
+    "no_adaptive_candidates": "-M3",
     "avg_only": "Avg",
 }
 COLORS = {
     "full": "#2166ac",
     "no_client_information": "#7b3294",
     "no_fusion_selection": "#b2182b",
+    "no_adaptive_candidates": "#4d9221",
     "avg_only": "#5f6b6d",
 }
 

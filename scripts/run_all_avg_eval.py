@@ -125,20 +125,11 @@ def parse_args():
     p.add_argument('--my-merge-stats-max-batches', type=int, default=-1)
     p.add_argument('--my-merge-eval-max-batches', type=int, default=-1)
     p.add_argument('--my-merge-bn-batches', type=int, default=-1)
-    p.add_argument('--my-merge-adaptive-candidates', action=argparse.BooleanOptionalAction, default=None)
-    p.add_argument('--my-merge-adaptive-sparse-sign', action=argparse.BooleanOptionalAction, default=None)
-    p.add_argument('--my-merge-adaptive-subset-soup', action=argparse.BooleanOptionalAction, default=None)
-    p.add_argument('--my-merge-ultrasound-specialist', action=argparse.BooleanOptionalAction, default=False)
-    p.add_argument('--my-merge-ultrasound-allow-soup', action=argparse.BooleanOptionalAction, default=False)
-    p.add_argument('--my-merge-ultrasound-sparse-sign', action=argparse.BooleanOptionalAction, default=None)
-    p.add_argument('--my-merge-ultrasound-subset-soup', action=argparse.BooleanOptionalAction, default=None)
-    p.add_argument('--my-merge-ultrasound-sparse-sign-density', type=float, default=-1.0)
-    p.add_argument('--my-merge-ultrasound-selection-medical-weight', type=float, default=-1.0)
     p.add_argument(
         '--my-merge-ablation',
         type=str,
         default='',
-        help='Comma-separated my_merge ablation presets, e.g. full,no_rarity or avg_only.',
+        help='Comma-separated my_merge ablation presets, e.g. full,no_adaptive_candidates or avg_only.',
     )
     p.add_argument(
         '--my-merge-disable',
@@ -249,24 +240,6 @@ def build_cfg(row, args):
         cfg['my_merge_eval_max_batches'] = args.my_merge_eval_max_batches
     if args.my_merge_bn_batches >= 0:
         cfg['my_merge_bn_batches'] = args.my_merge_bn_batches
-    if args.my_merge_adaptive_candidates is not None:
-        cfg['my_merge_adaptive_candidates'] = args.my_merge_adaptive_candidates
-    if args.my_merge_adaptive_sparse_sign is not None:
-        cfg['my_merge_adaptive_sparse_sign'] = args.my_merge_adaptive_sparse_sign
-    if args.my_merge_adaptive_subset_soup is not None:
-        cfg['my_merge_adaptive_subset_soup'] = args.my_merge_adaptive_subset_soup
-    if args.my_merge_ultrasound_specialist:
-        cfg['my_merge_ultrasound_specialist'] = args.my_merge_ultrasound_specialist
-    if args.my_merge_ultrasound_allow_soup:
-        cfg['my_merge_ultrasound_allow_soup'] = args.my_merge_ultrasound_allow_soup
-    if args.my_merge_ultrasound_sparse_sign is not None:
-        cfg['my_merge_ultrasound_sparse_sign'] = args.my_merge_ultrasound_sparse_sign
-    if args.my_merge_ultrasound_subset_soup is not None:
-        cfg['my_merge_ultrasound_subset_soup'] = args.my_merge_ultrasound_subset_soup
-    if args.my_merge_ultrasound_sparse_sign_density >= 0:
-        cfg['my_merge_ultrasound_sparse_sign_density'] = args.my_merge_ultrasound_sparse_sign_density
-    if args.my_merge_ultrasound_selection_medical_weight >= 0:
-        cfg['my_merge_ultrasound_selection_medical_weight'] = args.my_merge_ultrasound_selection_medical_weight
     if args.my_merge_ablation:
         cfg['my_merge_ablation'] = args.my_merge_ablation
     if args.my_merge_disable:

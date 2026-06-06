@@ -8,12 +8,8 @@ from pathlib import Path
 
 from generate_ablation_combined_results_table import (
     ablation_sort_key,
-    case_sort_key,
-    discover_merge_jsons,
     fmt,
-    fmt_weight,
     load_lookup,
-    load_weight_rows,
 )
 
 
@@ -22,6 +18,67 @@ def parse_args():
     p.add_argument("--grid-root", required=True)
     p.add_argument("--dest-dir", required=True)
     return p.parse_args()
+
+
+def discover_merge_jsons(grid_root):
+    return sorted(Path(grid_root).glob("*/*/merged/**/merge_result.json"))
+
+
+def safe_float(value):
+    try:
+        return float(value)
+    except (TypeError, ValueError):
+        return None
+
+
+def load_weight_rows(grid_root):
+    rows = []
+    for json_path in discover_merge_jsons(grid_root):
+        try:
+            payload = json.loads(json_path.read_text(encoding="utf-8"))
+        except Exception:
+            continue
+        if payload.get("method") != "my_merge":
+            continue
+        rel = json_path.relative_to(grid_root)
+        ablation = rel.parts[0] if rel.parts else "unknown"
+        method_info = payload.get("method_info", {})
+        client_info = method_info.get("client_diagnostic_information", [])
+        base = {
+            "ablation": ablation,
+            "task_type": payload.get("task_type", ""),
+            "dataset": payload.get("dataset", ""),
+            "model": payload.get("model") or payload.get("clip_model", ""),
+            "num_clients": int(float(payload.get("num_clients", 0) or 0)),
+            "beta": float(payload.get("beta", 0.0) or 0.0),
+            "seed": payload.get("seed", ""),
+            "selected_candidate": method_info.get("selected_candidate", ""),
+        }
+        for client_idx, item in enumerate(client_info):
+            row = dict(base)
+            row.update(
+                {
+                    "client_index": int(item.get("client_index", client_idx) or client_idx),
+                    "client_name": item.get("client_name", f"client_{client_idx}.pt"),
+                    "prior_weight_pi": safe_float(item.get("base_weight")),
+                    "diagnostic_weight_alpha_all": safe_float(item.get("overall_weight")),
+                    "medical_weight_alpha_morph": safe_float(item.get("morphology_weight")),
+                }
+            )
+            rows.append(row)
+    return rows
+
+
+def case_sort_key(row):
+    return (
+        ablation_sort_key(row.get("ablation", "")),
+        row.get("task_type", ""),
+        row.get("dataset", ""),
+        row.get("model", ""),
+        int(row.get("num_clients", 0) or 0),
+        float(row.get("beta", 0.0) or 0.0),
+        int(row.get("client_index", 0) or 0),
+    )
 
 
 def case_id(row):

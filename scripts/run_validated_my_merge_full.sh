@@ -27,7 +27,7 @@ REPRO_SAMPLE_LIMIT="${REPRO_SAMPLE_LIMIT:-2}"
 REPRO_EXTRA_ARGS="${REPRO_EXTRA_ARGS:---limit ${REPRO_SAMPLE_LIMIT}}"
 RUN_REPRO="${RUN_REPRO:-true}"
 
-ABLATIONS="${ABLATIONS:-full no_client_information no_fusion_selection avg_only}"
+ABLATIONS="${ABLATIONS:-full no_client_information no_fusion_selection no_adaptive_candidates}"
 MY_MERGE_STATS_MAX_BATCHES="${MY_MERGE_STATS_MAX_BATCHES:-1}"
 MY_MERGE_EVAL_MAX_BATCHES="${MY_MERGE_EVAL_MAX_BATCHES:-1}"
 MY_MERGE_BN_BATCHES="${MY_MERGE_BN_BATCHES:-1}"

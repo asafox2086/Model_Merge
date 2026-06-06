@@ -9,11 +9,12 @@ START = "<!-- CHAOSHENG_RAW_M2_START -->"
 END = "<!-- CHAOSHENG_RAW_M2_END -->"
 DATASET = "chaoshengmnist_224"
 SETTINGS = [(3, 0.0), (3, 0.01), (3, 0.1), (5, 0.0), (5, 0.01), (5, 0.1), (7, 0.0), (7, 0.01), (7, 0.1)]
-ABLATIONS = ["full", "no_client_information", "no_fusion_selection", "avg_only"]
+ABLATIONS = ["full", "no_client_information", "no_fusion_selection", "no_adaptive_candidates", "avg_only"]
 ABLATION_LABELS = {
     "full": "full",
     "no_client_information": "-M1",
     "no_fusion_selection": "-M2",
+    "no_adaptive_candidates": "-M3",
     "avg_only": "avg",
 }
 MODEL_ORDER = ["resnet", "convnext", "vit_t", "swin_tiny", "clip-vit-base-patch32"]

@@ -2,7 +2,7 @@
 
 - Base table: `result/all_results.md`.
 - my_merge ablation source: `outputs/codex_my_merge_full_gpu_20260601_1400/my_merge_ablation_grid`.
-- Row labels state which module is missing. `M1` = Diagnostic Evidence Client Information Estimation, `M2` = Medical Evidence Guided Fusion and Selection.
+- Row labels state which module is missing. `M1` = Diagnostic Evidence Client Information, `M2` = Medical Checkpoint Fusion, `M3` = Adaptive Candidate Validation.
 - Highlight rule: highest value is bold, second-highest distinct value is underlined.
 
 ## Ablation Rows
@@ -12,22 +12,7 @@
 | `my_merge full (none missing)` | `(none missing)` |
 | `my_merge -M1 client_info` | `client_info` |
 | `my_merge -M2 fusion_select` | `fusion_select` |
-| `my_merge avg_only (-M1,-M2)` | `(-M1,-M2)` |
-
-## Weight Analysis
-
-- Weight details are generated from `merge_result.json`; they are not manually filled.
-- Full per-client weights are kept outside this master table to preserve readability.
-- Deep analysis: `reports/client_weight_analysis.md`.
-- Raw detail CSV: `reports/client_weight_detail.csv`.
-
-### Average Weight Change
-
-| ablation | rows | mean_pi | mean_alpha_all | mean_alpha_morph | mean_abs_delta_all | mean_abs_delta_morph |
-| --- | ---: | ---: | ---: | ---: | ---: | ---: |
-| `full` | 1125 | 0.2000 | 0.2000 | 0.2000 | 0.0522 | 0.0748 |
-| `no_client_information` | 1125 | 0.2000 | 0.2000 | 0.2000 | 0.0000 | 0.0000 |
-| `no_fusion_selection` | 1125 | 0.2000 | 0.2000 | 0.2000 | 0.0522 | 0.0748 |
+| `my_merge avg_only (-M1,-M2,-M3)` | `(-M1,-M2,-M3)` |
 
 ## Small
 
@@ -815,7 +800,7 @@
       <td>0.1617</td>
     </tr>
     <tr>
-      <td>my_merge avg_only (-M1,-M2)</td>
+      <td>my_merge avg_only (-M1,-M2,-M3)</td>
       <td>0.3017</td>
       <td>0.3069</td>
       <td>0.3949</td>
@@ -1167,7 +1152,7 @@
       <td>0.1542</td>
     </tr>
     <tr>
-      <td>my_merge avg_only (-M1,-M2)</td>
+      <td>my_merge avg_only (-M1,-M2,-M3)</td>
       <td>0.3345</td>
       <td>0.2467</td>
       <td>0.2822</td>
@@ -1971,7 +1956,7 @@
       <td><u>0.1617</u></td>
     </tr>
     <tr>
-      <td>my_merge avg_only (-M1,-M2)</td>
+      <td>my_merge avg_only (-M1,-M2,-M3)</td>
       <td><strong>0.1947</strong></td>
       <td>0.1374</td>
       <td><u>0.1374</u></td>
@@ -2323,7 +2308,7 @@
       <td>0.1252</td>
     </tr>
     <tr>
-      <td>my_merge avg_only (-M1,-M2)</td>
+      <td>my_merge avg_only (-M1,-M2,-M3)</td>
       <td>0.1565</td>
       <td>0.1121</td>
       <td>0.1384</td>
@@ -3127,7 +3112,7 @@
       <td><strong>0.2336</strong></td>
     </tr>
     <tr>
-      <td>my_merge avg_only (-M1,-M2)</td>
+      <td>my_merge avg_only (-M1,-M2,-M3)</td>
       <td>0.1692</td>
       <td>0.0836</td>
       <td>0.1500</td>
@@ -3479,7 +3464,7 @@
       <td>0.1884</td>
     </tr>
     <tr>
-      <td>my_merge avg_only (-M1,-M2)</td>
+      <td>my_merge avg_only (-M1,-M2,-M3)</td>
       <td>0.1343</td>
       <td>0.1081</td>
       <td>0.1160</td>
@@ -4283,7 +4268,7 @@
       <td>0.1096</td>
     </tr>
     <tr>
-      <td>my_merge avg_only (-M1,-M2)</td>
+      <td>my_merge avg_only (-M1,-M2,-M3)</td>
       <td><strong>0.1947</strong></td>
       <td>0.1374</td>
       <td><strong>0.1374</strong></td>
@@ -4635,7 +4620,7 @@
       <td>0.1465</td>
     </tr>
     <tr>
-      <td>my_merge avg_only (-M1,-M2)</td>
+      <td>my_merge avg_only (-M1,-M2,-M3)</td>
       <td><u>0.1565</u></td>
       <td>0.1186</td>
       <td>0.1524</td>
@@ -5441,7 +5426,7 @@
       <td>0.1267</td>
     </tr>
     <tr>
-      <td>my_merge avg_only (-M1,-M2)</td>
+      <td>my_merge avg_only (-M1,-M2,-M3)</td>
       <td>0.1842</td>
       <td>0.1692</td>
       <td>0.2037</td>
@@ -5793,7 +5778,7 @@
       <td>0.1360</td>
     </tr>
     <tr>
-      <td>my_merge avg_only (-M1,-M2)</td>
+      <td>my_merge avg_only (-M1,-M2,-M3)</td>
       <td>0.1857</td>
       <td>0.1199</td>
       <td>0.1863</td>

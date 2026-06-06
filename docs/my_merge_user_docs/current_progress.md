@@ -1,6 +1,37 @@
 # 当前进度
 
-更新时间：2026-05-31
+更新时间：2026-06-05
+
+## 2026-06-05 精简与全量前状态
+
+本轮目标是把 `my_merge` 收成清晰的科研代码，并启动新的全量实验。当前已经完成：
+
+- `methods/my_merge.py` 从上一轮约 1500 行压到 780 行，主路径只保留 M1/M2/M3 三个模块。
+- M1 保留医学图像证据和客户端诊断权重估计；删除对结果没有实际作用的覆盖率混合字段。
+- M2 保留两个基础融合候选：医学权重增量融合 `medical_weighted_fusion` 和符号一致增量融合 `sign_consistent_delta`。
+- M3 默认开启，只做自适应候选生成和验证集选择；正式消融为 `no_adaptive_candidates`。
+- 删除了 M3 子候选的隐藏命令行开关，避免通过超参数绕过论文里的模块定义。
+- `scripts/generate_ablation_combined_results_table.py` 只生成总表，不再把超声单独分析、smoke、权重分析写到 `汇总表.md`。
+- `My_merge_ret/汇总表.md` 已按旧全量结果重新生成一次，目前只保留 `Ablation Rows`、`Small`、`VLM` 总表结构。
+
+当前设计判断：
+
+- 不再给 `chaoshengmnist_224` 单独分支，所有医学数据集走同一套 M1/M2/M3。
+- `avg_only` 只作为 `-M1,-M2,-M3` 的消融基线，正式全量不再运行；总表生成时直接复用 baseline `avg` 行。
+- 后续只看总表判断是否负优化；额外诊断表不再发布到主汇总表。
+
+全量运行：
+
+- 已启动：`codex_my_merge_compact_full_20260605`
+- 输出目录：`outputs/codex_my_merge_compact_full_20260605/my_merge_ablation_grid`
+- 发布总表：`My_merge_ret/汇总表.md`
+- 运行消融：`full no_client_information no_fusion_selection no_adaptive_candidates`
+- 不运行：`avg_only`，由总表生成脚本复用 baseline `avg`。
+- 初始检查：`full/small/resnet` 和 `full/small/convnext` 已启动并占用 GPU，输出目录已产生首个 `eval.json`。
+- 完成状态：2026-06-06 已补齐到 `900/900` 个 eval，并重新生成 `My_merge_ret/汇总表.md`。
+- 全量结论：`full` 平均准确率 `0.3191`，相对已有最佳原始方法均值差 `-0.0012`，W/T/L=`85/38/102`。
+- 消融结论：去掉 M2 平均下降 `0.0964`，去掉 M3 平均下降 `0.0457`，去掉 M1 平均下降 `0.0095`。总体上 M2、M3 有用，M1 较弱。
+- 超声结论：`chaoshengmnist` 仍是主要问题，`full` 只有 `1/0/44`，且 `-M3` 比 full 高 `0.0551`、`-M2` 比 full 高 `0.0381`，说明当前 M2/M3 在超声上仍有负优化。
 
 ## 当前状态总览
 
@@ -808,3 +839,194 @@ ResNet 9 格 smoke：
 
 - 下方标准全量表现在已经是 6/1 GPU 全量消融数据，不再沿用 5/23 的旧 `my_merge` 表。
 - 顶部 Chaosheng 6/4 控制实验区块是额外的超声专项对照，不用 6/1 全量覆盖；它用于记录后续超声候选池和 adaptive candidate 的受控实验。
+
+## 2026-06-04 正常候选池移除 avg 保底
+
+用户反馈：
+
+- 当前是科研方法，不需要把工程鲁棒性作为主要目标。
+- 正常 `my_merge` 候选池里继续保留 `avg` 会削弱方法叙事，也会让 M2 变成“保底搜索”，不够干净。
+
+代码修改：
+
+- 在 `_validated_standard_checkpoint_merge` 中删除正常候选池初始化时的 `avg` 候选。
+- 同时删除默认非 extra 模式里的 `avg_sign_blend_0p25`，避免继续保留显式 avg 混合候选。
+- 以前 `len(candidates) == 1` 会直接返回 `avg`；现在改为只有 `len(candidates) == 0` 才返回 `avg`。因此只剩一个医学候选时，会继续走候选评估并选择这个医学候选。
+
+保留项：
+
+- `avg_only` 消融仍然直接返回 `avg`，因为它是明确对照。
+- 非医学图像任务或框架信息缺失时仍然 fallback 到 `avg`，这不参与医学方法主实验。
+- `no_fusion_selection` 这类关闭 M2 的消融仍然会退回平均，用于对比。
+
+验证：
+
+- `./.gpuenv/bin/python -m py_compile methods/my_merge.py` 通过。
+- 静态检查确认正常候选池里已经没有 `candidates["avg"]` 和 `avg_sign_blend_0p25`。
+
+## 2026-06-04 M1/M2 算法精简
+
+用户反馈：
+
+- 当前代码超过一千多行，候选池和 M1 细项过多，不像一个清晰科研方法。
+- 需要根据已有结果删除用处不大的 M1 参数和低采用率 M2 方法。
+
+已有数据依据：
+
+- 最新 6/1 全量 full 结果中，M2 最终选择统计为：
+  - `medical_weighted_fusion`: 117/225。
+  - `sign_consistent_delta`: 29/225。
+  - `avg`: 47/225，已从正常候选池删除。
+  - `avg_sign_blend_0p25`: 32/225，属于 avg 混合保底，已删除。
+- adaptive/超声 smoke 中，最终被选中的主要是 `head_prior_repair:*`、`adaptive_subset_top2_overall`、`adaptive_sign_sparse_0p2`、`medical_weighted_fusion`、`sign_consistent_delta`。
+- `adaptive_subset_top4_overall` 只在非超声 ResNet 36 格中出现 1 次，Chaosheng ResNet 9 格和精简超声 smoke 中没有成为主要来源；因此 top-k 子集只保留 `top2/top3`。
+- `top2_soup:*` 在当前 6/1 全量、adaptive ResNet 36 格和 Chaosheng ResNet 9 格里没有作为最终候选出现；超声方向上权重空间 top-2 soup 还容易引入不稳定，因此删除。
+- 最新全量只有 `full/no_client_information/no_fusion_selection/avg_only`，没有 `no_focal/no_rarity/no_domain_focus` 的子项消融。因此 M1 细项按“下游是否实际独立使用、是否与保留指标重复、是否增加复杂度”裁剪。
+
+M1 删除项：
+
+- 删除 `shape_compactness`：需要一整段空间协方差/特征值计算，但只间接进入 reliability/salience，没有独立消融证据。
+- 删除 class-rarity 权重：类别层已经保留 `seen_classes` 覆盖信息和 per-class accuracy/margin，rarity 是重复调制。
+- 删除 hard/focal 样本分支：`hard_acc` 和 `focal_acc` 与 `morph_acc + margin_score` 高度重叠，且没有最新子项消融支撑。
+- 删除 domain-focus 二次权重：它本质仍是 boundary/contrast/texture 的再加权，和 `diagnostic_salience` 重复。
+
+M1 保留项：
+
+- 图像证据：前景面积、边界强度、局部对比度、纹理异质性、诊断显著性、证据可靠性。
+- 客户端评分：普通准确率、医学加权准确率、预测 margin、类别覆盖与 per-class 表现。
+- 输出权重：`overall_weights`、`morphology_weights`、`class_weights`。
+
+M2 删除项：
+
+- 删除普通 `avg` 候选和 `avg_sign_blend_0p25`。
+- 删除权重空间 `top2_soup:*` 及其 `_blend_state_dicts` helper。
+- 删除 `adaptive/ultrasound_subset_top4_overall`，只保留采用依据更明确的 `top2/top3`。
+
+M2 保留项：
+
+- `medical_weighted_fusion`：全量中采用最多。
+- `sign_consistent_delta`：ResNet 上采用较多，并且承载 M1 医学共识权重。
+- `adaptive_subset_top{k}_overall` / `ultrasound_subset_top{k}_overall`：只保留 `k=2,3`，是超声和 adaptive smoke 的主要收益来源。
+- `adaptive_sign_sparse_0p2` / `ultrasound_sign_sparse_0p2`：少量但有效，尤其配合 head prior repair。
+- `head_prior_repair:*`：adaptive/超声 smoke 中频繁作为最终候选。
+
+代码结果：
+
+- `methods/my_merge.py` 从 1755 行降到 1587 行，净删约 168 行。
+- `./.gpuenv/bin/python -m py_compile methods/my_merge.py` 通过。
+- 设计文档 `docs/my_merge_user_docs/method_design.md` 已同步为精简后的 M1/M2 叙事。
+
+最小 smoke：
+
+- 命令范围：`small / bloodmnist_224 / resnet / limit=1`，即 `clients=3, beta=0, seed=42`。
+- 输出：`outputs/codex_my_merge_simplified_smoke_20260605`。
+- test acc：`0.413329`，test loss：`1.555681`。
+- 正常候选池：`medical_weighted_fusion`、`sign_consistent_delta`。
+- 最终选择：`medical_weighted_fusion`。
+- implementation：`medical_evidence_two_module_posthoc_merge_v9_delta_validated`。
+
+补充同配置单格验证：
+
+- 为了和 6/1 全量更可比，另跑 `bloodmnist_224/resnet/c3_b0`，设置 `my_merge_stats_max_batches=16`、`my_merge_bn_batches=4`。
+- 输出：`outputs/codex_my_merge_simplified_smoke_blood_fullcfg_20260605`。
+- 精简后 test acc：`0.386437`，最终选择 `medical_weighted_fusion`，候选池为 `medical_weighted_fusion`、`sign_consistent_delta`。
+- 6/1 旧全量同格 test acc：`0.552470`，最终选择 `avg_sign_blend_0p25`，候选池为 `avg`、`medical_weighted_fusion`、`sign_consistent_delta`、`avg_sign_blend_0p25`。
+- 旧版同格 `medical_weighted_fusion` 的 val acc 是 `0.378906`，精简后同候选 val acc 是 `0.386098`，权重也接近：旧 overall `[0.4757, 0.3346, 0.1897]`，新 overall `[0.4862, 0.3392, 0.1746]`。
+- 结论：这个格子的下降主要来自按用户要求删除 `avg/avg_sign_blend` 保底候选，而不是 M1 精简导致医学权重大幅跑偏。
+
+另一个旧版本来就选择 `medical_weighted_fusion` 的格子：
+
+- `organcmnist_224/resnet/c3_b0` 快速 smoke 输出：`outputs/codex_my_merge_simplified_smoke_organc_20260605`。
+- 精简后 test acc：`0.566821`，旧 6/1 全量同格 test acc：`0.487342`。
+- 该格说明保留的医学加权主路径仍能正常工作；是否全量正向需要后续跑完整 grid 判断。
+
+## 2026-06-05 三模块重构：M3 自适应默认开启
+
+用户判断：
+
+- 当前 adaptive 结果可以接受。
+- 代码需要改成更简洁的科研代码，不再保留从未触发的异常兜底。
+- adaptive 不应作为超声特判，而应作为第三个模块 M3，并加入正式消融。
+
+代码改动：
+
+- `DEFAULT_ADAPTIVE_CANDIDATES` 从 `False` 改为 `True`，full 默认开启 M3。
+- 新增 `MODULE3_COMPONENTS = {"adaptive_candidates"}`。
+- 新增消融标签：`no_adaptive_candidates`、`no_adaptive_candidate_generation`、`no_m3`，都表示关闭 M3。
+- 默认全量 ablation 从 `full no_client_information no_fusion_selection avg_only` 改为 `full no_client_information no_fusion_selection no_adaptive_candidates avg_only`。
+- 删除 `merge_my_merge` 内部的 `try/except` 平均 fallback；非医学任务或缺少 metadata/checkpoints/config 现在直接报错。
+- 从 `my_merge` 主逻辑删除 `ultrasound_specialist`、`ultrasound_sparse_sign`、`ultrasound_subset_soup`、`ultrasound_selection_medical_weight` 等数据集特判路径。
+- `scripts/run_all_avg_eval.py` 删除旧的 `--my-merge-ultrasound-*` 参数入口。
+
+结构整理：
+
+- M1：`_module1_diagnostic_client_information_estimation`，只负责医学图像证据和客户端信息估计。
+- M2：`_module2_base_medical_candidates`，只生成两个基础医学候选：`medical_weighted_fusion` 和 `sign_consistent_delta`。
+- M3：`_module3_add_adaptive_candidates` 和 `_module3_validate_and_select`，默认加入 `adaptive_subset_top2/top3_overall`、`adaptive_sign_sparse_0p2`、`head_prior_repair:*`，再统一做 BN recalibration 和 val selection。
+
+保留原则：
+
+- `avg` 仍只用于 `avg_only` 和 `no_fusion_selection` 这类显式对照，不进入正常 full 候选池。
+- M3 不看数据集名称；`chaoshengmnist_224` 不再有单独代码路径。
+- M3 的消融 `no_adaptive_candidates` 是正式 `-M3`，用于衡量 adaptive 候选增量。
+
+验证：
+
+- `./.gpuenv/bin/python -m py_compile methods/my_merge.py scripts/run_all_avg_eval.py scripts/generate_ablation_combined_results_table.py scripts/update_summary_with_chaosheng_raw.py scripts/monitor_my_merge_progress.py scripts/plot_client_weight_dashboard.py scripts/plot_client_weight_ratios.py` 通过。
+- 静态检查确认 `methods/my_merge.py` 已无 `ultrasound_*` 主逻辑、无 `try/except` 方法级异常兜底。
+
+继续精简：
+
+- 删除旧 `hard_case_accuracy`、`focal_hard_case_accuracy`、`diagnostic_information_vector` 和 `fusion_confidence` 输出字段。
+- 同步更新 `scripts/generate_my_merge_diagnostics.py`，诊断表只保留 `acc_A`、`medical_acc_M`、`margin_Q`。
+- 删除旧 component alias：`clip_denorm`、`vlm_denorm`、`layerwise_merge`、`classwise_head`、`medical_prior` 等，仅保留 M1/M2/M3 相关别名。
+- `methods/my_merge.py` 从本轮开始时 1587 行降到 1545 行；本轮 diff 统计为 454 insertions / 568 deletions，净删 114 行。
+
+smoke 验证：
+
+- full 默认 M3：`outputs/codex_my_merge_m3_default_smoke_20260605`。
+  - 单格：`bloodmnist_224/resnet/c3_b0`。
+  - test acc：`0.625840`。
+  - implementation：`medical_evidence_three_module_posthoc_merge_v10_adaptive`。
+  - M2 基础候选：`medical_weighted_fusion`、`sign_consistent_delta`。
+  - M3 后完整候选池：上述两个基础候选 + `adaptive_subset_top2_overall` + `adaptive_sign_sparse_0p2` + 四个 `head_prior_repair:*`。
+  - 最终选择：`head_prior_repair:adaptive_subset_top2_overall`。
+- `-M3`：`outputs/codex_my_merge_m3_off_smoke_20260605`。
+  - test acc：`0.413329`。
+  - 候选池只剩 `medical_weighted_fusion`、`sign_consistent_delta`。
+  - 最终选择：`medical_weighted_fusion`。
+- `-M2`：`outputs/codex_my_merge_m2_off_smoke_20260605`。
+  - test acc：`0.301680`。
+  - disabled components 包含 `medical_weighted_fusion`、`sign_consistent_delta`、`validated_selection`、`bn_recalibration`、`adaptive_candidates`。
+  - 候选池为空，最终选择 `avg`，消融逻辑正确。
+- `-M1`：`outputs/codex_my_merge_m1_off_smoke_20260605`。
+  - test acc：`0.625840`。
+  - disabled components 为 `diagnostic_client_information`、`diagnostic_evidence`、`image_space`。
+  - M3 仍默认开启，候选池与 full 相同，最终选择 `head_prior_repair:adaptive_subset_top2_overall`。
+
+## 2026-06-05 my_merge 紧凑重写
+
+用户反馈：
+
+- 1545 行仍然太长；这个方法的核心不应需要一千五百行。
+
+处理：
+
+- 直接重写 `methods/my_merge.py`，不再小修小补。
+- 保留 M1/M2/M3、必要消融、必要诊断输出和 small/VLM 两类医学图像入口。
+- 删除旧配置框架式写法、旧兼容字段、旧超声分支、旧异常 fallback 和冗长包装函数。
+- 文件行数从 1545 行降到 813 行。
+
+紧凑版结构：
+
+- M1：`_module1`，收集 val 批次、提取 6 维医学图像证据、估计 `overall_weights`、`morphology_weights`、`class_weights`。
+- M2：`_build_m2_m3_candidates` 的前半部分，生成 `medical_weighted_fusion` 和 `sign_consistent_delta`。
+- M3：同一函数后半部分加入 `adaptive_subset_top2/top3_overall` 和 `adaptive_sign_sparse_0p2`；`_select_candidate` 负责 BN 校准、`head_prior_repair:*` 和 val selection。
+
+验证：
+
+- `./.gpuenv/bin/python -m py_compile methods/my_merge.py scripts/run_all_avg_eval.py scripts/generate_my_merge_diagnostics.py scripts/generate_ablation_combined_results_table.py` 通过。
+- full smoke：`outputs/codex_my_merge_compact_full_smoke_20260605`，acc `0.625840`，候选池 8 个，最终 `head_prior_repair:adaptive_subset_top2_overall`。
+- `-M3` smoke：`outputs/codex_my_merge_compact_m3_off_smoke_20260605`，acc `0.416837`，候选池只剩 `medical_weighted_fusion` 和 `sign_consistent_delta`，最终 `medical_weighted_fusion`。
+- `-M2` smoke：`outputs/codex_my_merge_compact_m2_off_smoke_20260605`，acc `0.301680`，候选池为空，最终 `avg`。
+- `-M1` smoke：`outputs/codex_my_merge_compact_m1_off_smoke_20260605`，acc `0.625840`，M1 disabled 后仍能正常用 base weights 跑 M2/M3。
