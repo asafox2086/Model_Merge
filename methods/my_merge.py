@@ -22,7 +22,6 @@ EPS = 1e-8
 DEFAULT_STATS_MAX_BATCHES = 16
 DEFAULT_BN_BATCHES = 4
 DEFAULT_SELECTION_MEDICAL_WEIGHT = 0.15
-DEFAULT_ADAPTIVE_SPARSE_SIGN_DENSITY = 0.20
 CLIP_IMAGE_MEAN = (0.48145466, 0.4578275, 0.40821073)
 CLIP_IMAGE_STD = (0.26862954, 0.26130258, 0.27577711)
 
@@ -499,59 +498,50 @@ def _sign_delta_merge(state_dicts, base_merged, reference, param_names, weights,
     return overlay_param_dict(base_merged, params)
 
 
-def _subset_average(state_dicts, base_weights, subset):
-    subset = tuple(int(i) for i in subset)
-    weights = [float(torch.as_tensor(base_weights, dtype=torch.float32)[i]) for i in subset]
-    return average_state_dicts([state_dicts[i] for i in subset], weights)[0]
-
-
-def _add_subset_candidates(candidates, traces, state_dicts, base_weights, overall):
-    if len(state_dicts) < 3:
-        return
-    order = torch.argsort(torch.as_tensor(overall, dtype=torch.float32), descending=True).tolist()
-    for k in range(2, min(3, len(state_dicts) - 1) + 1):
-        subset = tuple(sorted(order[:k]))
-        raw = torch.zeros(len(state_dicts), dtype=torch.float32)
-        for idx in subset:
-            raw[idx] = float(torch.as_tensor(base_weights, dtype=torch.float32)[idx])
-        weights = _normalize(raw, torch.ones(len(state_dicts)) / len(state_dicts))
-        name = f"adaptive_subset_top{k}_overall"
-        candidates[name] = _subset_average(state_dicts, base_weights, subset)
-        traces[name] = {
-            "fusion_weights": [float(x) for x in weights.tolist()],
-            "group_weights": {},
-            "routing_summary": {"adaptive_subset": True, "subset_source": "topk_overall", "subset_indices": list(subset), "subset_size": k},
-        }
+def _blend_state_dicts(left, right, right_weight):
+    right_weight = float(right_weight)
+    left_weight = 1.0 - right_weight
+    merged = OrderedDict()
+    for key, left_value in left.items():
+        right_value = right[key]
+        if torch.is_floating_point(left_value):
+            merged[key] = (left_weight * left_value.detach().float() + right_weight * right_value.detach().float()).to(left_value.dtype)
+        else:
+            merged[key] = left_value.detach().clone()
+    return merged
 
 
 def _build_m2_m3_candidates(state_dicts, base_merged, base, overall, morph, class_weights, num_classes, meta, cfg, reference, param_names):
     candidates, traces = OrderedDict(), {}
     consensus = _consensus(overall, morph, base)
+    candidates["avg"] = base_merged
+    traces["avg"] = {
+        "fusion_weights": [float(x) for x in torch.as_tensor(base, dtype=torch.float32).tolist()],
+        "group_weights": {},
+        "routing_summary": {"candidate": "avg"},
+    }
     if _enabled(cfg, "medical_weighted_fusion"):
         state, trace = _medical_weighted_merge(state_dicts, base_merged, reference, base, overall, morph, class_weights, num_classes, meta)
         candidates["medical_weighted_fusion"] = state
         traces["medical_weighted_fusion"] = trace
+    sign_state = None
     if _enabled(cfg, "sign_consistent_delta") and meta.get("task_type") == "small" and reference is not None and param_names is not None:
-        state = _sign_delta_merge(state_dicts, base_merged, reference, param_names, consensus.tolist())
-        candidates["sign_consistent_delta"] = state
+        sign_state = _sign_delta_merge(state_dicts, base_merged, reference, param_names, consensus.tolist())
+        candidates["sign_consistent_delta"] = sign_state
         traces["sign_consistent_delta"] = {
             "fusion_weights": [float(x) for x in consensus.tolist()],
             "group_weights": {},
             "routing_summary": {"sign_delta_weight_source": "medical_consensus"},
         }
-    module2_pool = list(candidates.keys())
+    module2_pool = [name for name in candidates.keys() if name != "avg"]
 
-    if _enabled(cfg, "adaptive_candidates"):
-        _add_subset_candidates(candidates, traces, state_dicts, base, overall)
-        if _enabled(cfg, "sign_consistent_delta") and meta.get("task_type") == "small" and reference is not None and param_names is not None:
-            density = DEFAULT_ADAPTIVE_SPARSE_SIGN_DENSITY
-            name = f"adaptive_sign_sparse_{str(density).replace('.', 'p')}"
-            candidates[name] = _sign_delta_merge(state_dicts, base_merged, reference, param_names, consensus.tolist(), density=density)
-            traces[name] = {
-                "fusion_weights": [float(x) for x in consensus.tolist()],
-                "group_weights": {},
-                "routing_summary": {"sign_delta_weight_source": "medical_consensus", "adaptive_sparse_sign": True, "adaptive_sparse_sign_density": density},
-            }
+    if _enabled(cfg, "adaptive_candidates") and sign_state is not None:
+        candidates["avg_sign_blend_0p25"] = _blend_state_dicts(base_merged, sign_state, right_weight=0.25)
+        traces["avg_sign_blend_0p25"] = {
+            "fusion_weights": [float(x) for x in consensus.tolist()],
+            "group_weights": {},
+            "routing_summary": {"avg_sign_blend": True, "blend_right_weight": 0.25},
+        }
     return candidates, traces, module2_pool
 
 
@@ -623,30 +613,6 @@ def _prepare(meta, state_dict, cfg, batches):
     return _recalibrate_bn(meta, state_dict, cfg, batches) if _enabled(cfg, "bn_recalibration") else state_dict
 
 
-def _head_prior_repair(meta, state_dict, cfg, batches, labels):
-    keys = _classifier_bias_keys(state_dict, int(meta["num_classes"]))
-    if not keys:
-        return None, {}
-    device = torch.device(cfg.get("stats_device", cfg.get("device", "cpu")))
-    model, forward_fn = _build_model_forward(meta, cfg, device)
-    model.load_state_dict(state_dict, strict=True)
-    model.eval()
-    pred_sum = torch.zeros(int(meta["num_classes"]), dtype=torch.float32)
-    total = 0
-    with torch.no_grad():
-        for x, _ in batches:
-            logits = forward_fn(model, x.to(device, non_blocking=True)).detach().float().cpu()
-            pred_sum += torch.softmax(logits, dim=1).sum(dim=0)
-            total += int(logits.shape[0])
-    pred = (pred_sum / max(total, 1)).clamp_min(EPS)
-    pred = pred / pred.sum().clamp_min(EPS)
-    counts = torch.bincount(labels.detach().cpu().long().view(-1), minlength=int(meta["num_classes"])).float().clamp_min(EPS)
-    target = counts / counts.sum().clamp_min(EPS)
-    offset = torch.log(target) - torch.log(pred)
-    repaired = OrderedDict((k, (v.detach().float().cpu() + offset).to(v.dtype) if k in keys else v.detach().clone()) for k, v in state_dict.items())
-    return repaired, {"classifier_bias_keys": keys, "target_prior": [float(x) for x in target.tolist()], "predicted_prior": [float(x) for x in pred.tolist()]}
-
-
 def _select_candidate(candidates, traces, base_merged, base_weights, meta, cfg, batches, features, labels):
     if not _enabled(cfg, "validated_selection") or not candidates:
         return base_merged, {
@@ -666,24 +632,6 @@ def _select_candidate(candidates, traces, base_merged, base_weights, meta, cfg, 
         key = (metrics[name]["selection_score"], metrics[name]["val_acc"], -metrics[name]["val_loss"])
         if best_key is None or key > best_key:
             best_name, best_key = name, key
-        if _enabled(cfg, "adaptive_candidates"):
-            repaired, repair_trace = _head_prior_repair(meta, prepared_state, cfg, batches, labels)
-            if repaired is None:
-                continue
-            repair_name = f"head_prior_repair:{name}"
-            candidates[repair_name] = repaired
-            prepared[repair_name] = repaired
-            metrics[repair_name] = _eval_candidate(meta, repaired, cfg, batches, features, labels)
-            repair_key = (metrics[repair_name]["selection_score"], metrics[repair_name]["val_acc"], -metrics[repair_name]["val_loss"])
-            source = traces.get(name, {})
-            traces[repair_name] = {
-                "fusion_weights": source.get("fusion_weights", [float(x) for x in torch.as_tensor(base_weights, dtype=torch.float32).tolist()]),
-                "group_weights": source.get("group_weights", {}),
-                "routing_summary": {**source.get("routing_summary", {}), "head_prior_repair": repair_trace, "head_prior_repair_source": name},
-            }
-            if repair_key > best_key:
-                best_name, best_key = repair_name, repair_key
-
     trace = traces.get(best_name, {})
     routing = {"validated_candidates": len(candidates), "adaptive_candidates": bool(_enabled(cfg, "adaptive_candidates"))}
     routing.update(trace.get("routing_summary", {}))
@@ -762,7 +710,6 @@ def merge_my_merge(state_dicts, weights, meta=None, checkpoints=None, cfg=None):
         "modality": meta.get("dataset"),
         "model_family": _model_family(meta),
         "adaptive_candidates_enabled": adaptive,
-        "adaptive_sparse_sign_density": DEFAULT_ADAPTIVE_SPARSE_SIGN_DENSITY,
         "base_weights": [float(x) for x in base_weights],
         "overall_weights": [float(x) for x in info["overall_weights"].tolist()],
         "morphology_weights": [float(x) for x in info["morphology_weights"].tolist()],

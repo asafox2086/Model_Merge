@@ -33,6 +33,97 @@
 - 消融结论：去掉 M2 平均下降 `0.0964`，去掉 M3 平均下降 `0.0457`，去掉 M1 平均下降 `0.0095`。总体上 M2、M3 有用，M1 较弱。
 - 超声结论：`chaoshengmnist` 仍是主要问题，`full` 只有 `1/0/44`，且 `-M3` 比 full 高 `0.0551`、`-M2` 比 full 高 `0.0381`，说明当前 M2/M3 在超声上仍有负优化。
 
+## 2026-06-06 精简回归定位
+
+用户指出精简前超声结果更好。回看旧代码和新结果后确认一个明确回归：
+
+- 精简前 `_validated_standard_checkpoint_merge` 会把 `avg` 放入候选池，验证集可以在 `avg`、医学加权融合、sign delta、子集候选之间选择。
+- 精简后 `_build_m2_m3_candidates` 只放入 M2/M3 候选，遗漏了 `avg`，导致只要 M2/M3 打开，超声就没有退回平均模型的机会。
+- 这解释了为什么 `chaoshengmnist` 上 M2/M3 看起来负优化：验证选择被迫在一组可能已经坏掉的候选里选最不坏的，而不能选 `avg`。
+
+已修复：
+
+- 在候选池中恢复 `avg`。
+- `module2_candidate_pool` 仍只记录 M2 候选，不把 `avg` 当成 M2 模块。
+- 语法检查通过：`py_compile methods/my_merge.py scripts/run_all_avg_eval.py scripts/generate_ablation_combined_results_table.py`。
+- 后续超声全量显示 full 仍为 `0.1170`，原因是 M3 的 `head_prior_repair` 在一个很小的 val batch 上把 `val_acc` 修到 `1.0`，但 test 崩掉。
+- 已删除 `head_prior_repair`。单格 smoke `chaoshengmnist_224 / resnet / c3_b0` 从 `0.1087` 恢复到 `0.3046`。
+
+已启动超声全量验证：
+
+- run tag：`codex_my_merge_chaosheng_no_head_repair_full_20260606`
+- 数据集：`chaoshengmnist_224`
+- 范围：small 的 4 个 backbone + VLM CLIP，4 个消融，共 `180` 个 eval。
+- 输出目录：`outputs/codex_my_merge_chaosheng_no_head_repair_full_20260606/my_merge_ablation_grid`
+- VLM smoke 已确认 `avg` 回到候选池，且至少一个格子重新选回 `avg`。
+
+结果显示这还没有真正恢复：
+
+- `full` 超声 45 格均值为 `0.1742`，仍低于 2026-06-01 旧全量的 `0.2253`。
+- 关键原因不是单纯候选池，而是本轮全量脚本默认用了 `my_merge_stats_max_batches=1`、`my_merge_bn_batches=1`。同一个 `chaoshengmnist_224/resnet/c3_b0` 格子里，候选验证集 `val_acc` 全部为 `0`，选择退化成按 loss 排名，M1 权重也退化成均匀。
+- 2026-06-01 旧全量配置是 `my_merge_stats_max_batches=16`、`my_merge_bn_batches=4`，该口径下 M1 权重非均匀，候选验证有效。
+
+已进一步修复：
+
+- `scripts/run_validated_my_merge_full.sh` 和 `scripts/run_my_merge_ablation_split_grid.sh` 默认恢复为 `stats=16`、`bn=4`。
+- 删除 M3 中的 `adaptive_subset_top2/top3` 和 `adaptive_sign_sparse_0p2` 搜索候选。
+- 恢复旧版有效的保守候选 `avg_sign_blend_0p25`，作为精简后的唯一 M3 候选：在 `avg` 和 `sign_consistent_delta` 之间做 25% 小步混合。
+- `head_prior_repair`、subset、sparse 相关代码均已删除，`methods/my_merge.py` 当前为 727 行。
+- 语法检查通过：`py_compile methods/my_merge.py scripts/run_all_avg_eval.py`。
+
+修复后 smoke：
+
+- `chaoshengmnist_224 / resnet / 9格 / stats=16 / bn=4`
+- 输出目录：`outputs/codex_my_merge_blend_stats16_chaosheng_resnet9_20260606`
+- 新均值 `0.3883`，高于 2026-06-01 旧全量同 9 格均值 `0.3726`，远高于错误口径 `0.2687`。
+- 候选池恢复为 `avg`、`medical_weighted_fusion`、`sign_consistent_delta`、`avg_sign_blend_0p25`。
+
+已启动新的超声全量：
+
+- run tag：`codex_my_merge_chaosheng_blend_stats16_full_20260606`
+- 数据集：`chaoshengmnist_224`
+- 范围：small 的 4 个 backbone + VLM CLIP，4 个消融，共 `180` 个 eval。
+- 口径：`my_merge_stats_max_batches=16`、`my_merge_bn_batches=4`、`stats_split=val`。
+- 输出目录：`outputs/codex_my_merge_chaosheng_blend_stats16_full_20260606/my_merge_ablation_grid`
+
+全量结果：
+
+- 已完成 `180/180`，日志未发现 `fail (`。
+- `full` 均值 `0.2317`，相对已有最佳原始方法均值 `+0.0105`，W/T/L=`18/8/19`。
+- 2026-06-01 旧版超声 `full` 均值为 `0.2253`，本轮高 `+0.0064`。
+- 错误口径 no-head-repair 版超声 `full` 均值为 `0.1742`，本轮高 `+0.0575`。
+
+按模型拆分：
+
+| model | new full | old 2026-06-01 | bad stats1 | new-old |
+|---|---:|---:|---:|---:|
+| convnext | 0.1708 | 0.1707 | 0.1251 | +0.0001 |
+| resnet | 0.3883 | 0.3726 | 0.2687 | +0.0158 |
+| swin_tiny | 0.2359 | 0.2251 | 0.1444 | +0.0108 |
+| vit_t | 0.2008 | 0.1952 | 0.1827 | +0.0056 |
+| CLIP ViT-B/32 | 0.1628 | 0.1631 | 0.1503 | -0.0003 |
+
+消融结果：
+
+| ablation | mean_acc | delta_vs_full | W/T/L |
+|---|---:|---:|---:|
+| full | 0.2317 | 0.0000 | 18/8/19 |
+| no_adaptive_candidates (-M3) | 0.2302 | -0.0015 | 16/8/21 |
+| no_client_information (-M1) | 0.2019 | -0.0298 | 7/9/29 |
+| no_fusion_selection (-M2) | 0.1551 | -0.0766 | 1/5/39 |
+
+候选选择：
+
+- `full`：`medical_weighted_fusion` 19 次、`avg` 11 次、`avg_sign_blend_0p25` 8 次、`sign_consistent_delta` 7 次。
+- `-M3`：`medical_weighted_fusion` 23 次、`avg` 13 次、`sign_consistent_delta` 9 次。
+- M3 的贡献很小，但不再负优化；M1、M2 已重新表现为明确正贡献。
+
+生成文件：
+
+- 消融汇总：`outputs/codex_my_merge_chaosheng_blend_stats16_full_20260606/my_merge_ablation_grid/reports/ablation_summary.md`
+- 本轮 combined 总表：`outputs/codex_my_merge_chaosheng_blend_stats16_full_20260606/my_merge_ablation_grid/reports/all_results_ablation_combined.md`
+- 主汇总表已更新：`My_merge_ret/汇总表.md` 保留 `outputs/codex_my_merge_compact_full_20260605` 的非超声结果，并用本轮 `codex_my_merge_chaosheng_blend_stats16_full_20260606` 覆盖 `chaoshengmnist_224` 的 `my_merge` 四个消融行。
+
 ## 当前状态总览
 
 `my_merge` 仍处于“方法方向已明确，但实现还需要修稳”的阶段。2026-05-31 晚上已经完成一轮针对超声退化的定位和修复，不建议立刻跑全量，但可以进入更系统的 smoke。
