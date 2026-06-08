@@ -142,6 +142,9 @@ def run_evaluate(cfg, merged_dir=None, checkpoint_path=None, meta_path=None):
         'test_loss': float(result['loss']),
         'num_samples': int(result['num_samples']),
     }
+    for field in ('source_image_size', 'eval_image_size', 'image_resize'):
+        if field in result:
+            payload[field] = result[field]
     save_json(eval_path, payload)
     append_summary_row(Path(cfg['output_root']) / 'reports' / 'eval_summary.csv', payload)
     return payload, eval_path

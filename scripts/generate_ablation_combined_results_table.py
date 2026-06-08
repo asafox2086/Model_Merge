@@ -1,11 +1,12 @@
 #!/usr/bin/env python3
 import argparse
 import csv
+import re
 from copy import deepcopy
 from pathlib import Path
 
 from generate_combined_results_table import highlight_rows, parse_tables, render_table
-from generate_my_merge_master_table import CLIENT_AVG_GROUPS, SETTINGS, SMALL_DATASETS, SMALL_MODELS, VLM_MODELS
+from generate_my_merge_master_table import CLIENT_AVG_GROUPS, SETTINGS
 
 
 ABLATION_LABELS = {
@@ -16,9 +17,9 @@ ABLATION_LABELS = {
     "no_diagnostic_information": "my_merge -M1 client_info",
     "no_fusion_selection": "my_merge -M2 fusion_select",
     "no_medical_fusion_selection": "my_merge -M2 fusion_select",
-    "no_adaptive_candidates": "my_merge -M3 adaptive",
-    "no_adaptive_candidate_generation": "my_merge -M3 adaptive",
-    "no_m3": "my_merge -M3 adaptive",
+    "no_adaptive_candidates": "my_merge -M3 conflict_stabilization",
+    "no_adaptive_candidate_generation": "my_merge -M3 conflict_stabilization",
+    "no_m3": "my_merge -M3 conflict_stabilization",
     "no_calibration": "my_merge -M2 calibration",
 }
 
@@ -87,17 +88,33 @@ def fmt(value):
     return "-" if value is None else f"{value:.4f}"
 
 
-def raw_values(lookup, ablation, task_type, model_name):
+DATASET_TH_RE = re.compile(r'<th\s+colspan="\d+">(.*?)</th>')
+
+
+def table_datasets(base_table):
+    datasets = []
+    for line in base_table["header_lines"]:
+        match = DATASET_TH_RE.search(line)
+        if match:
+            datasets.append(match.group(1))
+    return datasets
+
+
+def task_type_for_section(section):
+    return "vlm" if "vlm" in section.lower() else "small"
+
+
+def raw_values(lookup, ablation, task_type, model_name, datasets):
     values = []
-    for dataset in SMALL_DATASETS:
+    for dataset in datasets:
         for num_clients, beta, _label in SETTINGS:
             values.append(lookup.get((ablation, task_type, dataset, model_name, num_clients, beta)))
     return [fmt(value) for value in values]
 
 
-def client_average_values(lookup, ablation, task_type, model_name):
+def client_average_values(lookup, ablation, task_type, model_name, datasets):
     values = []
-    for dataset in SMALL_DATASETS:
+    for dataset in datasets:
         for num_clients, _label in CLIENT_AVG_GROUPS:
             group = []
             for cand_clients, beta, _raw_label in SETTINGS:
@@ -118,13 +135,14 @@ def baseline_avg_values(base_table):
 
 
 def ablation_rows_for_table(base_table, lookup, ablations, section, model_name, kind):
-    task_type = "small" if section == "Small" else "vlm"
+    task_type = task_type_for_section(section)
+    datasets = table_datasets(base_table)
     rows = []
     for ablation in ablations:
         if kind == "Raw":
-            values = raw_values(lookup, ablation, task_type, model_name)
+            values = raw_values(lookup, ablation, task_type, model_name, datasets)
         else:
-            values = client_average_values(lookup, ablation, task_type, model_name)
+            values = client_average_values(lookup, ablation, task_type, model_name, datasets)
         if ablation == "avg_only" and all(value == "-" for value in values):
             values = baseline_avg_values(base_table)
         if all(value == "-" for value in values):
@@ -158,7 +176,7 @@ def build_output(merged_tables, grid_root, ablations):
         "",
         f"- Base table: `result/all_results.md`.",
         f"- my_merge ablation source: `{grid_root}`.",
-        "- Row labels state which module is missing. `M1` = Diagnostic Evidence Client Information, `M2` = Medical Checkpoint Fusion, `M3` = Adaptive Candidate Validation.",
+        "- Row labels state which module is missing. `M1` = Diagnostic Evidence Client Information, `M2` = Medical Reliability-Guided Fusion, `M3` = Conflict-Aware Delta Stabilization.",
         "- Highlight rule: highest value is bold, second-highest distinct value is underlined.",
         "",
         "## Ablation Rows",
@@ -174,16 +192,7 @@ def build_output(merged_tables, grid_root, ablations):
 
     current_section = None
     current_model = None
-    order = []
-    for section in ["Small", "VLM"]:
-        models = SMALL_MODELS if section == "Small" else VLM_MODELS
-        for model_name in models:
-            for kind in ["Raw", "Client Average"]:
-                key = (section, model_name, kind)
-                if key in merged_tables:
-                    order.append(key)
-
-    for section, model_name, kind in order:
+    for section, model_name, kind in merged_tables.keys():
         if section != current_section:
             lines.append(f"## {section}")
             lines.append("")

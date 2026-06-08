@@ -1,4 +1,5 @@
 from torch.utils.data import DataLoader
+from torchvision import transforms
 
 from dataset import ClipImageDataset, NpzTensorDataset, build_clip_transform, load_npz_splits
 from model import build_model
@@ -34,11 +35,28 @@ def resolve_vlm_max_text_len(meta, default=32):
     return max_text_len
 
 
+def _image_hw(images):
+    if images.ndim == 3:
+        return int(images.shape[1]), int(images.shape[2])
+    if images.ndim >= 4:
+        return int(images.shape[1]), int(images.shape[2])
+    raise ValueError(f'Unexpected image shape: {images.shape}')
+
+
+def _build_small_transform(meta, images):
+    source_h, source_w = _image_hw(images)
+    target = int(meta.get('image_size') or 0)
+    if target > 0 and (source_h != target or source_w != target):
+        return transforms.Resize((target, target), antialias=True)
+    return None
+
+
 def build_small_runtime(meta, data_root, split, batch_size, num_workers, device):
     batch_size, num_workers = validate_loader_settings(batch_size, num_workers, context='small runtime')
     npz_path = f"{data_root}/{meta['dataset']}.npz"
     splits = load_npz_splits(npz_path)
-    ds = NpzTensorDataset(splits[split].images, splits[split].labels, transform=None)
+    transform = _build_small_transform(meta, splits[split].images)
+    ds = NpzTensorDataset(splits[split].images, splits[split].labels, transform=transform)
     loader = DataLoader(ds, batch_size=batch_size, shuffle=False, num_workers=num_workers, pin_memory=(str(device).startswith('cuda')))
     model, _, _, _ = build_model(
         name=meta['model'],

@@ -124,6 +124,127 @@
 - 本轮 combined 总表：`outputs/codex_my_merge_chaosheng_blend_stats16_full_20260606/my_merge_ablation_grid/reports/all_results_ablation_combined.md`
 - 主汇总表已更新：`My_merge_ret/汇总表.md` 保留 `outputs/codex_my_merge_compact_full_20260605` 的非超声结果，并用本轮 `codex_my_merge_chaosheng_blend_stats16_full_20260606` 覆盖 `chaoshengmnist_224` 的 `my_merge` 四个消融行。
 
+## 2026-06-06 两模块整理与自然图像对照准备
+
+用户指出 M3 只剩 `avg_sign_blend_0p25`，本质上只是 M2 候选池里的一个保守混合候选，不应作为独立模块。这个判断成立，已调整：
+
+- 删除正式 M3 模块定义，当前方法改为 M1+M2 两模块。
+- `avg_sign_blend_0p25 = 0.75 * avg + 0.25 * sign_consistent_delta` 已并入 M2，作为 `avg_sign_blend` 候选。
+- 旧消融标签 `no_adaptive_candidates/no_m3` 仅保留为兼容别名，含义改为关闭 M2 里的 `avg_sign_blend` 候选，不再作为论文正式 M3。
+- 默认全量消融改为 `full no_client_information no_fusion_selection`。
+- `merge_result.json` 中实现名改为 `medical_evidence_two_module_posthoc_merge_v11`。
+
+自然图像对照准备：
+
+- `natural_model_hub/` 已确认包含 288 个 small 配置：`cifar10_32`、`cifar100_32`、`svhn_32`、`tinyimagenet_64` × 8 个 backbone × 9 个 clients/beta。
+- 当前 `my_merge` 默认仍拒绝非医学数据集，保持医学专用边界。
+- 新增 `--my-merge-domain-control`，仅用于自然图像域外对照实验；显式打开后才允许在自然图像数据集上运行。
+- 已试跑 `cifar10_32/resnet/c3_b0`，代码可进入自然对照模式，但失败于数据缺失：`Med_data/cifar10_32.npz` 不存在。
+- 已搜索当前仓库 `Med_data`、`natural_model_hub`、`/data/liyapeng_grp` 常见深度、`/data1/users/weiyipan/FL/data`、`/data1/users/weiyipan/ML`，未找到 `cifar10_32.npz/cifar100_32.npz/svhn_32.npz/tinyimagenet_64.npz`。
+
+医学 smoke：
+
+- 运行：`outputs/codex_two_module_medical_smoke_20260606`
+- 配置：`chaoshengmnist_224 / resnet / clients=3 / beta=0 / stats=16 / bn=4`
+- 结果：`acc=0.3585`，与合并 M3 前同格一致。
+- 候选池：`avg`、`medical_weighted_fusion`、`sign_consistent_delta`、`avg_sign_blend_0p25`。
+- `module2_candidate_pool`：`medical_weighted_fusion`、`sign_consistent_delta`、`avg_sign_blend_0p25`。
+
+## 2026-06-07 M3 重新定义为冲突稳定路径
+
+用户指出只有 `avg_sign_blend_0p25` 和纯 `sign_consistent_delta` 会显得割裂。已将 M3 改成一条统一的冲突感知 delta 插值路径：
+
+```text
+delta_lambda = (1 - lambda) * avg + lambda * sign_consistent_delta
+lambda in {0.00, 0.25, 0.50, 0.75, 1.00}
+```
+
+当前模块定义：
+
+- M1：医学诊断客户端信息估计。
+- M2：医学可靠性加权融合，只包含 `medical_weighted_fusion`。
+- M3：冲突感知增量稳定，包含 `delta_0p00/0p25/0p50/0p75/1p00`。
+
+这样 `delta_0p00` 是普通平均，`delta_1p00` 是原纯 sign delta 端点，`0p25/0p50/0p75` 是从 avg 到该端点的离散稳定路径，不再是孤立补丁。
+
+代码检查：
+
+- 语法检查通过：`py_compile methods/my_merge.py scripts/run_all_avg_eval.py scripts/generate_ablation_combined_results_table.py scripts/monitor_my_merge_progress.py`。
+
+smoke：
+
+- 输出：`outputs/codex_m3_path_probe_20260607`
+- 配置：`chaoshengmnist_224 / resnet / clients=3 / beta=0 / stats=16 / bn=4`
+- 结果：`acc=0.3585`
+- 候选池旧命名：`avg`、`medical_weighted_fusion`、`delta_stabilization_0p25`、`delta_stabilization_0p50`、`delta_stabilization_0p75`、`delta_stabilization_1p00`
+- `module2_candidate_pool`：`medical_weighted_fusion`
+- `module3_candidate_pool`：四个旧命名 `delta_stabilization` 路径点
+- 该格选择 `delta_stabilization_0p25`，val selection score 分别为：`0p25=0.4133`、`0p50=0.3198`、`0p75=0.2330`、`1p00=0.2172`。
+
+命名整理：
+
+- 按用户要求把 M3 起点 `avg` 改名为 `delta_0p00`。
+- 同时把整条 M3 候选路径统一短名为 `delta_0p00/0p25/0p50/0p75/1p00`，模块含义仍由 M3 的“冲突感知增量稳定”解释。
+- `medical_weighted_fusion` 是之前讨论的第一条医学加权融合路径，属于 M2 候选；它不是 M1 本身，而是 M1 权重进入参数融合后的结果。
+- 改名后 smoke：`outputs/codex_m3_path_delta0_probe_20260607`，同一超声 ResNet 格子 `acc=0.3585`，候选池为 `delta_0p00`、`medical_weighted_fusion`、`delta_0p25`、`delta_0p50`、`delta_0p75`、`delta_1p00`，最终选择 `delta_0p25`。
+
+## 2026-06-07 自然图像 .npz 到位确认
+
+用户反馈师兄已上传自然图像 `.npz`。检查结果：
+
+- `Med_data/cifar10_32.npz`、`Med_data/cifar100_32.npz`、`Med_data/svhn_32.npz`、`Med_data/tinyimagenet_64.npz` 已存在。
+- 四个文件都包含现有 loader 需要的 `train_images/train_labels/val_images/val_labels/test_images/test_labels/metadata`。
+- shape 正常：CIFAR10/100 为 `45000/5000/10000`，SVHN 为 `65931/7326/26032`，TinyImageNet 为 `90000/10000/10000`。
+- `natural_model_hub` 中对应 small checkpoint 目录和 manifest 均存在。
+
+入口 smoke：
+
+- 运行：`outputs/codex_natural_npz_smoke_20260607`
+- 配置：`cifar10_32 / resnet / clients=3 / beta=0 / --my-merge-domain-control`
+- 结果：脚本已能完整读自然数据、加载自然 checkpoint、执行 `my_merge` 和 test eval，`test_acc=0.1467`。
+- `merge_result.json` 中 `natural_domain_control=true`，说明该结果是显式域外对照模式，不改变默认“医学任务专用”的边界。
+
+已有结果口径：
+
+- `natural_model_hub` 中 288 个配置的 `meta.json` 都带有客户端单模型 `best_val_acc/test_acc/test_loss`，这是训练阶段已有结果。
+- 当前仓库还没有自然图像模型融合全量对照表；已有融合输出只有 `cifar10_32/resnet/c3_b0` 的 smoke，以及 2026-06-06 因 `.npz` 缺失失败的 probe。
+- 客户端单模型结果粗略汇总：`cifar10_32` 平均客户端 test acc 约 `0.2768`，`cifar100_32` 约 `0.1511`，`svhn_32` 约 `0.2667`，`tinyimagenet_64` 约 `0.1128`。
+
+## 2026-06-07 医学 + 自然域全量启动准备
+
+用户要求医学和自然领域都跑全量，并把结果用脚本写入 `My_merge_ret/汇总表.md`。
+
+脚本调整：
+
+- `scripts/run_my_merge_ablation_split_grid.sh` 新增 `MY_MERGE_DOMAIN_CONTROL=true` 透传，用于自然域外对照。
+- `scripts/run_validated_my_merge_full.sh` 同步记录并透传该开关。
+- `scripts/generate_ablation_combined_results_table.py` 改为从表头动态读取数据集名，因此同一脚本可生成医学和自然域 combined 表。
+- 新增 `scripts/generate_formal_results_table.py`，从自然域 baseline 的 `eval_summary.csv` 生成与 `result/all_results.md` 同格式的 base table。
+- 新增 `scripts/publish_domain_summary_tables.py`，把医学 combined 表和自然 combined 表合并写入一个总表。
+- 新增 `scripts/run_medical_natural_full_and_publish.sh`，串联医学 my_merge 全量、自然 baseline、自然 my_merge 消融和最终发布。
+
+全量口径：
+
+- 医学：`bloodmnist_224/dermamnist_224/organcmnist_224/organsmnist_224/chaoshengmnist_224`，small 四个 backbone + VLM，`full/-M1/-M2/-M3` 四个消融。
+- 自然：`cifar10_32/cifar100_32/svhn_32/tinyimagenet_64`，8 个 small backbone，无 VLM。
+- 自然 baseline：默认 12 个对比方法 `avg/ties/dare_linear/dare_ties/regmean/fisher/breadcrumbs/model_stock/from/iso_c/free_merge/robustmerge`。
+- 自然 my_merge：同样跑 `full/-M1/-M2/-M3`，显式 `--my-merge-domain-control`。
+
+启动状态：
+
+- 2026-06-07 11:49 CST 已启动后台全量。
+- `RUN_TAG=codex_medical_natural_full_20260607_1150`
+- 总输出目录：`outputs/codex_medical_natural_full_20260607_1150`
+- driver 日志：`logs/codex_medical_natural_full_20260607_1150/driver.log`
+- 预计最终发布：`My_merge_ret/汇总表.md`
+- 当前阶段：医学 `full` 消融，`resnet` 与 `convnext` 两个 small job 已在 GPU 0/1 上启动。
+
+巡检：
+
+- 2026-06-07 14:40 CST：医学 `full` 已完成，5 个 job 共 `225/225` 行，全部 `OK`。
+- 当前阶段进入医学 `no_client_information (-M1)`：`resnet 32/45`，`convnext 17/45`，全部 `OK`。
+- 自然域 baseline 和自然域 my_merge 消融尚未开始；`My_merge_ret/汇总表.md` 尚未被本轮覆盖。
+
 ## 当前状态总览
 
 `my_merge` 仍处于“方法方向已明确，但实现还需要修稳”的阶段。2026-05-31 晚上已经完成一轮针对超声退化的定位和修复，不建议立刻跑全量，但可以进入更系统的 smoke。
@@ -1121,3 +1242,107 @@ smoke 验证：
 - `-M3` smoke：`outputs/codex_my_merge_compact_m3_off_smoke_20260605`，acc `0.416837`，候选池只剩 `medical_weighted_fusion` 和 `sign_consistent_delta`，最终 `medical_weighted_fusion`。
 - `-M2` smoke：`outputs/codex_my_merge_compact_m2_off_smoke_20260605`，acc `0.301680`，候选池为空，最终 `avg`。
 - `-M1` smoke：`outputs/codex_my_merge_compact_m1_off_smoke_20260605`，acc `0.625840`，M1 disabled 后仍能正常用 base weights 跑 M2/M3。
+
+## 2026-06-07 医学+自然全量运行进度
+
+本次全量 run tag：
+
+- `codex_medical_natural_full_20260607_1150`
+- 主输出：`outputs/codex_medical_natural_full_20260607_1150`
+- driver 日志：`logs/codex_medical_natural_full_20260607_1150/driver.log`
+- 目标汇总表：`My_merge_ret/汇总表.md`
+
+19:55 检查：
+
+- 后台主流程仍在运行，当前还在医学部分，没有进入自然领域阶段。
+- 医学 `full` 已完成：5 个任务分组全部 `45/45 OK`。
+- 医学 `no_client_information` driver 已标记 finished；small 四个骨干都是 `45/45 OK`，但 VLM 状态表只有 `42/45 OK`。
+- 医学 `no_fusion_selection` 已完成：5 个任务分组全部 `45/45 OK`。
+- 医学 `no_adaptive_candidates` 正在运行：
+  - `small_resnet`：`45/45 OK`
+  - `small_convnext`：`45/45 OK`
+  - `small_vit_t`：`45/45 OK`
+  - `small_swin_tiny`：`26/45 OK`
+  - `vlm_clip-vit-base-patch32`：`15/45 OK`
+- `My_merge_ret/汇总表.md` 尚未被本轮覆盖，时间戳仍是 `2026-06-06 20:55:02 +0800`。
+
+发现的问题：
+
+- `no_client_information/vlm_clip-vit-base-patch32` 日志里出现过 `Killed`，所以 `42/45` 不是正常完成。
+- 主流程没有因此停止，后续仍继续跑 `no_fusion_selection` 和 `no_adaptive_candidates`。
+- 如果最终汇总前这 3 个 VLM 缺项没有自动补齐，需要在 GPU 空出后单独 resume 补跑该分组，再生成汇总表。
+
+22:37 检查：
+
+- 主流程已经通过医学 my_merge 阶段，进入自然领域 formal baseline。
+- 医学 `no_adaptive_candidates` 已完成：5 个任务分组全部 `45/45 OK`。
+- 医学四个消融整体状态：
+  - `full`：`225/225 OK`
+  - `no_fusion_selection`：`225/225 OK`
+  - `no_adaptive_candidates`：`225/225 OK`
+  - `no_client_information`：small 四个骨干 `180/180 OK`，VLM 仍是 `42/45 OK`
+- 自然 formal baseline 当前已经跑完：
+  - `avg`：`216 OK / 72 FAIL`
+  - `ties`：`216 OK / 72 FAIL`
+  - `dare_linear`：`216 OK / 72 FAIL`
+- 自然 formal baseline 正在跑：
+  - `dare_ties`：当前 `162 OK / 43 FAIL / 205 rows`
+  - `regmean`：当前 `52 OK / 52 rows`
+- 当前活跃进程是自然 formal 的 `dare_ties` 和 `regmean`。
+- `My_merge_ret/汇总表.md` 仍未被本轮覆盖，时间戳还是 `2026-06-06 20:55:02 +0800`。
+
+自然领域失败原因：
+
+- 失败集中在 `vit_t` 和 `swin_tiny`，错误为 `Input height (32/64) doesn't match model (224)`。
+- `natural_model_hub` 的对应 `meta.json` 里写有 `image_size: 224`，说明这些自然 ViT/Swin 检查点需要把 CIFAR/SVHN/TinyImageNet 图像 resize 到 224 后再评估。
+- 当前评估脚本没有按自然模型 meta 的 `image_size` 对 `.npz` 图像 resize，所以自然领域结果如果直接汇总会缺 `vit_t/swin_tiny` 的大量配置。
+
+23:05 处理 resize：
+
+- 用户确认按严谨科研流程做 resize，并要求写入文档。
+- 进一步检查发现自然 `resnet` 的 `meta.json` 也写有 `image_size: 224`；因此问题不只是 `vit_t/swin_tiny` 会报错，所有自然 checkpoint 都应按 `meta.image_size` 做评估输入。
+- 原始 `.npz` 不修改，train/val/test 划分和标签不修改；只在 dataloader/eval transform 中把输入 tensor 确定性 resize 到 checkpoint metadata 记录的尺寸。
+- 已修改 `evaluators/small_eval.py`：small 评估路径按 `meta.image_size` 构造 resize transform，并在结果中记录 `source_image_size`、`eval_image_size`、`image_resize`。
+- 已修改 `evaluators/vlm_eval.py`：VLM 原本已有 resize，现在也记录同样的尺寸字段。
+- 已修改 `utils/runtime.py`：my_merge 内部 M1 统计、M2/M3 验证选择和 BN recalibration 走 `build_runtime`，现在也按 `meta.image_size` 做同样 resize。
+- 已修改 `evaluate.py`：把尺寸字段写入 `eval.json` 和 `eval_summary.csv`，后续可检查自然结果是否都按 224 协议跑。
+- 已修改 `scripts/run_all_avg_eval.py`：自然数据集 resume 时要求旧 `eval.json` 的 `eval_image_size` 与 `meta.image_size` 一致；旧自然结果没有这个字段，会自动判为 stale 并重跑。
+- 验证：
+  - `py_compile` 通过：`evaluators/small_eval.py`、`evaluators/vlm_eval.py`、`evaluate.py`、`utils/runtime.py`、`scripts/run_all_avg_eval.py`。
+  - `build_small_runtime` smoke：`cifar10_32/vit_t` 的 batch shape 为 `(2, 3, 224, 224)`，一次前向输出 shape 为 `(2, 10)`。
+  - 旧自然 `avg/cifar10_32/resnet/c3_b0` 的 `eval.json` 被 `load_valid_eval_payload` 判为 stale，确认后续 resume 会重跑旧自然结果。
+- 已停止仍在使用旧预处理的自然 formal 进程：`dare_ties`、`regmean` 及其父级 wrapper。
+- 已用同一 `RUN_TAG=codex_medical_natural_full_20260607_1150` 重新启动 wrapper：`screen -dmS mednat_resize_resume_20260607 ...`。
+- 新 wrapper 当前先进入医学 my_merge 阶段；医学旧结果不会因缺少 `eval_image_size` 被误判 stale，后续自然结果会按 resize 修复后的逻辑重跑。
+- 23:06 检查：resume 已跳过医学 `full`，正在跑 `no_client_information/vlm_clip-vit-base-patch32__my_merge`，用于补之前 `42/45` 的 VLM 缺口。
+- 23:08 检查：后台进程仍在运行；`no_client_information/vlm_clip-vit-base-patch32__my_merge` 当前 `44/45`，其中旧结果 `SKIP=42`，新补结果 `OK=2`，还剩 1 个 VLM 配置。
+- 2026-06-08 08:01 检查：后台 `mednat_resize_resume_20260607` 仍在运行，已经进入自然 formal baseline。
+  - 医学 resume 已完成，`no_client_information` 的 VLM 缺口已补过并进入后续阶段。
+  - 自然 formal 当前状态：`avg/ties/dare_linear/dare_ties` 都是 `288/288 OK`。
+  - 当前活跃自然任务：`regmean` 和 `fisher`。
+  - `regmean` 状态表暂时显示 `130 OK / 18 FAIL / 148 rows`；这些 `FAIL` 是 resize 修复前留下的旧 `Input height` 行，当前日志显示新 run 正在把旧 eval 判为 stale 后重跑，且 `cifar100_32` 的 `vit_t/swin_tiny` 已能正常完成。
+  - `fisher` 当前 `31/288 OK`。
+  - `My_merge_ret/汇总表.md` 还未被本轮覆盖。
+- 2026-06-08 08:05 检查：后台任务仍在跑。
+  - `screen`、主 wrapper 和自然 formal 子任务仍存在。
+  - GPU 0/1 均有计算占用，当前自然 formal 子任务仍是 `regmean` 和 `fisher`。
+  - 自然 formal 状态：`avg/ties/dare_linear/dare_ties` 已完成 `288/288 OK`；`regmean` 当前状态表为 `130 OK / 18 FAIL / 148 rows`，日志显示正在继续重跑旧 stale 结果；`fisher` 当前 `36/288 OK`。
+  - `My_merge_ret/汇总表.md` 时间戳仍是 `2026-06-06 20:55:02 +0800`，说明还没走到最终生成总表。
+- 2026-06-08 11:13 检查：后台任务仍在自然 formal baseline 阶段。
+  - 已完成：`avg/ties/dare_linear/dare_ties` 均为 `288/288 OK`。
+  - 正在推进：`regmean` 当前 `228/288 OK`，`fisher` 当前 `216/288 OK`。
+  - 尚未开始生成目录的方法：`breadcrumbs/model_stock/from/iso_c/free_merge/robustmerge`。
+  - 当前自然 formal baseline 已完成约 `1596/3456` 个配置；后续还需要跑剩余 baseline 方法，再跑自然领域 `my_merge` 消融，最后才会写入 `My_merge_ret/汇总表.md`。
+  - `My_merge_ret/汇总表.md` 时间戳仍是 `2026-06-06 20:55:02 +0800`，不是本轮最终结果。
+- 2026-06-08 14:26 检查：后台任务继续正常运行，仍在自然 formal baseline 阶段。
+  - 新完成：`regmean/fisher` 均已达到 `288/288 OK`。
+  - 正在推进：`breadcrumbs` 当前 `134/288 OK`，`model_stock` 当前 `145/288 OK`。
+  - 已完成方法：`avg/ties/dare_linear/dare_ties/regmean/fisher`。
+  - 尚未开始生成目录的方法：`from/iso_c/free_merge/robustmerge`。
+  - 当前自然 formal baseline 已完成约 `2007/3456` 个配置。
+  - GPU 0/1 均有计算占用；`My_merge_ret/汇总表.md` 时间戳仍未更新，说明还没进入最终发布表格阶段。
+- 2026-06-08 医学结果快速汇总：
+  - 医学 my_merge 报告文件：`outputs/codex_medical_natural_full_20260607_1150/medical/my_merge_ablation_grid/reports/all_results_ablation_combined.md`。
+  - 整体均值：`full=0.3156`，`-M1=0.2764`，`-M2=0.2227`，`-M3=0.3036`。
+  - 相比 full 的下降：去掉 M1 下降 `0.0392`，去掉 M2 下降 `0.0929`，去掉 M3 下降 `0.0120`。
+  - 与原始最好方法逐配置比较：full 为 `65/58/102`，平均低 `0.0047`；说明模块本身有贡献，但 full 还没有在所有医学配置上压过原有最优 baseline。

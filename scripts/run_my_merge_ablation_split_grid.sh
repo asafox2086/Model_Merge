@@ -12,6 +12,7 @@ MY_MERGE_EVAL_MAX_BATCHES="${MY_MERGE_EVAL_MAX_BATCHES:-1}"
 MY_MERGE_BN_BATCHES="${MY_MERGE_BN_BATCHES:-4}"
 MY_MERGE_EXPORT_DIAGNOSTICS="${MY_MERGE_EXPORT_DIAGNOSTICS:-true}"
 MY_MERGE_DIAGNOSTICS_PLOT="${MY_MERGE_DIAGNOSTICS_PLOT:-false}"
+MY_MERGE_DOMAIN_CONTROL="${MY_MERGE_DOMAIN_CONTROL:-false}"
 MY_MERGE_VIZ_MAX_BATCHES="${MY_MERGE_VIZ_MAX_BATCHES:-1}"
 MY_MERGE_VIZ_MAX_PLOTS="${MY_MERGE_VIZ_MAX_PLOTS:-0}"
 MAX_PARALLEL_JOBS="${MAX_PARALLEL_JOBS:-1}"
@@ -68,6 +69,9 @@ if [[ "${MY_MERGE_DIAGNOSTICS_PLOT}" == "true" ]]; then
   diagnostic_args+=(--my-merge-diagnostics-plot)
 else
   diagnostic_args+=(--no-my-merge-diagnostics-plot)
+fi
+if [[ "${MY_MERGE_DOMAIN_CONTROL}" == "true" ]]; then
+  diagnostic_args+=(--my-merge-domain-control)
 fi
 
 run_small_model_job() {
@@ -166,6 +170,7 @@ esac
   echo "my_merge_eval_max_batches=${MY_MERGE_EVAL_MAX_BATCHES}"
   echo "my_merge_bn_batches=${MY_MERGE_BN_BATCHES}"
   echo "my_merge_diagnostics_plot=${MY_MERGE_DIAGNOSTICS_PLOT}"
+  echo "my_merge_domain_control=${MY_MERGE_DOMAIN_CONTROL}"
 } > "${OUTPUT_ROOT}/reports/ablation_split_config.txt"
 
 for worker_idx in "${!GPU_ARRAY[@]}"; do

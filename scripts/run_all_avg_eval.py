@@ -129,7 +129,7 @@ def parse_args():
         '--my-merge-ablation',
         type=str,
         default='',
-        help='Comma-separated my_merge ablation presets, e.g. full,no_adaptive_candidates or avg_only.',
+        help='Comma-separated my_merge ablation presets, e.g. full,no_client_information or avg_only.',
     )
     p.add_argument(
         '--my-merge-disable',
@@ -139,6 +139,12 @@ def parse_args():
     )
     p.add_argument('--my-merge-export-diagnostics', action=argparse.BooleanOptionalAction, default=True)
     p.add_argument('--my-merge-diagnostics-plot', action=argparse.BooleanOptionalAction, default=False)
+    p.add_argument(
+        '--my-merge-domain-control',
+        action=argparse.BooleanOptionalAction,
+        default=False,
+        help='Allow my_merge to run on non-medical image datasets for domain-control experiments only.',
+    )
     p.add_argument('--my-merge-viz-split', type=str, default='test')
     p.add_argument('--my-merge-viz-max-batches', type=int, default=2)
     p.add_argument('--my-merge-viz-max-plots', type=int, default=0)
@@ -197,6 +203,7 @@ def build_cfg(row, args):
         'method': args.method,
         'merge_weight_mode': resolve_merge_weight_mode(args),
         'model_hub_root': args.model_hub_root,
+        'meta_path': str(Path(args.model_hub_root) / row['meta_path']),
         'data_root': args.data_root,
         'device': args.device,
         'num_workers': args.num_workers,
@@ -244,6 +251,8 @@ def build_cfg(row, args):
         cfg['my_merge_ablation'] = args.my_merge_ablation
     if args.my_merge_disable:
         cfg['my_merge_disable'] = args.my_merge_disable
+    if args.my_merge_domain_control:
+        cfg['my_merge_domain_control'] = True
     if item['task_type'] == 'small':
         cfg['model'] = item['model']
         cfg['batch_size'] = args.small_batch_size
@@ -251,6 +260,20 @@ def build_cfg(row, args):
         cfg['clip_model'] = row['clip_model']
         cfg['batch_size'] = args.vlm_batch_size
     return cfg
+
+
+def _expected_eval_image_size(cfg):
+    dataset = str(cfg.get('dataset', ''))
+    if dataset not in {'cifar10_32', 'cifar100_32', 'svhn_32', 'tinyimagenet_64'}:
+        return None
+    meta_path = cfg.get('meta_path')
+    if not meta_path:
+        return None
+    meta = load_json(meta_path)
+    image_size = int(meta.get('image_size') or 0)
+    if image_size <= 0:
+        return None
+    return [image_size, image_size]
 
 
 def build_eval_path(cfg):
@@ -370,6 +393,9 @@ def load_valid_eval_payload(cfg):
         float(payload['test_acc'])
         float(payload['test_loss'])
     except (KeyError, TypeError, ValueError):
+        return None, eval_json
+    expected_eval_size = _expected_eval_image_size(cfg)
+    if expected_eval_size is not None and payload.get('eval_image_size') != expected_eval_size:
         return None, eval_json
     return payload, eval_json
 

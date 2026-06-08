@@ -6,6 +6,14 @@ from utils.runtime import resolve_vlm_max_text_len, validate_loader_settings
 from utils.metrics import evaluate_classification
 
 
+def _image_hw(images):
+    if images.ndim == 3:
+        return int(images.shape[1]), int(images.shape[2])
+    if images.ndim >= 4:
+        return int(images.shape[1]), int(images.shape[2])
+    raise ValueError(f'Unexpected image shape: {images.shape}')
+
+
 def build_vlm_forward(text_encoder):
     def _forward(model, x):
         base = get_clip_base(model)
@@ -20,7 +28,10 @@ def evaluate_vlm_checkpoint(meta, checkpoint, data_root, split='test', device='c
     batch_size, num_workers = validate_loader_settings(batch_size, num_workers, context='vlm evaluation')
     npz_path = f"{data_root}/{meta['dataset']}.npz"
     splits = load_npz_splits(npz_path)
-    tf = build_clip_transform(image_size=int(meta.get('image_size', 224)))
+    source_size = _image_hw(splits[split].images)
+    image_size = int(meta.get('image_size', 224))
+    eval_size = (image_size, image_size)
+    tf = build_clip_transform(image_size=image_size)
     ds = ClipImageDataset(splits[split].images, splits[split].labels, tf)
     loader = DataLoader(ds, batch_size=batch_size, shuffle=False, num_workers=num_workers, pin_memory=(str(device).startswith('cuda')))
     max_text_len = resolve_vlm_max_text_len(meta, default=32)
@@ -37,10 +48,16 @@ def evaluate_vlm_checkpoint(meta, checkpoint, data_root, split='test', device='c
     model = model.to(device)
     text_encoder = text_encoder.to(device)
 
-    return evaluate_classification(
+    result = evaluate_classification(
         model=model,
         loader=loader,
         device=device,
         forward_fn=build_vlm_forward(text_encoder),
         amp_enabled=bool(amp),
     )
+    result.update({
+        'source_image_size': list(source_size),
+        'eval_image_size': list(eval_size),
+        'image_resize': source_size != eval_size,
+    })
+    return result

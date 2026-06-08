@@ -68,7 +68,7 @@ M1 使用或围绕这些医学图像证据：
 
 当前 M1 证据精简为前景面积、边界强度、局部对比度、纹理异质性、诊断显著性和证据可靠性。`shape_compactness`、class-rarity、hard/focal 样本权重和 domain-focus 已删除：没有最新全量子项消融支撑，且与显著性、margin 和类别覆盖信息重复。2026-06-03 曾尝试加入 `speckle_noise`、`acoustic_shadow`、`hyperechoic_response`、`ultrasound_profile`，但 smoke 证明该 profile 会在 `dermamnist_224` 误触发、在 `chaoshengmnist_224` 不触发，造成明显负优化，因此已从代码删除。
 
-### M2：医学证据 checkpoint 融合
+### M2：医学可靠性加权融合
 
 输入：
 
@@ -76,30 +76,46 @@ M1 使用或围绕这些医学图像证据：
 - M1 权重。
 - reference checkpoint。
 
-输出基础候选：
+输出候选：
 
-- `medical_weighted_fusion`：使用 M1 估计出的医学图像客户端可靠性做轻量加权融合；实现上以 reference checkpoint 为原点写成 delta 融合。
-- `sign_consistent_delta`：符号一致的 delta 融合，delta 合并权重使用 M1 的 `overall_weights` 和 `morphology_weights` 形成的医学共识权重，而不是无脑基础权重。
+- `medical_weighted_fusion`：使用 M1 估计出的医学图像客户端可靠性做轻量加权融合；实现上以 reference checkpoint 为原点写成 delta 融合。这就是之前讨论的“第一条医学加权融合路径”，但它不是 M1 本身，而是把 M1 输出真正用到参数融合里的 M2 候选。
 
-M2 不再包含普通 `avg`、`avg_sign_blend_0p25`、权重空间 top-2 soup、anchor、prototype、specialist 或稀疏残差。`avg_only` 只作为显式对照。
+M2 解决的是“应该相信哪个客户端”的问题。它把 M1 的 `overall_weights`、`morphology_weights` 和 `class_weights` 分别注入深层、浅层和分类头融合。
 
-### M3：自适应候选生成与验证选择
+### M3：冲突感知增量稳定
 
 输入：
 
-- M2 基础候选。
+- 平均融合 checkpoint。
+- M1 医学共识权重。
+- reference checkpoint。
+
+输出候选：
+
+- `delta_0p00`
+- `delta_0p25`
+- `delta_0p50`
+- `delta_0p75`
+- `delta_1p00`
+
+M3 解决的是“客户端参数更新方向冲突”的问题。它先计算每个客户端相对 reference 的 delta，在符号一致方向上合并更新；合并权重仍然来自 M1 的医学共识权重。随后构造一条从 `delta_0p00` 到冲突稳定 delta 端点的离散插值路径：
+
+```text
+delta_lambda = (1 - lambda) * avg + lambda * sign_consistent_delta
+lambda in {0.00, 0.25, 0.50, 0.75, 1.00}
+```
+
+其中 `delta_0p00` 就是普通平均，`delta_1p00` 是原来的纯 sign-consistent delta 端点。这样 M3 不是孤立的 `0p25` 补丁，而是一条完整的冲突稳定路径；`lambda` 控制注入多少经过符号冲突筛选的 delta 知识。
+
+M2/M3 不再包含权重空间 top-2 soup、anchor、prototype、specialist、稀疏残差、subset 搜索或 head prior repair。`avg_only` 只作为显式对照。
+
+### 验证选择
+
+输入：
+
+- M2/M3 候选池。
 - M1 权重。
 - 合法的 `val` split。
-
-当前 M3 默认开启，消融标签为 `no_adaptive_candidates` 或 `no_m3`。
-
-M3 额外生成三类候选：
-
-- `adaptive_subset_top{k}_overall`：按 M1 `overall_weights` 排序，只保留 top2/top3 客户端做子集平均。它用医学证据选择客户端，不按数据集名称特判。
-- `adaptive_sign_sparse_0p2`：在符号一致 delta 融合前只保留幅度最大的 20% delta，用于抑制客户端私有噪声和方向冲突。
-- `head_prior_repair:*`：对每个候选的分类头 bias 做类别先验校正，使用 `bias += log(pi_val) - log(p_pred)`，只修正类别偏置，不改主体特征层。
-
-M3 选择规则：
 
 - 每个候选先按最终输出路径做同样的 BN recalibration。
 - 在 `val` 上计算候选表现。
@@ -108,11 +124,9 @@ M3 选择规则：
 
 实现备注：
 
-- 对归一化权重而言，`reference + sum_i w_i * (client_i - reference)` 与直接 `sum_i w_i * client_i` 在数学上等价。因此“delta 写法”本身不是万能改进；真正有行为差异的改动是：M1 医学共识权重进入 `sign_consistent_delta`，以及 M2 在医学加权、sign delta、top-k 子集和 head repair 候选之间做验证选择。
+- 对归一化权重而言，`reference + sum_i w_i * (client_i - reference)` 与直接 `sum_i w_i * client_i` 在数学上等价。因此“delta 写法”本身不是万能改进；真正有行为差异的改动是：M1 医学权重进入 `medical_weighted_fusion`，M1 医学共识权重进入 M3 的 sign-consistent delta 路径，并由 `val` 在 M2 医学加权候选和 M3 冲突稳定路径 `delta_0p00/0p25/0p50/0p75/1p00` 之间选择。
 - delta helper 必须避免原地修改 `reference_state`；2026-06-03 的 smoke 已经证明 reference 污染会让 `medical_weighted_fusion` 变成负优化。
-- 统一 adaptive candidate 不判断具体数据集。早期超声专用开关和 `ultrasound_*` 候选已从当前代码路径删除，相关失败/收益记录只保留在进度文档中。
-- M3 默认开启，因为用户认为现有结果可接受；默认全量消融现在包含 `no_adaptive_candidates` 作为 `-M3`。
-- gate 默认从更保守的高阈值降低为 `DEFAULT_RELIABILITY_THRESHOLD=0.10`、`DEFAULT_SEPARATION_THRESHOLD=0.05`，让医学证据在弱但稳定时也能影响 M1 权重。
+- 早期超声专用开关、`ultrasound_*` 候选、M3 subset/sparse/head-repair 候选已从当前代码路径删除，相关失败/收益记录只保留在进度文档中。
 
 当前应避免的旧设计：
 
@@ -138,7 +152,10 @@ M1: 估计医学图像客户端信息
 M2: 构造基础医学融合候选
         |
         v
-M3: 增加自适应候选并在 val 上选择
+M3: 构造冲突稳定 delta 插值路径
+        |
+        v
+在 val 上选择候选
         |
         v
 输出最终 merged checkpoint
@@ -154,6 +171,7 @@ M3: 增加自适应候选并在 val 上选择
 - 超声提升后，再检查其他医学图像数据集是否大面积下降。
 - full、-M1、-M2、-M3、avg_only 必须一起看。
 - 结果表和图必须脚本生成，不能手动填。
+- 输入预处理必须遵守 checkpoint metadata，而不是只看数据文件名。自然领域 `.npz` 保留原始 `32/64` 图像，但评估和 my_merge 内部验证时按 `meta.image_size` 做确定性运行时 resize；这不是改原始数据、划分或标签，而是还原训练/验证协议。
 
 ## 当前风险
 
@@ -162,4 +180,4 @@ M3: 增加自适应候选并在 val 上选择
 - 超声任务上 sign/blend 候选被过窄 gate 误杀。
 - 候选评分没有经过与最终输出一致的 BN recalibration，导致 `val` 选择和最终 checkpoint 表现不一致。
 
-2026-06-02 新一轮改动后，`full/no_client_information/no_fusion_selection/avg_only` 的 2026-06-01 全量结果已作为旧版本基线。下一步需要先跑小规模 smoke，确认医学共识 sign-delta 和 top-2 soup 是否改善超声与已知坏例，再决定是否重跑全量。
+2026-06-07 已将 M3 重新定义为冲突感知增量稳定路径：`delta_0p00/0p25/0p50/0p75/1p00`。自然图像对照已经补齐 `cifar10_32.npz/cifar100_32.npz/svhn_32.npz/tinyimagenet_64.npz` 数据文件；运行时必须按各 checkpoint 的 `meta.image_size` 统一 resize 后再跑 baseline 和 my_merge 域外对照。

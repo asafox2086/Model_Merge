@@ -33,9 +33,16 @@ MEDICAL_IMAGE_DATASETS = {
     "chaoshengmnist_224",
 }
 
+NATURAL_CONTROL_DATASETS = {
+    "cifar10_32",
+    "cifar100_32",
+    "svhn_32",
+    "tinyimagenet_64",
+}
+
 M1 = {"image_space", "diagnostic_evidence", "diagnostic_client_information"}
-M2 = {"medical_weighted_fusion", "sign_consistent_delta", "validated_selection", "bn_recalibration"}
-M3 = {"adaptive_candidates"}
+M2 = {"medical_weighted_fusion", "validated_selection", "bn_recalibration"}
+M3 = {"conflict_stabilization"}
 
 def _tokens(value):
     if value in (None, "", False):
@@ -63,10 +70,19 @@ def _disabled_components(cfg):
             disabled.add("diagnostic_evidence")
         elif name in {"no_fusion_selection", "no_medical_fusion_selection", "no_m2"}:
             disabled.update(M2 | M3)
-        elif name in {"no_adaptive_candidates", "no_adaptive_candidate_generation", "no_m3"}:
+        elif name in {
+            "no_adaptive_candidates",
+            "no_adaptive_candidate_generation",
+            "no_m3",
+            "no_conflict_stabilization",
+            "no_sign_delta",
+            "no_ties_delta",
+            "no_avg_sign_blend",
+            "no_sign_blend",
+        }:
             disabled.update(M3)
-        elif name in {"no_sign_delta", "no_ties_delta"}:
-            disabled.add("sign_consistent_delta")
+        elif name in M1 or name in M2 or name in M3:
+            disabled.add(name)
         elif name == "no_calibration":
             disabled.add("bn_recalibration")
         elif name.startswith("no_"):
@@ -86,10 +102,9 @@ def _ablation_config(cfg):
         "diagnostic_evidence",
         "diagnostic_client_information",
         "medical_weighted_fusion",
-        "sign_consistent_delta",
+        "conflict_stabilization",
         "validated_selection",
         "bn_recalibration",
-        "adaptive_candidates",
     ]
     return {
         "labels": _ablation_labels(cfg),
@@ -100,6 +115,17 @@ def _ablation_config(cfg):
 
 def _is_medical_image_task(meta):
     return meta.get("task_type") in {"small", "vlm"} and meta.get("dataset") in MEDICAL_IMAGE_DATASETS
+
+
+def _is_natural_control_task(meta):
+    return meta.get("task_type") == "small" and meta.get("dataset") in NATURAL_CONTROL_DATASETS
+
+
+def _domain_control_enabled(cfg):
+    value = (cfg or {}).get("my_merge_domain_control", False)
+    if isinstance(value, bool):
+        return value
+    return str(value).strip().lower() in {"1", "true", "yes", "y", "on"}
 
 
 def _model_family(meta):
@@ -511,38 +537,50 @@ def _blend_state_dicts(left, right, right_weight):
     return merged
 
 
+def _blend_label(value):
+    return f"{float(value):.2f}".replace(".", "p")
+
+
 def _build_m2_m3_candidates(state_dicts, base_merged, base, overall, morph, class_weights, num_classes, meta, cfg, reference, param_names):
     candidates, traces = OrderedDict(), {}
     consensus = _consensus(overall, morph, base)
-    candidates["avg"] = base_merged
-    traces["avg"] = {
+    avg_name = "delta_0p00" if _enabled(cfg, "conflict_stabilization") else "avg"
+    candidates[avg_name] = base_merged
+    traces[avg_name] = {
         "fusion_weights": [float(x) for x in torch.as_tensor(base, dtype=torch.float32).tolist()],
         "group_weights": {},
-        "routing_summary": {"candidate": "avg"},
+        "routing_summary": {
+            "conflict_stabilization": bool(_enabled(cfg, "conflict_stabilization")),
+            "delta_interpolation_weight": 0.0,
+            "delta_path_start": bool(_enabled(cfg, "conflict_stabilization")),
+        },
     }
     if _enabled(cfg, "medical_weighted_fusion"):
         state, trace = _medical_weighted_merge(state_dicts, base_merged, reference, base, overall, morph, class_weights, num_classes, meta)
         candidates["medical_weighted_fusion"] = state
         traces["medical_weighted_fusion"] = trace
-    sign_state = None
-    if _enabled(cfg, "sign_consistent_delta") and meta.get("task_type") == "small" and reference is not None and param_names is not None:
-        sign_state = _sign_delta_merge(state_dicts, base_merged, reference, param_names, consensus.tolist())
-        candidates["sign_consistent_delta"] = sign_state
-        traces["sign_consistent_delta"] = {
-            "fusion_weights": [float(x) for x in consensus.tolist()],
-            "group_weights": {},
-            "routing_summary": {"sign_delta_weight_source": "medical_consensus"},
-        }
-    module2_pool = [name for name in candidates.keys() if name != "avg"]
+    module2_pool = [name for name in candidates.keys() if name == "medical_weighted_fusion"]
+    module3_pool = []
+    if _enabled(cfg, "conflict_stabilization"):
+        module3_pool.append(avg_name)
 
-    if _enabled(cfg, "adaptive_candidates") and sign_state is not None:
-        candidates["avg_sign_blend_0p25"] = _blend_state_dicts(base_merged, sign_state, right_weight=0.25)
-        traces["avg_sign_blend_0p25"] = {
-            "fusion_weights": [float(x) for x in consensus.tolist()],
-            "group_weights": {},
-            "routing_summary": {"avg_sign_blend": True, "blend_right_weight": 0.25},
-        }
-    return candidates, traces, module2_pool
+    if _enabled(cfg, "conflict_stabilization") and meta.get("task_type") == "small" and reference is not None and param_names is not None:
+        sign_state = _sign_delta_merge(state_dicts, base_merged, reference, param_names, consensus.tolist())
+        for weight in (0.25, 0.50, 0.75, 1.00):
+            name = f"delta_{_blend_label(weight)}"
+            candidates[name] = sign_state if weight >= 1.0 else _blend_state_dicts(base_merged, sign_state, right_weight=weight)
+            traces[name] = {
+                "fusion_weights": [float(x) for x in consensus.tolist()],
+                "group_weights": {},
+                "routing_summary": {
+                    "conflict_stabilization": True,
+                    "sign_delta_weight_source": "medical_consensus",
+                    "delta_interpolation_weight": float(weight),
+                    "delta_path_endpoint": bool(weight >= 1.0),
+                },
+            }
+            module3_pool.append(name)
+    return candidates, traces, module2_pool, module3_pool
 
 
 def _selection_score(acc, medical_acc, loss):
@@ -633,7 +671,7 @@ def _select_candidate(candidates, traces, base_merged, base_weights, meta, cfg, 
         if best_key is None or key > best_key:
             best_name, best_key = name, key
     trace = traces.get(best_name, {})
-    routing = {"validated_candidates": len(candidates), "adaptive_candidates": bool(_enabled(cfg, "adaptive_candidates"))}
+    routing = {"validated_candidates": len(candidates)}
     routing.update(trace.get("routing_summary", {}))
     return prepared.get(best_name, candidates[best_name]), {
         "selected_candidate": best_name,
@@ -648,7 +686,7 @@ def _select_candidate(candidates, traces, base_merged, base_weights, meta, cfg, 
 
 def _module2_module3(state_dicts, base_merged, meta, cfg, info, reference, param_names):
     base = torch.as_tensor(info["base_weights"], dtype=torch.float32)
-    candidates, traces, module2_pool = _build_m2_m3_candidates(
+    candidates, traces, module2_pool, module3_pool = _build_m2_m3_candidates(
         state_dicts,
         base_merged,
         base,
@@ -665,8 +703,9 @@ def _module2_module3(state_dicts, base_merged, meta, cfg, info, reference, param
     if not trace.get("candidates_prepared"):
         state = _prepare(meta, state, cfg, info["batches"])
     return state, {
-        "fusion_rule": "m2_base_fusion_m3_adaptive_validation",
+        "fusion_rule": "m2_medical_fusion_m3_conflict_stabilization_validation",
         "module2_candidate_pool": module2_pool,
+        "module3_candidate_pool": module3_pool,
         "candidate_pool": trace.get("candidate_pool", []),
         "candidate_metrics": trace.get("candidate_metrics", {}),
         "selected_candidate": trace.get("selected_candidate", "avg"),
@@ -680,15 +719,17 @@ def _module2_module3(state_dicts, base_merged, meta, cfg, info, reference, param
 def merge_my_merge(state_dicts, weights, meta=None, checkpoints=None, cfg=None):
     if meta is None or checkpoints is None or cfg is None:
         raise ValueError("my_merge requires task metadata, client checkpoints, and runtime config.")
-    if not _is_medical_image_task(meta):
+    natural_control = _is_natural_control_task(meta) and _domain_control_enabled(cfg)
+    if not _is_medical_image_task(meta) and not natural_control:
         raise ValueError(f"my_merge is defined only for medical image tasks, got dataset={meta.get('dataset')}.")
 
     base_merged, base_weights = average_state_dicts(state_dicts, weights)
     ablation = _ablation_config(cfg)
     if "avg_only" in {x.lower().replace("-", "_") for x in ablation["labels"]}:
         return base_merged, {
-            "implementation": "medical_evidence_three_module_merge_v10_ablation_avg_only",
+            "implementation": "medical_evidence_three_module_merge_v12_ablation_avg_only",
             "medical_only": True,
+            "natural_domain_control": bool(natural_control),
             "ablation_config": ablation,
             "selected_candidate": "avg",
             "base_weights": [float(x) for x in base_weights],
@@ -697,25 +738,25 @@ def merge_my_merge(state_dicts, weights, meta=None, checkpoints=None, cfg=None):
 
     info = _module1(meta, checkpoints, cfg, base_weights)
     reference = param_names = None
-    if _enabled(cfg, "medical_weighted_fusion") or _enabled(cfg, "sign_consistent_delta"):
+    if _enabled(cfg, "medical_weighted_fusion") or _enabled(cfg, "conflict_stabilization"):
         reference, param_names = build_reference_bundle(meta, device="cpu")
     merged, fusion = _module2_module3(state_dicts, base_merged, meta, cfg, info, reference, param_names)
 
-    adaptive = _enabled(cfg, "adaptive_candidates")
-    implementation = "medical_evidence_three_module_posthoc_merge_v10_adaptive" if adaptive else "medical_evidence_three_module_posthoc_merge_v10"
+    implementation = "medical_evidence_three_module_posthoc_merge_v12"
     return merged, {
         "implementation": implementation,
         "medical_only": True,
+        "natural_domain_control": bool(natural_control),
         "ablation_config": ablation,
         "modality": meta.get("dataset"),
         "model_family": _model_family(meta),
-        "adaptive_candidates_enabled": adaptive,
         "base_weights": [float(x) for x in base_weights],
         "overall_weights": [float(x) for x in info["overall_weights"].tolist()],
         "morphology_weights": [float(x) for x in info["morphology_weights"].tolist()],
         "class_weights": [[float(v) for v in row] for row in info["class_weights"].tolist()],
         "client_diagnostic_information": info["client_diagnostic_information"],
         "module2_candidate_pool": fusion["module2_candidate_pool"],
+        "module3_candidate_pool": fusion["module3_candidate_pool"],
         "candidate_pool": fusion["candidate_pool"],
         "candidate_metrics": fusion["candidate_metrics"],
         "selected_candidate": fusion["selected_candidate"],
