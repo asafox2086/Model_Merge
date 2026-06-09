@@ -169,7 +169,10 @@ done
 
 if [[ "${PUBLISH_RESULTS}" == "true" ]]; then
   mkdir -p "${PUBLISH_ROOT}/reports"
-  cp "${MY_MERGE_OUTPUT_ROOT}/reports/all_results_ablation_combined.md" "${PUBLISH_ROOT}/汇总表.md"
+  "${PYTHON_BIN}" scripts/generate_ablation_combined_results_table.py \
+    --base result/all_results.md \
+    --grid-root "${MY_MERGE_OUTPUT_ROOT}" \
+    --dest "${PUBLISH_ROOT}/汇总表.md"
   cp "${MY_MERGE_OUTPUT_ROOT}/reports/ablation_summary.md" "${PUBLISH_ROOT}/reports/ablation_summary.md"
   cp "${MY_MERGE_OUTPUT_ROOT}/reports/validated_run_config.txt" "${PUBLISH_ROOT}/reports/validated_run_config.txt"
   if [[ -f "${REPRO_OUTPUT_ROOT}/reports/reproduction_check.md" ]]; then

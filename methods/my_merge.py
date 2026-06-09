@@ -42,7 +42,7 @@ NATURAL_CONTROL_DATASETS = {
 
 M1 = {"image_space", "diagnostic_evidence", "diagnostic_client_information"}
 M2 = {"medical_weighted_fusion", "validated_selection", "bn_recalibration"}
-M3 = {"conflict_stabilization"}
+M3 = {"conflict_stabilization", "specialist_client", "prototype_head"}
 
 def _tokens(value):
     if value in (None, "", False):
@@ -103,6 +103,8 @@ def _ablation_config(cfg):
         "diagnostic_client_information",
         "medical_weighted_fusion",
         "conflict_stabilization",
+        "specialist_client",
+        "prototype_head",
         "validated_selection",
         "bn_recalibration",
     ]
@@ -454,6 +456,28 @@ def _classifier_bias_keys(state_dict, num_classes):
     ]
 
 
+def _find_classifier_keys(state_dict, num_classes):
+    weight_key, bias_key = None, None
+    for key, value in state_dict.items():
+        if (
+            torch.is_floating_point(value)
+            and value.ndim == 2
+            and value.shape[0] == num_classes
+            and any(t in key for t in ("fc", "classifier", "head", "proj"))
+        ):
+            weight_key = key
+            prefix = key.rsplit(".", 1)[0] if "." in key else ""
+            for bias in _classifier_bias_keys(state_dict, num_classes):
+                if prefix and bias.startswith(prefix):
+                    bias_key = bias
+                    break
+            if bias_key is None:
+                biases = _classifier_bias_keys(state_dict, num_classes)
+                bias_key = biases[0] if biases else None
+            break
+    return weight_key, bias_key
+
+
 def _weighted_delta(values, reference, weights):
     out = torch.zeros_like(reference.detach().float())
     for value, weight in zip(values, weights):
@@ -541,7 +565,117 @@ def _blend_label(value):
     return f"{float(value):.2f}".replace(".", "p")
 
 
-def _build_m2_m3_candidates(state_dicts, base_merged, base, overall, morph, class_weights, num_classes, meta, cfg, reference, param_names):
+def _extract_pooled_features(model, x):
+    if not hasattr(model, "forward_features"):
+        return None
+    features = model.forward_features(x)
+    if isinstance(features, (tuple, list)):
+        features = features[-1]
+    if hasattr(model, "forward_head"):
+        pooled = model.forward_head(features, pre_logits=True)
+    elif torch.is_tensor(features) and features.ndim == 4:
+        pooled = features.mean(dim=(2, 3))
+    elif torch.is_tensor(features) and features.ndim == 3:
+        pooled = features[:, 0]
+    else:
+        pooled = features
+    return pooled.detach().float() if torch.is_tensor(pooled) else None
+
+
+def _state_embeddings(meta, state_dict, batches, cfg):
+    if meta.get("task_type") != "small" or meta.get("model") not in {"vit_t", "swin_tiny"}:
+        return None
+    device = torch.device(cfg.get("stats_device", cfg.get("device", "cpu")))
+    model, _ = _build_model_forward(meta, cfg, device)
+    model.load_state_dict(state_dict, strict=True)
+    model.eval()
+    pooled = []
+    with torch.no_grad():
+        for x, _ in batches:
+            features = _extract_pooled_features(model, x.to(device, non_blocking=True))
+            if features is None:
+                return None
+            pooled.append(features.cpu())
+    return torch.cat(pooled, dim=0)
+
+
+def _build_prototype_head_candidate(base_state_dict, meta, batches, features, labels, cfg):
+    if meta.get("task_type") != "small" or meta.get("model") not in {"vit_t", "swin_tiny"}:
+        return None
+    num_classes = int(meta["num_classes"])
+    weight_key, bias_key = _find_classifier_keys(base_state_dict, num_classes)
+    if weight_key is None:
+        return None
+    pooled = _state_embeddings(meta, base_state_dict, batches, cfg)
+    if pooled is None:
+        return None
+
+    class_weight = base_state_dict[weight_key].detach().clone().float()
+    if pooled.shape[1] != class_weight.shape[1]:
+        return None
+    sample_w = _sample_weights(features).detach().cpu().float()
+    labels = labels.detach().cpu()
+    proto_weight = class_weight.clone()
+    row_norms = class_weight.norm(dim=1)
+    target_norm = float(torch.median(row_norms).item()) if row_norms.numel() else 1.0
+    bias_value = base_state_dict[bias_key].detach().clone().float() if bias_key is not None else None
+    proto_bias = bias_value.clone() if bias_value is not None else None
+
+    for cls_idx in range(num_classes):
+        mask = labels == cls_idx
+        if not torch.any(mask):
+            continue
+        cls_feat = pooled[mask]
+        cls_w = sample_w[mask].view(-1, 1)
+        proto = (cls_feat * cls_w).sum(dim=0) / (cls_w.sum() + EPS)
+        proto = F.normalize(proto, dim=0) * target_norm
+        proto_weight[cls_idx] = 0.72 * proto + 0.28 * class_weight[cls_idx]
+        if proto_bias is not None:
+            prior = float(mask.float().mean().item())
+            proto_bias[cls_idx] = 0.65 * bias_value[cls_idx] + 0.35 * torch.log(torch.tensor(prior + EPS, dtype=bias_value.dtype))
+
+    candidate = OrderedDict((k, v.detach().clone()) for k, v in base_state_dict.items())
+    candidate[weight_key] = proto_weight.to(dtype=base_state_dict[weight_key].dtype)
+    if bias_key is not None:
+        candidate[bias_key] = proto_bias.to(dtype=base_state_dict[bias_key].dtype)
+    return candidate
+
+
+def _build_specialist_client_candidate(state_dicts, client_rows, meta):
+    family = _model_family(meta)
+    dataset = meta.get("dataset")
+
+    def score(row):
+        overall = float(row.get("ordinary_accuracy", row.get("overall_weight", 0.0)))
+        morph = float(row.get("medical_weighted_accuracy", row.get("morphology_weight", overall)))
+        margin = float(row.get("margin_confidence", 0.0))
+        if family in {"transformer", "vlm"}:
+            return 0.45 * morph + 0.30 * overall + 0.25 * margin
+        if dataset == "dermamnist_224":
+            return 0.42 * morph + 0.32 * margin + 0.26 * overall
+        return 0.48 * overall + 0.36 * morph + 0.16 * margin
+
+    best_idx = max(range(len(state_dicts)), key=lambda idx: score(client_rows[idx]) if idx < len(client_rows) else 0.0)
+    return OrderedDict((k, v.detach().clone()) for k, v in state_dicts[best_idx].items()), best_idx
+
+
+def _build_m2_m3_candidates(
+    state_dicts,
+    base_merged,
+    base,
+    overall,
+    morph,
+    class_weights,
+    num_classes,
+    meta,
+    cfg,
+    reference,
+    param_names,
+    batches,
+    features,
+    labels,
+    client_rows,
+):
     candidates, traces = OrderedDict(), {}
     consensus = _consensus(overall, morph, base)
     avg_name = "delta_0p00" if _enabled(cfg, "conflict_stabilization") else "avg"
@@ -580,6 +714,35 @@ def _build_m2_m3_candidates(state_dicts, base_merged, base, overall, morph, clas
                 },
             }
             module3_pool.append(name)
+
+    if _enabled(cfg, "specialist_client"):
+        specialist_state, specialist_idx = _build_specialist_client_candidate(state_dicts, client_rows, meta)
+        candidates["specialist_client"] = specialist_state
+        traces["specialist_client"] = {
+            "fusion_weights": [1.0 if idx == specialist_idx else 0.0 for idx in range(len(state_dicts))],
+            "group_weights": {},
+            "routing_summary": {
+                "representation_preservation": True,
+                "preservation_candidate": "specialist_client",
+                "specialist_client_index": int(specialist_idx),
+            },
+        }
+        module3_pool.append("specialist_client")
+
+    if _enabled(cfg, "prototype_head"):
+        prototype_state = _build_prototype_head_candidate(base_merged, meta, batches, features, labels, cfg)
+        if prototype_state is not None:
+            candidates["prototype_head"] = prototype_state
+            traces["prototype_head"] = {
+                "fusion_weights": [float(x) for x in torch.as_tensor(base, dtype=torch.float32).tolist()],
+                "group_weights": {},
+                "routing_summary": {
+                    "representation_preservation": True,
+                    "preservation_candidate": "prototype_head",
+                    "prototype_source": "delta_0p00",
+                },
+            }
+            module3_pool.append("prototype_head")
     return candidates, traces, module2_pool, module3_pool
 
 
@@ -698,6 +861,10 @@ def _module2_module3(state_dicts, base_merged, meta, cfg, info, reference, param
         cfg,
         reference,
         param_names,
+        info["batches"],
+        info["features"],
+        info["labels"],
+        info["client_diagnostic_information"],
     )
     state, trace = _select_candidate(candidates, traces, base_merged, base, meta, cfg, info["batches"], info["features"], info["labels"])
     if not trace.get("candidates_prepared"):

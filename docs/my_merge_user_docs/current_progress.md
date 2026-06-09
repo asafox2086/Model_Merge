@@ -1346,3 +1346,58 @@ smoke 验证：
   - 整体均值：`full=0.3156`，`-M1=0.2764`，`-M2=0.2227`，`-M3=0.3036`。
   - 相比 full 的下降：去掉 M1 下降 `0.0392`，去掉 M2 下降 `0.0929`，去掉 M3 下降 `0.0120`。
   - 与原始最好方法逐配置比较：full 为 `65/58/102`，平均低 `0.0047`；说明模块本身有贡献，但 full 还没有在所有医学配置上压过原有最优 baseline。
+- 2026-06-08 23:05 检查：后台任务仍在运行，自然 formal baseline 接近结束。
+  - 已完成：`avg/ties/dare_linear/dare_ties/regmean/fisher/breadcrumbs/model_stock/from/iso_c` 均为 `288/288 OK`。
+  - 正在推进：`free_merge` 当前 `158/288 OK`，`robustmerge` 当前 `201/288 OK`。
+  - 当前自然 formal baseline 已完成约 `3239/3456` 个配置。
+  - GPU 0/1 均有计算占用；自然领域 `my_merge` 消融目录尚未生成，说明还没进入 my_merge 自然消融阶段。
+  - `My_merge_ret/汇总表.md` 时间戳仍是 `2026-06-06 20:55:02 +0800`；`My_merge_ret/医学汇总表.md` 已复制并提交到远端。
+- 2026-06-09 07:52 检查：自然 formal baseline 已全部完成，当前进入自然领域 `my_merge` 消融。
+  - 自然 formal baseline：12 个方法全部 `288/288 OK`，总计 `3456/3456` 完成。
+  - `my_merge` 自然消融：`full` 已完成 8 个模型，共 `288/288 OK`。
+  - 当前正在跑：`no_client_information/small_densenet__my_merge`，状态为 `26/36 OK`；同一消融中 `convnext/mobilenet/resnet/resnet34/swin_tiny/vit_t` 已各自 `36/36 OK`，`efficientnet` 尚未生成状态表。
+  - 当前自然 `my_merge` 消融完成量约为 `530/1152`；后面还需要完成 `no_client_information` 尾部以及 `no_fusion_selection/no_adaptive_candidates`。
+  - `My_merge_ret/汇总表.md` 尚未更新，最终总表还未生成。
+- 2026-06-09 12:05 表示保真候选回加：
+  - 在当前精简版 `my_merge` 的 M3 中加回两个旧版最有证据的候选：`specialist_client` 和 `prototype_head`。
+  - `specialist_client` 使用 M1 的 client 医学诊断信息选择得分最高 client，作为完整医学专家模型候选。
+  - `prototype_head` 只用于 `vit_t/swin_tiny`，用融合后 encoder 在验证集上的医学加权类别原型重建分类头。
+  - CPU smoke 通过：
+    - `bloodmnist_224/vit_t/c3_b0`：候选池包含 `specialist_client/prototype_head`，最终选中 `prototype_head`，test acc `0.3195`。
+    - `bloodmnist_224/resnet/c3_b0`：候选池包含 `specialist_client`，最终选中 `delta_0p25`，test acc `0.4116`。
+  - 已启动医学 full-only 全量验证：`outputs/codex_rep_m3_medical_full_20260609`，只跑 `full`，不覆盖 `My_merge_ret/汇总表.md`。
+- 2026-06-09 12:12 调度调整：
+  - 用户要求若表示保真改动显著优化，则停止自然领域 run，优先跑医学。
+  - 已停止旧自然领域 `codex_medical_natural_full_20260607_1150` 相关进程。
+  - 医学 full-only run 改为双 GPU resume：`screen repm3_med_full_2gpu_20260609`。
+  - 当前医学状态：`small_resnet__my_merge` 已有 5 行记录（3 行 resume SKIP，2 行新 OK），`small_convnext__my_merge` 已有 1 行 OK。
+  - 第一个正式医学结果 `bloodmnist_224/resnet/c3_b0` 为 `0.5881`，相比当前旧汇总表同格 my_merge 约 `0.2886` 明显提升，先继续跑医学 full。
+- 2026-06-09 12:25 汇总表发布约束：
+  - 用户明确要求不能手动填 `My_merge_ret/汇总表.md`，必须由脚本自动写入。
+  - 已检查 `scripts/generate_ablation_combined_results_table.py`：它调用 `highlight_rows`，按每个配置列在所有方法之间比较，最高值自动写为 `<strong>...</strong>`，次高的不同数值自动写为 `<u>...</u>`。
+  - 已修改 `scripts/run_validated_my_merge_full.sh`：发布阶段不再把报告文件 `cp` 到 `汇总表.md`，而是再次调用生成脚本并用 `--dest "${PUBLISH_ROOT}/汇总表.md"` 直接写目标表。后续医学全量跑完后，最终总表必须通过这个脚本路径生成。
+- 2026-06-09 12:56 医学 full-only 全量进度：
+  - 后台 `screen repm3_med_full_2gpu_20260609` 仍在运行。
+  - 当前状态：`small_resnet__my_merge` 为 `45/45`（其中 `3` 个是 resume SKIP，`42` 个 OK），`small_convnext__my_merge` 为 `28/45 OK`，`small_vit_t__my_merge` 为 `17/45 OK`。
+  - `swin_tiny` 和 `vlm` 还没开始生成状态表；最终 `My_merge_ret/汇总表.md` 尚未更新。
+- 2026-06-09 13:27 医学 full-only 全量进度：
+  - 后台任务仍在运行。
+  - 当前状态：`small_resnet__my_merge` 为 `45/45`，`small_vit_t__my_merge` 为 `45/45`，`small_convnext__my_merge` 为 `43/45 OK`，`vlm_clip-vit-base-patch32__my_merge` 为 `2/45 OK`。
+  - `swin_tiny` 还没开始生成状态表；`outputs/.../reports` 当前只有 `validated_run_config.txt`，最终总表还未生成。
+- 2026-06-09 13:58 医学 full-only 全量进度：
+  - 后台任务仍在运行。
+  - 当前状态：`small_convnext__my_merge` 为 `45/45`，`small_resnet__my_merge` 为 `45/45`，`small_vit_t__my_merge` 为 `45/45`，`small_swin_tiny__my_merge` 为 `15/45 OK`，`vlm_clip-vit-base-patch32__my_merge` 为 `22/45 OK`。
+  - `reports` 目录仍只有 `validated_run_config.txt`，说明 full 还没结束，最终总表还未生成。
+- 2026-06-09 14:28 医学 full-only 全量进度：
+  - 后台任务仍在运行。
+  - 当前状态：`small_convnext__my_merge` 为 `45/45`，`small_resnet__my_merge` 为 `45/45`，`small_vit_t__my_merge` 为 `45/45`，`small_swin_tiny__my_merge` 为 `32/45 OK`，`vlm_clip-vit-base-patch32__my_merge` 为 `32/45 OK`。
+  - `reports` 目录仍只有 `validated_run_config.txt`，最终总表还未生成。
+- 2026-06-09 15:02 医学 full-only 全量完成：
+  - `screen repm3_med_full_2gpu_20260609` 已结束，`driver.log` 显示 `validated my_merge run finished`。
+  - 报告已由脚本生成：`outputs/codex_rep_m3_medical_full_20260609/my_merge_ablation_grid/reports/all_results_ablation_combined.md` 和 `ablation_summary.md`。
+  - 已按用户要求直接调用 `scripts/generate_ablation_combined_results_table.py --dest My_merge_ret/汇总表.md`，由脚本自动写入总表，不手动填、不复制。
+  - `My_merge_ret/汇总表.md` 已更新，且校验含有 `my_merge full (none missing)`、`<strong>` 最好标记和 `<u>` 次好标记。
+  - full 有效配置 `212` 个，整体 `mean_acc=0.3683`，相对原始最好方法 `delta_vs_best_original=+0.0456`，`W/T/L=115/52/45`。
+  - 数据集分解：`bloodmnist_224=28/8/9`，`dermamnist_224=16/27/2`，`organcmnist_224=24/5/12`，`organsmnist_224=21/6/9`，`chaoshengmnist_224=26/6/13`。
+  - 选中候选分布（按 212 个有效配置）：`prototype_head=61`，`specialist_client=60`，`medical_weighted_fusion=40`，`delta_0p00=19`，`delta_1p00=10`，`delta_0p50=9`，`delta_0p25=8`，`delta_0p75=5`。
+  - 结论：这次恢复的 M3 表示保真候选不是边缘补丁，而是主要收益来源；`prototype_head/specialist_client` 合计 `121/212` 次被最终选择。

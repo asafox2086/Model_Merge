@@ -181,3 +181,37 @@ M3: 构造冲突稳定 delta 插值路径
 - 候选评分没有经过与最终输出一致的 BN recalibration，导致 `val` 选择和最终 checkpoint 表现不一致。
 
 2026-06-07 已将 M3 重新定义为冲突感知增量稳定路径：`delta_0p00/0p25/0p50/0p75/1p00`。自然图像对照已经补齐 `cifar10_32.npz/cifar100_32.npz/svhn_32.npz/tinyimagenet_64.npz` 数据文件；运行时必须按各 checkpoint 的 `meta.image_size` 统一 resize 后再跑 baseline 和 my_merge 域外对照。
+
+## 2026-05-13/05-15 版本对比结论
+
+用户指出 5 月 13 日 GitHub 版本在医学数据集上除超声外表现更强。对比 `512858d` 和当前 `91408a6` 后，结论如下。
+
+当时的 `methods/my_merge.py` 是 1588 行，当前精简后是 768 行。旧版不是一个简单的 M1/M2/M3 小候选池，而是医学模态专用大候选池：
+
+- 模态特征包含 blood 的核质比/染色质/边界，derma 的颜色恒常性和 hair removal，organ 的 soft-tissue window 和空间先验，ultrasound 的各向异性扩散和声影。
+- 候选包含 `avg/morphology/morph_anchor/specialist_client/consensus/reference_delta/prototype_head`。
+- 验证选择会在这些异构候选之间选最优，其中 transformer/VLM 经常受益于 `prototype_head` 或 `specialist_client`，CNN 经常受益于 `morphology/consensus/specialist_client`。
+
+5 月 15 日归档的 selected candidate 分布可以证明这一点：`prototype_head=72`，`specialist_client=62`，`morphology=43`，`avg=22`，`consensus=11`，`morph_anchor=10`，`reference_delta=5`。当前 full 的候选分布则集中为：`medical_weighted_fusion=107`，`delta_0p00=45`，`delta_1p00=23`，`delta_0p25=21`，`delta_0p50=16`，`delta_0p75=13`。
+
+因此当前非超声指标下降的主要原因不是数据读法变化，也不是简单随机波动，而是方法精简时删掉了旧版对非超声最有帮助的几类候选：
+
+- `prototype_head`：对 `vit_t/swin_tiny/CLIP` 的非超声任务帮助明显，当前完全删除。
+- `specialist_client`：对 VLM 和部分 CNN 保留完整医学专家表示有效，当前完全删除。
+- `morph_anchor/consensus/morphology`：旧版候选直接保留或插值医学形态学路径，当前被压缩为单个 `medical_weighted_fusion`。
+- 模态专用特征：当前 `_morph_features` 退化为 Sobel/局部对比度/纹理的通用证据图，derma/organ/blood 的专用预处理和先验都被删掉。
+
+结果表现也一致：旧归档 full 为 `mean_acc=0.3194`，`W/T/L=74/43/108`；后续一次更偏非超声的表为 `mean_acc=0.3191`，`W/T/L=85/38/102`；当前表为 `mean_acc=0.3156`，`W/T/L=65/58/102`。当前超声从历史很差的 `1/0/44` 或 `4/0/41` 提到 `18/8/19`，但代价是 blood/organ 等非超声任务的胜场减少。
+
+后续如果要恢复非超声优势，优先考虑把旧版中最有证据的 `prototype_head` 和 `specialist_client` 作为医学候选重新纳入，而不是继续调当前 delta 权重超参数。若仍要求代码简洁，可以只保留这两个候选，并把它们解释为“医学表示保真候选”：当参数融合破坏表示几何时，保留专家表示或重建医学原型分类头。
+
+2026-06-09 已将 `specialist_client` 和 `prototype_head` 接回当前精简代码，作为 M3 的表示保真子路径。当前 M3 因此由两部分组成：
+
+- `M3a conflict_stabilization`：`delta_0p00/0p25/0p50/0p75/1p00`，处理 client delta 符号冲突。
+- `M3b representation_preservation`：`specialist_client/prototype_head`，处理医学表示空间被参数融合破坏的问题。
+
+旧版三个关键候选的具体做法：
+
+- `prototype_head`：只用于 small transformer。先用融合后的 encoder 在验证集上抽取 pooled feature，再按类别计算医学样本权重加权的类别原型；每个分类头行替换为 `0.72 * class_prototype + 0.28 * old_head_row`，并用类别先验轻微修正 bias。作用是保留 encoder，但重建医学类别边界。
+- `specialist_client`：先用验证集和医学样本权重给每个 client 打分，再直接复制得分最高 client 的整套权重作为候选。transformer/VLM 更重视 `morph_acc`，derma 更重视 `focal_acc`，其他任务更重视 `overall_acc + morph_acc`。作用是避免参数平均破坏完整医学表示。
+- `morphology/consensus/morph_anchor`：`morphology` 是按层融合，early 层偏向 morphology 最强 client，late 层偏向 overall 最强 client，classifier 按 class weights 逐类融合，并可做稀疏残差回灌；`consensus` 是 avg 与 morphology 的插值；`morph_anchor` 是复制 morphology 最强 client 的 backbone，只重融合 classifier head。作用是保留病灶/组织结构相关参数。
