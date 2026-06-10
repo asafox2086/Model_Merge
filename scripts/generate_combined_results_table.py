@@ -127,7 +127,7 @@ def highlight_rows(rows):
             if num == top:
                 highlighted[row_idx]["values"][col_idx] = f"<strong>{raw}</strong>"
             elif second is not None and num == second:
-                highlighted[row_idx]["values"][col_idx] = f"<u>{raw}</u>"
+                highlighted[row_idx]["values"][col_idx] = f"<ins>{raw}</ins>"
     return highlighted
 
 
@@ -179,7 +179,7 @@ def build_output(base_intro, merged_tables):
         "",
         "- Combined from `result/all_results.md` and the generated my_merge result table.",
         "- Original values are preserved; this file only adds `my_merge` as a new row.",
-        "- Highlight rule: highest value in each column is `<strong>bold</strong>`, second-highest distinct value is `<u>underlined</u>`.",
+        "- Highlight rule: highest value in each column is `<strong>bold</strong>`, second-highest distinct value is `<ins>underlined</ins>`.",
         "",
     ]
 
