@@ -20,8 +20,6 @@ from .common import (
 
 EPS = 1e-8
 DEFAULT_STATS_MAX_BATCHES = 16
-DEFAULT_BN_BATCHES = 4
-DEFAULT_SELECTION_MEDICAL_WEIGHT = 0.15
 CLIP_IMAGE_MEAN = (0.48145466, 0.4578275, 0.40821073)
 CLIP_IMAGE_STD = (0.26862954, 0.26130258, 0.27577711)
 
@@ -41,8 +39,8 @@ NATURAL_CONTROL_DATASETS = {
 }
 
 M1 = {"image_space", "diagnostic_evidence", "diagnostic_client_information"}
-M2 = {"medical_weighted_fusion", "validated_selection", "bn_recalibration"}
-M3 = {"conflict_stabilization", "specialist_client", "prototype_head"}
+M2 = {"medical_weighted_fusion", "conflict_stabilization", "specialist_anchor"}
+M3 = set()
 
 def _tokens(value):
     if value in (None, "", False):
@@ -69,7 +67,7 @@ def _disabled_components(cfg):
         elif name == "no_diagnostic_evidence":
             disabled.add("diagnostic_evidence")
         elif name in {"no_fusion_selection", "no_medical_fusion_selection", "no_m2"}:
-            disabled.update(M2 | M3)
+            disabled.update(M2)
         elif name in {
             "no_adaptive_candidates",
             "no_adaptive_candidate_generation",
@@ -81,12 +79,15 @@ def _disabled_components(cfg):
             "no_sign_blend",
         }:
             disabled.update(M3)
+        elif name == "specialist_client":
+            disabled.add("specialist_anchor")
+        elif name in {"bn_recalibration", "prototype_head", "validated_selection"}:
+            continue
         elif name in M1 or name in M2 or name in M3:
             disabled.add(name)
-        elif name == "no_calibration":
-            disabled.add("bn_recalibration")
         elif name.startswith("no_"):
-            disabled.add(name[3:])
+            component = name[3:]
+            disabled.add("specialist_anchor" if component == "specialist_client" else component)
         elif name.startswith("without_"):
             disabled.add(name[8:])
     return disabled
@@ -103,10 +104,7 @@ def _ablation_config(cfg):
         "diagnostic_client_information",
         "medical_weighted_fusion",
         "conflict_stabilization",
-        "specialist_client",
-        "prototype_head",
-        "validated_selection",
-        "bn_recalibration",
+        "specialist_anchor",
     ]
     return {
         "labels": _ablation_labels(cfg),
@@ -548,6 +546,80 @@ def _sign_delta_merge(state_dicts, base_merged, reference, param_names, weights,
     return overlay_param_dict(base_merged, params)
 
 
+def _task_conflict_stats(state_dicts, reference, param_names):
+    task_matrix, _ = build_task_matrix(state_dicts, reference, param_names)
+    abs_mass = task_matrix.abs().sum(dim=0)
+    active = abs_mass > EPS
+    if torch.any(active):
+        sign_agree = task_matrix.sum(dim=0).abs() / (abs_mass + EPS)
+        sign_conflict = 1.0 - float((sign_agree[active] * abs_mass[active]).sum().item() / (abs_mass[active].sum().item() + EPS))
+    else:
+        sign_conflict = 0.0
+
+    flat = task_matrix.float()
+    norms = flat.norm(dim=1).clamp_min(EPS)
+    if flat.shape[0] > 1:
+        unit = flat / norms.view(-1, 1)
+        cos = unit @ unit.t()
+        pair_mask = ~torch.eye(flat.shape[0], dtype=torch.bool, device=flat.device)
+        direction_conflict = float(torch.clamp((1.0 - cos[pair_mask].mean()) * 0.5, min=0.0, max=1.0).item())
+    else:
+        direction_conflict = 0.0
+    norm_dispersion = float(torch.clamp(norms.std(unbiased=False) / (norms.mean() + EPS), min=0.0, max=1.0).item())
+    conflict = max(0.0, min(1.0, 0.45 * sign_conflict + 0.35 * direction_conflict + 0.20 * norm_dispersion))
+    return {
+        "sign_conflict": sign_conflict,
+        "direction_conflict": direction_conflict,
+        "norm_dispersion": norm_dispersion,
+        "conflict_score": conflict,
+    }
+
+
+def _delta_blend_weight(conflict_stats, reliability, meta):
+    conflict = float(conflict_stats.get("conflict_score", 0.0))
+    reliability = float(max(0.0, min(1.0, reliability)))
+    family = _model_family(meta)
+    cap = 0.35 if family in {"transformer", "vlm"} else 0.25
+    raw = cap * max(0.0, conflict - 0.20) / 0.80
+    return max(0.0, min(cap, raw * (0.55 + 0.45 * reliability)))
+
+
+def _specialist_scores(client_rows, meta):
+    family = _model_family(meta)
+    dataset = meta.get("dataset")
+
+    def score(row):
+        overall = float(row.get("ordinary_accuracy", row.get("overall_weight", 0.0)))
+        morph = float(row.get("medical_weighted_accuracy", row.get("morphology_weight", overall)))
+        margin = float(row.get("margin_confidence", 0.0))
+        if family in {"transformer", "vlm"}:
+            return 0.45 * morph + 0.30 * overall + 0.25 * margin
+        if dataset == "dermamnist_224":
+            return 0.42 * morph + 0.32 * margin + 0.26 * overall
+        return 0.48 * overall + 0.36 * morph + 0.16 * margin
+
+    return torch.tensor([score(row) for row in client_rows], dtype=torch.float32)
+
+
+def _specialist_anchor_weight(scores, consensus, reliability, meta):
+    if scores.numel() <= 1:
+        return 0.0, 0
+    scores = torch.nan_to_num(scores.float(), nan=0.0, posinf=0.0, neginf=0.0).clamp_min(0.0)
+    order = torch.argsort(scores, descending=True)
+    best_idx = int(order[0].item())
+    best = float(scores[best_idx].item())
+    second = float(scores[int(order[1].item())].item())
+    dominance = (best - second) / (best + EPS)
+    consensus = torch.as_tensor(consensus, dtype=torch.float32)
+    concentration = float(torch.clamp(consensus.max() - consensus.mean(), min=0.0, max=1.0).item())
+    reliability = float(max(0.0, min(1.0, reliability)))
+    family = _model_family(meta)
+    cap = 0.55 if family in {"transformer", "vlm"} else 0.35
+    gate = max(0.0, min(1.0, (dominance - 0.06) / 0.24))
+    weight = cap * gate * (0.50 + 0.50 * reliability) * (0.70 + 0.30 * min(1.0, concentration * len(consensus)))
+    return max(0.0, min(cap, weight)), best_idx
+
+
 def _blend_state_dicts(left, right, right_weight):
     right_weight = float(right_weight)
     left_weight = 1.0 - right_weight
@@ -565,320 +637,74 @@ def _blend_label(value):
     return f"{float(value):.2f}".replace(".", "p")
 
 
-def _extract_pooled_features(model, x):
-    if not hasattr(model, "forward_features"):
-        return None
-    features = model.forward_features(x)
-    if isinstance(features, (tuple, list)):
-        features = features[-1]
-    if hasattr(model, "forward_head"):
-        pooled = model.forward_head(features, pre_logits=True)
-    elif torch.is_tensor(features) and features.ndim == 4:
-        pooled = features.mean(dim=(2, 3))
-    elif torch.is_tensor(features) and features.ndim == 3:
-        pooled = features[:, 0]
-    else:
-        pooled = features
-    return pooled.detach().float() if torch.is_tensor(pooled) else None
-
-
-def _state_embeddings(meta, state_dict, batches, cfg):
-    if meta.get("task_type") != "small" or meta.get("model") not in {"vit_t", "swin_tiny"}:
-        return None
-    device = torch.device(cfg.get("stats_device", cfg.get("device", "cpu")))
-    model, _ = _build_model_forward(meta, cfg, device)
-    model.load_state_dict(state_dict, strict=True)
-    model.eval()
-    pooled = []
-    with torch.no_grad():
-        for x, _ in batches:
-            features = _extract_pooled_features(model, x.to(device, non_blocking=True))
-            if features is None:
-                return None
-            pooled.append(features.cpu())
-    return torch.cat(pooled, dim=0)
-
-
-def _build_prototype_head_candidate(base_state_dict, meta, batches, features, labels, cfg):
-    if meta.get("task_type") != "small" or meta.get("model") not in {"vit_t", "swin_tiny"}:
-        return None
-    num_classes = int(meta["num_classes"])
-    weight_key, bias_key = _find_classifier_keys(base_state_dict, num_classes)
-    if weight_key is None:
-        return None
-    pooled = _state_embeddings(meta, base_state_dict, batches, cfg)
-    if pooled is None:
-        return None
-
-    class_weight = base_state_dict[weight_key].detach().clone().float()
-    if pooled.shape[1] != class_weight.shape[1]:
-        return None
-    sample_w = _sample_weights(features).detach().cpu().float()
-    labels = labels.detach().cpu()
-    proto_weight = class_weight.clone()
-    row_norms = class_weight.norm(dim=1)
-    target_norm = float(torch.median(row_norms).item()) if row_norms.numel() else 1.0
-    bias_value = base_state_dict[bias_key].detach().clone().float() if bias_key is not None else None
-    proto_bias = bias_value.clone() if bias_value is not None else None
-
-    for cls_idx in range(num_classes):
-        mask = labels == cls_idx
-        if not torch.any(mask):
-            continue
-        cls_feat = pooled[mask]
-        cls_w = sample_w[mask].view(-1, 1)
-        proto = (cls_feat * cls_w).sum(dim=0) / (cls_w.sum() + EPS)
-        proto = F.normalize(proto, dim=0) * target_norm
-        proto_weight[cls_idx] = 0.72 * proto + 0.28 * class_weight[cls_idx]
-        if proto_bias is not None:
-            prior = float(mask.float().mean().item())
-            proto_bias[cls_idx] = 0.65 * bias_value[cls_idx] + 0.35 * torch.log(torch.tensor(prior + EPS, dtype=bias_value.dtype))
-
-    candidate = OrderedDict((k, v.detach().clone()) for k, v in base_state_dict.items())
-    candidate[weight_key] = proto_weight.to(dtype=base_state_dict[weight_key].dtype)
-    if bias_key is not None:
-        candidate[bias_key] = proto_bias.to(dtype=base_state_dict[bias_key].dtype)
-    return candidate
-
-
-def _build_specialist_client_candidate(state_dicts, client_rows, meta):
-    family = _model_family(meta)
-    dataset = meta.get("dataset")
-
-    def score(row):
-        overall = float(row.get("ordinary_accuracy", row.get("overall_weight", 0.0)))
-        morph = float(row.get("medical_weighted_accuracy", row.get("morphology_weight", overall)))
-        margin = float(row.get("margin_confidence", 0.0))
-        if family in {"transformer", "vlm"}:
-            return 0.45 * morph + 0.30 * overall + 0.25 * margin
-        if dataset == "dermamnist_224":
-            return 0.42 * morph + 0.32 * margin + 0.26 * overall
-        return 0.48 * overall + 0.36 * morph + 0.16 * margin
-
-    best_idx = max(range(len(state_dicts)), key=lambda idx: score(client_rows[idx]) if idx < len(client_rows) else 0.0)
-    return OrderedDict((k, v.detach().clone()) for k, v in state_dicts[best_idx].items()), best_idx
-
-
-def _build_m2_m3_candidates(
-    state_dicts,
-    base_merged,
-    base,
-    overall,
-    morph,
-    class_weights,
-    num_classes,
-    meta,
-    cfg,
-    reference,
-    param_names,
-    batches,
-    features,
-    labels,
-    client_rows,
-):
-    candidates, traces = OrderedDict(), {}
-    consensus = _consensus(overall, morph, base)
-    avg_name = "delta_0p00" if _enabled(cfg, "conflict_stabilization") else "avg"
-    candidates[avg_name] = base_merged
-    traces[avg_name] = {
-        "fusion_weights": [float(x) for x in torch.as_tensor(base, dtype=torch.float32).tolist()],
-        "group_weights": {},
-        "routing_summary": {
-            "conflict_stabilization": bool(_enabled(cfg, "conflict_stabilization")),
-            "delta_interpolation_weight": 0.0,
-            "delta_path_start": bool(_enabled(cfg, "conflict_stabilization")),
-        },
-    }
-    if _enabled(cfg, "medical_weighted_fusion"):
-        state, trace = _medical_weighted_merge(state_dicts, base_merged, reference, base, overall, morph, class_weights, num_classes, meta)
-        candidates["medical_weighted_fusion"] = state
-        traces["medical_weighted_fusion"] = trace
-    module2_pool = [name for name in candidates.keys() if name == "medical_weighted_fusion"]
-    module3_pool = []
-    if _enabled(cfg, "conflict_stabilization"):
-        module3_pool.append(avg_name)
-
-    if _enabled(cfg, "conflict_stabilization") and meta.get("task_type") == "small" and reference is not None and param_names is not None:
-        sign_state = _sign_delta_merge(state_dicts, base_merged, reference, param_names, consensus.tolist())
-        for weight in (0.25, 0.50, 0.75, 1.00):
-            name = f"delta_{_blend_label(weight)}"
-            candidates[name] = sign_state if weight >= 1.0 else _blend_state_dicts(base_merged, sign_state, right_weight=weight)
-            traces[name] = {
-                "fusion_weights": [float(x) for x in consensus.tolist()],
-                "group_weights": {},
-                "routing_summary": {
-                    "conflict_stabilization": True,
-                    "sign_delta_weight_source": "medical_consensus",
-                    "delta_interpolation_weight": float(weight),
-                    "delta_path_endpoint": bool(weight >= 1.0),
-                },
-            }
-            module3_pool.append(name)
-
-    if _enabled(cfg, "specialist_client"):
-        specialist_state, specialist_idx = _build_specialist_client_candidate(state_dicts, client_rows, meta)
-        candidates["specialist_client"] = specialist_state
-        traces["specialist_client"] = {
-            "fusion_weights": [1.0 if idx == specialist_idx else 0.0 for idx in range(len(state_dicts))],
-            "group_weights": {},
-            "routing_summary": {
-                "representation_preservation": True,
-                "preservation_candidate": "specialist_client",
-                "specialist_client_index": int(specialist_idx),
-            },
-        }
-        module3_pool.append("specialist_client")
-
-    if _enabled(cfg, "prototype_head"):
-        prototype_state = _build_prototype_head_candidate(base_merged, meta, batches, features, labels, cfg)
-        if prototype_state is not None:
-            candidates["prototype_head"] = prototype_state
-            traces["prototype_head"] = {
-                "fusion_weights": [float(x) for x in torch.as_tensor(base, dtype=torch.float32).tolist()],
-                "group_weights": {},
-                "routing_summary": {
-                    "representation_preservation": True,
-                    "preservation_candidate": "prototype_head",
-                    "prototype_source": "delta_0p00",
-                },
-            }
-            module3_pool.append("prototype_head")
-    return candidates, traces, module2_pool, module3_pool
-
-
-def _selection_score(acc, medical_acc, loss):
-    w = DEFAULT_SELECTION_MEDICAL_WEIGHT
-    return (1.0 - w) * acc + w * medical_acc - 0.001 * loss
-
-
-def _eval_candidate(meta, state_dict, cfg, batches, features, labels):
-    device = torch.device(cfg.get("stats_device", cfg.get("device", "cpu")))
-    model, forward_fn = _build_model_forward(meta, cfg, device)
-    model.load_state_dict(state_dict, strict=True)
-    model.eval()
-    sample_w = _sample_weights(features).detach().cpu().float()
-    total = correct = weighted_correct = weighted_total = loss_sum = 0.0
-    offset = 0
-    with torch.no_grad():
-        for x, y in batches:
-            x = x.to(device, non_blocking=True)
-            y_device = y.to(device, non_blocking=True)
-            logits = forward_fn(model, x).detach().float()
-            preds = logits.argmax(dim=1).cpu()
-            y_cpu = y.cpu()
-            ok = (preds == y_cpu).float()
-            weights = sample_w[offset: offset + y.numel()]
-            total += int(y.numel())
-            correct += float(ok.sum().item())
-            weighted_correct += float((ok * weights).sum().item())
-            weighted_total += float(weights.sum().item())
-            loss_sum += float(F.cross_entropy(logits, y_device, reduction="sum").item())
-            offset += int(y.numel())
-    acc = correct / max(total, EPS)
-    medical_acc = weighted_correct / max(weighted_total, EPS)
-    loss = loss_sum / max(total, EPS)
-    return {
-        "val_acc": float(acc),
-        "val_medical_acc": float(medical_acc),
-        "val_loss": float(loss),
-        "selection_score": float(_selection_score(acc, medical_acc, loss)),
-        "selection_medical_weight": DEFAULT_SELECTION_MEDICAL_WEIGHT,
-    }
-
-
-def _recalibrate_bn(meta, state_dict, cfg, batches):
-    max_batches = int(cfg.get("my_merge_bn_batches", DEFAULT_BN_BATCHES))
-    if max_batches <= 0:
-        return state_dict
-    device = torch.device(cfg.get("stats_device", cfg.get("device", "cpu")))
-    model, forward_fn = _build_model_forward(meta, cfg, device)
-    model.load_state_dict(state_dict, strict=True)
-    bns = [m for m in model.modules() if isinstance(m, torch.nn.modules.batchnorm._BatchNorm)]
-    if not bns:
-        return state_dict
-    for module in bns:
-        module.running_mean.zero_()
-        module.running_var.fill_(1.0)
-        module.num_batches_tracked.zero_()
-        module.momentum = None
-    model.train()
-    with torch.no_grad():
-        for idx, (x, _) in enumerate(batches):
-            if max_batches and idx >= max_batches:
-                break
-            forward_fn(model, x.to(device, non_blocking=True))
-    return {k: v.detach().cpu().clone() for k, v in model.state_dict().items()}
-
-
-def _prepare(meta, state_dict, cfg, batches):
-    return _recalibrate_bn(meta, state_dict, cfg, batches) if _enabled(cfg, "bn_recalibration") else state_dict
-
-
-def _select_candidate(candidates, traces, base_merged, base_weights, meta, cfg, batches, features, labels):
-    if not _enabled(cfg, "validated_selection") or not candidates:
-        return base_merged, {
-            "selected_candidate": "avg",
-            "candidate_pool": list(candidates.keys()),
-            "candidate_metrics": {},
-            "fusion_weights": [float(x) for x in torch.as_tensor(base_weights, dtype=torch.float32).tolist()],
-            "group_weights": {},
-            "routing_summary": {"validated_candidates": len(candidates)},
-        }
-
-    metrics, prepared, best_name, best_key = {}, {}, None, None
-    for name, state in list(candidates.items()):
-        prepared_state = _prepare(meta, state, cfg, batches)
-        prepared[name] = prepared_state
-        metrics[name] = _eval_candidate(meta, prepared_state, cfg, batches, features, labels)
-        key = (metrics[name]["selection_score"], metrics[name]["val_acc"], -metrics[name]["val_loss"])
-        if best_key is None or key > best_key:
-            best_name, best_key = name, key
-    trace = traces.get(best_name, {})
-    routing = {"validated_candidates": len(candidates)}
-    routing.update(trace.get("routing_summary", {}))
-    return prepared.get(best_name, candidates[best_name]), {
-        "selected_candidate": best_name,
-        "candidate_pool": list(candidates.keys()),
-        "candidate_metrics": metrics,
-        "fusion_weights": trace.get("fusion_weights", [float(x) for x in torch.as_tensor(base_weights, dtype=torch.float32).tolist()]),
-        "group_weights": trace.get("group_weights", {}),
-        "routing_summary": routing,
-        "candidates_prepared": True,
-    }
-
-
 def _module2_module3(state_dicts, base_merged, meta, cfg, info, reference, param_names):
     base = torch.as_tensor(info["base_weights"], dtype=torch.float32)
-    candidates, traces, module2_pool, module3_pool = _build_m2_m3_candidates(
-        state_dicts,
-        base_merged,
-        base,
-        info["overall_weights"],
-        info["morphology_weights"],
-        info["class_weights"],
-        int(meta["num_classes"]),
-        meta,
-        cfg,
-        reference,
-        param_names,
-        info["batches"],
-        info["features"],
-        info["labels"],
-        info["client_diagnostic_information"],
-    )
-    state, trace = _select_candidate(candidates, traces, base_merged, base, meta, cfg, info["batches"], info["features"], info["labels"])
-    if not trace.get("candidates_prepared"):
-        state = _prepare(meta, state, cfg, info["batches"])
+    consensus = _consensus(info["overall_weights"], info["morphology_weights"], base)
+    module2_pool = ["delta_0p00"]
+    routing = {}
+    fusion_weights = [float(x) for x in base.tolist()]
+    group_weights = {}
+
+    if _enabled(cfg, "medical_weighted_fusion"):
+        state, medical_trace = _medical_weighted_merge(
+            state_dicts,
+            base_merged,
+            reference,
+            base,
+            info["overall_weights"],
+            info["morphology_weights"],
+            info["class_weights"],
+            int(meta["num_classes"]),
+            meta,
+        )
+        module2_pool.append("medical_weighted_fusion")
+        routing.update(medical_trace.get("routing_summary", {}))
+        fusion_weights = medical_trace.get("fusion_weights", fusion_weights)
+        group_weights = medical_trace.get("group_weights", {})
+        selected_steps = ["medical_weighted_fusion"]
+    else:
+        state = base_merged
+        selected_steps = ["delta_0p00"]
+
+    conflict_stats = {}
+    delta_weight = 0.0
+    if _enabled(cfg, "conflict_stabilization") and meta.get("task_type") == "small" and reference is not None and param_names is not None:
+        conflict_stats = _task_conflict_stats(state_dicts, reference, param_names)
+        sign_state = _sign_delta_merge(state_dicts, base_merged, reference, param_names, consensus.tolist())
+        delta_weight = _delta_blend_weight(conflict_stats, info.get("evidence_reliability", 0.0), meta)
+        if delta_weight > 0:
+            state = _blend_state_dicts(state, sign_state, right_weight=delta_weight)
+        module2_pool.append("conflict_delta")
+        selected_steps.append(f"conflict_delta_{_blend_label(delta_weight)}")
+
+    specialist_weight, specialist_idx = 0.0, None
+    if _enabled(cfg, "specialist_anchor"):
+        scores = _specialist_scores(info["client_diagnostic_information"], meta)
+        specialist_weight, specialist_idx = _specialist_anchor_weight(scores, consensus, info.get("evidence_reliability", 0.0), meta)
+        if specialist_weight > 0:
+            specialist_state = OrderedDict((k, v.detach().clone()) for k, v in state_dicts[specialist_idx].items())
+            state = _blend_state_dicts(state, specialist_state, right_weight=specialist_weight)
+        module2_pool.append("specialist_anchor")
+        selected_steps.append(f"specialist_anchor_{_blend_label(specialist_weight)}")
+
+    routing.update({
+        "selection_rule": "deterministic_medical_evidence_conflict_flow",
+        "validated_candidates": 0,
+        "conflict_stats": conflict_stats,
+        "delta_blend_weight": float(delta_weight),
+        "specialist_anchor_weight": float(specialist_weight),
+        "specialist_client_index": None if specialist_idx is None else int(specialist_idx),
+    })
     return state, {
-        "fusion_rule": "m2_medical_fusion_m3_conflict_stabilization_validation",
+        "fusion_rule": "m1_medical_weighted_m2_conflict_representation_flow",
         "module2_candidate_pool": module2_pool,
-        "module3_candidate_pool": module3_pool,
-        "candidate_pool": trace.get("candidate_pool", []),
-        "candidate_metrics": trace.get("candidate_metrics", {}),
-        "selected_candidate": trace.get("selected_candidate", "avg"),
-        "routing_summary": trace.get("routing_summary", {}),
-        "fusion_weights": trace.get("fusion_weights", []),
-        "group_weights": trace.get("group_weights", {}),
+        "module3_candidate_pool": [],
+        "candidate_pool": module2_pool,
+        "candidate_metrics": {},
+        "selected_candidate": " + ".join(selected_steps),
+        "routing_summary": routing,
+        "fusion_weights": fusion_weights,
+        "group_weights": group_weights,
         "evidence_reliability": info.get("evidence_reliability"),
     }
 

@@ -1401,3 +1401,217 @@ smoke 验证：
   - 数据集分解：`bloodmnist_224=28/8/9`，`dermamnist_224=16/27/2`，`organcmnist_224=24/5/12`，`organsmnist_224=21/6/9`，`chaoshengmnist_224=26/6/13`。
   - 选中候选分布（按 212 个有效配置）：`prototype_head=61`，`specialist_client=60`，`medical_weighted_fusion=40`，`delta_0p00=19`，`delta_1p00=10`，`delta_0p50=9`，`delta_0p25=8`，`delta_0p75=5`。
   - 结论：这次恢复的 M3 表示保真候选不是边缘补丁，而是主要收益来源；`prototype_head/specialist_client` 合计 `121/212` 次被最终选择。
+- 2026-06-09 15:30 占位符和下划线问题处理：
+  - 用户指出 `汇总表.md` 仍有占位符且 GitHub 上看不到下划线。
+  - 已定位占位符来源：`full/vlm_clip-vit-base-patch32__my_merge` 原始日志在 `organcmnist_224 c5_b0.0` 后被系统 `Killed`，只完成 `32/45` 个 VLM 配置，因此总表中 VLM 的 `organcmnist_224` 后 4 个配置和 `organsmnist_224` 9 个配置显示 `-`。
+  - 曾在普通命令中尝试 resume，但沙箱内 CUDA 不可见，失败项变为 `No CUDA GPUs are available`；后续 GPU 运行必须继续走 `screen`。
+  - 已把次好标记从 `<u>...</u>` 改为 GitHub 更稳定显示的 `<ins>...</ins>`，并重新生成过一次表；待 VLM 缺口和消融补齐后再最终发布。
+  - 已启动完整医学消融后台任务：`screen repm3_med_ablation_2gpu_20260609`，配置为 `full no_client_information no_fusion_selection no_adaptive_candidates`，`VLM_BATCH_SIZE=8`，`PUBLISH_RESULTS=true`。该任务会先 resume `full` 并补齐缺失 VLM，再跑三个消融，最后脚本写入 `My_merge_ret/汇总表.md`。
+- 2026-06-09 18:04 消融进度：
+  - 后台 `screen repm3_med_ablation_2gpu_20260609` 仍在运行。
+  - `full` 已完成补跑：small 四个模型均为 `45/45 SKIP`，VLM 为 `45/45`（`32` 个已有结果 SKIP，`13` 个新 OK），说明之前的 `-` 来源已经在结果目录层面补齐；最终表要等全部消融结束后由脚本重新发布。
+  - `no_client_information` 已完成 small 四个模型各 `45/45 OK`；VLM 当前 `25/45 OK`。
+  - 当前正在跑 `no_fusion_selection`，已生成 `small_convnext=3/45 OK`、`small_resnet=4/45 OK`。
+  - 当前 `My_merge_ret/汇总表.md` 仍是 15:29 的中间版本，仍有 `18` 个 `-`；最终要等本轮完整消融结束后才会被发布脚本覆盖。
+
+## 2026-06-11 隐私约束下的候选池选择修正
+
+用户指出原先候选池通过服务端 `val` batch 计算 `val_acc/val_loss/selection_score` 来挑最终候选，这在严格联邦模型融合设定下不成立：如果客户端私有验证数据能发到服务端，模型融合的隐私动机就被削弱。
+
+本轮先只修正候选池选择，不重跑全量：
+
+- 删除候选选择阶段的服务端样本评估函数：不再对每个候选模型跑 forward，不再用 `cross_entropy`、`val_acc`、`val_loss` 或医学加权验证准确率排序。
+- 删除依赖服务端样本的候选：`prototype_head` 和 BN recalibration 相关路径已从主代码移除，因为它们需要服务端持有样本或激活统计。
+- 候选路由改为模型空间规则：只看客户端模型相对 reference 的 delta 符号冲突、方向冲突、delta 范数离散度、M1 输出的聚合客户端信息、候选融合权重集中度和 evidence reliability。
+- 主代码命名从 `validated_selection` 改为 `candidate_routing`，`routing_summary.selection_rule` 标记为 `privacy_safe_model_space`，避免继续暗示使用服务端验证集挑模型。
+
+当前方法边界需要在论文里讲清楚：候选池选择已经不需要服务端验证数据；但 M1 的医学权重估计目前仍通过 `stats_split` 读取统计数据并评估客户端模型。如果严格写成联邦隐私协议，M1 这一步应解释为“客户端本地计算并上传聚合诊断统计/置信统计”，或者使用公开校准集。后续若继续严谨化，应把 M1 也改成只消费客户端上传的聚合 rows，而不是服务端直接读样本。
+
+新的论文叙事建议：
+
+- M1+M2 合并讲成“医学证据加权融合”：从医学图像证据和客户端诊断统计得到医学专用权重，并把这些权重用于参数/增量融合。
+- 观察医学客户端之间存在方向冲突后，引出 M3“冲突感知增量稳定”：沿 `delta_0p00 -> delta_1p00` 的增量路径做模型空间路由，而不是用服务端验证集挑最优。
+- `specialist_client` 可以作为 M3 里的“专家保真”策略：当聚合统计显示某个客户端明显强于其他客户端时，保留完整专家模型，避免参数平均破坏表征。
+
+还能考虑但暂不加入的新策略：layer-wise conflict routing，即按 early/mid/late 层分别计算冲突强度并选择不同的 delta 插值强度。它比继续扩大候选池更像一个方法，但实现和消融成本更高，需等当前隐私修正版结果稳定后再决定。
+
+## 2026-06-11 闭式两模块版本
+
+用户继续指出“模型空间候选打分”仍包含过多手写超参数，不适合作为论文主算法。这个判断成立，因此本轮把候选池路由进一步改成闭式融合，不再 `argmax` 选择候选。
+
+当前代码主路径：
+
+```text
+W_avg = Avg(W_i)
+W_med = MedicalWeightedFusion(W_i)
+r = evidence_reliability
+W_base = (1 - r) * W_avg + r * W_med
+
+Delta_i = W_i - W_ref
+c = mean(sign_conflict, direction_conflict, norm_dispersion)
+W_sign = SignConsistentDeltaMerge(W_i, W_ref, M1_consensus_weights)
+
+W_final = (1 - c) * W_base + c * W_sign
+```
+
+模块定义同步改为两模块：
+
+- M1：医学证据加权融合。包含图像证据提取、客户端医学权重估计和 `medical_weighted_fusion`。M1 产出 `W_med`，再用医学证据可靠性 `r` 与 `W_avg` 连续混合。
+- M2：冲突感知增量稳定。只计算客户端 delta 冲突强度 `c`，并把 `W_base` 与符号一致增量结果 `W_sign` 连续混合。
+
+已删除/移出主路径：
+
+- 不再生成 `delta_0p25/0p50/0p75/1p00` 离散候选池。
+- 不再计算候选打分，也不再使用 `medical_weighted_fusion > delta > specialist > avg` 这种优先级。
+- `specialist_client` 不再作为主方法模块，避免重新变成候选池搜索。
+- sign-delta 不再使用固定 `preserve_density=0.5`，默认 `density=1.0`，避免 M2 中隐藏额外稀疏超参数。
+
+为了兼容旧脚本，`no_fusion_selection/no_m2/no_adaptive_candidates/no_m3` 这些旧消融标签暂时都映射为关闭 M2 的 `conflict_stabilization`。新论文和新默认脚本里只保留：
+
+- `full`：M1 + M2。
+- `-M1`：关闭医学证据加权融合，退回平均底座。
+- `-M2`：关闭冲突感知增量稳定，只保留 M1 的医学加权底座。
+- `avg_only`：普通平均；不实际跑 my_merge，由汇总脚本复用 baseline `avg` 行。
+
+默认全量脚本的 `ABLATIONS` 已同步改为 `full no_client_information no_fusion_selection`。代码检查：`python3 -m py_compile methods/my_merge.py scripts/generate_ablation_combined_results_table.py` 已通过；静态 grep 确认主文件里不再有 `candidate_routing`、`specialist_client`、`selection_score`、`val_acc`、`val_loss`、`cross_entropy` 等候选选择残留。
+
+## 2026-06-11 闭式公式加入少量强度超参数
+
+用户指出科研方法并不要求完全没有超参数，关键是超参数要少且有含义。当前无强度版本的 full-only 中间结果显示 `r` 平均约 `0.72`、`c` 平均约 `0.50`，M1 医学融合和 M2 sign-delta 都被用得过猛，导致已完成 79 格均值相对现有最佳约 `-0.0544`。
+
+本轮保留闭式公式，但加入两个全局强度超参数：
+
+```text
+r = medical_strength * evidence_reliability
+c = conflict_strength * mean(sign_conflict, direction_conflict, norm_dispersion)
+W_final = (1 - c) * [(1 - r) * W_avg + r * W_med] + c * W_sign
+```
+
+默认值：
+
+- `medical_strength = 0.5`
+- `conflict_strength = 0.5`
+
+这两个参数的含义分别是“相信医学证据加权融合的强度”和“相信冲突稳定 sign-delta 的强度”，不是候选池打分系数。代码和脚本已支持 `--my-merge-medical-strength`、`--my-merge-conflict-strength`，全量脚本也会记录并透传。
+
+smoke：
+
+- 配置：`dermamnist_224 / resnet / c3_b0,b0.01,b0.1`
+- 输出：`outputs/codex_closed_form_strength_smoke_20260611/derma_resnet3`
+- 结果：`0.6688 / 0.6474 / 0.6813`
+- 相对现有最佳：W/T/L=`1/0/2`
+- 关键修复：无强度版本中 `c3_b0.1` 曾崩到约 `0.1097`，加入强度后恢复到 `0.6813`。
+
+## 2026-06-11 回滚诊断：闭式精简版为何变差
+
+用户指出精简后 full 明显变差。复查结果后，主要问题不是 `medical_strength/conflict_strength` 这类小参数，而是精简时删掉了旧版的两个表示保持候选：
+
+- `prototype_head`：对 ViT/Swin 类模型，用融合 encoder 的特征原型重建分类头，修复医学类别头错位。
+- `specialist_client`：当 M1 统计显示单个客户端明显更可靠时，保留完整专家模型，避免参数平均破坏表征。
+
+之前 6/9 的好结果中，full 有效配置 `212` 个，`prototype_head=61`、`specialist_client=60`，两者合计 `121/212` 次被最终采用；这说明它们不是边缘补丁，而是主要收益来源。闭式两模块版本把它们删除后，只剩 `avg/medical_weighted/sign_delta` 的连续混合，无法处理分类头错位和完整专家保真，因此 full partial 掉到负优化。
+
+回滚动作：
+
+- `methods/my_merge.py` 和主运行脚本已恢复到提交 `9ea1e0c` 之后的好方法版本。
+- 当前主方法重新包含 `medical_weighted_fusion`、`validated_selection`、`bn_recalibration`、`conflict_stabilization`、`specialist_client`、`prototype_head`。
+- `methods/my_merge.py` 与当前 HEAD 无差异；`9ea1e0c..HEAD` 对方法代码无差异，后续提交只改了汇总表。
+- 静态检查已通过：`python3 -m py_compile methods/my_merge.py scripts/run_all_avg_eval.py scripts/generate_ablation_combined_results_table.py scripts/monitor_my_merge_progress.py`。
+
+后续原则：不要再为了形式精简删掉 `prototype_head/specialist_client`。如果需要隐私叙事，应把它们改写为客户端本地统计/本地候选评分上传，而不是直接删除。
+
+## 2026-06-11 恢复版医学 full 全量重跑
+
+恢复到表示保持候选版本后，已启动医学 full 全量重跑，用于验证回滚后的真实结果。
+
+- `RUN_TAG=codex_restored_good_medical_full_20260611_1838`
+- 只跑主方法 full：`ABLATIONS=full`
+- 不重跑已有 baseline：`RUN_REPRO=false`
+- 暂不自动覆盖主汇总表：`PUBLISH_RESULTS=false`，等 full 完整后再由脚本生成/发布，避免半截结果污染 `汇总表.md`
+- 数据集：`bloodmnist_224 dermamnist_224 organcmnist_224 organsmnist_224 chaoshengmnist_224`
+- 模型：`resnet convnext vit_t swin_tiny` 和 `openai/clip-vit-base-patch32`
+- GPU：`0 1`，`MAX_PARALLEL_JOBS=2`
+- 输出目录：`outputs/codex_restored_good_medical_full_20260611_1838/my_merge_ablation_grid/full`
+- 日志目录：`logs/codex_restored_good_medical_full_20260611_1838`
+
+启动检查：`run_validated_my_merge_full.sh` 仍在运行，当前 first wave 为 `small_resnet__my_merge` 和 `small_convnext__my_merge`。
+
+2026-06-11 19:25 中间结果：
+
+- 当前不是最终全量；已完成并可与 baseline 匹配的结果约 `92/225`。
+- partial overall：`mean_acc=0.3907`，相对 `result/all_results.md` 原始最好方法 `delta=+0.0556`。
+- 按模型：`resnet` 已完成 `45/45`，`delta=+0.0895`；`convnext` 已完成约 `30/45`，`delta=+0.0195`；`vit_t` 已完成约 `17/45`，`delta=+0.0298`。
+- 按数据集已完成部分：`bloodmnist +0.0551`，`dermamnist +0.0438`，`organcmnist +0.1016`，`organsmnist +0.0779`，`chaoshengmnist +0.0355`。
+- 初步判断：恢复 `prototype_head/specialist_client` 后，效果已经从闭式精简版的负优化恢复为正优化；最终结论仍需等 `swin_tiny` 和 VLM 全部完成。
+
+## 2026-06-11 叙事友好版本：去候选验证、去 BN，保留确定性 head alignment
+
+用户指出恢复版虽然效果好，但又回到了“服务端验证候选池/额外校准”的叙事，不适合作为干净的医学模型融合方法。本轮停止了 `codex_restored_good_medical_full_20260611_1838`，改回更像论文主线的确定性流程。
+
+当前保留的主线：
+
+- M1：医学证据和客户端诊断信息，计算 `overall/morph/class` 权重。
+- M2：用 M1 权重做医学加权融合；根据 delta 冲突做小幅 sign-delta 稳定；根据 M1 专家分数做 soft specialist anchor；对 ViT/Swin 做确定性 prototype head alignment。
+- 删除服务端候选验证选择：不再生成候选池后用 `val_acc/val_loss/selection_score` 选最优。
+- 删除 BN recalibration：默认脚本 `MY_MERGE_BN_BATCHES=0`，方法代码里不再有 `_recalibrate_bn/_prepare`。
+
+关于是否能去掉 `prototype_head` 和 BN：
+
+- BN 可以去掉。它是纯校准工程，依赖额外 batch 统计，叙事收益不大。
+- `prototype_head` 不能直接去掉。超声 `vit_t` 9 格 smoke 显示：
+  - no prototype + no BN：`mean_acc=0.2119`，相对原始最好 `delta=-0.0178`，W/T/L=`1/0/8`。
+  - no prototype + no BN + local/expert gate/head transplant 等替代：最好也只有 `delta=-0.0152`，仍为负。
+  - deterministic prototype head alignment + no BN：`mean_acc=0.2245`，`delta=-0.0052`，W/T/L=`2/0/7`。
+  - 超声 `resnet` 同版本：`mean_acc=0.3282`，`delta=+0.0211`，W/T/L=`6/0/3`。
+
+结论：`prototype_head` 不是候选池补丁，而是在 transformer 医学图像融合中修复分类头/表征错位的必要步骤。为了叙事干净，应把它写成“医学原型头对齐（prototype head alignment）”：可由客户端本地上传类别原型/公开校准集计算，不再写成服务端在候选池里挑模型。当前代码暂时仍用 `stats_split` batch 模拟这个统计过程，但主流程已经不是候选搜索。
+
+已启动该版本医学 full 全量：
+
+- `RUN_TAG=codex_story_clean_proto055_medical_full_20260611_2052`
+- `ABLATIONS=full`
+- `RUN_REPRO=false`
+- `PUBLISH_RESULTS=false`
+- `MY_MERGE_BN_BATCHES=0`
+- 输出目录：`outputs/codex_story_clean_proto055_medical_full_20260611_2052/my_merge_ablation_grid/full`
+- 启动检查：`small_resnet__my_merge` 和 `small_convnext__my_merge` 已在 GPU 0/1 上运行。
+
+## 2026-06-11 按用户要求删除 prototype head alignment
+
+用户要求先删掉 prototype head alignment 直接看效果。本轮已停止 `codex_story_clean_proto055_medical_full_20260611_2052`，避免继续跑 prototype 版 full。
+
+代码改动：
+
+- 从 M2 主模块集合移除 `prototype_head`。
+- 删除 `_extract_pooled_features`、`_state_embeddings`、`_build_prototype_head_alignment`。
+- 删除主融合流程里的 `prototype_head_alignment` 调用和诊断字段。
+- 当前主方法只保留：M1 医学权重估计；M2 医学加权融合、冲突稳定、专家软锚定。
+- BN recalibration 和服务端候选验证选择仍保持删除状态。
+
+已有 smoke 事实：
+
+- 超声 `vit_t`，无 prototype + 无 BN：`mean_acc=0.2119`，相对原始最好 `delta=-0.0178`，W/T/L=`1/0/8`。
+- 超声 `vit_t`，prototype 0.55 + 无 BN：`mean_acc=0.2245`，`delta=-0.0052`，W/T/L=`2/0/7`。
+- 超声 `resnet`，无 prototype 不受该模块影响；当前保留医学加权/冲突/专家软锚定。
+
+已启动无 prototype 医学 full 全量：
+
+- `RUN_TAG=codex_story_clean_no_proto_medical_full_20260611_2100`
+- `ABLATIONS=full`
+- `RUN_REPRO=false`
+- `PUBLISH_RESULTS=false`
+- `MY_MERGE_BN_BATCHES=0`
+- 输出目录：`outputs/codex_story_clean_no_proto_medical_full_20260611_2100/my_merge_ablation_grid/full`
+- 启动检查：`small_resnet__my_merge` 和 `small_convnext__my_merge` 已在 GPU 0/1 上运行。
+
+全量结果已完成：
+
+- `RUN_TAG=codex_story_clean_no_proto_medical_full_20260611_2100`
+- 覆盖 5 个医学数据集、5 类模型、共 `225/225` 个 full 结果。
+- overall：`mean_acc=0.2962`，相对 `result/all_results.md` 原始最好方法 `delta_vs_best_original=-0.0241`。
+- 按严格逐格比较：W/T/L=`102/0/123`；按现有 ablation summary 脚本的 `5e-5` 平局阈值显示为 `58/53/114`。两者结论一致：整体是负优化。
+- 数据集均值相对原始最好：`bloodmnist=-0.0254`，`dermamnist=-0.0025`，`organcmnist=-0.0445`，`organsmnist=-0.0484`，`chaoshengmnist=+0.0004`。
+- 模型均值相对原始最好：`convnext=-0.0119`，`clip-vit-base-patch32=-0.0048`，`resnet=-0.0356`，`swin_tiny=-0.0252`，`vit_t=-0.0429`。
+
+结论：删除 prototype/head alignment 后，方法叙事更简洁，但 full 全量性能明显变差；它不能作为最终主结果。这个结果支持之前 smoke 判断：对 transformer/VLM 医学图像融合，分类头/表征对齐不是可有可无的补丁，而是恢复性能的关键机制。
+
