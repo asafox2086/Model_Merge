@@ -125,6 +125,8 @@ def parse_args():
     p.add_argument('--my-merge-stats-max-batches', type=int, default=-1)
     p.add_argument('--my-merge-eval-max-batches', type=int, default=-1)
     p.add_argument('--my-merge-bn-batches', type=int, default=-1)
+    p.add_argument('--my-merge-feature-summary-root', type=str, default='')
+    p.add_argument('--my-merge-require-feature-summary', action=argparse.BooleanOptionalAction, default=False)
     p.add_argument(
         '--my-merge-ablation',
         type=str,
@@ -247,6 +249,10 @@ def build_cfg(row, args):
         cfg['my_merge_eval_max_batches'] = args.my_merge_eval_max_batches
     if args.my_merge_bn_batches >= 0:
         cfg['my_merge_bn_batches'] = args.my_merge_bn_batches
+    if args.my_merge_feature_summary_root:
+        cfg['my_merge_feature_summary_root'] = args.my_merge_feature_summary_root
+    if args.my_merge_require_feature_summary:
+        cfg['my_merge_require_feature_summary'] = True
     if args.my_merge_ablation:
         cfg['my_merge_ablation'] = args.my_merge_ablation
     if args.my_merge_disable:

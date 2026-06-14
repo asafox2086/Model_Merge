@@ -11,15 +11,15 @@ from generate_my_merge_master_table import CLIENT_AVG_GROUPS, SETTINGS
 
 ABLATION_LABELS = {
     "full": "my_merge full (none missing)",
-    "avg_only": "my_merge avg_only (-M1,-M2,-M3)",
+    "avg_only": "my_merge avg_only (-M1,-M2)",
     "no_diagnostic_evidence": "my_merge -M1 diagnostic_evidence",
     "no_client_information": "my_merge -M1 client_info",
     "no_diagnostic_information": "my_merge -M1 client_info",
-    "no_fusion_selection": "my_merge -M2 fusion_select",
-    "no_medical_fusion_selection": "my_merge -M2 fusion_select",
-    "no_adaptive_candidates": "my_merge -M3 conflict_stabilization",
-    "no_adaptive_candidate_generation": "my_merge -M3 conflict_stabilization",
-    "no_m3": "my_merge -M3 conflict_stabilization",
+    "no_fusion_selection": "my_merge -M2 conflict_resolution",
+    "no_medical_fusion_selection": "my_merge -M2 conflict_resolution",
+    "no_adaptive_candidates": "my_merge -M2 conflict_resolution",
+    "no_adaptive_candidate_generation": "my_merge -M2 conflict_resolution",
+    "no_m3": "my_merge -M2 conflict_resolution",
     "no_calibration": "my_merge -M2 calibration",
 }
 
@@ -176,7 +176,7 @@ def build_output(merged_tables, grid_root, ablations):
         "",
         f"- Base table: `result/all_results.md`.",
         f"- my_merge ablation source: `{grid_root}`.",
-        "- Row labels state which module is missing. `M1` = Diagnostic Evidence Client Information, `M2` = Medical Reliability-Guided Fusion, `M3` = Conflict-Aware Delta Stabilization.",
+        "- Row labels state which module is missing. `M1` = Medical Evidence Client Weighting, `M2` = Conflict-Aware Delta and Specialist Preservation.",
         "- Highlight rule: highest value is bold, second-highest distinct value is underlined.",
         "",
         "## Ablation Rows",

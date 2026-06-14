@@ -1,6 +1,232 @@
 # 当前进度
 
-更新时间：2026-06-05
+更新时间：2026-06-12
+
+## 2026-06-12 观察驱动的方法重设
+
+用户强调：方法设计必须先看数据和中间结果，观察现象，再由现象推出方法；不能为了刷指标倒推故事。这个原则已作为后续 `my_merge` 的设计约束。
+
+### 2026-06-12 候选空间诊断观察
+
+本轮新增了只读诊断脚本：
+
+- 脚本：`scripts/analyze_my_merge_candidate_space.py`
+- 输出：`docs/my_merge_user_docs/candidate_space_metrics_20260612.csv`
+- 摘要：`docs/my_merge_user_docs/candidate_space_metrics_20260612.md`
+
+这一步不改主算法，也不跑测试评估；它只复用历史好版本的 `selected_candidate` 作为“显微镜标签”，计算每个候选在模型参数空间里的中间量。历史标签来自服务端验证集候选选择，因此不能作为最终算法输入，只能用来观察什么形态曾经有效。
+
+诊断范围：
+
+- `bloodmnist_224`、`chaoshengmnist_224`、`organcmnist_224`
+- `resnet`
+- `clients={3,5,7}`、`beta={0,0.01,0.1}`
+- 27 个格子，每格 7 个候选：`delta_0p00/0p25/0p50/0p75/1p00`、`medical_weighted_fusion`、`specialist_client`
+
+关键中间现象：
+
+- 单个 `conflict_score` 解释不了候选选择。历史选中的各类候选在 `conflict_score` 上高度重叠：例如 `delta_0p00` 均值约 `0.431`，`delta_1p00` 均值约 `0.467`，`specialist_client` 均值约 `0.463`，但每组范围互相覆盖。
+- `delta_0p00 -> delta_1p00` 的确是一条连续冲突路径：随着 lambda 增大，`distance_from_avg_ratio` 和 `candidate_norm_ratio_to_avg` 单调增大，`cos_to_sign` 单调接近 1。这说明“增量冲突处理”是合理的连续轴，不应该拆成互不相关的候选补丁。
+- `medical_weighted_fusion` 的空间特征很稳定：它通常离 `avg` 很近，`cos_to_consensus` 接近 1，说明它更像是 M1 的医学权重微调，不是强冲突处理。
+- `specialist_client` 是另一种机制：它距离 `avg` 远，范数往往很大，且 `cos_to_specialist=1`；它不能被解释为 delta 路径的一段，而应解释为“当平均会混合互斥专家时，保留医学证据最强专家的表征”。
+- 负结论也很重要：候选空间指标与历史验证分数的全局相关性不足以直接写一个排序器。单特征在 27 格内命中历史最佳的次数都很低，例如按 `distance_from_avg_ratio` 取最大只命中 `9/27`，按 `cos_to_specialist` 取最大也只命中 `9/27`。继续调手写 proxy score 会变成面向结果编程。
+
+由观察得到的设计约束：
+
+- 不能再做“大候选池 + 手写评分选赢家”。这既不像一个简洁方法，也没有稳定中间现象支撑。
+- 更合理的做法是把方法收成两个可解释模块：
+  - M1：医学证据权重，并产生一个离平均模型较近的 `medical_weighted_fusion`。
+  - M2：冲突处理，不做验证集选择，只在一条连续 delta 路径上做闭式修正；专家保真只能作为高异质、医学赢家清晰时的软锚点，而不是候选池搜索。
+- 下一次改代码时，应避免再恢复验证集 candidate selection；如果要加入 `delta_0p25/0p50/0p75/1p00`，也应该作为连续公式的离散化观察或消融，而不是服务端验证选最优。
+
+补充观察：历史好版本和当前固定候选 smoke 的一个关键差异是 BN 重校准。
+
+- 同一格 `bloodmnist_224/resnet/c3_b0`，当前固定候选脚本构造出的 `delta_0p50` 测试为 `0.4037`，与 `v17` 的 `delta_0p50` 一致。
+- 历史好版本同名 `delta_0p50` 测试为 `0.5881`。
+- 查看 commit `9ea1e0c` 后确认：历史候选在验证评估和最终输出前都会经过 `_prepare -> _recalibrate_bn`，即用统计 batch 重置并重新累计 BatchNorm running mean/var。
+- 因此历史好结果不只是“选了 delta_0p50”，还包含“冲突融合后做 BN 统计对齐”。这不是候选选择，也不需要标签；它解决的是融合后特征分布与 BN 运行统计不匹配的问题。
+
+由这个观察得到的下一步：
+
+- 可以恢复 BN 重校准作为 M2 的一部分，命名为统计对齐（statistical alignment）。
+- 仍然不恢复服务端验证集候选选择。
+- 先只验证这个窄改动，避免把问题再次变成大候选池搜索。
+
+### 2026-06-12 v15 闭式冲突规则的负优化观察
+
+`v15` 探针不再继续等待，已经可以判定为负优化：
+
+- 探针：`outputs/codex_v15_closed_delta_probe_20260612/my_merge_ablation_grid/full/small_resnet__my_merge`
+- 范围：`bloodmnist_224`、`organcmnist_224`、`chaoshengmnist_224` 的 `resnet`，共 27 格。
+- 总体：平均相对已有最佳基线 `delta=-0.0686`，W/T/L=`7/0/20`。
+- 分数据集：
+  - `bloodmnist_224`: `delta=-0.0300`，W/T/L=`3/0/6`
+  - `organcmnist_224`: `delta=-0.0988`，W/T/L=`1/0/8`
+  - `chaoshengmnist_224`: `delta=-0.0770`，W/T/L=`3/0/6`
+
+关键中间现象：
+
+- `v15` 的闭式规则几乎总是把模型从 `delta_0p00` 推向更激进的增量路径：27 格里 `delta_0p25/0p50/0p75/1p00` 共 24 次，`medical_weighted_fusion` 3 次，`delta_0p00` 0 次。
+- 历史好版本在同一 27 格里经常选择更保守或更极端但有语义解释的形态：`specialist_client` 9 次、`delta_1p00` 6 次、`delta_0p00` 4 次、其余 delta/医学加权 8 次。
+- 典型反例：
+  - `bloodmnist_224/resnet/c3_b0.01`：`v15` 选 `delta_0p25`，测试低于已有最佳 `-0.0555`；历史好版本验证候选显示 `delta_0p00` 最好。
+  - `organcmnist_224/resnet/c3_b0.1`：`v15` 因 `reliability=0.725`、`weight_shift=0.137`、`conflict=0.390` 启用 `medical_weighted_fusion`，测试低于已有最佳 `-0.2512`；历史好版本显示 `delta_0p00` 最稳。
+  - `chaoshengmnist_224/resnet/c7_b0/b0.01`：`v15` 因高冲突选 `delta_1p00`，但测试分别低于已有最佳 `-0.1393/-0.0404`，说明“冲突越高越大步 sign delta”不是稳定规律。
+
+由观察得到的设计结论：
+
+- 单个 `conflict_score` 不能直接映射到 `delta_lambda`。高冲突既可能需要 sign-delta，也可能意味着客户端表征已经不可平均，应该保留一个医学证据清晰的专家。
+- `medical_weighted_fusion` 不能只凭高可靠性和低范数离散度启用；当方向冲突接近 `0.49` 时，即使 M1 权重看起来清晰，也可能是多个客户端学到互斥表征。
+- 下一版 M2 不做验证集候选选择，也不做数据集特判。它只根据 M1 医学权重和模型空间冲突，把冲突分成三种处理：
+  1. 低冲突：允许 M1 的医学加权增量融合。
+  2. 中等冲突：只做小步 sign-consistent delta 修正。
+  3. 高冲突且 M1 有清晰赢家：使用医学证据最强专家作为保真锚点，避免把互斥表征平均坏。
+
+### 2026-06-12 v16 专家保真三段式规则的负面观察
+
+按上面的结论实现了 `v16`：M2 加入 `specialist_anchor`，并用 M1 权重清晰度、客户端类别分区异质性、模型冲突共同决定是否保留专家；同时把 delta 规则改得更保守。
+
+探针：
+
+- 输出：`outputs/codex_v16_conflict_routing_probe_20260612/my_merge_ablation_grid/full/small_resnet__my_merge`
+- 范围：先跑 `resnet` 的 `bloodmnist_224` 和 `chaoshengmnist_224` 前 15 格后停止。
+- 结果：平均相对已有最佳基线 `delta=-0.0736`，W/T/L=`2/0/13`。
+
+关键中间现象：
+
+- `bloodmnist_224/resnet/c3_b0`：`v15` 的 `delta_0p25` 为 `0.4183`，但 `v16` 退回 `delta_0p00` 后只有 `0.3017`，低于已有最佳 `0.3826`。说明“中低冲突先保守回 avg”会错杀有效的 sign-delta。
+- `bloodmnist_224/resnet/c7_b0.01`：`v16` 选 `delta_1p00`，测试 `0.2891`，低于已有最佳 `0.4250`，也低于历史好版本的 `delta_0p50`。说明“高冲突直接强 delta”仍不可靠。
+- `chaoshengmnist_224/resnet/c3_b0.01/c3_b0.1`：`v16` 因冲突分数略低而退回 `delta_0p00`，分别只有 `0.3010/0.1743`，而历史好版本分别是 `delta_0p75/delta_1p00`。说明超声上的高 M1 权重清晰度本身就是需要冲突处理的证据，不能因为 `conflict_score` 未过阈值就放弃 delta。
+- `chaoshengmnist_224/resnet/c5_b0`：`v16` 触发 `specialist_client`，结果 `0.2615` 高于已有最佳 `0.2264`。说明专家保真不是无效模块，但触发范围和 delta 强度选择仍未解决。
+
+删除/保留结论：
+
+- 删除或回滚：`v16` 的过度保守 delta 规则。它把大量格子退回平均模型，实际比 `v15` 更差。
+- 暂时保留为待改进观察：`specialist_anchor`。它有明确医学解释，也在部分高异质场景有效，但不能作为简单阈值补丁。
+- 下一步不再用单个闭式阈值直接决定最终形态。更合理的方向是恢复一组少量、可解释的融合形态：`delta_0p00/0p25/0p50/0p75/1p00`、`medical_weighted_fusion`、`specialist_client`，但不使用服务端验证集。最终选择要由模型空间代理指标排序，例如：
+  - 与 M1 医学共识 delta 的方向一致性；
+  - sign-delta 的冲突消解比例；
+  - 候选相对 avg 的增量范数是否过大；
+  - 专家客户端的医学证据优势和类别分区异质性。
+
+### 2026-06-12 v17 代理评分候选路由的负面观察
+
+随后实现了 `v17`：恢复少量可解释候选形态，但不使用服务端验证集；每个候选只用模型空间/M1 代理指标打分：
+
+- 候选：`delta_0p00/0p25/0p50/0p75/1p00`、`medical_weighted_fusion`、`specialist_client`。
+- 分数：`proxy_score`，来源包括 `conflict_score`、`sign_conflict`、`norm_dispersion`、M1 权重清晰度、专家分数差、客户端类别分区异质性。
+- 隐私约束：没有 `val_acc/val_loss/selection_score`，没有服务端验证集候选选择。
+
+探针：
+
+- 输出：`outputs/codex_v17_proxy_routing_probe_20260612/my_merge_ablation_grid/full/small_resnet__my_merge`
+- 范围：`resnet` 先跑到 22 格后停止。
+- 总体：平均相对已有最佳基线 `delta=-0.0370`，W/T/L=`7/0/15`。
+- 分数据集：
+  - `bloodmnist_224`: `delta=-0.0400`，W/T/L=`2/0/7`
+  - `chaoshengmnist_224`: `delta=-0.0394`，W/T/L=`3/0/6`
+  - `organcmnist_224`: 前 4 格 `delta=-0.0246`，W/T/L=`2/0/2`
+
+关键中间现象：
+
+- `v17` 比 `v16` 好，但仍明显负优化；说明“用手写代理分数替代验证集选择”目前还不能稳定恢复历史好版本。
+- `bloodmnist_224/resnet/c3_b0`：`v17` 选 `delta_0p50`，测试 `0.4037`，相对已有最佳 `+0.0211`。这说明恢复 delta 路径是有用的。
+- `bloodmnist_224/resnet/c7_b0`：`v17` 选 `delta_0p75`，测试 `0.1885`，相对已有最佳 `-0.1675`。这说明代理分数无法识别“高冲突但不应强 delta”的情形。
+- `chaoshengmnist_224/resnet/c3_b0/c3_b0.01`：`v17` 选 `specialist_client`，分别只有 `0.1959/0.2875`，相对已有最佳 `-0.0700/-0.1240`。这说明专家保真不能只由 M1 赢家清晰度和类别异质性触发。
+- `chaoshengmnist_224/resnet/c5_b0.01/c7_b0.01`：`v17` 的 `specialist_client` 有正收益，分别 `+0.0970/+0.0521`。这说明专家保真机制本身有价值，但当前触发条件不可靠。
+
+删除/保留结论：
+
+- 删除：当前 `v17` 的手写 `proxy_score` 自动选择逻辑。它符合隐私约束，但不能解释足够多的中间现象，继续调分会变成面向结果编程。
+- 保留为观察：候选形态本身仍有价值，尤其是 `delta` 路径和 `specialist_client` 在不同格子均出现正收益。
+- 下一步应先生成系统性的“中间现象表”，而不是继续写新规则。表至少要包含每个格子的：
+  - M1 权重、权重清晰度、专家优势；
+  - 参数冲突统计；
+  - 各候选相对 `avg` 的模型空间距离/方向一致性；
+  - 历史验证选择只作为显微镜，不作为最终算法输入。
+- 已生成中间现象表：`docs/my_merge_user_docs/observation_table_20260612.md`。后续方法设计应先补充这张表缺失的候选空间指标，再提出新规则。
+
+本轮立即停止等待负优化版本。`v14` 小探针已经足够判定方向错误：
+
+- 探针：`outputs/codex_v14_resnet_probe_20260612/my_merge_ablation_grid/full`
+- 首批 `bloodmnist_224/resnet` 结果：
+  - `c3_b0`: `acc=0.3201`，已有最好基线 `0.3826`，`delta=-0.0625`
+  - `c3_b0.01`: `acc=0.2569`，已有最好基线 `0.3376`，`delta=-0.0807`
+  - `c3_b0.1`: `acc=0.3215`，已有最好基线 `0.3964`，`delta=-0.0749`
+  - 前 5 行均值 `delta=-0.0841`，W/T/L=`0/1/4`
+
+观察 1：当前负优化不是“跑得不够久”，而是主融合路径错了。
+
+- `v14` 强制执行 `medical_weighted_fusion + 小幅 sign_delta`。
+- 对 `bloodmnist_224/resnet/c3_b0.01`，M1 权重为：
+  - `overall=[0.419, 0.214, 0.366]`
+  - `morphology=[0.380, 0.212, 0.409]`
+  - `evidence_reliability=0.668`
+- 这些权重看起来有医学差异，但历史有效版本在同一格选择的是 `delta_0p00`，即普通平均，而不是医学加权。
+- 说明：M1 权重可以作为医学证据，但不能无条件覆盖参数融合；当医学证据与模型空间冲突不匹配时，强行使用医学加权会破坏模型。
+
+观察 2：历史好结果的有效机制不是单一医学加权，而是“保守平均到冲突增量”的路径。
+
+- 历史有效运行：`outputs/codex_restored_good_medical_full_20260611_1838/my_merge_ablation_grid/full`
+- `resnet` 45 格均值相对已有最好基线 `delta=+0.0895`，W/T/L=`39/0/6`
+- 关键格：
+  - `bloodmnist_224/resnet/c3_b0`: 选择 `delta_0p50`，`delta=+0.2055`
+  - `bloodmnist_224/resnet/c3_b0.01`: 选择 `delta_0p00`，`delta=+0.1164`
+  - `chaoshengmnist_224/resnet/c3_b0.01`: 选择 `delta_0p75`，`delta=+0.1887`
+- 说明：同一统一方法里，不同任务需要不同强度的冲突增量；`delta_0p00/0p25/0p50/0p75/1p00` 是一个连续稳定路径，不应被删成单点或弱补丁。
+
+观察 3：历史候选选择只能作为显微镜，不能作为最终算法。
+
+- 历史版本用 `val_acc/val_loss/selection_score` 在服务端选择候选，这违反联邦模型融合的隐私语义。
+- 但是这些历史选择结果可以用于观察现象：哪些融合形态在什么情形下有效。
+- 最终算法必须只使用融合时可得的信息：
+  - M1 医学证据权重
+  - 模型增量的符号冲突、方向冲突、范数离散度
+  - 医学权重相对平均权重的偏移
+  - 客户端类别覆盖/医学证据可靠性
+
+由观察推出的下一版设计约束：
+
+- M1 只负责估计医学证据权重，不直接决定最终必须采用 `medical_weighted_fusion`。
+- M2 负责冲突处理，核心输出是一条 `delta_lambda` 路径：
+  `delta_lambda = (1 - lambda) * delta_0p00 + lambda * sign_consistent_delta`。
+- `lambda` 不能由服务端验证集选，而要由模型空间冲突闭式给出。
+- `medical_weighted_fusion` 不能再作为强制主路径；它应作为 M1 证据强、模型冲突低时才启用的医学加权融合。
+- 如果 M1 权重偏移明显但参数冲突也明显，应优先走 delta 冲突稳定，而不是直接按医学权重重排全模型参数。
+
+下一步只做小探针，不跑全量。探针必须先验证这个观察是否成立：恢复 `delta_0p00/0p25/0p50/0p75/1p00` 的闭式冲突路径后，至少不能在 `bloodmnist_224/resnet` 前几格继续出现 `-0.06~-0.20` 的明显负优化。
+
+## 2026-06-12 统一医学方法约束
+
+用户指出“肯定不能每个数据集方法不一样”。这个判断是对的：如果 `chaoshengmnist_224`、`dermamnist_224` 等数据集分别走不同融合规则，论文里的方法就会退化成数据集调参，不能作为统一医学模型融合方法。
+
+本轮已按这个原则修改 `methods/my_merge.py`：
+
+- 删除按具体医学数据集写融合分支的逻辑。代码中只保留医学/自然域边界判断，不再出现 `dataset == chaosheng/derma/...` 影响融合路径。
+- 删除旧的候选池硬选择路由。当前不再从 `delta_0p25/0p50/0p75/specialist_client` 里挑一个赢家，而是在同一条流水线上连续执行。
+- M1：计算医学证据权重，并生成 `medical_weighted_fusion`。这是“医学图像需要诊断证据驱动权重”的主观察。
+- M2：处理模型空间冲突。先用统一的 `conflict_score` 产生小幅 `sign_consistent_delta` 修正，再用“专家增量方向是否与医学共识方向一致”决定 `specialist_anchor` 的软锚定强度。
+- `specialist_anchor` 不再是某个数据集特判，也不是候选池里直接选最强客户端；它只有在 M1 的专家优势明显、且该专家 delta 与医学共识 delta 对齐时才会被软混合。
+- 所有医学数据集共享同一套公式。允许存在的差异只来自模型结构的参数命名分组，例如 CNN 和 Transformer 的 early/mid/late 层名不同；这不是数据集特判。
+- 输出诊断中 `validated_candidates=0`、`candidate_metrics={}`，表示当前主流程没有服务端验证集候选选择。
+
+当前统一流程：
+
+```text
+Avg baseline
+  -> M1: medical evidence weights + medical_weighted_fusion
+  -> M2a: model-space conflict score -> soft sign-delta correction
+  -> M2b: consensus-aligned specialist anchor -> soft expert preservation
+  -> final merged model
+```
+
+接口验证：
+
+- 语法检查通过：`python3 -m py_compile methods/my_merge.py scripts/generate_ablation_combined_results_table.py scripts/run_all_avg_eval.py`。
+- shell 检查通过：`bash -n scripts/run_validated_my_merge_full.sh scripts/run_my_merge_ablation_split_grid.sh`。
+- CPU smoke 已跑通：`outputs/codex_unified_two_module_smoke_cpu_20260612`。
+- smoke 单格：`chaoshengmnist_224/resnet/clients=3/beta=0/seed=42`，`test_acc=0.2471`。该 smoke 只用了 2 个统计 batch 和 1 个 eval batch，只用于确认流程，不作为正式性能结论。
+- smoke 输出：`selected_candidate=medical_weighted_fusion+sign_delta_0p08+specialist_anchor_0p19`，说明当前是统一连续流水线，不是按数据集挑候选。
 
 ## 2026-06-05 精简与全量前状态
 
@@ -1231,7 +1457,7 @@ smoke 验证：
 
 紧凑版结构：
 
-- M1：`_module1`，收集 val 批次、提取 6 维医学图像证据、估计 `overall_weights`、`morphology_weights`、`class_weights`。
+- M1：`_module1`，收集医学图像证据摘要、估计 `overall_weights`、`morphology_weights`、`class_weights`。
 - M2：`_build_m2_m3_candidates` 的前半部分，生成 `medical_weighted_fusion` 和 `sign_consistent_delta`。
 - M3：同一函数后半部分加入 `adaptive_subset_top2/top3_overall` 和 `adaptive_sign_sparse_0p2`；`_select_candidate` 负责 BN 校准、`head_prior_repair:*` 和 val selection。
 
@@ -1615,3 +1841,788 @@ smoke：
 
 结论：删除 prototype/head alignment 后，方法叙事更简洁，但 full 全量性能明显变差；它不能作为最终主结果。这个结果支持之前 smoke 判断：对 transformer/VLM 医学图像融合，分类头/表征对齐不是可有可无的补丁，而是恢复性能的关键机制。
 
+## 2026-06-12 两模块冲突处理版
+
+用户提出只保留两个模块，并把专家保真归入冲突处理。这个定义更适合当前论文叙事：专家保真不是独立补丁，而是当客户端表示空间冲突过强时，避免强行平均破坏医学专家表征的一种冲突解决策略。
+
+本轮代码调整：
+
+- M1：医学证据客户端加权。包含图像证据、客户端诊断统计、类别级/整体医学权重，以及 `medical_weighted_fusion`。
+- M2：冲突感知融合。包含两类冲突处理：
+  - delta 路径：恢复 `delta_0p00/0p25/0p50/0p75/1p00`，在增量空间处理符号/方向冲突。
+  - 专家保真：恢复硬 `specialist_client`，当 M1 统计显示某个客户端明显占优时，直接保留该专家，解释为表示冲突下的保真选择。
+- 暂不恢复 `prototype_head`。理由是旧好结果中 resnet 从未选择 prototype，resnet 的主要收益来自 `specialist_client` 和 delta 路径；先验证这两个机制能否恢复 CNN/VLM 表现。
+- 不恢复服务端验证集候选选择：当前路由规则只使用模型空间冲突指标和 M1 产生的客户端统计，不计算 `val_acc/val_loss/selection_score`。
+- 不恢复 BN recalibration。
+
+旧好结果的依据：
+
+- resnet 选择分布：`specialist_client=16`，`delta_1p00=10`，`delta_0p00=6`，`delta_0p25=4`，`delta_0p50=3`，`delta_0p75=3`，`medical_weighted_fusion=3`，`prototype_head=0`。
+- 全模型选择分布：`specialist_client=73`，delta 路径合计 `51`，两者合计 `124/225`，说明“delta 冲突处理 + 硬专家保真”是主要恢复方向。
+- transformer 仍可能需要 prototype：旧结果中 `vit_t` 有 `prototype_head=33/45`，`swin_tiny` 有 `prototype_head=28/45`。因此本轮是有意先做无 prototype 的两模块版本，若 ViT/Swin 仍明显差，再决定是否把 prototype 作为 M2 内部的 transformer 专用冲突修复策略加入。
+
+静态检查：
+
+- `python3 -m py_compile methods/my_merge.py scripts/generate_ablation_combined_results_table.py scripts/run_all_avg_eval.py` 通过。
+- `bash -n scripts/run_validated_my_merge_full.sh scripts/run_my_merge_ablation_split_grid.sh` 通过。
+- 主代码中不再有服务端候选验证函数，不再出现 `selection_score/val_acc/val_loss/cross_entropy`。
+
+## 2026-06-12 隐私约束修正：融合端不能看原始数据
+
+用户明确指出：医学模型融合不应把原始数据上传到服务端；最多只能在一开始“看数据”得到六个医学图像特性。这个约束会改变方法边界：以前那些在融合端用验证集跑每个 checkpoint、根据 `val_acc/loss/margin` 选候选的方法，在联邦/多医院叙事下不成立。
+
+本轮据此重构 `methods/my_merge.py`：
+
+- 删除服务端逐 checkpoint 预测路径：不再用 `_predict_logits` 在 `stats_split` 上计算 `ordinary_accuracy`、`medical_weighted_accuracy`、`margin_confidence`。
+- 删除服务端 BN 重新校准：不再用原始 batch forward 更新 BN running statistics。
+- M1 现在只使用医学图像特征摘要、客户端样本数、客户端类别覆盖和模型参数；`best_val_acc/test_acc` 不参与融合权重，避免结果泄露。
+- 当前特征摘要包括 `boundary/contrast/texture/salience/reliability` 五个有效医学指标。实验代码可以用 `prepare_my_merge_feature_summaries.py` 预先生成 JSON；正式融合时通过 `--my-merge-feature-summary-root` 读取摘要，并可用 `--my-merge-require-feature-summary` 强制没有摘要就报错。
+- 当前仓库没有真实客户端本地样本索引，所以预计算脚本以数据集/类别粒度模拟“客户端本地上传摘要”。这比在融合端评估所有 checkpoint 更符合隐私边界，但论文实现中应表述为客户端本地计算并上传统计摘要。
+- M2 的 `statistical_alignment` 改为只聚合 checkpoint 中已有的 BN `running_mean/running_var/num_batches_tracked`，等价于客户端随 checkpoint 上传局部统计；不再访问原始图像。
+
+当前方法信息流：
+
+1. 客户端本地训练并上传 checkpoint，同时上传五维医学统计摘要和 BN running statistics。
+2. M1 用五维摘要、类别覆盖和样本支持度计算整体权重、形态权重、类别级权重，并执行医学加权融合。
+3. M2 观察参数增量方向/符号冲突，用 M1 共识权重做 sign-consistent delta 稳定；当某客户端医学统计明显占优时，用专家保真作为冲突下的保守锚定；最后只对上传的 BN 统计做加权对齐。
+
+静态检查：
+
+- `python3 -m py_compile methods/my_merge.py scripts/run_all_avg_eval.py scripts/prepare_my_merge_feature_summaries.py` 通过。
+- `bash -n scripts/run_my_merge_ablation_split_grid.sh scripts/run_validated_my_merge_full.sh scripts/run_full_my_merge_refresh.sh` 通过。
+
+下一步需要跑小规模 probe。注意：这版为了满足隐私约束，主动放弃了历史好版本里的服务端验证候选选择，因此指标可能低于历史最好；如果出现负优化，应优先分析 M1 摘要权重和 M2 冲突强度，而不是重新加入服务端验证集选择。
+
+## 2026-06-12 严格摘要模式 resnet probe
+
+按“融合端不能看原始数据”的约束，先生成医学摘要 JSON，再用强制摘要模式融合：
+
+- 摘要脚本：`scripts/prepare_my_merge_feature_summaries.py`
+- 摘要目录：`outputs/codex_privacy_safe_probe_20260612/feature_summaries`
+- 摘要范围：`bloodmnist_224`、`chaoshengmnist_224`、`organcmnist_224`，`resnet`，共 27 个配置。
+- 融合命令使用 `--my-merge-feature-summary-root ... --my-merge-require-feature-summary --my-merge-stats-max-batches 0`，因此融合阶段只读摘要 JSON 和 checkpoint，不读原始图像。
+
+第一版严格摘要 full：
+
+- 输出：`outputs/codex_privacy_safe_probe_20260612/my_merge_ablation_grid/full/small_resnet__my_merge`
+- 总体：`mean_delta=-0.0241`，W/T/L=`11/0/16`
+- `bloodmnist_224`: `mean_delta=-0.0969`，W/T/L=`0/0/9`
+- `chaoshengmnist_224`: `mean_delta=-0.0070`，W/T/L=`5/0/4`
+- `organcmnist_224`: `mean_delta=+0.0316`，W/T/L=`6/0/3`
+
+消融观察：
+
+- `no_medical_weighted_fusion`: 总体 `mean_delta=-0.0583`，比 full 更差。说明 M1 医学加权不是无效模块；它在 `organcmnist_224` 上提供正收益。
+- 原始 `no_conflict_stabilization` 消融无效，因为代码把 `no_conflict_stabilization` 错误归到了空的 M3，实际没有关闭 delta。已修复该消融映射。
+- `no_specialist_anchor`: 总体 `mean_delta=-0.0546`，比 full 更差；但它在少数 blood 格子更好，说明专家保真有价值但触发强度不稳定。
+- `no_statistical_alignment`: 总体 `mean_delta=-0.0185`，优于 full；`bloodmnist_224` 从 `-0.0969` 改到 `-0.0802`。结论：当前 BN running statistics 加权对齐平均负收益，不能默认放进主方法。
+
+据此修改代码：
+
+- `statistical_alignment` 改为可选组件，默认关闭；只有显式传 `my_merge_ablation=statistical_alignment` 或 `with_statistical_alignment` 才启用。
+- 修复 `no_conflict_stabilization/no_sign_delta`，现在会真正关闭 M2 的 delta 冲突模块。
+
+修正版严格摘要 probe：
+
+- 输出：`outputs/codex_privacy_safe_fixed_probe_20260612/my_merge_ablation_grid`
+- `full` 默认不启用 BN 统计对齐：总体 `mean_delta=-0.0185`，W/T/L=`11/0/16`
+- 真正 `no_conflict_stabilization`: 总体 `mean_delta=-0.0310`，W/T/L=`10/0/17`
+- 显式 `statistical_alignment`: 总体 `mean_delta=-0.0241`，W/T/L=`11/0/16`
+
+由修正版 probe 得到的事实：
+
+- M2 的 sign-consistent delta 虽然权重不大，但有稳定正贡献：full 比 `no_conflict_stabilization` 平均高 `+0.0125`。
+- BN 统计对齐不是可靠主模块：显式开启后比默认 full 低 `-0.0056`，主要拖低 blood。
+- 当前主要短板集中在 `bloodmnist_224`：默认 full 的 `blood` 仍是 `mean_delta=-0.0802`，只有 `c7_b0.01` 一格超过已有最好方法。
+- `chaoshengmnist_224` 已接近持平，且 9 格中 4 格超过已有最好；`organcmnist_224` 明显为正。
+
+下一步观察方向：
+
+- 不能回到服务端验证候选选择。
+- 不应删除 M1 或 M2：M1 对 organc 有用，M2 delta 有整体正贡献。
+- 需要定位 blood 负优化是否来自分类头的类别级医学权重过强、专家锚定误触发，还是 blood 的类别切分导致六维图像摘要无法可靠区分客户端。
+
+## 2026-06-12 分类头路由回退观察
+
+为了定位 `bloodmnist_224` 的负优化，我先尝试过把分类头的类别路由做成更软的默认路径：
+
+- `soft_full`: 默认 `class_routing_strength=0.35`，类别权重在生成 `class_weights` 时被缩小一次，在写分类头时又被缩小一次。
+- `no_class`: 关闭类别路由。
+- `strong_class`: 强类别路由。
+- `fixed_full`: 上一版已验证的默认路径，不使用双重缩放；生成类别权重后，在分类头中按 `0.45 * class_weights + 0.55 * consensus` 注入一次。
+
+严格摘要模式 resnet probe 结果：
+
+- `fixed_full`: overall `mean_delta=-0.0185`
+- `soft_full`: overall `mean_delta=-0.0233`
+- `no_class`: overall `mean_delta=-0.0253`
+- `strong_class`: overall `mean_delta=-0.0208`
+
+观察结论：
+
+- 完全去掉类别路由会更差，说明类别级医学权重不是无用模块。
+- `soft_full` 比 `fixed_full` 更差，原因不是类别信息过强，而是类别专家信号被双重缩放后过弱。
+- `strong_class` 不能稳定修复 blood，且会牺牲部分其他格子，不能作为默认。
+
+据此把默认代码回退为 `fixed_full` 的单次注入形式：M1 仍计算类别级医学权重，M2/M1 融合时只在分类头按固定 45% 比例使用类别权重；`no_class_routing` 保留为消融。该调整仍满足隐私约束，因为只使用客户端上传的六维摘要、客户端元信息和 checkpoint，不使用服务端验证集选择。
+
+回退后重新跑严格摘要模式 resnet probe：
+
+- 输出：`outputs/codex_fixed_class_route_reprobe_20260612/my_merge_ablation_grid/full/small_resnet__my_merge`
+- 总体：`mean_acc=0.3087`，相对已有最好 `mean_delta=-0.0190`，W/T/L=`11/0/16`
+- `bloodmnist_224`: `mean_acc=0.2896`，`mean_delta=-0.0822`，W/T/L=`1/0/8`
+- `chaoshengmnist_224`: `mean_acc=0.2991`，`mean_delta=-0.0081`，W/T/L=`4/0/5`
+- `organcmnist_224`: `mean_acc=0.3375`，`mean_delta=+0.0332`，W/T/L=`6/0/3`
+
+和上一版 `fixed_full` 对比：总体只差 `-0.0005`，说明代码已经基本回到旧的稳定路径；和 `soft_full` 对比：总体提升 `+0.0043`，主要来自 `organcmnist_224` 的 `+0.0131`。因此 soft class routing 被正式否定，不再作为默认方法。
+
+新的问题仍集中在 blood：即使恢复分类头单次注入，`bloodmnist_224` 仍是 `mean_delta=-0.0822`。下一步不继续调分类头强度，而是观察 blood 的 M1 权重、M2 冲突强度和专家锚定是否与实际负优化格子对应。
+
+## 2026-06-13 bloodmnist 中间量观察
+
+对 `outputs/codex_fixed_class_route_reprobe_20260612/.../full/small_resnet__my_merge` 的 9 个 `bloodmnist_224` resnet 格子读取 `merge_result.json`，只分析 M1/M2 中间量，不使用服务端验证集选择。
+
+逐格观察：
+
+- blood 全部 9 格里只有 `c7_b0.01` 超过已有最好，其余 8 格均负优化。
+- M1 的整体/形态权重最大值与最终相对差值几乎没有正相关：`overall_max corr_delta=0.087`，`morph_max corr_delta=0.021`。说明问题不是简单的“医学权重越集中越好/越坏”。
+- M2 的 conflict delta 权重与相对差值呈正相关：`delta_w corr_delta=0.436`。这说明 sign-consistent delta 不是 blood 的主要负优化来源，反而可能在高冲突格子里提供缓冲。
+- 专家锚定权重与相对差值呈负相关：`anchor_w corr_delta=-0.402`。负优化最重的 `c5_b0` 和 `c7_b0` 都有非零专家锚定，且被锚定客户端只覆盖少数类别。
+
+当前假设：
+
+- `bloodmnist_224` 是细胞分类，类别之间是局部形态差异；在强 class split 下，单个客户端通常只覆盖很少类别。M1 可以识别某个客户端的局部医学证据更强，但把这个客户端作为“专家保真”锚点会牺牲其他血细胞类别的表征。
+- 因此 blood 的主要风险不是 M1 权重本身，也不是 delta 冲突处理，而是 M2 里的专家保真缺少类别覆盖约束：当候选专家只覆盖少数类别时，保真会从“保护医学专家”变成“保留偏科专家”。
+
+下一步验证：
+
+- 跑当前代码的 `no_specialist_anchor` 严格摘要消融，优先看 blood 9 格。如果 blood 明显改善而 organc/chaosheng 下降，说明需要把专家保真改成“类别覆盖/多专家覆盖安全”的冲突处理，而不是直接删除。
+
+`no_specialist_anchor` 严格摘要 resnet probe 完成：
+
+- 输出：`outputs/codex_no_specialist_current_probe_20260613/my_merge_ablation_grid/no_specialist_anchor/small_resnet__my_merge`
+- `full`: overall `mean_delta=-0.0190`，W/T/L=`11/0/16`
+- `no_specialist_anchor`: overall `mean_delta=-0.0316`，W/T/L=`10/0/17`
+- `no_specialist_anchor - full`: overall `mean_diff=-0.0126`
+- blood：`mean_diff=+0.0044`，W/T/L=`3/4/2`
+- chaosheng：`mean_diff=+0.0048`，W/T/L=`6/2/1`
+- organc：`mean_diff=-0.0469`，W/T/L=`3/0/6`
+
+结论：
+
+- 不能直接删除专家保真。它对 `organcmnist_224` 是强正贡献，直接关掉会把 organc 从正优化拉到负优化。
+- blood 的问题也不是“专家保真一律有害”：9 格里只有 `c5_b0.1` 大幅改善，`c5_b0.01` 大幅下降，其余多数几乎不变。
+- 更合理的改法是把专家保真从“只看 M1 专家分数”改成“看 M1 专家分数，同时要求类别覆盖足够”。当被锚定客户端只覆盖很少血细胞类别时，降低保真权重；当 organ 类数据的专家覆盖较完整时，保留保真作用。
+
+进一步检查后，类别覆盖率不是可靠门控：
+
+- 按 `no_specialist_anchor - full` 排序后，`class_coverage` 与专家保真收益的粗相关只有 `0.118`。
+- `organcmnist_224` 中也存在低覆盖专家，但专家保真往往仍然有强正贡献；如果简单按覆盖率关闭，会误伤 organ。
+
+更稳定的观察是“弱锚定不可靠”：
+
+- 离线模拟规则：若 full 中 `specialist_anchor_weight < threshold`，改用 `no_specialist_anchor` 结果；否则保留 full。
+- `threshold=0.15` 时，overall 从 `mean_delta=-0.0190` 改为 `-0.0150`，W/T/L 从 `11/0/16` 改为 `12/0/15`。
+- blood 从 `-0.0822` 改为 `-0.0722`；organc 从 `+0.0332` 改为 `+0.0402`；chaosheng 从 `-0.0081` 降到 `-0.0130`。
+- `threshold=0.25` 或近似关闭大部分锚定会明显伤 organc，说明专家保真仍需要保留，只应去掉低置信弱锚定。
+
+下一步实现：
+
+- 在 `_specialist_anchor_weight` 中加入最小有效权重门控：如果计算出的专家保真权重低于 `0.15`，直接置零。
+- 解释为 M2 的冲突处理约束：只有当 M1 识别出的专家优势足够明确时，才允许以专家保真覆盖冲突；弱优势只交给 delta 稳定处理，避免把随机偏科专家当成医学专家。
+
+## 2026-06-13 严格隐私版 M1/M2 定位消融
+
+本轮继续遵守隐私约束：服务端只使用客户端 checkpoint、客户端元信息和预先上传的医学摘要，不使用原始数据、不跑服务端验证集、不用 `val_acc`/`val_loss` 选择候选。
+
+先验证上一节的弱专家保真门控：
+
+- 输出：`outputs/codex_min_anchor_probe_20260613/my_merge_ablation_grid/full/small_resnet__my_merge`
+- 总体：`mean_acc=0.3128`，相对已有最好 `mean_delta=-0.0150`，W/T/L=`12/0/15`
+- `bloodmnist_224`: `mean_acc=0.2997`，`mean_delta=-0.0722`，W/T/L=`2/0/7`
+- `chaoshengmnist_224`: `mean_acc=0.2942`，`mean_delta=-0.0130`，W/T/L=`3/0/6`
+- `organcmnist_224`: `mean_acc=0.3445`，`mean_delta=+0.0402`，W/T/L=`7/0/2`
+
+和旧 full 对比：
+
+- 总体 `+0.0040`
+- blood `+0.0100`
+- chaosheng `-0.0049`
+- organc `+0.0069`
+
+结论：弱专家保真置零是小幅正贡献，但它只是局部修正；27 个格子里多数不变，且会伤到部分超声格子，不能继续围绕这个阈值盲调。
+
+接着跑当前代码的两个定位消融：
+
+- `no_m1`: `outputs/codex_current_ablation_probe_20260613/my_merge_ablation_grid/no_m1/small_resnet__my_merge`
+- `no_conflict_stabilization`: `outputs/codex_current_ablation_probe_20260613/my_merge_ablation_grid/no_conflict_stabilization/small_resnet__my_merge`
+
+结果：
+
+- full：总体 `mean_delta=-0.0150`
+- `no_m1`：总体 `mean_delta=-0.1024`，比 full 低 `-0.0874`；chaosheng 低 `-0.1050`，organc 低 `-0.1565`
+- `no_conflict_stabilization`：总体 `mean_delta=-0.0258`，比 full 低 `-0.0108`
+- `no_specialist_anchor`：总体 `mean_delta=-0.0316`，比 full 低 `-0.0166`；但 chaosheng 比 full 高 `+0.0097`，organc 比 full 低 `-0.0539`
+
+定位结论：
+
+- M1 的医学证据权重不能删。去掉 M1 后多数格子直接崩，说明“医学权重”是方法主干，不是负优化来源。
+- M2 的 delta 冲突处理不能删。去掉后总体下降，说明冲突确实存在，增量/符号一致处理是有用的。
+- 专家保真是有条件的：对 organc 是强正贡献，对 chaosheng 是负贡献，对 blood 接近中性但不稳定。因此专家保真不能作为无条件补丁，也不能直接删除。
+
+进一步观察专家保真收益和医学摘要的关系。定义 `class_morphology_separation`：对每个类别的 `[boundary, contrast, texture, salience, reliability]` 摘要做归一化类间标准差，衡量类别之间是否真的存在可分的医学形态差异。只用客户端上传摘要计算，不需要服务端原始数据。
+
+观察结果：
+
+- 全 27 格中，专家保真收益与 `class_morphology_separation` 的相关性约 `+0.589`。
+- `chaoshengmnist_224` 的类间形态分离度最低，约 `0.054`；专家保真平均收益 `-0.0097`。
+- `bloodmnist_224` 的类间形态分离度居中，约 `0.117`；专家保真平均收益 `+0.0056`，但个别格子不稳定。
+- `organcmnist_224` 的类间形态分离度最高，约 `0.197`；专家保真平均收益 `+0.0539`。
+
+这给出新的设计依据：专家保真不应该按数据集名称开关，而应该由 M1 摘要判断“类别医学形态是否足够可分”。当类间医学形态分离很弱时，某个客户端的高专家分数更可能是偏科/噪声优势；当类间形态分离强时，专家保真更像是在保留真实医学专长。
+
+已实现的下一步改动：
+
+- M1 新增 `class_morphology_separation`，从上传的类别摘要计算。
+- M2 的 `_specialist_anchor_weight` 加入 `specialist_separation_gate`：只有类间形态分离从 `0.05` 增至 `0.17` 以上时，专家保真才从关闭逐步打开。
+- 该改动不是超声特判；超声只是因为观测到的类间形态分离度最低，所以自然被门控抑制。
+
+正在验证：
+
+- 输出：`outputs/codex_separation_anchor_probe_20260613/my_merge_ablation_grid/full/small_resnet__my_merge`
+- 目标：检查该门控是否能保留 organc 的专家保真正贡献，同时减少 chaosheng 的专家保真负贡献。
+
+验证结果：
+
+- 总体：`mean_acc=0.3158`，相对已有最好 `mean_delta=-0.0119`，W/T/L=`13/0/14`
+- `bloodmnist_224`: `mean_acc=0.2991`，`mean_delta=-0.0727`，W/T/L=`2/0/7`
+- `chaoshengmnist_224`: `mean_acc=0.3039`，`mean_delta=-0.0033`，W/T/L=`4/0/5`
+- `organcmnist_224`: `mean_acc=0.3445`，`mean_delta=+0.0402`，W/T/L=`7/0/2`
+
+对比：
+
+- 比 min-anchor full 总体高 `+0.0031`。
+- chaosheng 从 `mean_delta=-0.0130` 修到 `-0.0033`，等价于 no-specialist 的 chaosheng 表现。
+- organc 保持 `+0.0402`，没有因为抑制超声专家保真而牺牲器官数据集。
+- blood 基本不变，说明 blood 的剩余问题不是这个专家保真门控能解决的。
+
+诊断输出确认：
+
+- chaosheng 的 `class_morphology_separation≈0.065`，`specialist_separation_gate≈0.126`，所有格子的 `specialist_anchor_weight=0`。
+- organc 的 `class_morphology_separation≈0.236`，`specialist_separation_gate=1.0`，保留 M1 明确识别出的专家锚定。
+- blood 的 `class_morphology_separation≈0.141`，`specialist_separation_gate≈0.756`，只保留少数足够强的专家锚定。
+
+结论：
+
+- 保留 `class_morphology_separation` 门控。它解决的是 M2 的“专家保真冲突”：当类别医学形态本身不够分离时，单专家保真容易变成偏科客户端保真；当类别医学形态高度可分时，专家保真是在保护真实医学专长。
+- 该规则没有按数据集名称分支，符合统一方法要求。
+- 下一步问题转向 blood：当前 M1 和 delta 都是正贡献，但 blood 仍明显低于已有最好，说明 blood 的负优化更可能来自融合粒度或类别头/细胞局部形态的表达方式。
+
+## 2026-06-13 blood 剩余负优化观察
+
+在 `separation_anchor` 版本中继续看 blood 的 9 个 resnet 格子：
+
+- `c5_b0.1` 和 `c7_b0.01` 可以超过已有最好，说明 M1/M2 并不是对 blood 一律无效。
+- `c5_b0` 和 `c7_b0` 极差，分别约 `-0.1196` 和 `-0.1868`。这两个格子是强类别切分，每个客户端只见 1 到 2 个血细胞类别。
+- 在 `c7_b0` 中，M1 把共享融合权重从均匀 `1/7` 推到 `[0.266, 0.086, 0.094, 0.120, 0.174, 0.165, 0.095]`，最高权重客户端只见 `[3, 0]` 两类。
+- 类别头路由本身是合理的：`beta=0` 时每个类别的分类头主要给见过该类的客户端。因此更可能的问题不是分类头，而是共享 trunk 被少数类别客户端的医学权重带偏。
+
+进一步比较 `full - no_m1`：
+
+- 总体上 M1 是必要的，`no_m1` 会让 chaosheng 和 organc 明显下降。
+- 但 blood 内部 `c3_b0.1`、`c5_b0`、`c7_b0` 中 `no_m1` 反而更好，说明 blood 的形态证据对共享层不够稳。
+- M1 收益和上传摘要里的样本内医学特征波动（`global_std / global_mean`）强相关，尤其 boundary/contrast/texture/reliability 的相关约 `0.65`。
+- blood 的这些波动低于 organc，也低于 chaosheng 的一部分特征；这说明 blood 的形态摘要更适合作为类别头/专家线索，不一定适合强改共享 trunk。
+
+据此实现一个新的可消融设计：`trunk_evidence_gate`。
+
+- M1 仍计算医学证据权重、类别权重、类别形态分离度。
+- 分类头继续使用类别级 M1 权重。
+- 共享 trunk 的 M1 加权强度由 `global_std / global_mean` 的平均医学证据波动决定：证据波动低时，trunk 权重回退到 base/equal；证据波动高时，trunk 才充分使用 M1 权重。
+- 该规则不是 blood 特判，也不使用服务端验证集；它只使用客户端上传的医学摘要。
+
+正在验证：
+
+- 输出：`outputs/codex_trunk_evidence_gate_probe_20260613/my_merge_ablation_grid/full/small_resnet__my_merge`
+- 目标：检查 trunk 保守门控是否能修复 blood 的极端 split，同时不破坏 chaosheng 和 organc。
+
+验证结果：负优化，已删除该模块。
+
+- `trunk_evidence_gate`: 总体 `mean_delta=-0.0145`，比 `separation_anchor` 低 `-0.0026`
+- blood：`mean_delta=-0.0767`，比 `separation_anchor` 低 `-0.0040`
+- chaosheng：`mean_delta=-0.0070`，比 `separation_anchor` 低 `-0.0037`
+- organc：`mean_delta=+0.0402`，基本不变
+
+逐格看，trunk gate 没有修复最差的 `blood c5_b0` 和 `blood c7_b0`，反而让 `blood c3_b0`、`blood c3_b0.01`、`blood c5_b0.01`、`blood c5_b0.1`、`blood c7_b0.01` 都下降。因此“共享层证据波动低就保守 trunk”这个假设不成立，代码已回滚，不进入方法。
+
+新的结论：
+
+- blood 的剩余问题不是简单的 trunk 强度门控。
+- 需要继续观察更细的冲突结构，尤其是 `beta=0` 类别完全/近完全分割时，为什么已有最好常常是 fisher/regmean/iso_c 这类统计或子空间方法，而当前 my_merge 的 delta/医学权重不能恢复这些格子。
+
+## 2026-06-13 继续观察：blood 负优化更像子空间冲突
+
+按用户要求，后续设计必须遵循“先观察现象，再引入方法”，且不能修改基线代码。当前只读取 `iso.py`、`fisher.py`、`regmean.py` 的实现和 `result/all_results.md` 的结果作为参照，不改这些基线文件。
+
+重新读取 `merge_result.json` 中的真实诊断字段后，得到几个关键现象：
+
+- 当前 full 版本的 `conflict_delta` 对多数格子是小幅正贡献，不能直接删除。比如 `blood c7_b0.01` 去掉 conflict 后从 `0.4499` 掉到 `0.3473`。
+- blood 的失败不是“冲突越高越差”。在 blood 内部，`norm_dispersion` 与相对已有最好方法的差值反而正相关，说明部分大幅 delta 是有效医学/类别知识，不应该用简单强裁剪抹掉。
+- 最差的 blood 格子主要集中在强类别切分，特别是 `beta=0` 且客户端数多时。此时分类头路由相对合理，但共享表示容易被只见少数类别的客户端 delta 拉偏。
+- 原始总表中，blood 的已有最好方法常来自 `regmean`、`fisher`、`iso_c`、`dare/ties`。其中 `regmean/fisher` 需要客户端上传激活协方差或 Fisher 统计量，不能由服务端拿原始数据计算；`iso_c/ties/dare` 更接近 checkpoint-only 的冲突/子空间处理，符合当前隐私设定。
+
+因此本轮只尝试一个很小的 M2 改动：在已有 M1 医学加权和 sign-consistent delta 之后，加入 checkpoint-only 的共享层谱稳定项。
+
+设计逻辑：
+
+- 不新增候选池，不用服务端验证集挑模型。
+- 只在 `conflict_score` 较高、客户端标签覆盖碎片化较强、且 M1 摘要显示类别形态分离不足时打开。
+- 只处理非分类头权重的 delta 谱，把奇异值向均值做温和收缩；分类头仍由 M1 的类别路由负责。
+- 这个设计借鉴的是近年 model merging 里“delta/子空间冲突”的思想，而不是把 `iso.py` 基线搬进来；基线代码不修改。
+
+正在验证：
+
+- 输出：`outputs/codex_subspace_stabilization_probe_20260613/my_merge_ablation_grid/full/small_resnet__my_merge`
+- 范围：`bloodmnist_224`、`organcmnist_224`、`chaoshengmnist_224` 的 `resnet` 27 格。
+- 保留标准：如果只修复 blood 但明显破坏 chaosheng/organc，或者总体低于 separation-anchor 版本，就删除该改动。
+
+验证结果：负优化，已删除该模块。
+
+- 总体：比 separation-anchor 版本低 `-0.0050`，相对已有最好 `mean_delta=-0.0169`。
+- blood：比 separation-anchor 低 `-0.0045`，没有修复最差的 `c5_b0` 和 `c7_b0`；`c7_b0.01` 反而从 `0.4499` 降到 `0.4157`。
+- chaosheng：比 separation-anchor 低 `-0.0085`，说明对共享层 delta 谱做各向同性收缩会破坏超声上原本有效的细粒度增量。
+- organc：小幅低 `-0.0020`。
+
+删除原因：
+
+- 虽然已有最好方法里 `iso_c` 在部分 blood 格子有效，但把“谱各向同性化”作为统一的后处理并不适合当前 M1/M2 流程。
+- 这进一步说明 blood 的问题不是简单的 2D 权重谱不均衡，而更可能是“哪些客户端/哪些类别的共享表示应该被保留”的局部重要性问题。该问题如果借鉴 `fisher/regmean`，必须由客户端上传统计摘要，不能由服务端使用原始验证数据计算。
+
+继续定位 M1 与 M2 的耦合关系：
+
+- `no_m1` 在 blood 的若干格子反而更好，例如 `c3_b0.1`、`c5_b0`、`c7_b0`；但在 `c5_b0.1`、`c7_b0.01` 又明显更差。
+- `no_class_routing` 总体比 full 低，说明分类头类别路由不是主要负优化来源。
+- `no_medical_weighted_fusion` 也总体比 full 低，说明 M1 的医学加权融合不能整体删除。
+
+据此尝试一个最小假设：M1 仍用于医学加权和分类头，但 M2 的 sign-consistent delta 改用 `base/equal` 权重，而不是 M1 的 `consensus` 权重。这个假设用于验证“blood 负优化是否来自 M1 权重注入冲突 delta”。
+
+验证结果：负优化，已回滚。
+
+- 输出：`outputs/codex_base_weight_sign_delta_probe_20260613/my_merge_ablation_grid/full/small_resnet__my_merge`
+- 总体：比 separation-anchor 版本低 `-0.0010`。
+- blood：低 `-0.0021`，没有修复 `c5_b0` 和 `c7_b0`；`c7_b0.01` 从 `0.4499` 降到 `0.4338`。
+- chaosheng：基本持平，`-0.0001`。
+- organc：低 `-0.0007`。
+
+结论：M2 的 sign-delta 使用 M1 共识权重不是主要问题。blood 最差格子更可能需要参数重要性或统计校正，而不是简单把 M2 权重退回平均。
+
+继续检查 BN/统计对齐：
+
+- 旧输出 `outputs/codex_stat_align_resnet_probe_gpu_20260612` 显示 `statistical_alignment` 对 blood/chaosheng 有大幅提升，但诊断字段是 `bn_recalibrated=True, bn_batches=4`。
+- 这说明旧提升来自服务端用 batch forward 重估 BN running statistics，本质上使用了融合端原始数据，不符合当前“原始数据不能上传到服务端”的约束，不能作为正式方法。
+- 当前代码里的 `statistical_alignment` 已改成只聚合客户端 checkpoint 中已有的 BN `running_mean/running_var/num_batches_tracked`，不做服务端 forward。必须重新验证这个隐私安全版本。
+
+隐私安全 BN 统计聚合验证：
+
+- 输出：`outputs/codex_privacy_bn_stat_alignment_probe_20260613/my_merge_ablation_grid/statistical_alignment/small_resnet__my_merge`
+- 总体：比 separation-anchor full 低 `-0.0255`，相对已有最好 `mean_delta=-0.0375`，W/L=`9/18`。
+- blood：比 full 低 `-0.0165`，`c7_b0.01` 从 `0.4499` 掉到 `0.3391`。
+- chaosheng：比 full 低 `-0.0590`，多数格子明显下降。
+- organc：基本持平，`-0.0011`，但不能弥补 blood/chaosheng 的损失。
+
+结论：
+
+- 服务端 BN 重校准确实能解释历史一部分好结果，但它违反隐私设定，不能用。
+- 仅聚合客户端上传的 BN running stats 不足以解决 blood 问题，且会明显破坏 chaosheng。
+- `statistical_alignment` 继续默认关闭；不进入主方法。
+
+## 2026-06-13 M1 医学指标复核：可以改指标，但必须逐项验证
+
+用户提醒 M1 的六个医学指标本身也可以增加、减少或替换。因此重新检查当前六维摘要：
+
+- 当前第 1 维 `area` 来自 `mask = evidence >= quantile(evidence, 0.70)`。
+- 这意味着每张图都会固定取 evidence 的前 30% 区域，`area` 数学上必然接近 `0.30`。
+- 新版特征摘要统计确认旧设计里 `area` 基本没有区分度；这不是有效医学证据。
+
+据此尝试一版较大的 M1 指标替换：
+
+- 用自适应结构范围 `extent` 替换固定分位数 `area`。
+- 在边缘前加入平滑，并把直接局部方差 `texture` 替换成更抗高频噪声的 `texture_coherence`。
+- `morph_quality`、类别质量和 `class_morphology_separation` 都纳入第 0 维，观察它是否能贡献医学区分。
+- 新摘要输出：`outputs/codex_m1_feature_revision_20260613/feature_summaries`。
+- 探针输出：`outputs/codex_m1_feature_revision_probe_20260613/my_merge_ablation_grid/full/small_resnet__my_merge`。
+
+验证结果：负优化，已删除该实现。
+
+- 27 格 resnet 医学探针总体比当前保留的 `separation_anchor` 版本低 `-0.0259`。
+- blood：`mean_acc=0.2849`，比旧版低 `-0.0142`，最差的 `c5_b0`、`c7_b0` 没有修复。
+- chaosheng：比旧版低 `-0.0043`，基本接近但没有稳定收益。
+- organc：比旧版低 `-0.0592`，其中 `c3_b0.01` 和 `c3_b0.1` 大幅下降。
+
+删除原因：
+
+- “固定 area 没有信息”这个观察成立，但本次改动同时改变了底层 edge/contrast/texture 的证据图，影响太大。
+- organc 原本依赖当前边界/对比度/纹理统计，替换成过度平滑和结构相干性会破坏 M1 对器官 CT 的有效权重。
+- 因此不能把这版指标作为主方法；后续如果继续改 M1 指标，应采用更小的单变量改动，例如只替换无效的第 0 维，或直接从 M1 评分中显式移除第 0 维，而不动已验证有效的 boundary/contrast/texture/salience/reliability 计算。
+
+继续做了一个更小的单变量验证：只从 `salience` 公式中移除 `(0.65 + area)`，其余 edge/contrast/texture/reliability 全部不动。
+
+- 摘要输出：`outputs/codex_m1_salience_no_area_20260613/feature_summaries`。
+- 探针输出：`outputs/codex_m1_salience_no_area_probe_20260613/my_merge_ablation_grid/full/small_resnet__my_merge`。
+- 总体比 `separation_anchor` 低 `-0.00003`，几乎完全等价。
+- blood：9/9 完全持平。
+- chaosheng：1 个格子小降，均值 `-0.00010`。
+- organc：1 个格子小升，均值 `+0.00001`。
+
+结论：
+
+- `area` 是一个理论上无效的指标，但在当前 salience 里主要表现为近似常数缩放，不会明显改变客户端排序。
+- 当前性能瓶颈不在 `area` 这一项；继续围绕它微调没有价值。
+- 该单变量修正已回滚，主代码保持当前保留版本。
+
+继续做了一个更小的替换验证：只把第 0 维 `area` 替换成亮/暗强度尾部显著性 `tail_salience`，其余 edge、contrast、texture、reliability 和融合逻辑全部不动。
+
+观察依据：
+
+- 候选摘要统计显示 `bright_tail`、`dark_tail` 在 blood 和 organc 上有明显类间差异，在 chaosheng 上也有弱信号。
+- 医学含义是局部强回声/低回声尾部分布，理论上比固定 30% 面积更接近医学图像的强度异常证据。
+
+验证结果：基本中性，已删除该实现。
+
+- 摘要输出：`outputs/codex_m1_tail_salience_20260613/feature_summaries`。
+- 探针输出：`outputs/codex_m1_tail_salience_probe_20260613/my_merge_ablation_grid/full/small_resnet__my_merge`。
+- 27 格 resnet 医学探针总体比 `separation_anchor` 低 `-0.000005`，可视为持平但没有收益。
+- blood：均值高 `+0.00010`，只有 `c7_b0.01` 明显小涨 `+0.0020`，但 `c5_b0.01`、`c5_b0.1` 小降。
+- chaosheng：均值低 `-0.00010`，`c5_b0.01` 小降 `-0.0018`。
+- organc：均值低 `-0.00001`，5 胜 4 负但幅度都很小。
+
+结论：
+
+- 亮/暗尾部是有医学解释和统计信号的候选特征，但在当前 M1 权重计算中不能稳定转化为性能收益。
+- 它不能作为主方法保留；当前 M1 暂时仍保留旧六维结构。
+- 后续如果继续改 M1 指标，应优先看“客户端权重排序是否变化、变化是否符合每类医学摘要差异”，而不是只看单个特征的类间方差。
+
+继续检查 M1 六维摘要到客户端权重的实际映射。
+
+只读统计：
+
+- 使用当前保留版摘要 `outputs/codex_privacy_safe_probe_20260612/feature_summaries`，不重新读原图、不改基线。
+- 27 格 resnet 医学摘要里，`area` 的类间相对 CV 为 0，确认它基本是死指标。
+- `salience` 的类间相对 CV 最大：blood `0.2609`，chaosheng `0.1235`，organc `0.4505`。
+- 但 `salience` 本身是 boundary、contrast、texture、area、reliability 的乘积型汇总，又在 `morph_quality` 和 `class_quality` 里与原始项一起使用，理论上存在重复计入同一证据的风险。
+
+据此做了一个最小删减实验：不改变六维摘要本身，只在 M1 权重公式里去掉 `salience` 的直接权重，把权重重新分配给 boundary、contrast、texture、reliability。
+
+验证结果：负优化，已回滚。
+
+- 探针输出：`outputs/codex_m1_no_salience_weight_probe_20260613/my_merge_ablation_grid/full/small_resnet__my_merge`。
+- 总体比当前保留版低 `-0.00121`，W/T/L=`5/10/12`。
+- blood：均值低 `-0.00110`，其中 `c7_b0.01` 低 `-0.0094`。
+- chaosheng：均值低 `-0.00160`，其中 `c5_b0` 低 `-0.0117`。
+- organc：均值低 `-0.00093`，其中 `c7_b0.01` 低 `-0.0072`。
+
+结论：
+
+- `salience` 虽然是组合项，但它保留了非线性显著性信息，当前 M1 权重计算仍依赖它。
+- 直接删除 `salience` 的权重不是简化，而是损失信息；该改动不进入主方法。
+- 当前可确认的无效项仍只有 `area`，但删除/替换它对性能几乎无影响，说明主瓶颈不在第 0 维。
+
+据此做了一个结构性精简：M1 摘要从 6 维改成 5 维，正式删除无效的 `area`。
+
+新 M1 摘要：
+
+- `boundary`：诊断证据区域内的边界强度。
+- `contrast`：诊断证据区域内的局部对比。
+- `texture`：诊断证据区域内的局部纹理变化。
+- `salience`：由边界、对比、纹理和可靠性组合得到的非线性显著性。
+- `reliability`：证据可靠性。
+
+实现细节：
+
+- 旧公式里的 `(0.65 + area)` 因为 `area≈0.30`，实际接近常数 `0.95`；新公式直接使用 `0.95`，避免保留一个没有信息量的伪指标。
+- `_collect_feature_summary` 兼容旧 6 维摘要：读到旧摘要时自动丢掉第 0 维，因此旧结果和新摘要能平滑切换。
+- 这不是新增模块，也不是超参数搜索，只是删除已证伪的冗余特征。
+
+验证结果：保留。
+
+- 新 5 维摘要输出：`outputs/codex_m1_five_feature_20260613/feature_summaries`。
+- 探针输出：`outputs/codex_m1_five_feature_probe_20260613/my_merge_ablation_grid/full/small_resnet__my_merge`。
+- 27 格 resnet 医学探针总体比当前保留版低 `-0.000029`，属于数值等价。
+- W/T/L vs 旧版：`1/25/1`。
+- blood：9/9 完全持平。
+- chaosheng：只有 `c3_b0` 小降 `-0.0009`。
+- organc：只有 `c7_b0.1` 小升 `+0.0001`。
+
+结论：
+
+- M1 不再写成“六个医学指标”，而是五个有效医学摘要指标。
+- 删除 `area` 让方法叙事更严谨：不再把固定分位数面积包装成医学证据。
+- 性能基本不变，说明这个精简是安全的；后续全量应使用新的 5 维摘要重新生成。
+
+## 2026-06-13 17:33：M2 低类别覆盖 sign-delta 密度实验
+
+继续按照“先观察，再采取措施”的流程检查当前 5 维 M1 版本。
+
+观察 1：M1 不是整体负优化，但在 blood 上存在局部伤害。
+
+- 27 格医学 ResNet probe 中，full 相比 `no_m1` 总体高 `+0.0905`。
+- chaosheng 高 `+0.1146`，organc 高 `+0.1565`，说明医学证据权重是主收益来源。
+- blood 平均只高 `+0.0002`，且存在明显负格子：`c3_b0.1=-0.0991`，`c5_b0=-0.0938`，`c7_b0=-0.0859`。
+- 因此问题不是“删掉 M1”，而是 blood 强类别拆分时 M1 的医学权重会放大错误客户端。
+
+观察 2：M2 的 conflict-delta 是整体正收益，但对最差 blood 格子修正不足。
+
+- full 相比 `no_conflict_stabilization` 总体高 `+0.0138`。
+- blood 高 `+0.0134`，chaosheng 高 `+0.0131`，organc 高 `+0.0149`。
+- 但 blood 的 `c5_b0` 和 `c7_b0` 上 full 与 no-conflict 完全持平，说明当前 conflict-delta 在这些格子没有起到纠偏作用。
+- 诊断显示 blood 并非没有冲突：`conflict_score` 平均 `0.4522`，`sign_conflict` 平均 `0.4762`，`direction_conflict` 平均 `0.4771`。
+- 当前 delta 混合权重只有约 `0.05~0.09`，所以冲突修正幅度较保守。
+
+据此尝试措施：在平均客户端类别覆盖率较低时，把 sign-delta 的参数保留密度从固定 `0.50` 提升到最高 `0.75`。
+
+- 动机：低覆盖类别拆分下，客户端任务向量更像局部专家；若只保留 50% delta，可能丢掉共享表征中的一致更新。
+- 实验输出：`outputs/codex_low_coverage_sign_density_probe_20260613/my_merge_ablation_grid/full/small_resnet__my_merge`。
+- 新策略实际使 blood/chaosheng/organc 的平均 sign-delta 密度分别变为 `0.6343/0.6270/0.6332`。
+
+验证结果：负优化，已删除该策略。
+
+- 27 格总体比固定密度旧版低 `-0.0006`。
+- blood 均值只高 `+0.0006`，且没有修复 `c5_b0`、`c7_b0`。
+- chaosheng 均值低 `-0.0020`，其中 `c5_b0.01` 低 `-0.0099`。
+- organc 均值低 `-0.0004`，其中 `c5_b0` 低 `-0.0038`，`c5_b0.01` 低 `-0.0027`。
+
+结论：
+
+- “类别覆盖低就提高 sign-delta 密度”这个解释太粗，会把非 blood 数据集上本来有效的稀疏冲突修正稀释掉。
+- M2 仍保留固定 `density=0.50` 的 conflict-delta，因为它在三类医学数据上都有稳定正收益。
+- 下一步应继续定位 blood 上 M1 权重为什么会在 `c3_b0.1/c5_b0/c7_b0` 伤害模型，而不是继续调 sign-delta 密度。
+
+## 2026-06-13 18:05：共享层 delta 一致性加权
+
+继续定位 M1 在 blood 上的局部负收益来源，先做三个只关一个开关的消融。
+
+观察 1：分类头路由不是主要问题。
+
+- `no_class_routing` 总体比 full 低 `-0.0123`。
+- blood 比 full 低 `-0.0062`，chaosheng 低 `-0.0052`，organc 低 `-0.0254`。
+- 因此类别头按 M1 类别权重路由总体是有效的，不能作为 blood 负优化主因删除。
+
+观察 2：专家锚定也不是主要问题。
+
+- `no_specialist_anchor` 总体比 full 低 `-0.0196`。
+- chaosheng 完全不变，因为当前分离度门控已经把超声专家锚定关掉。
+- organc 低 `-0.0539`，说明专家锚定主要保护器官数据集上的强医学专家。
+- blood 大多持平，只在少数格子有小变化，所以它不是 blood 最差格子的主要原因。
+
+观察 3：主体医学加权融合不能删除，但它确实是 blood 局部伤害来源。
+
+- `no_medical_weighted_fusion` 总体比 full 低 `-0.0642`。
+- chaosheng 低 `-0.1127`，organc 低 `-0.0753`，说明 M1 主体医学加权是当前主收益。
+- blood 平均低 `-0.0045`，但局部格子反而更好：`c3_b0.1` 从 `0.3075` 到 `0.4089`，`c7_b0` 从 `0.1692` 到 `0.2710`。
+- 这说明问题不是“医学权重无效”，而是“用一个客户端级标量医学权重去融合共享 trunk 太粗”，在 blood 强类别拆分时会把共享表征拉向局部类别客户端。
+
+对照基线实现得到的进一步启发：
+
+- `fisher` 和 `regmean` 的共同点是客户端上传参数重要性或协方差统计，让融合从“客户端标量权重”进入“参数/层统计权重”。
+- 当前不能用服务端原始数据，也不能改基线代码；但可以在 `my_merge` 内部只根据客户端模型 delta 本身估计共享层的一致性。
+
+据此实现一个很小的 M2 修正：`delta_agreement_weighting`。
+
+- M1 仍计算医学证据权重，并保留分类头类别路由。
+- 对共享层，在原 M1 层权重基础上，计算每个客户端 delta 与平均共同 delta 方向的一致性。
+- 若某客户端的共享层 delta 与共同方向更一致，则轻微提高其该层融合权重；若方向更偏离，则轻微降低。
+- 这个修正只用模型参数，不用服务端验证集或原始图像；它是对 M1 共享层标量权重过粗的补偿，而不是候选池搜索。
+
+验证结果：保留。
+
+- 输出：`outputs/codex_delta_agreement_weight_probe_20260613/my_merge_ablation_grid/full/small_resnet__my_merge`。
+- 27 格总体比 5 维 M1 full 高 `+0.00263`，相对已有最好从 `-0.01197` 改到 `-0.00934`。
+- blood 高 `+0.00179`，W/T/L vs 旧 full 为 `5/2/2`。
+- chaosheng 高 `+0.00349`，相对已有最好从 `-0.00339` 改为 `+0.00010`，W/T/L vs best 为 `6/0/3`。
+- organc 高 `+0.00261`，相对已有最好为 `+0.04280`。
+
+逐格变化：
+
+- blood 改善 `c3_b0` `+0.0047`、`c3_b0.1` `+0.0032`、`c7_b0.01` `+0.0082`，但没有修复 `c5_b0`、`c7_b0`。
+- chaosheng 改善 `c3_b0` `+0.0090`、`c3_b0.01` `+0.0054`、`c7_b0.01` `+0.0162`。
+- organc 改善 `c3_b0` `+0.0066`、`c3_b0.1` `+0.0120`、`c7_b0.01` `+0.0067`。
+
+诊断：
+
+- 所有 resnet 格子约有 100 个共享层 tensor 被调整。
+- 平均权重改变量很小：blood `0.00517`，chaosheng `0.00531`，organc `0.00428`。
+- 说明它不是大幅重写 M1，而是对共享层医学权重做温和的参数空间一致性校正。
+
+结论：
+
+- 保留 `delta_agreement_weighting`。
+- 它提供了一条更合理的故事线：M1 给出医学证据权重；M2 发现共享层存在客户端方向冲突，于是用 delta 一致性对共享层权重做局部修正，再叠加原有 sign-consistent conflict delta。
+- 当前局限是 blood 的 `c5_b0`、`c7_b0` 仍未修复，后续若继续优化，应围绕“单类别/少类别客户端的共享表示如何避免塌缩”继续观察，而不是再调分类头或专家锚定。
+
+直接消融确认：
+
+- 输出：`outputs/codex_delta_agreement_weight_probe_20260613/my_merge_ablation_grid/no_delta_agreement_weighting/small_resnet__my_merge`。
+- full 相比 `no_delta_agreement_weighting` 总体高 `+0.00263`，W/T/L 为 `15/4/8`。
+- blood 高 `+0.00179`，W/T/L 为 `5/2/2`。
+- chaosheng 高 `+0.00349`，W/T/L 为 `5/2/2`。
+- organc 高 `+0.00261`，W/T/L 为 `5/0/4`。
+- 这说明它不是和其它代码混在一起的偶然收益，而是一个独立有效的小修正。
+
+## 2026-06-13 19:00：共享层类别覆盖均衡实验
+
+继续从失败格子找现象。
+
+观察 1：最差格子存在“类别覆盖客户端权重偏低”的表象。
+
+- `blood c5_b0` 中，客户端 3/4 只覆盖单类，M1 共享层融合权重偏低；该格子 full 为 `0.1698`，相比已有最好低 `-0.1196`。
+- `blood c7_b0` 中，多数客户端只覆盖单类，full 为 `0.1692`，相比已有最好低 `-0.1868`。
+- `chaosheng c3_b0.1` 中，客户端 0 覆盖 `[0,1,6]` 但共享层权重只有约 `0.127`，full 为 `0.2650`，相比已有最好低 `-0.2031`。
+- 这些现象看起来像“医学质量/样本量权重压低了某些类别代表客户端”，可能导致共享 trunk 对类别覆盖不足。
+
+据此尝试措施：只在共享层做一个轻量的类别覆盖均衡。
+
+- 分类头仍然保留 M1 的按类路由，不改。
+- 对 early/mid/late 共享层，把原 M1 层权重轻微拉向“覆盖稀有类别的客户端”先验。
+- 这个先验只使用 `meta.clients[*].classes`，不使用服务端原始数据、验证集准确率或测试集信息。
+- 实验输出：`outputs/codex_coverage_balanced_trunk_probe_gpu_20260613/my_merge_ablation_grid/full/small_resnet__my_merge`。
+
+验证结果：负优化，已删除该策略。
+
+- 27 格总体比上一版 full 低 `-0.00150`，W/T/L 为 `8/4/15`。
+- blood 均值低 `-0.00091`，没有修复 `c5_b0`、`c7_b0`；`c5_b0` 和 `c7_b0` 仍分别为 `0.1698`、`0.1692`。
+- chaosheng 均值低 `-0.00150`，最差的 `c3_b0.1` 继续从 `0.2650` 降到 `0.2570`。
+- organc 均值低 `-0.00210`，其中 `c3_b0.1` 低 `-0.0106`。
+
+结论：
+
+- “类别覆盖不足”只是表象，不是当前 shared trunk 负优化的充分解释。
+- 直接按类别覆盖重平衡共享层会破坏 M1 原本有效的医学证据权重，尤其误伤 organc 和 chaosheng。
+- 该策略不保留。后续不能再走“覆盖多少类别就提高共享层权重”的粗暴路线。
+
+## 2026-06-13 19:45：分类头/共享层拆分实验
+
+继续围绕 blood 的局部负优化做观察。
+
+观察 1：`no_medical_weighted_fusion` 只在少数 blood 格子更好，不能整体删除 M1 主体融合。
+
+- `blood c3_b0.1`：full `0.3107`，`no_medical_weighted_fusion` `0.4089`，提高 `+0.0982`。
+- `blood c7_b0`：full `0.1692`，`no_medical_weighted_fusion` `0.2710`，提高 `+0.1017`。
+- 但 `chaosheng` 9 格在 `no_medical_weighted_fusion` 下全部下降，均值低 `-0.1162`。
+- `organc` 9 格也全部下降，均值低 `-0.0779`。
+- 因此不能把 M1 主体医学加权整体删掉。
+
+观察 2：参数空间诊断显示，坏格子不是简单的“共享层方向反了”。
+
+- 在 `blood c3_b0.1` 中，early/mid/late 共享层客户端 delta 与平均方向的 cos 多数仍在 `0.75~0.96`，方向没有整体翻转。
+- 在 `blood c7_b0` 中，共享层 cos 也大多为正，问题更像权重集中后把 trunk/head 一起拉向局部专家，而不是某个层组完全冲突。
+- 分类头的方向更不稳定，多个格子里弱权重客户端 head 与平均方向 cos 只有约 `0.16~0.25`；但这个现象在好格子里也会出现，不能直接作为单阈值门控。
+
+据此尝试措施：只让 M1 医学权重作用在分类头，共享层回到基础平均后再做 M2 冲突修正。
+
+- 实验开关：`head_only_medical_fusion`。
+- 目的：验证 blood 负优化是否主要来自 shared trunk 医学加权。
+- 输出：`outputs/codex_head_only_medical_fusion_probe_gpu_20260613/my_merge_ablation_grid/head_only_medical_fusion/small_resnet__my_merge`。
+
+验证结果：明显负优化，已删除该实验开关。
+
+- 27 格总体比 full 低 `-0.01514`，W/T/L 为 `3/4/20`。
+- blood 均值低 `-0.00546`，没有修复 `c5_b0`、`c7_b0`；`c7_b0` 仍为 `0.1692`。
+- chaosheng 均值低 `-0.01597`，`c3_b0.1` 从 `0.2650` 降到 `0.2327`。
+- organc 均值低 `-0.02399`，`c3_b0.01` 下降 `-0.0639`。
+
+结论：
+
+- blood 的失败不能通过“共享层不用医学权重、只在分类头用医学权重”解决。
+- M1 医学加权对 shared trunk 在 chaosheng/organc 上是必要的，简单拆分 head/trunk 会破坏这两个数据集。
+- 后续优化需要找更细的“哪些共享层/哪些参数方向需要保守”的证据，而不是整体关闭 shared trunk 医学加权。
+
+## 2026-06-13 21:10：层组冲突观测与 head-protected conflict 实验
+
+继续按“观测 -> 措施 -> 结果 -> 保留/删除”的流程排查。
+
+新增只读诊断脚本：
+
+- 脚本：`scripts/observe_my_merge_layer_conflicts.py`。
+- 输出：`docs/my_merge_user_docs/layer_conflict_observation_20260613.csv`。
+- 输入只包含客户端 checkpoint、reference model、已有 `merge_result.json` 和公开汇总表；不读取服务端验证/测试图像，不做候选选择。
+- 诊断项：early/mid/late/classifier 四组的 sign conflict、direction conflict、norm dispersion、综合 conflict score，以及 M1 融合权重集中度和已有 best baseline 差值。
+
+观测 1：失败格子不能用共享层冲突解释。
+
+- `delta_vs_best` 与 early/mid/late conflict score 不是负相关，反而弱正相关：early `+0.297`，mid `+0.357`。
+- 这说明“共享层冲突越高越差”的假设不成立，不能据此做更激进的共享层裁剪或关掉 M1 共享层融合。
+
+观测 2：分类头冲突更可疑，但不能直接关闭 class routing。
+
+- 最差格子里 classifier direction conflict 往往偏高，例如 `blood c3_b0.1` 为 `0.483`，`chaosheng c3_b0.1` 为 `0.450`。
+- 但 `no_class_routing` 总体仍比 full 低：full - no_class_routing 总体 `+0.01490`，W/T/L 为 `18/1/8`。
+- 因此分类头按类路由是必要的，问题不是“不要 class routing”，而可能是 M2 的全参数 sign-delta 会再次改写已经按类融合的 classifier head。
+
+据此尝试措施：`head-protected conflict stabilization`。
+
+- M1 继续按类路由 classifier head。
+- M2 的 sign-delta conflict stabilization 只作用在非 classifier 的 shared layers 上，避免用全局 consensus 权重二次覆盖 classifier head。
+- 实验输出：`outputs/codex_head_protected_conflict_probe_gpu_20260613/my_merge_ablation_grid/full/small_resnet__my_merge`。
+
+验证结果：基本无收益，已回滚。
+
+- 27 格新旧 full 平均差为 `+0.000025`，W/T/L 为 `13/3/11`。
+- blood 均值 `-0.00075`，没有修复 `blood c5_b0` 和 `blood c7_b0`。
+- chaosheng 均值 `+0.00389`，主要来自 `c5_b0` 的 `+0.0368`，但最差的 `c3_b0.1` 下降 `-0.0063`。
+- organc 均值 `-0.00307`，其中 `c3_b0` 下降 `-0.0146`，`c7_b0.01` 下降 `-0.0153`。
+
+结论：
+
+- “M2 不应改 classifier head”这个解释不够稳定，不能作为默认方法。
+- 该方法改动已从 `methods/my_merge.py` 删除，只保留诊断脚本和结果记录。
+- 下一步应继续寻找能解释 blood `c5_b0/c7_b0` 和 chaosheng `c3_b0.1` 的更强观测信号；目前共享层整体冲突、类别覆盖、head/trunk 拆分、head-protected sign-delta 都不能解释这些失败。
+
+继续观察 classifier bias。
+
+观察：
+
+- 假设：强非 IID 下 classifier bias 可能主要编码客户端类别先验，当前按类路由 bias 可能导致 blood 失败。
+- 只读统计：对每个格子计算 class-routed bias 与 avg/consensus bias 的平均偏移、bias range，并与 `delta_vs_best`、`full - no_medical_weighted_fusion` 对齐。
+- 结果：bias route shift 与 `delta_vs_best` 为弱正相关 `+0.368`，与 `full - no_medical_weighted_fusion` 也是弱正相关 `+0.229`。
+- 典型反例：organc/chaosheng 中 bias shift 更大但 full 更好；`chaosheng c3_b0.1` 是最差格子，但 `full - no_medical_weighted_fusion` 为 `+0.0889`，说明回退到 avg head 反而会更差。
+
+结论：
+
+- “classifier bias 回退到 avg/consensus”没有足够观测依据，未改代码。
+- 当前更可能的问题不是单独的 bias 先验，而是某些 extreme split 下完整 head/trunk 表示组合不稳定。
+
+## 2026-06-13 21:25：M2 conflict blend 强度实验
+
+继续观察 M2 的 conflict stabilization。
+
+观察：
+
+- `no_conflict_stabilization` 总体比 full 低 `-0.01641`，说明 M2 的 sign-delta 冲突修正确实有效。
+- 当前 full 中 `delta_blend_weight` 大多只有 `0.05~0.08`。
+- 逐格统计显示，`full - no_conflict_stabilization` 与 `delta_blend_weight`、`conflict_score`、`norm_dispersion` 均为正相关，其中与 norm dispersion 相关约 `+0.387`。
+- 高 `delta_blend_weight >= 0.08` 的格子平均收益约 `+0.0440`，高于低权重格子。
+
+据此尝试措施：增强但不放开的 M2 conflict blend。
+
+- 将 CNN 的 M2 conflict blend 上限从 `0.25` 提到 `0.35`。
+- 这不是新增候选池，也不使用验证集选择；仍然是同一个确定性 M2 公式，只是让参数空间冲突信号有更大纠偏幅度。
+- 实验输出：`outputs/codex_stronger_conflict_probe_gpu_20260613/my_merge_ablation_grid/full/small_resnet__my_merge`。
+
+验证结果：保留。
+
+- 27 格平均比上一版 full 高 `+0.00226`，W/T/L 为 `20/3/4`。
+- blood 均值 `+0.00127`，W/T/L 为 `7/1/1`。
+- chaosheng 均值 `+0.00140`，W/T/L 为 `6/2/1`。
+- organc 均值 `+0.00411`，W/T/L 为 `7/0/2`。
+- 相对已有最好方法的总体均值从 `-0.00934` 改为 `-0.00708`。
+
+逐格注意：
+
+- 正向：`organc c5_b0.1` `+0.0117`，`organc c7_b0.1` `+0.0097`，`chaosheng c5_b0.01` `+0.0090`，`chaosheng c7_b0.01` `+0.0090`，`blood c7_b0.01` `+0.0050`。
+- 负向：`chaosheng c5_b0` `-0.0207`，`organc c7_b0.01` `-0.0049`，`blood c5_b0.01` `-0.0029`。
+- 仍未修复：`blood c5_b0`、`blood c7_b0`、`chaosheng c3_b0.1`。
+
+结论：
+
+- 增强 M2 conflict blend 是一个稳定的小收益，保留在当前代码中。
+- 它说明 M2 不是补丁式候选选择，而是对 M1 后参数冲突的必要纠偏；但它仍无法解释和解决最差 extreme split。

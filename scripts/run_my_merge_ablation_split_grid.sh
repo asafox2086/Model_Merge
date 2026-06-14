@@ -10,6 +10,8 @@ LOG_ROOT="${LOG_ROOT:-${ROOT_DIR}/logs/my_merge_split_${ABLATION}_$(date +%Y%m%d
 MY_MERGE_STATS_MAX_BATCHES="${MY_MERGE_STATS_MAX_BATCHES:-16}"
 MY_MERGE_EVAL_MAX_BATCHES="${MY_MERGE_EVAL_MAX_BATCHES:-1}"
 MY_MERGE_BN_BATCHES="${MY_MERGE_BN_BATCHES:-0}"
+MY_MERGE_FEATURE_SUMMARY_ROOT="${MY_MERGE_FEATURE_SUMMARY_ROOT:-}"
+MY_MERGE_REQUIRE_FEATURE_SUMMARY="${MY_MERGE_REQUIRE_FEATURE_SUMMARY:-false}"
 MY_MERGE_EXPORT_DIAGNOSTICS="${MY_MERGE_EXPORT_DIAGNOSTICS:-true}"
 MY_MERGE_DIAGNOSTICS_PLOT="${MY_MERGE_DIAGNOSTICS_PLOT:-false}"
 MY_MERGE_DOMAIN_CONTROL="${MY_MERGE_DOMAIN_CONTROL:-false}"
@@ -60,6 +62,14 @@ diagnostic_args=(
   --my-merge-viz-max-batches "${MY_MERGE_VIZ_MAX_BATCHES}"
   --my-merge-viz-max-plots "${MY_MERGE_VIZ_MAX_PLOTS}"
 )
+if [[ -n "${MY_MERGE_FEATURE_SUMMARY_ROOT}" ]]; then
+  diagnostic_args+=(--my-merge-feature-summary-root "${MY_MERGE_FEATURE_SUMMARY_ROOT}")
+fi
+if [[ "${MY_MERGE_REQUIRE_FEATURE_SUMMARY}" == "true" ]]; then
+  diagnostic_args+=(--my-merge-require-feature-summary)
+else
+  diagnostic_args+=(--no-my-merge-require-feature-summary)
+fi
 if [[ "${MY_MERGE_EXPORT_DIAGNOSTICS}" == "true" ]]; then
   diagnostic_args+=(--my-merge-export-diagnostics)
 else
@@ -169,6 +179,8 @@ esac
   echo "my_merge_stats_max_batches=${MY_MERGE_STATS_MAX_BATCHES}"
   echo "my_merge_eval_max_batches=${MY_MERGE_EVAL_MAX_BATCHES}"
   echo "my_merge_bn_batches=${MY_MERGE_BN_BATCHES}"
+  echo "my_merge_feature_summary_root=${MY_MERGE_FEATURE_SUMMARY_ROOT}"
+  echo "my_merge_require_feature_summary=${MY_MERGE_REQUIRE_FEATURE_SUMMARY}"
   echo "my_merge_diagnostics_plot=${MY_MERGE_DIAGNOSTICS_PLOT}"
   echo "my_merge_domain_control=${MY_MERGE_DOMAIN_CONTROL}"
 } > "${OUTPUT_ROOT}/reports/ablation_split_config.txt"

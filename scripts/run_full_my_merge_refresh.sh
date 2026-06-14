@@ -24,7 +24,9 @@ SMALL_BATCH_SIZE="${SMALL_BATCH_SIZE:-64}"
 VLM_BATCH_SIZE="${VLM_BATCH_SIZE:-32}"
 MY_MERGE_STATS_MAX_BATCHES="${MY_MERGE_STATS_MAX_BATCHES:-1}"
 MY_MERGE_EVAL_MAX_BATCHES="${MY_MERGE_EVAL_MAX_BATCHES:-1}"
-MY_MERGE_BN_BATCHES="${MY_MERGE_BN_BATCHES:-1}"
+MY_MERGE_BN_BATCHES="${MY_MERGE_BN_BATCHES:-0}"
+MY_MERGE_FEATURE_SUMMARY_ROOT="${MY_MERGE_FEATURE_SUMMARY_ROOT:-}"
+MY_MERGE_REQUIRE_FEATURE_SUMMARY="${MY_MERGE_REQUIRE_FEATURE_SUMMARY:-false}"
 
 mkdir -p "${LOG_ROOT}" "${OUTPUT_ROOT}"
 
@@ -43,11 +45,23 @@ echo "[$(date +%F\ %T)] STATS_NUM_WORKERS=${STATS_NUM_WORKERS}"
 echo "[$(date +%F\ %T)] MY_MERGE_STATS_MAX_BATCHES=${MY_MERGE_STATS_MAX_BATCHES}"
 echo "[$(date +%F\ %T)] MY_MERGE_EVAL_MAX_BATCHES=${MY_MERGE_EVAL_MAX_BATCHES}"
 echo "[$(date +%F\ %T)] MY_MERGE_BN_BATCHES=${MY_MERGE_BN_BATCHES}"
+echo "[$(date +%F\ %T)] MY_MERGE_FEATURE_SUMMARY_ROOT=${MY_MERGE_FEATURE_SUMMARY_ROOT}"
+echo "[$(date +%F\ %T)] MY_MERGE_REQUIRE_FEATURE_SUMMARY=${MY_MERGE_REQUIRE_FEATURE_SUMMARY}"
 
 read -r -a GPU_ARRAY <<< "${GPU_IDS}"
 read -r -a DATASET_ARRAY <<< "${DATASETS}"
 read -r -a SMALL_MODEL_ARRAY <<< "${SMALL_MODELS}"
 read -r -a CLIP_MODEL_ARRAY <<< "${CLIP_MODELS}"
+
+FEATURE_SUMMARY_ARGS=()
+if [[ -n "${MY_MERGE_FEATURE_SUMMARY_ROOT}" ]]; then
+  FEATURE_SUMMARY_ARGS+=(--my-merge-feature-summary-root "${MY_MERGE_FEATURE_SUMMARY_ROOT}")
+fi
+if [[ "${MY_MERGE_REQUIRE_FEATURE_SUMMARY}" == "true" ]]; then
+  FEATURE_SUMMARY_ARGS+=(--my-merge-require-feature-summary)
+else
+  FEATURE_SUMMARY_ARGS+=(--no-my-merge-require-feature-summary)
+fi
 
 if (( ${#GPU_ARRAY[@]} == 0 )); then
   echo "GPU_IDS is empty" >&2
@@ -109,6 +123,7 @@ run_small_job() {
       --my-merge-stats-max-batches "${MY_MERGE_STATS_MAX_BATCHES}" \
       --my-merge-eval-max-batches "${MY_MERGE_EVAL_MAX_BATCHES}" \
       --my-merge-bn-batches "${MY_MERGE_BN_BATCHES}" \
+      "${FEATURE_SUMMARY_ARGS[@]}" \
       --datasets "${DATASET_ARRAY[@]}" \
       --small-models "${model_name}"
     echo "[$(date +%F\ %T)] done ${job_name} gpu=${gpu_id}"
@@ -144,6 +159,7 @@ run_vlm_job() {
       --my-merge-stats-max-batches "${MY_MERGE_STATS_MAX_BATCHES}" \
       --my-merge-eval-max-batches "${MY_MERGE_EVAL_MAX_BATCHES}" \
       --my-merge-bn-batches "${MY_MERGE_BN_BATCHES}" \
+      "${FEATURE_SUMMARY_ARGS[@]}" \
       --datasets "${DATASET_ARRAY[@]}" \
       --clip-models "${clip_model}"
     echo "[$(date +%F\ %T)] done ${job_name} gpu=${gpu_id}"
