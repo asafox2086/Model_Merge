@@ -2626,3 +2626,141 @@ smoke：
 
 - 增强 M2 conflict blend 是一个稳定的小收益，保留在当前代码中。
 - 它说明 M2 不是补丁式候选选择，而是对 M1 后参数冲突的必要纠偏；但它仍无法解释和解决最差 extreme split。
+
+## 2026-06-14 Client Average 90% 目标复核与 middle-delta 负例
+
+用户提出新的硬目标：`Client Average` 中 my_merge 需要约 90% 都是最高。按当前 `My_merge_ret/汇总表.md` 的口径，Client Average 一共 75 个格子，90% 约等于至少 68 个格子最高；当前 `my_merge full` 只有约 33/75 个最高或并列最高，因此不是小幅调参问题。
+
+先做只读统计：
+
+- raw 层面 `my_merge full` 相比 `avg` 为 W/T/L=`135/42/48`，说明 M1/M2 整体不是简单低于平均，但存在 48 个低于 Avg 的塌点。
+- 最大塌点是 `convnext/dermamnist_224/c5_b0.1`：当前 full 为 `0.2025`，Avg/Best 为 `0.6688`。这种单点塌陷会直接拖垮 Client Average。
+- Client Average 的失败集中在 `convnext/vit_t/swin_tiny`，赢家主要是 `Breadcrumbs`、`RegMean`、`RobustMerge`、`Iso-C`、`Fisher`。这说明问题不是“医学权重还不够大”，而是当前方法缺少对参数污染/统计错配的稳定处理。
+
+据此尝试一个最小 M2 改动：在现有 sign-consistent delta 后加入 checkpoint-only 的 `middle-delta` 过滤。
+
+- 设计动机：失败赢家里 Breadcrumbs/RobustMerge 较多，它们共同倾向于过滤异常幅值参数；middle-delta 只保留每个客户端 task vector 的中等幅值更新，去掉极大更新和小噪声更新。
+- 隐私属性：只用客户端模型参数和 M1 医学共识权重，不使用服务端验证集、不读原始图像、不做候选池选择。
+- 探针输出：`outputs/codex_middle_delta_probe_20260614/small_convnext__my_merge`。
+- 关键结果：`convnext/dermamnist_224/c5_b0.1` 从当前 full 的 `0.2025` 只到 `0.2045`，远低于 Avg/Best 的 `0.6688`。
+
+结论：middle-delta 不能修复最大塌点，已从 `methods/my_merge.py` 删除。
+
+新的观察结论：
+
+- 最大塌点不是简单的“缺少中等幅值参数过滤”。
+- 需要改查融合后模型是否退化为错误类别先验、坏分类头/共享层组合，或者专家锚定是否把模型拉向错误客户端。
+- 后续优化应优先围绕 `convnext/dermamnist_224/c5_b0.1` 这种灾难塌点做局部验证；只有先把 raw 层面的低于 Avg 塌点压下去，Client Average 才有可能接近 90% 最高。
+
+继续检查“本地验证专家保真”能否替代软融合。
+
+只读上界分析一开始看起来很诱人：
+
+- 如果直接用 `model_hub` 里客户端元信息的 `best_val_acc` 选择客户端专家，并把该客户端 `test_acc` 当作离线上界，Client Average 似乎可以到 `74/75`。
+- 但这一步只是诊断，不是算法，因为 `meta.clients[*].test_acc` 不一定与当前统一评估脚本口径一致。
+
+据此做了一个真实评估探针：
+
+- 临时实现：用客户端上传的本地 `best_val_acc` 标量选主专家，最终模型直接等于该客户端 checkpoint。
+- 隐私上它不读服务端原始验证集，但仍必须通过当前统一测试脚本验证。
+- 探针输出：`outputs/codex_local_expert_probe_20260614/small_convnext__my_merge`。
+- 关键结果：`convnext/dermamnist_224/c5_b0.1` 选择了 client 1，但当前统一评估只有 `0.1521`，比当前 full 的 `0.2025` 更低，也远低于 Avg/Best 的 `0.6688`。
+
+结论：直接使用 `meta.clients[*].best_val_acc` 做专家选择是负优化，已从 `methods/my_merge.py` 删除。
+
+新的负例说明：
+
+- `model_hub` 中记录的客户端 `test_acc/best_val_acc` 不能直接作为当前统一评估口径下的全局性能代理。
+- “专家保真”本身仍可能有价值，但不能用这个本地分数硬选专家；否则会把方法变成不稳定的客户端选择器。
+- 最大塌点需要继续从当前融合输出本身解释，例如预测分布、分类头偏置、或者 M1 权重过度集中与 head/trunk 组合错配。
+
+继续按 `Client Average` 90% 目标做观察。
+
+观察：
+
+- 当前 `Client Average` 为 `33/75` 最高或并列最高，目标 90% 约为 `68/75`。
+- 历史最好发布结果 `outputs/codex_rep_m3_medical_full_20260609` 为 `51/75`，说明当前代码确实退化，但历史结果依赖服务端验证批次、BN 重估和 prototype head，不能按隐私约束原样恢复。
+- 当前 42 个失败格子主要集中在 `convnext/vit_t/swin_tiny`；赢家多为 `Breadcrumbs/RegMean/Fisher/RobustMerge`，不是简单输给 Avg。直接“低于 Avg 就回退 Avg”的 oracle 也只能从 `33/75` 到 `35/75`，因此不能靠 Avg 回退解决。
+- 最大 raw 塌点仍是 `convnext/dermamnist_224/c5_b0.1`：当前 M1 融合权重 `[0.108, 0.566, 0.105, 0.133, 0.088]`，单客户端权重过高；历史好版本同格权重接近 `[0.165, 0.164, 0.162, 0.252, 0.257]`。
+
+据此尝试措施：M1 权重稳定约束。
+
+- 改动内容：降低样本量先验，给 M1 的 overall/morph/class 权重加上限与熵约束，并降低专家锚定中 `support_score` 的作用。
+- 隐私属性：只使用客户端摘要、客户端类别/样本量元信息和 checkpoint，不读取服务端验证或测试图像。
+- 探针输出：`outputs/codex_m1_bounded_probe_20260614/my_merge_ablation_grid/full`。
+
+验证结果：负优化，已回滚。
+
+- `vit_t` 45 个 raw 格子平均 `-0.00676`，W/T/L=`10/9/26`。
+- `convnext` 已完成 36 个 raw 格子平均 `-0.02479`，W/T/L=`4/22/10`；早停并停止剩余任务。
+- 典型严重负例：`convnext/dermamnist_224/c3_b0.01` 从 `0.6688` 降到 `0.1097`；`vit_t/dermamnist_224/c5_b0.01` 从 `0.5516` 降到 `0.3496`。
+
+结论：
+
+- “M1 权重过度集中”是可观察现象，但简单限幅会破坏一些原本正确的 derma/organ 格子，不能保留。
+- 后续不再从 M1 压平权重入手。更有依据的方向是 M2：历史好版本在若干坏格子中选择 `delta_0p25/0p50`，而当前确定性 M2 的 `delta_blend_weight` 多数只有 `0.06~0.13`，冲突纠偏可能偏弱。
+
+继续检查 M2 的专家锚定是否是主失败来源。
+
+观察：
+
+- 最大塌点 `convnext/dermamnist_224/c5_b0.1` 和若干 organ/blood 塌点里存在 `specialist_anchor` 软锚定，可能把模型拉向错误专家。
+- 但此前 resnet 严格摘要探针显示 `no_specialist_anchor` 总体低于 full，因此不能只凭单个坏格子删除专家保真。
+
+据此尝试措施：在当前失败最集中的 `convnext/vit_t/swin_tiny` 上跑 `no_specialist_anchor` 宽探针。
+
+- 输出：`outputs/codex_no_specialist_broad_probe_20260614/my_merge_ablation_grid/no_specialist_anchor`。
+- 早停时 `vit_t` 已完成 `45/45`，`convnext` 完成 `42/45`，`swin_tiny` 尚未开始；因结果已经不能支持该方向，停止剩余任务。
+
+验证结果：不是主因，不保留。
+
+- `vit_t`：45 个 raw 平均 `+0.00120`，W/T/L=`6/33/6`；Client Average 15 组平均 `+0.00120`，W/T/L=`5/6/4`。
+- `convnext`：42 个 raw 平均 `-0.00040`，W/T/L=`2/36/4`；Client Average 14 组平均 `-0.00040`，W/T/L=`2/8/4`。
+- 最大正例：`vit_t/dermamnist_224/c5_b0.1` 从 `0.1980` 到 `0.3631`，说明专家锚定确有局部误伤。
+- 最大负例：`vit_t/dermamnist_224/c5_b0.01` 从 `0.5516` 到 `0.4095`，说明直接删除专家锚定同样会破坏已有好格子。
+
+结论：
+
+- `specialist_anchor` 不是 `Client Average` 失败的主瓶颈；直接删除或关闭不能接近 90% 目标。
+- 后续转向 M2 的 delta 路径强度/异常参数处理，而不是删除专家保真。
+
+继续检查 M2 的 delta 路径强度。
+
+观察：
+
+- 历史好版本在若干坏格子里选择过 `delta_0p25/0p50`，而当前确定性 M2 的 `delta_blend_weight` 多数只有 `0.06~0.13`。
+- 这支持一个假设：当前冲突纠偏过弱，尤其对 `convnext` 的 blood/chaosheng 低分格子。
+
+据此尝试措施：全局增强 delta blend。
+
+- 临时把 CNN/VLM 的 delta blend 上限从 `0.35` 提到 `0.50/0.55`，启动阈值从 `0.20` 降到 `0.14`。
+- 输出：`outputs/codex_stronger_delta_broad_probe_20260614/my_merge_ablation_grid/full`。
+
+验证结果：局部正向但整体不稳，已回滚。
+
+- `vit_t` 完成 `45/45`：raw 平均 `-0.00435`，W/T/L=`14/8/23`；Client Average 15 组平均 `-0.00435`，W/T/L=`7/1/7`。
+- `convnext` 早停时完成 `31/45`：raw 平均 `+0.00498`，W/T/L=`4/23/4`；Client Average 10 组平均 `+0.00514`，W/T/L=`2/5/3`。
+- 正例：`convnext/bloodmnist_224/c7_b0` 从 `0.0713` 到 `0.1947`；`vit_t/bloodmnist_224/c7_avg` 提高约 `+0.0233`。
+- 负例：`vit_t/bloodmnist_224/c3_avg` 下降约 `-0.0446`；`vit_t/organsmnist_224/c7_avg` 下降约 `-0.0427`。
+
+结论：
+
+- “增强 delta”确实能修复部分冲突格子，但不能作为全局规则；冲突高并不必然意味着应该更大幅度走 sign-delta。
+- 后续应转向更细的 M2 异常参数处理，例如只针对 2D 权重矩阵或异常幅值更新做过滤，而不是整体提高 delta 混合强度。
+
+继续把上面的负例转成可检验的 M2 规则。
+
+观察：
+
+- 全局增强 delta 的正例大多有较高的符号冲突或方向冲突，例如 `convnext/bloodmnist_224/c7_b0` 的 `sign_conflict=0.689`、`direction_conflict=0.503`。
+- 最大负例之一 `vit_t/organsmnist_224/c7_b0.01` 虽然方向冲突接近阈值，但 `norm_dispersion=0.670`，说明客户端更新尺度本身非常离散；这种情况下强行走 sign-delta 容易把不同尺度的客户端更新混在一起。
+- 已完成样本上的单阈值诊断显示：`direction_conflict >= 0.495` 或 `sign_conflict >= 0.585` 的格子更可能从增强 delta 中获益；高 `norm_dispersion` 是明显风险因子。
+
+据此尝试措施：M2 的门控式冲突增强。
+
+- 保留当前默认 delta blend 作为主路径。
+- 仅当 `sign_conflict >= 0.585` 或 `direction_conflict >= 0.495`，且 `norm_dispersion <= 0.55` 时，把 sign-delta 混合上限从默认 `0.35` 提高到 CNN 的 `0.50`、Transformer 的 `0.45`，并把启动点从 `0.20` 降到 `0.14`。
+- 其他格子完全沿用原逻辑。
+- 隐私属性：只用客户端 checkpoint 的 task-vector 符号、方向和范数统计，不使用服务端原始数据或服务端验证集。
+
+下一步：先在失败最多的 `convnext/vit_t/swin_tiny` 上跑探针，和当前 full 比较 raw 与 Client Average 后再决定是否全量。
