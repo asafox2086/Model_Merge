@@ -2764,3 +2764,50 @@ smoke：
 - 隐私属性：只用客户端 checkpoint 的 task-vector 符号、方向和范数统计，不使用服务端原始数据或服务端验证集。
 
 下一步：先在失败最多的 `convnext/vit_t/swin_tiny` 上跑探针，和当前 full 比较 raw 与 Client Average 后再决定是否全量。
+
+补完 `convnext` 门控 delta 探针后的完整结果：
+
+- 输出：`outputs/codex_gated_delta_convnext_probe_20260614/my_merge_ablation_grid/full/small_convnext__my_merge`。
+- 完成 `convnext` 45/45 个 raw case。
+- 对当前正式 full：raw 平均 `+0.00234`，W/T/L=`1/43/1`。
+- Client Average：平均 `+0.00234`，W/T/L=`1/13/1`。
+- 正例：`convnext/bloodmnist_224/c7_b0` 从 `0.0713` 到 `0.1947`。
+- 负例：`convnext/chaoshengmnist_224/c7_b0.1` 从 `0.1267` 到 `0.1087`。
+- 最大 derma 塌点 `convnext/dermamnist_224/c5_b0.1` 仍为 `0.2025`，没有修复。
+
+结论：
+
+- 门控式冲突增强只修复一个 blood case，同时引入一个超声负例。
+- 它没有解决最大 derma 塌点，不能作为稳定方法保留。
+- 已删除该规则，代码回到原默认 delta blend。
+- 下一步转向最大塌点诊断：先做 checkpoint-only 参数检查，再用统一评估脚本真实评估该 case 的单客户端 checkpoint，判断是分类头偏置、共享 trunk 损坏，还是 M1 权重导致 head/trunk 错配。
+
+继续诊断最大塌点后得到新观察。
+
+观察：
+
+- `convnext/dermamnist_224/c5_b0.1` 当前 full 只有 `0.2025`，Avg/历史好版本为 `0.6688`。
+- 当前 M1 共识权重为 `[0.108, 0.566, 0.105, 0.133, 0.088]`，client 1 被赋予 `56.6%` 权重。
+- 统一评估单客户端 checkpoint 发现 client 1 只有 `0.1521`，而 client 3/4 都是 `0.6688`。
+- checkpoint-only trunk task-vector 距离显示 client 1 是参数离群点；因此该塌点是“医学权重被参数离群客户端劫持”，不是 delta 强度问题。
+
+据此尝试措施：checkpoint 一致性保真约束。
+
+- 初版宽松规则：只要出现明显参数离群，就按 trunk task-vector 一致性修正 M1 的 overall/morph/class 权重。
+- 结果：`dermamnist_224/convnext/c5_b0.1` 可从 `0.2025` 修到 `0.6688`，但 `chaoshengmnist_224/convnext/c7_b0.01` 会从 `0.1617` 降到 `0.1087`。
+- 解释：超声中离群客户端可能是真实声学模式专家，不能简单削弱。
+
+收窄后的保留规则：
+
+- 先由 M1 产生医学共识权重。
+- 计算每个客户端中后层 trunk task-vector 到其他客户端的平均距离，得到 checkpoint 一致性分数。
+- 仅当最高医学权重客户端也是一致性最低的参数离群客户端，并且医学权重集中度 `>= 0.33`、离群强度 `>= 0.45` 时，才触发保真约束。
+- 触发时用 `weight * consistency^2` 重新归一化 M1 权重；不触发时完全沿用原逻辑。
+- 该规则只用 checkpoint 和参考模型，不使用服务端验证集、测试集或客户端原始数据。
+
+代表性探针结果：
+
+- `dermamnist_224/convnext/c5_b0.1`：触发，`0.2025 -> 0.6688`。
+- `bloodmnist_224/convnext/c7_b0.1`：不触发，维持 `0.1619`，避免宽松规则的 `0.0836` 负优化。
+- `chaoshengmnist_224/convnext/c7_b0.01`：不触发，维持 `0.1617`，避免宽松规则的 `0.1087` 负优化。
+- 下一步跑 `convnext` 全量 45 个 raw case，确认该规则是否有整体收益。
