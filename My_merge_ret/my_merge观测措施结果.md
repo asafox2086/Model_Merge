@@ -344,3 +344,71 @@
   - fusion weights 从约 `[0.43,0.29,0.28]` 降低集中到约 `[0.41,0.30,0.29]`；
   - class routing 仍保留。
 - 该措施还没有 test accuracy 结论；等当前 generalist guard full 空出 GPU 后，先跑 `organsmnist_224/convnext` 和 `swin_tiny` 小探针。如果负优化，删除。
+
+## 观测 13：互补覆盖不能只靠专家锚点，保守保护 trunk 有小幅收益
+
+对象：`outputs/codex_coverage_preservation_probe_20260615`，只跑 `organsmnist_224` 的 `convnext` 和 `swin_tiny`。
+
+措施：
+
+- 在 M2 增加一个窄规则 `coverage_preservation`：
+  - 联合类别覆盖足够；
+  - 没有单个客户端覆盖 `>=0.95` 的全类别 generalist；
+  - 平均客户端类别覆盖低于 `0.55`；
+  - 触发后只把 `overall_weights` 和 `morphology_weights` 向均匀 prior 收缩，保护 trunk；
+  - 不改 class routing，仍保留按类别专家负责；
+  - 当 gate 足够高时关闭 `specialist_anchor`，避免整体模型被锚到一个局部类别专家。
+
+结果：
+
+- 18 个 raw case 中 W/T/L=`5/12/1`，平均 `+0.00468`。
+- 正向变化主要来自 `swin_tiny/organsmnist_224`：
+  - `c5_b0`：`0.1096 -> 0.1244`。
+  - `c7_b0`：`0.1340 -> 0.1521`。
+  - `c7_b0.01`：`0.0785 -> 0.1267`。
+- `convnext/organs/c3_b0` 小幅提升：`0.1146 -> 0.1171`。
+- 唯一负例很小：`convnext/organs/c5_b0.01`：`0.07987 -> 0.07976`。
+
+解释：
+
+- 这个结果说明“互补覆盖”观察是有用的，但收益不是来自更强专家，而是来自削弱 trunk 的单专家偏置。
+- 这条规则目前只在 `organs` 小范围验证，不足以进入正式汇总。下一步必须跑医学 small 全量，确认它不会伤害 blood/derma/organc/chaosheng。
+
+全量验证早停结论：
+
+- 医学 small full 验证目录：`outputs/codex_coverage_preservation_medical_full_20260615`。
+- 跑到 60 个 raw case 时已经出现明确负优化，对 generalist guard full：W/T/L=`9/32/19`，平均 `-0.01360`。
+- 典型负例：
+  - `dermamnist_224/convnext/c3_b0.01`：`0.6688 -> 0.1097`。
+  - `organcmnist_224/resnet/c3_b0.01`：`0.3530 -> 0.1889`。
+  - `organsmnist_224/resnet/c3_b0`：`0.2660 -> 0.1859`。
+- 结论：`coverage_preservation` 只在 `organs/convnext+swin_tiny` 局部有效，扩展到所有医学 small 后会误伤 derma/organc/resnet 等场景，不满足“医学统一方法”的要求。
+- 处理：已停止该 full 任务，删除 `methods/my_merge.py` 中的 `coverage_preservation` 代码，不进入正式方法，也不更新 `汇总表.md`。
+
+## 观测 14：数据蒸馏方向应优先做客户端原型摘要，不做服务端代理数据蒸馏
+
+用户提示可以查找数据蒸馏方向。按隐私约束重新梳理：
+
+- FedMD 和 FedDF 属于蒸馏式模型融合：服务端或各方通过公共/代理数据对客户端输出做蒸馏。这适合解释“模型融合不等于参数平均”，但如果在本项目里用医学验证集或上传图像做代理数据，会破坏“原始数据不上传服务端”的叙事。
+- FedDTG/FedFTG 这类 data-free distillation 用生成器合成样本再蒸馏。它避免直接上传原图，但会引入生成器训练、合成医学图像隐私争议和额外训练流程，和当前后处理式模型融合方法距离较远。
+- FedD3/dataset distillation 让客户端上传蒸馏样本。医学场景下蒸馏样本仍可能携带病灶分布和身份线索，不适合作为主线。
+- FedProto/FedProtoKD 这条线更适合：客户端只上传每类 feature prototype/count/coverage。它不是原图，也不是服务端验证集，可用于修正 class routing 或分类头保真。
+
+暂定措施：
+
+- 不恢复旧版服务端验证集 `prototype_head`。
+- 后续如做蒸馏，只做“客户端上传类别原型摘要”的轻量形式：
+  - 每个客户端本地抽每类 pooled feature prototype 和 count；
+  - 服务端只聚合摘要；
+  - 用摘要约束 classifier head 或 class routing；
+  - 没有摘要时完全关闭。
+- 该方向必须单独探针；如果不能稳定提升，就不进入正式方法。
+
+参考：
+
+- FedProto: https://arxiv.org/abs/2105.00243
+- FedDF: https://arxiv.org/abs/2006.07242
+- FedMD: https://arxiv.org/abs/1910.03581
+- FedDTG: https://arxiv.org/abs/2201.03169
+- FedD3: https://arxiv.org/abs/2208.11311
+- FedProtoKD: https://arxiv.org/abs/2508.19009

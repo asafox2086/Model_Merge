@@ -2896,3 +2896,41 @@ smoke：
   - specialist anchor 在该场景关闭。
 - CPU 探针没有完成 test eval，但 merge trace 已显示 `organs/convnext/c3_b0` 上 anchor 从 `0.16` 关为 `0`，fusion weights 集中度下降，class routing 保留。
 - 等当前 `codex_medical_full_generalist_guard_20260615` GPU full 完成后，再跑该门控的 GPU 小探针；正优化才进入主代码。
+
+## 2026-06-15 互补覆盖门控小探针
+
+已在 `methods/my_merge.py` 临时加入 `coverage_preservation`，属于 M2 内部的冲突处理规则：
+
+- 触发条件：联合类别覆盖足够、无全类别 generalist、平均客户端类别覆盖低。
+- 操作：只把 `overall_weights` 和 `morphology_weights` 往均匀 prior 收缩，保护 trunk；不改 class routing。
+- 当 gate 足够高时关闭 `specialist_anchor`，避免整体模型锚到单个局部类别专家。
+
+小探针：
+
+- 输出：`outputs/codex_coverage_preservation_probe_20260615`。
+- 范围：`organsmnist_224` 的 `convnext` 和 `swin_tiny`，18 个 raw case。
+- 对 generalist guard full：W/T/L=`5/12/1`，平均 `+0.00468`。
+- 主要正例：
+  - `swin_tiny/organs/c5_b0`：`0.1096 -> 0.1244`。
+  - `swin_tiny/organs/c7_b0`：`0.1340 -> 0.1521`。
+  - `swin_tiny/organs/c7_b0.01`：`0.0785 -> 0.1267`。
+- 唯一负例很小：`convnext/organs/c5_b0.01`：`0.07987 -> 0.07976`。
+
+结论：这个观察不是负优化，但收益仍局部。下一步必须跑医学 small 全量，确认不会伤害 blood/derma/organc/chaosheng。若全量变差，删除 `coverage_preservation`。
+
+医学 small full 早停结论：
+
+- 验证目录：`outputs/codex_coverage_preservation_medical_full_20260615`。
+- 跑到 60 个 raw case 时已经明显负优化，对 generalist guard full：W/T/L=`9/32/19`，平均 `-0.01360`。
+- 典型负例：
+  - `dermamnist_224/convnext/c3_b0.01`：`0.6688 -> 0.1097`。
+  - `organcmnist_224/resnet/c3_b0.01`：`0.3530 -> 0.1889`。
+  - `organsmnist_224/resnet/c3_b0`：`0.2660 -> 0.1859`。
+- 已停止该 full 任务，删除 `methods/my_merge.py` 中的 `coverage_preservation` 代码。
+- 不进入正式方法，不更新 `My_merge_ret/汇总表.md`。
+
+数据蒸馏方向也已重新评估：
+
+- 不做 FedDF/FedMD 式服务端代理数据蒸馏，因为需要公共/代理数据，医学场景容易被质疑变相拿服务端数据。
+- 不优先做生成式 data-free distillation 或 dataset distillation，因为会引入生成器/蒸馏样本和医学隐私争议。
+- 可行方向是 FedProto/FedProtoKD 式客户端类别原型摘要：客户端只上传 pooled feature prototype/count/coverage，服务端用于 class routing 或 classifier head 保真；没有摘要则关闭。
