@@ -2811,3 +2811,15 @@ smoke：
 - `bloodmnist_224/convnext/c7_b0.1`：不触发，维持 `0.1619`，避免宽松规则的 `0.0836` 负优化。
 - `chaoshengmnist_224/convnext/c7_b0.01`：不触发，维持 `0.1617`，避免宽松规则的 `0.1087` 负优化。
 - 下一步跑 `convnext` 全量 45 个 raw case，确认该规则是否有整体收益。
+
+`convnext` 全量验证完成：
+
+- 输出：`outputs/codex_checkpoint_consistency_convnext033fs_20260615/my_merge_ablation_grid/full/small_convnext__my_merge`。
+- 45/45 个 raw case 全部完成。
+- 对当前正式 full：raw 平均 `+0.01036`，W/T/L=`1/44/0`。
+- Client Average：平均 `+0.01036`，W/T/L=`1/14/0`。
+- 唯一 accuracy 变化是 `dermamnist_224/convnext/c5_b0.1` 从 `0.2025` 修到 `0.6688`。
+- 触发了 3 个 derma guard；除 `c5_b0.1` 外，另外两个 derma c7 格子原本已是 `0.6688`，触发后不改变 accuracy。
+- 没有 blood、chaosheng、organc、organs 负例。
+
+结论：checkpoint 一致性保真约束可以保留为 M2 的局部灾难防护，但它只解决 M1 权重被参数离群客户端劫持的问题，不足以把 Client Average 推到 90%。下一步继续分析剩余失败格子。

@@ -215,3 +215,18 @@
 下一步：
 
 - 在 `convnext` 全量 45 个 raw case 上验证该窄规则是否只修复塌点而不引入新的系统性负优化。
+
+全量验证结果：
+
+- 输出：`outputs/codex_checkpoint_consistency_convnext033fs_20260615/my_merge_ablation_grid/full/small_convnext__my_merge`。
+- `convnext` 完成 45/45 个 raw case。
+- 对当前正式 full：raw 平均 `+0.01036`，W/T/L=`1/44/0`。
+- Client Average：平均 `+0.01036`，W/T/L=`1/14/0`。
+- 唯一变化：`dermamnist_224/convnext/c5_b0.1` 从 `0.2025` 到 `0.6688`。
+- 触发了 3 个 derma guard，但其中 `c7_b0` 和 `c7_b0.01` 原本已经是 `0.6688`，触发后没有改变 accuracy；没有 blood、chaosheng、organ 负例。
+
+结论：
+
+- 该规则是稳定正向的局部修复，可以保留到 M2。
+- 它解决的是“医学权重被参数离群客户端劫持”的灾难塌点，不是通用提分模块。
+- 由于 `convnext` 只修复 1 个 Client Average，距离 `90%` Client Average 目标仍很远；下一步应继续观察剩余失败格子，尤其是 `blood/organc/organs` 中不是 M1 劫持导致的低分。

@@ -43,7 +43,7 @@ NATURAL_CONTROL_DATASETS = {
 }
 
 M1 = {"image_space", "diagnostic_evidence", "diagnostic_client_information", "medical_weighted_fusion", "class_routing"}
-M2 = {"delta_agreement_weighting", "conflict_stabilization", "specialist_anchor"}
+M2 = {"checkpoint_consistency", "delta_agreement_weighting", "conflict_stabilization", "specialist_anchor"}
 M3 = set()
 OPTIONAL_COMPONENTS = {"statistical_alignment"}
 
@@ -77,6 +77,11 @@ def _disabled_components(cfg):
             disabled.add("class_routing")
         elif name in {"no_fusion_selection", "no_medical_fusion_selection", "no_m2"}:
             disabled.update(M2)
+        elif name in {
+            "no_checkpoint_consistency",
+            "no_consistency_guard",
+        }:
+            disabled.add("checkpoint_consistency")
         elif name in {
             "no_conflict_stabilization",
             "no_sign_delta",
@@ -118,6 +123,7 @@ def _ablation_config(cfg):
         "diagnostic_client_information",
         "medical_weighted_fusion",
         "class_routing",
+        "checkpoint_consistency",
         "delta_agreement_weighting",
         "conflict_stabilization",
         "specialist_anchor",
@@ -604,6 +610,106 @@ def _consensus(overall, morph, base):
     return _normalize(0.5 * torch.as_tensor(overall) + 0.5 * torch.as_tensor(morph), base)
 
 
+def _checkpoint_consistency_scores(state_dicts, reference, meta, num_classes):
+    num_clients = len(state_dicts)
+    if num_clients <= 2 or reference is None:
+        return torch.ones(num_clients, dtype=torch.float32), {"enabled": False}
+
+    pair_sums = torch.zeros(num_clients, num_clients, dtype=torch.float64)
+    used_tensors, used_params = 0, 0
+    for key, ref in reference.items():
+        if key not in state_dicts[0]:
+            continue
+        first = state_dicts[0][key]
+        if (
+            not torch.is_floating_point(first)
+            or not torch.is_floating_point(ref)
+            or tuple(first.shape) != tuple(ref.shape)
+            or _is_classifier_tensor(key, first, num_classes)
+            or _param_group(key, meta) == "early"
+        ):
+            continue
+        values = [sd[key].detach().float() - ref.detach().float() for sd in state_dicts]
+        for i in range(num_clients):
+            for j in range(i + 1, num_clients):
+                pair_sums[i, j] += float((values[i] - values[j]).square().sum().item())
+        used_tensors += 1
+        used_params += int(first.numel())
+
+    if used_tensors == 0:
+        return torch.ones(num_clients, dtype=torch.float32), {"enabled": False}
+
+    pair_dist = pair_sums + pair_sums.t()
+    mean_dist = torch.sqrt(pair_dist.sum(dim=1) / float(max(1, num_clients - 1))).float()
+    median = torch.clamp(mean_dist.median(), min=EPS)
+    consistency = torch.exp(-torch.clamp(mean_dist / median - 1.0, min=0.0)).clamp(0.05, 1.0)
+    trace = {
+        "enabled": True,
+        "used_tensors": int(used_tensors),
+        "used_params": int(used_params),
+        "mean_trunk_distance": [float(x) for x in mean_dist.tolist()],
+        "consistency_scores": [float(x) for x in consistency.tolist()],
+    }
+    return consistency, trace
+
+
+def _apply_checkpoint_consistency(info, consistency, cfg):
+    base = torch.as_tensor(info["base_weights"], dtype=torch.float32)
+    consistency = torch.as_tensor(consistency, dtype=torch.float32)
+    if consistency.numel() != base.numel() or not _enabled(cfg, "checkpoint_consistency"):
+        return info, {"applied": False}
+
+    pre_consensus = _consensus(info["overall_weights"], info["morphology_weights"], base)
+    concentration = float(torch.clamp(pre_consensus.max() - pre_consensus.mean(), min=0.0, max=1.0).item())
+    outlier = float(torch.clamp(1.0 - consistency.min(), min=0.0, max=1.0).item())
+    top_idx = int(torch.argmax(pre_consensus).item())
+    outlier_idx = int(torch.argmin(consistency).item())
+    top_is_outlier = top_idx == outlier_idx
+    gate = 1.0 if concentration >= 0.33 and outlier >= 0.45 and top_is_outlier else 0.0
+    if gate <= 0.0:
+        return info, {
+            "applied": False,
+            "gate": 0.0,
+            "outlier_strength": outlier,
+            "weight_concentration": concentration,
+            "top_weight_client": top_idx,
+            "outlier_client": outlier_idx,
+            "top_is_outlier": bool(top_is_outlier),
+        }
+
+    power = 2.0
+
+    def adjust(weights):
+        weights = torch.as_tensor(weights, dtype=torch.float32)
+        guarded = _normalize(weights * consistency.pow(power), weights)
+        return _normalize((1.0 - gate) * weights + gate * guarded, weights)
+
+    adjusted = dict(info)
+    adjusted["overall_weights"] = adjust(info["overall_weights"])
+    adjusted["morphology_weights"] = adjust(info["morphology_weights"])
+    adjusted["class_weights"] = torch.stack([adjust(row) for row in info["class_weights"]], dim=0)
+    rows = []
+    for idx, row in enumerate(info["client_diagnostic_information"]):
+        updated = dict(row)
+        updated["overall_weight"] = float(adjusted["overall_weights"][idx])
+        updated["morphology_weight"] = float(adjusted["morphology_weights"][idx])
+        updated["checkpoint_consistency"] = float(consistency[idx])
+        rows.append(updated)
+    adjusted["client_diagnostic_information"] = rows
+    return adjusted, {
+        "applied": True,
+        "gate": float(gate),
+        "power": float(power),
+        "outlier_strength": outlier,
+        "weight_concentration": concentration,
+        "top_weight_client": top_idx,
+        "outlier_client": outlier_idx,
+        "top_is_outlier": bool(top_is_outlier),
+        "pre_consensus": [float(x) for x in pre_consensus.tolist()],
+        "post_consensus": [float(x) for x in _consensus(adjusted["overall_weights"], adjusted["morphology_weights"], base).tolist()],
+    }
+
+
 def _layer_weights(group, base, overall, morph, consensus):
     if group == "early":
         return _normalize(0.70 * base + 0.30 * morph, base)
@@ -923,6 +1029,16 @@ def merge_my_merge(state_dicts, weights, meta=None, checkpoints=None, cfg=None):
     reference = param_names = None
     if _enabled(cfg, "medical_weighted_fusion") or _enabled(cfg, "conflict_stabilization"):
         reference, param_names = build_reference_bundle(meta, device="cpu")
+    consistency_trace = {"enabled": False}
+    consistency_guard_trace = {"applied": False}
+    if _enabled(cfg, "checkpoint_consistency") and reference is not None:
+        consistency_scores, consistency_trace = _checkpoint_consistency_scores(
+            state_dicts,
+            reference,
+            meta,
+            int(meta["num_classes"]),
+        )
+        info, consistency_guard_trace = _apply_checkpoint_consistency(info, consistency_scores, cfg)
     merged, fusion = _module2_module3(state_dicts, base_merged, meta, cfg, info, reference, param_names)
 
     implementation = "medical_evidence_three_module_posthoc_merge_v12"
@@ -947,6 +1063,8 @@ def merge_my_merge(state_dicts, weights, meta=None, checkpoints=None, cfg=None):
         "fusion_weights": fusion["fusion_weights"],
         "group_weights": fusion["group_weights"],
         "routing_summary": fusion["routing_summary"],
+        "checkpoint_consistency": consistency_trace,
+        "checkpoint_consistency_guard": consistency_guard_trace,
         "evidence_reliability": fusion["evidence_reliability"],
         "class_morphology_separation": fusion["class_morphology_separation"],
     }
