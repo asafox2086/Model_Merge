@@ -665,7 +665,10 @@ def _apply_checkpoint_consistency(info, consistency, cfg):
     top_idx = int(torch.argmax(pre_consensus).item())
     outlier_idx = int(torch.argmin(consistency).item())
     top_is_outlier = top_idx == outlier_idx
-    gate = 1.0 if concentration >= 0.33 and outlier >= 0.45 and top_is_outlier else 0.0
+    top_row = info["client_diagnostic_information"][top_idx] if top_idx < len(info["client_diagnostic_information"]) else {}
+    top_class_coverage = float(top_row.get("class_coverage", 0.0))
+    top_is_generalist = top_class_coverage >= 0.95
+    gate = 1.0 if concentration >= 0.33 and outlier >= 0.45 and top_is_outlier and top_is_generalist else 0.0
     if gate <= 0.0:
         return info, {
             "applied": False,
@@ -675,6 +678,8 @@ def _apply_checkpoint_consistency(info, consistency, cfg):
             "top_weight_client": top_idx,
             "outlier_client": outlier_idx,
             "top_is_outlier": bool(top_is_outlier),
+            "top_class_coverage": top_class_coverage,
+            "top_is_generalist": bool(top_is_generalist),
         }
 
     power = 2.0
@@ -705,6 +710,8 @@ def _apply_checkpoint_consistency(info, consistency, cfg):
         "top_weight_client": top_idx,
         "outlier_client": outlier_idx,
         "top_is_outlier": bool(top_is_outlier),
+        "top_class_coverage": top_class_coverage,
+        "top_is_generalist": bool(top_is_generalist),
         "pre_consensus": [float(x) for x in pre_consensus.tolist()],
         "post_consensus": [float(x) for x in _consensus(adjusted["overall_weights"], adjusted["morphology_weights"], base).tolist()],
     }

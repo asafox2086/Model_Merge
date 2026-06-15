@@ -230,3 +230,117 @@
 - 该规则是稳定正向的局部修复，可以保留到 M2。
 - 它解决的是“医学权重被参数离群客户端劫持”的灾难塌点，不是通用提分模块。
 - 由于 `convnext` 只修复 1 个 Client Average，距离 `90%` Client Average 目标仍很远；下一步应继续观察剩余失败格子，尤其是 `blood/organc/organs` 中不是 M1 劫持导致的低分。
+
+## 观测 10：checkpoint 一致性不能削弱少数类专家
+
+对象：医学 full 全量探针 `outputs/codex_medical_full_ccguard_20260615`。
+
+观测：
+
+- `convnext` 上的窄规则看起来稳定，但医学全量显示它仍会误伤 `resnet/vit_t` 的 derma。
+- 负例：
+  - `dermamnist_224/resnet/c7_b0`：`0.6688 -> 0.1307`。
+  - `dermamnist_224/resnet/c7_b0.01`：`0.6688 -> 0.1067`。
+  - `dermamnist_224/vit_t/c5_b0.01`：`0.5516 -> 0.2893`。
+  - `dermamnist_224/vit_t/c7_b0.01`：`0.6688 -> 0.4190`。
+- 对这些负例看 trace 后发现：被一致性削弱的最高权重客户端不是全类别客户端，而是少数类/局部专家：
+  - `resnet/c7_b0` 的 top client 只覆盖 `1/7` 类。
+  - `resnet/c7_b0.01` 和 `vit_t/c7_b0.01` 的 top client 覆盖 `3/7` 类。
+  - `vit_t/c5_b0.01` 的 top client 覆盖 `2/7` 类。
+- 正例 `convnext/derma/c5_b0.1` 的 top client 覆盖 `7/7` 类，是一个全类别 generalist；它被 M1 赋予 `56.6%` 权重但在当前统一评估口径下失效。
+
+结论：
+
+- checkpoint 一致性只能拦截“全类别 generalist 离群劫持”。
+- 对少数类专家，参数离群可能正是类别专长带来的表示差异，不能削弱；否则会破坏类别覆盖。
+
+措施：
+
+- 将 M2 的 checkpoint guard 再收窄：只有当 top client 同时满足
+  - 是最高 M1 医学权重客户端；
+  - 是 checkpoint 一致性最低的参数离群客户端；
+  - 医学权重集中度 `>= 0.33`；
+  - 离群强度 `>= 0.45`；
+  - 类别覆盖率 `>= 0.95`，即全类别 generalist；
+  才触发一致性削弱。
+- 关键 6-case 探针结果：
+  - `convnext/derma/c5_b0.1`：仍触发，`0.6688`。
+  - `resnet/derma/c7_b0`：不触发，恢复 `0.6688`。
+  - `resnet/derma/c7_b0.01`：不触发，恢复 `0.6688`。
+  - `vit_t/derma/c5_b0.01`：不触发，恢复 `0.5521`。
+  - `vit_t/derma/c5_b0.1`：仍触发，`0.3701`。
+  - `vit_t/derma/c7_b0.01`：不触发，恢复 `0.6688`。
+- 医学 full 全量已完成：`outputs/codex_medical_full_generalist_guard_20260615`。
+- 对上一版正式 full：180 个 small raw case 中 W/T/L=`2/178/0`，平均 `+0.00355`。
+- 唯一改变的两个格子都是正向修复：
+  - `dermamnist_224/convnext/c5_b0.1`：`0.2025 -> 0.6688`。
+  - `dermamnist_224/vit_t/c5_b0.1`：`0.1980 -> 0.3701`。
+- `My_merge_ret/汇总表.md` 已由 `scripts/generate_ablation_combined_results_table.py` 自动更新；检查结果：`full` 行无 `-` 占位符，最高/次高标记仍存在。
+- Client Average 统计：Small 共 60 个格子，`my_merge full` 最高或并列最高 24 个、次高 14 个。说明该修复稳定但只解决局部灾难点，距离“90% Client Average 最高”仍很远。
+
+## 观测 11：数据蒸馏方向应采用“客户端原型摘要”，不是服务端验证集 prototype head
+
+论文与方法线索：
+
+- FedProto（Federated Prototype Learning, 2021/AAAI 2022）指出，在非 IID 客户端中，直接在梯度/参数空间聚合容易因为局部数据分布不同而错位；可以改为通信每类抽象 prototype，用类别原型作为客户端知识载体。
+- FedDF（Ensemble Distillation for Robust Model Fusion in Federated Learning, 2020）把“模型融合”写成蒸馏问题：服务端用客户端模型集成输出训练中心模型。但它需要 proxy/unlabeled data；本项目如果让服务端拿医学原始图像或验证集，就会破坏隐私叙事。
+- FedFTG/FedDTG 等 data-free distillation 方向用生成器合成样本，再做蒸馏；这会引入额外训练、生成模型和合成医学图像隐私争议，和当前“后处理式模型融合”框架差异太大，暂不作为主线。
+- FedD3 类 dataset distillation 让客户端上传蒸馏样本，但医学场景下“合成图像是否泄露病灶模式”难以解释；更适合本项目的是上传低维或 pooled feature 原型，而不是图像本身。
+- 参考链接：
+  - FedProto: https://arxiv.org/abs/2105.00243
+  - FedDF: https://arxiv.org/abs/2006.07242
+  - FedMD: https://arxiv.org/abs/1910.03581
+  - TIES-Merging: https://arxiv.org/abs/2306.01708
+
+本仓库已有事实：
+
+- 现在正式 M1 只使用全局 `feature_summary`：每类五维医学形态特征均值、计数、全局均值和方差。
+- 仓库里曾有 `outputs/codex_proto_summary_smoke_20260614/prototype_summaries`，格式是每类 pooled feature prototype，不含原始图像。
+- 旧版 `prototype_head` 曾经有收益，但它依赖服务端验证集抽特征，因此不符合现在“原始数据最好不能上传到服务端”的约束。
+- 现有 `codex_proto_summary_smoke_20260614` 只覆盖 `chaoshengmnist_224/vit_t` 9 个格子；其中多数低于当前正式 full，说明旧 smoke 不能直接作为最终方案，只能作为“客户端原型摘要格式可用”的证据。
+
+拟采取措施：
+
+- 不恢复旧的服务端验证集 prototype head。
+- 设计可选的客户端本地原型摘要：
+  - 每个客户端本地对自己数据抽取 pooled feature 或医学五维特征；
+  - 上传每类 prototype、count、coverage；
+  - 服务端只用这些摘要修正 M1 的 class routing 或分类头保真；
+  - 没有 prototype summary 时默认完全关闭。
+- 先做 small transformer 的少量失败格子探针，原因是旧结果显示 `vit_t/swin_tiny` 更容易出现分类头/表示错位；CNN 不先接入，避免把一个 transformer 修复模块误扩散到所有模型。
+- 如果 prototype summary 修复是负优化，直接删除，不进入正式方法。
+
+## 观测 12：最差 Client Average 不只来自超声，而是互补类别客户端被整体权重压偏
+
+对象：当前正式汇总表 `My_merge_ret/汇总表.md` 和 full trace。
+
+观测：
+
+- 按 Client Average 差距排序，当前 my_merge 距离最优最差的格子主要是：
+  - `convnext/organsmnist_224/c3_avg`：my_merge `0.0855`，最优 `0.2354`。
+  - `swin_tiny/organsmnist_224/c3_avg/c5_avg/c7_avg` 也明显落后。
+  - 其次是 VLM/organs、blood 的若干格子。
+- 这说明当前主要短板不只是超声，而是器官类数据的类别互补分布。
+- 具体看 `organsmnist_224/convnext/c3_b0`：
+  - `avg_only` 为 `0.2354`，full 只有 `0.1146`。
+  - 三个客户端分别覆盖互补类别，覆盖率约 `[0.36, 0.36, 0.27]`，没有全类别专家。
+  - M1/M2 后整体权重变成约 `[0.43, 0.29, 0.28]`，并触发 `specialist_anchor=0.16` 指向 client 0。
+  - 这会让 trunk 和整体表示偏向一个局部类别专家，破坏其他互补类别。
+
+结论：
+
+- 对“互补类别客户端、没有全类别专家”的场景，医学类别路由仍有意义，但整体 trunk 不应被一个局部专家主导。
+- 这个问题和 derma 的 generalist 离群劫持不同：derma 需要削弱全类别离群 generalist；organs 需要保护互补类别覆盖。
+
+拟采取措施：
+
+- 设计 M2 的互补覆盖保守门控：
+  - 当全部客户端联合覆盖全类别，但每个客户端都是低覆盖局部专家，且没有 `coverage>=0.95` 的全类别专家时触发。
+  - 只把 overall/morphology 的整体融合权重拉回更均匀，保护 trunk。
+  - classifier class routing 只轻微平滑，仍保留每类由对应客户端负责的医学逻辑。
+  - 关闭该场景下的 specialist anchor，避免把整体模型锚到单个局部专家。
+- 临时 worktree merge trace 已确认在 `organsmnist_224/convnext/c3_b0` 上触发：
+  - specialist anchor 从 `0.16` 变为 `0`；
+  - fusion weights 从约 `[0.43,0.29,0.28]` 降低集中到约 `[0.41,0.30,0.29]`；
+  - class routing 仍保留。
+- 该措施还没有 test accuracy 结论；等当前 generalist guard full 空出 GPU 后，先跑 `organsmnist_224/convnext` 和 `swin_tiny` 小探针。如果负优化，删除。
