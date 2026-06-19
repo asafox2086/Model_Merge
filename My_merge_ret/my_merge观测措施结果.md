@@ -1,6 +1,6 @@
 # my_merge 观测-措施-结果记录
 
-更新时间：2026-06-15
+更新时间：2026-06-19
 
 本文放在 `汇总表.md` 同目录，用于记录当前方法优化过程中的关键观测、采取措施和实验结果。这里不把未完成探针写成最终结论。
 
@@ -1327,3 +1327,72 @@ ResNet 关键修复：
 - v14 相比观测 23 的 v13 是明确正向：均值提高 `+0.002140`，并修掉了最显眼的 `c5` specialist 回撤。
 - 相比 20260617 稳定版也小幅正向：均值提高 `+0.001410`，但 W/T/L 并不压倒，说明它更像“机制更完整且均值略优”的主线候选，不是每个 case 都更好。
 - 剩余风险集中在 `organs/swin_tiny/c5_b0`、`organc/resnet/c3` 和 `organs/resnet/c5_b0.01`；如果继续冲榜，应优先观测这些 case 的 conflict trace，而不是再加模型名或数据集特判。
+
+## 观测 24：v16e 用 head-compatible sparse-middle 修复 v16 的冲突残差
+
+背景：
+
+- v15 的 anatomy evidence graph 和 v16 早期简化版都不稳定；v16c 全量 72 格 mean 为 `0.185865`，低于 v14 的 `0.188664`。
+- v16c 最大新塌点是 `organc/vit_t/c7_b0.01`：`0.3177 -> 0.1282`，trace 显示低类别覆盖、高 sign/direction 冲突、norm dispersion 不极端，适合 middle-band task-vector delta。
+- 直接打开全模型 sparse-middle 后，`organc/vit_t/c7_b0.01` 恢复到 `0.3173`，但 `organc/swin_tiny/c5_b0` 从 `0.2233` 掉到 `0.0895`。该坏点的 head conflict pressure 为 `0.484`，说明分类头冲突高，不应把 sparse-middle 扩到 classifier/early trunk。
+
+措施：
+
+- 保留 v16 的简洁两段结构：M1 医学证据加权，M2 checkpoint 几何冲突残差。
+- M2 新增 `head-compatible sparse-middle`：
+  - 只在 `num_classes >= 10`、平均客户端类别覆盖 `<= 0.30`、sign conflict `>= 0.52`、direction conflict `>= 0.488`、norm dispersion `<= 0.55` 时考虑 sparse-middle。
+  - 如果 head conflict pressure `> 0.35`，要求 sign conflict 进一步达到 `>= 0.64`，否则退回 representation-only sign delta。
+  - 规则只使用客户端 checkpoint、参考模型 task-vector、客户端上传的类别覆盖/形态摘要；服务端不读取原始医学图像，也不使用服务端验证集挑候选。
+- 该规则没有 `if vit/resnet/swin/convnext` 之类模型名分支；`grep -nEi "resnet|vit|swin|convnext|mobilenet|densenet|efficientnet" methods/my_merge.py` 无命中。
+
+文献依据：
+
+- [Model soups](https://arxiv.org/abs/2203.05482) 说明同构 fine-tuned checkpoints 的 weight averaging 可在不增加推理成本的情况下提升泛化；本方法仍以 weight-space fusion 为主线。
+- [TIES-Merging](https://arxiv.org/abs/2306.01708) 指出 sign disagreement 是模型合并干扰的重要来源；本方法用 sign conflict/direction conflict 作为 delta gate。
+- [DARE](https://arxiv.org/abs/2311.03099) 说明 task-vector 中大量 delta 存在冗余，可通过筛选/重标定缓解干扰；本方法使用 middle-band delta 而不是直接全量叠加。
+- [Federated Learning for Medical Image Analysis: A Survey](https://arxiv.org/abs/2306.05980) 总结了医学影像跨机构协作中的隐私约束；本方法沿用 raw data 不出站点、服务端只处理 checkpoint 和统计摘要的设定。
+
+结果：
+
+- 输出：`outputs/codex_simple_v16e_swin_vit_probe_20260619/full`。
+- 范围：`organcmnist_224 + organsmnist_224`，`resnet/convnext/vit_t/swin_tiny`，共 72 个 raw case。
+- 状态：72/72 valid eval。
+- v16e mean：`0.188738`。
+
+对比：
+
+| compare | mean diff | median diff | W/T/L |
+|---|---:|---:|---:|
+| v16e vs v14 `outputs/codex_coherent_anchor_full_20260619/full` | +0.000075 | +0.000000 | 27/21/24 |
+| v16e vs v16d `outputs/codex_simple_v16d_organ_full_20260619/full` | +0.002111 | +0.000000 | 5/67/0 |
+| v16e vs v16c `outputs/codex_simple_v16c_organ_full_20260619/full` | +0.002873 | +0.000000 | 5/64/3 |
+
+分模型对 v14：
+
+| model | mean diff | W/T/L |
+|---|---:|---:|
+| `convnext` | +0.002058 | 3/12/3 |
+| `resnet` | -0.006819 | 6/0/12 |
+| `swin_tiny` | +0.002490 | 6/9/3 |
+| `vit_t` | +0.002570 | 12/0/6 |
+
+关键 case：
+
+| case | v16c | v16d | v16e | v14 |
+|---|---:|---:|---:|---:|
+| `organc/vit_t/c7_b0.01` | 0.1282 | 0.3173 | 0.3173 | 0.3177 |
+| `organc/swin_tiny/c5_b0` | 0.2233 | 0.0895 | 0.2233 | 0.2233 |
+| `organs/swin_tiny/c7_b0` | 0.1835 | 0.1736 | 0.1835 | 0.1621 |
+| `organs/vit_t/c7_b0` | 0.1442 | 0.1532 | 0.1532 | 0.1526 |
+
+汇总表：
+
+- 已用脚本更新 `My_merge_ret/reports/all_results_my_merge.md` 和 `My_merge_ret/汇总表.md`：
+  - `scripts/generate_my_merge_master_table.py --output-root outputs/codex_simple_v16e_swin_vit_probe_20260619 --dest My_merge_ret/reports/all_results_my_merge.md`
+  - `scripts/generate_combined_results_table.py --base result/all_results.md --mine My_merge_ret/reports/all_results_my_merge.md --dest My_merge_ret/汇总表.md`
+- 由于本轮只跑 organC/organS，未跑的 blood/derma/chaosheng/VLM 保持 `-`，避免和旧结果混表。
+
+结论：
+
+- v16e 是当前更适合讲故事的主线：隐私安全、医学类别覆盖驱动、checkpoint-only 冲突控制、无模型名特判。
+- 数值上 v16e 已小幅超过 v14，并且修复 v16d 的最大新增塌点；但优势很薄，主要残余风险在 `resnet` 的 broad-coverage coherent top delta 场景。

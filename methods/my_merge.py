@@ -683,6 +683,10 @@ def _classifier_routing_policy(meta, num_classes, cfg, classifier_delta_norm=0.0
     damping = _smooth01((pressure - 0.42) / 0.18)
     class_route_strength = 0.45 * (1.0 - damping)
     policy = "conflict_damped_class_routing" if damping > 0 else "class_routing"
+    parts = {
+        **parts,
+        "damping": float(damping),
+    }
     return policy, mean_coverage, class_route_strength, pressure, parts
 
 
@@ -1373,38 +1377,204 @@ def _statistical_alignment(state_dicts, state, weights):
     }
 
 
+def _anatomy_conflict_weight(conflict_stats, mean_coverage, reliability, num_classes):
+    if int(num_classes) < 2:
+        return 0.0, {
+            "sign_gate": 0.0,
+            "direction_gate": 0.0,
+            "sparse_coverage_gate": 0.0,
+            "support_gate": 0.0,
+        }
+    sign_conflict = float(conflict_stats.get("sign_conflict", 0.0))
+    direction_conflict = float(conflict_stats.get("direction_conflict", 0.0))
+    conflict_score = float(conflict_stats.get("conflict_score", 0.0))
+    sign_gate = _smooth01((sign_conflict - 0.48) / 0.14)
+    direction_gate = _smooth01((direction_conflict - 0.46) / 0.12)
+    sparse_gate = _smooth01((0.65 - float(mean_coverage)) / 0.50)
+    support_gate = max(sparse_gate, 0.40 * sign_gate)
+    conflict_gate = 0.65 * sign_gate + 0.35 * direction_gate
+    reliability = max(0.0, min(1.0, float(reliability)))
+    base_weight = _delta_blend_weight(conflict_stats, reliability, num_classes)
+    sign_support = 0.30 + 0.70 * sign_gate
+    weight = min(0.18, base_weight * support_gate * sign_support)
+    return max(0.0, weight), {
+        "sign_gate": float(sign_gate),
+        "direction_gate": float(direction_gate),
+        "sparse_coverage_gate": float(sparse_gate),
+        "support_gate": float(support_gate),
+        "conflict_gate": float(conflict_gate),
+        "base_delta_weight": float(base_weight),
+        "sign_support": float(sign_support),
+    }
+
+
+def _coherent_anatomy_delta_gate(conflict_stats, representation_pressure, head_pressure, mean_coverage, num_classes):
+    class_gate = max(0.0, min(1.0, float(num_classes) / 10.0))
+    coverage_gate = _smooth01((float(mean_coverage) - 0.55) / 0.20)
+    head_gate = _smooth01((0.12 - float(head_pressure)) / 0.12)
+    representation_gate = _smooth01((0.24 - float(representation_pressure)) / 0.24)
+    conflict_gate = _smooth01((float(conflict_stats.get("conflict_score", 0.0)) - 0.38) / 0.12)
+    gate = class_gate * coverage_gate * head_gate * representation_gate * conflict_gate
+    return max(0.0, min(1.0, gate)), {
+        "class_gate": float(class_gate),
+        "coverage_gate": float(coverage_gate),
+        "head_gate": float(head_gate),
+        "representation_gate": float(representation_gate),
+        "conflict_gate": float(conflict_gate),
+    }
+
+
+def _use_sparse_middle_delta(conflict_stats, mean_coverage, num_classes, head_pressure=0.0):
+    sign_conflict = float(conflict_stats.get("sign_conflict", 0.0))
+    direction_conflict = float(conflict_stats.get("direction_conflict", 0.0))
+    norm_dispersion = float(conflict_stats.get("norm_dispersion", 1.0))
+    head_pressure = float(head_pressure)
+    head_compatible = head_pressure <= 0.35 or sign_conflict >= 0.64
+    use_middle = bool(
+        int(num_classes) >= 10
+        and float(mean_coverage) <= 0.30
+        and sign_conflict >= 0.52
+        and direction_conflict >= 0.488
+        and norm_dispersion <= 0.55
+        and head_compatible
+    )
+    return use_middle, {
+        "low_coverage": float(mean_coverage) <= 0.30,
+        "sign_conflict_high": sign_conflict >= 0.52,
+        "direction_conflict_high": direction_conflict >= 0.488,
+        "scale_not_extreme": norm_dispersion <= 0.55,
+        "head_compatible": bool(head_compatible),
+        "head_pressure": float(head_pressure),
+        "coverage_threshold": 0.30,
+        "sign_conflict_threshold": 0.52,
+        "high_head_sign_conflict_threshold": 0.64,
+        "direction_conflict_threshold": 0.488,
+        "norm_dispersion_ceiling": 0.55,
+        "head_pressure_threshold": 0.35,
+    }
+
+
+def _medical_conflict_residual(state_dicts, state, reference, groups, group_conflict_stats, weights, meta, cfg, info, num_classes, head_pressure=0.0):
+    if not (_enabled(cfg, "conflict_stabilization") and reference is not None and groups):
+        return state, {
+            "applied": False,
+            "weight": 0.0,
+            "filter": "none",
+            "density": 0.0,
+            "conflict_stats": _empty_conflict_stats(),
+            "gate": {},
+        }
+    rep_names = []
+    for group in ("mid", "late"):
+        rep_names.extend(groups.get(group, []))
+    conflict_stats = _aggregate_conflict_stats(group_conflict_stats, groups=("mid", "late"))
+    mean_coverage = _mean_client_class_coverage(meta, num_classes)
+    representation_pressure, pressure_parts = _representation_conflict_pressure(
+        conflict_stats,
+        mean_coverage,
+        num_classes,
+    )
+    coherent_gate, coherent_parts = _coherent_anatomy_delta_gate(
+        conflict_stats,
+        representation_pressure,
+        head_pressure,
+        mean_coverage,
+        num_classes,
+    )
+    reliability = info.get("evidence_reliability", 0.0)
+    params = OrderedDict()
+    density = 0.50
+    middle_delta_keep = 0.0
+    middle_delta_remove_top = 0.0
+    all_names = []
+    for group in PARAM_GROUPS:
+        all_names.extend(groups.get(group, []))
+    use_middle_delta, middle_parts = _use_sparse_middle_delta(conflict_stats, mean_coverage, num_classes, head_pressure)
+    if use_middle_delta and all_names:
+        weight = _delta_blend_weight(conflict_stats, reliability, num_classes)
+        gate = {
+            "mode": "sparse_middle_delta",
+            "middle_delta_policy": middle_parts,
+            "coherent_gate": float(coherent_gate),
+            "coherent_gate_parts": coherent_parts,
+            "representation_pressure": float(representation_pressure),
+            "representation_pressure_parts": pressure_parts,
+            "base_delta_weight": float(weight),
+        }
+        names = all_names
+        middle_delta_keep = 0.25
+        middle_delta_remove_top = 0.10
+        params = _middle_delta_params(state_dicts, reference, all_names, weights.tolist(), keep=0.25, remove_top=0.10)
+        delta_filter = "sparse_middle_keep_0p25_remove_top_0p10"
+    elif coherent_gate > 0.20 and all_names:
+        base_weight = _delta_blend_weight(conflict_stats, reliability, num_classes)
+        weight = min(0.18, base_weight * (0.65 + 0.35 * coherent_gate))
+        gate = {
+            "mode": "coherent_anatomy_delta",
+            "coherent_gate": float(coherent_gate),
+            "coherent_gate_parts": coherent_parts,
+            "representation_pressure": float(representation_pressure),
+            "representation_pressure_parts": pressure_parts,
+            "base_delta_weight": float(base_weight),
+        }
+        names = all_names
+        delta_filter = "coherent_anatomy_delta_density_0p50"
+    else:
+        weight, gate = _anatomy_conflict_weight(
+            conflict_stats,
+            mean_coverage,
+            reliability,
+            num_classes,
+        )
+        gate = {
+            "mode": "representation_delta",
+            **gate,
+            "coherent_gate": float(coherent_gate),
+            "coherent_gate_parts": coherent_parts,
+            "representation_pressure": float(representation_pressure),
+            "representation_pressure_parts": pressure_parts,
+        }
+        names = rep_names
+        delta_filter = "representation_ties_delta_density_0p50"
+    if weight > 0.0 and not params and names:
+        params = _sign_delta_params(state_dicts, reference, names, weights.tolist(), density=density)
+    if params:
+        state = _blend_params_into_state(state, params, right_weight=weight)
+    return state, {
+        "applied": bool(params),
+        "weight": float(weight if params else 0.0),
+        "filter": delta_filter if params else "none",
+        "density": float(density if params else 0.0),
+        "middle_delta_keep": float(middle_delta_keep if params else 0.0),
+        "middle_delta_remove_top": float(middle_delta_remove_top if params else 0.0),
+        "conflict_stats": conflict_stats,
+        "gate": gate,
+        "group_param_counts": {group: len(groups.get(group, [])) for group in PARAM_GROUPS},
+    }
+
+
 def _module2_module3(state_dicts, base_merged, meta, cfg, info, reference, param_names):
     num_classes = int(meta["num_classes"])
     base = torch.as_tensor(info["base_weights"], dtype=torch.float32)
     consensus = _consensus(info["overall_weights"], info["morphology_weights"], base)
-    module2_pool = ["delta_0p00"]
-    routing = {}
-    fusion_weights = [float(x) for x in base.tolist()]
-    group_weights = {}
+    module2_pool = []
+    selected_steps = []
+    fusion_weights = [float(x) for x in consensus.tolist()]
+    group_weights = {group: [float(x) for x in consensus.tolist()] for group in PARAM_GROUPS}
     classifier_delta_norm = 0.0
     if meta.get("task_type") == "small" and reference is not None:
         classifier_delta_norm = _classifier_delta_mean_norm(state_dicts, reference, num_classes)
-    conflict_enabled = (
-        _enabled(cfg, "conflict_stabilization")
-        and meta.get("task_type") == "small"
-        and reference is not None
-        and param_names is not None
-    )
-    group_param_names = {name: [] for name in PARAM_GROUPS}
+
+    groups = {name: [] for name in PARAM_GROUPS}
     group_conflict_stats = {}
-    representation_conflict_stats = {}
-    head_conflict_stats = {}
+    representation_conflict_stats = _empty_conflict_stats()
+    head_conflict_stats = _empty_conflict_stats()
+    conflict_enabled = _enabled(cfg, "conflict_stabilization") and reference is not None and param_names is not None
     if conflict_enabled:
-        group_param_names = _group_param_names(state_dicts, reference, param_names, meta, num_classes)
-        group_conflict_stats = {
-            group: _task_conflict_stats(state_dicts, reference, names)
-            for group, names in group_param_names.items()
-        }
-        conflict_stats = _aggregate_conflict_stats(group_conflict_stats, groups=REPRESENTATION_GROUPS)
+        groups = _group_param_names(state_dicts, reference, param_names, meta, num_classes)
+        group_conflict_stats = {group: _task_conflict_stats(state_dicts, reference, names) for group, names in groups.items()}
         representation_conflict_stats = _aggregate_conflict_stats(group_conflict_stats, groups=("mid", "late"))
-        head_conflict_stats = group_conflict_stats.get("classifier") or conflict_stats
-    else:
-        conflict_stats = {}
+        head_conflict_stats = group_conflict_stats.get("classifier") or _empty_conflict_stats()
 
     if _enabled(cfg, "medical_weighted_fusion"):
         state, medical_trace = _medical_weighted_merge(
@@ -1419,146 +1589,48 @@ def _module2_module3(state_dicts, base_merged, meta, cfg, info, reference, param
             meta,
             cfg,
             classifier_delta_norm,
-            conflict_stats,
+            representation_conflict_stats,
             head_conflict_stats,
         )
         module2_pool.append("medical_weighted_fusion")
-        routing.update(medical_trace.get("routing_summary", {}))
+        selected_steps.append("medical_weighted_fusion")
+        routing = dict(medical_trace.get("routing_summary", {}))
         fusion_weights = medical_trace.get("fusion_weights", fusion_weights)
-        group_weights = medical_trace.get("group_weights", {})
-        selected_steps = ["medical_weighted_fusion"]
+        group_weights = medical_trace.get("group_weights", group_weights)
     else:
         state = base_merged
-        selected_steps = ["delta_0p00"]
+        routing = {
+            "early": 0,
+            "mid": 0,
+            "late": 0,
+            "classifier": 0,
+            "delta_space": reference is not None,
+            "delta_agreement_layers": 0,
+            "delta_agreement_mean_shift": 0.0,
+            "classifier_routing_policy": "disabled",
+            "classifier_mean_client_coverage": _mean_client_class_coverage(meta, num_classes),
+            "classifier_class_weight": 0.0,
+            "head_conflict_pressure": 0.0,
+            "head_conflict_pressure_parts": {},
+        }
+        selected_steps.append("avg")
 
-    delta_weight = 0.0
-    delta_filter = "none"
-    group_delta_blend_weights = {}
-    group_delta_filters = {}
-    group_delta_policies = {}
-    mean_client_coverage = 0.0
-    representation_pressure = 0.0
-    representation_pressure_parts = {}
-    head_conflict_pressure = float(routing.get("head_conflict_pressure", 0.0))
-    if conflict_enabled:
-        coverages = [float(row.get("class_coverage", 0.0)) for row in info["client_diagnostic_information"]]
-        mean_client_coverage = sum(coverages) / float(max(1, len(coverages)))
-        representation_pressure, representation_pressure_parts = _representation_conflict_pressure(
-            representation_conflict_stats,
-            mean_client_coverage,
-            num_classes,
-        )
-        use_coupled_middle, coupled_middle_policy = _coupled_middle_delta_policy(
-            conflict_stats,
-            group_conflict_stats,
-            head_conflict_pressure,
-            mean_client_coverage,
-            num_classes,
-        )
-        use_coherent_top, coherent_top_policy = _coherent_top_delta_policy(
-            conflict_stats,
-            head_conflict_pressure,
-            mean_client_coverage,
-            representation_pressure,
-            num_classes,
-        )
-        if use_coupled_middle:
-            weight = _delta_blend_weight(conflict_stats, info.get("evidence_reliability", 0.0), num_classes)
-            all_names = _mergeable_param_names(state_dicts, reference, param_names)
-            params = OrderedDict()
-            if weight > 0.0 and all_names:
-                params = _middle_delta_params(state_dicts, reference, all_names, consensus.tolist(), keep=0.25, remove_top=0.10)
-            if weight > 0.0 and params:
-                state = _blend_params_into_state(state, params, right_weight=weight)
-            delta_weight = float(weight)
-            delta_filter = "coupled_middle_keep_0p25_remove_top_0p10" if params else "none"
-            for group in PARAM_GROUPS:
-                names = group_param_names.get(group, [])
-                stats = group_conflict_stats.get(group) or _empty_conflict_stats()
-                group_delta_blend_weights[group] = float(weight if names else 0.0)
-                group_delta_filters[group] = delta_filter if names else "none"
-                group_delta_policies[group] = {
-                    "num_tensors": int(stats.get("num_tensors", 0)),
-                    "num_params": int(stats.get("num_params", 0)),
-                    "middle_delta_policy": coupled_middle_policy,
-                    "applied": bool(weight > 0.0 and names and params),
-                    "coupled_delta": True,
-                    "coherent_top_delta": False,
-                }
-            representation_pressure_parts["group_delta_policies"] = group_delta_policies
-        elif use_coherent_top:
-            weight = _delta_blend_weight(conflict_stats, info.get("evidence_reliability", 0.0), num_classes)
-            all_names = _mergeable_param_names(state_dicts, reference, param_names)
-            params = OrderedDict()
-            if weight > 0.0 and all_names:
-                params = _sign_delta_params(state_dicts, reference, all_names, consensus.tolist(), density=0.50)
-            if weight > 0.0 and params:
-                state = _blend_params_into_state(state, params, right_weight=weight)
-            delta_weight = float(weight)
-            delta_filter = "coherent_top_magnitude_0p50" if params else "none"
-            for group in PARAM_GROUPS:
-                names = group_param_names.get(group, [])
-                stats = group_conflict_stats.get(group) or _empty_conflict_stats()
-                group_delta_blend_weights[group] = float(weight if names else 0.0)
-                group_delta_filters[group] = delta_filter if names else "none"
-                group_delta_policies[group] = {
-                    "num_tensors": int(stats.get("num_tensors", 0)),
-                    "num_params": int(stats.get("num_params", 0)),
-                    "middle_delta_policy": coherent_top_policy,
-                    "applied": bool(weight > 0.0 and names and params),
-                    "coupled_delta": False,
-                    "coherent_top_delta": True,
-                }
-            representation_pressure_parts["group_delta_policies"] = group_delta_policies
-        else:
-            active_filters = []
-            for group in PARAM_GROUPS:
-                names = group_param_names.get(group, [])
-                stats = group_conflict_stats.get(group) or _empty_conflict_stats()
-                use_middle_delta, middle_delta_policy = _group_middle_delta_policy(
-                    group,
-                    stats,
-                    mean_client_coverage,
-                    num_classes,
-                )
-                weight = _group_delta_blend_weight(
-                    group,
-                    stats,
-                    info.get("evidence_reliability", 0.0),
-                    num_classes,
-                    middle_delta=use_middle_delta,
-                    head_pressure=head_conflict_pressure,
-                )
-                params = OrderedDict()
-                group_filter = "middle_keep_0p25_remove_top_0p10" if use_middle_delta else "top_magnitude_0p50"
-                if weight > 0.0 and names:
-                    if use_middle_delta:
-                        params = _middle_delta_params(state_dicts, reference, names, consensus.tolist(), keep=0.25, remove_top=0.10)
-                    else:
-                        params = _sign_delta_params(state_dicts, reference, names, consensus.tolist(), density=0.50)
-                if weight > 0.0 and params:
-                    state = _blend_params_into_state(state, params, right_weight=weight)
-                    active_filters.append(group_filter)
-                group_delta_blend_weights[group] = float(weight)
-                group_delta_filters[group] = group_filter if names else "none"
-                group_delta_policies[group] = {
-                    "num_tensors": int(stats.get("num_tensors", 0)),
-                    "num_params": int(stats.get("num_params", 0)),
-                    "middle_delta_policy": middle_delta_policy,
-                    "applied": bool(weight > 0.0 and names),
-                    "coupled_delta": False,
-                    "coherent_top_delta": False,
-                }
-                delta_weight = max(delta_weight, float(weight))
-            representation_pressure_parts["group_delta_policies"] = group_delta_policies
-            if any("middle_keep" in item for item in active_filters):
-                delta_filter = "layerwise_middle"
-            elif active_filters:
-                delta_filter = "layerwise_top_magnitude"
-        representation_pressure_parts["coupled_middle_delta_policy"] = coupled_middle_policy
-        representation_pressure_parts["coherent_top_delta_policy"] = coherent_top_policy
-        module2_pool.append("conflict_delta")
-        selected_steps.append(f"conflict_delta_{_blend_label(delta_weight)}_{delta_filter}")
+    state, residual_trace = _medical_conflict_residual(
+        state_dicts,
+        state,
+        reference,
+        groups,
+        group_conflict_stats,
+        consensus,
+        meta,
+        cfg,
+        info,
+        num_classes,
+        float(routing.get("head_conflict_pressure", 0.0)),
+    )
+    if residual_trace.get("applied"):
+        module2_pool.append("representation_conflict_residual")
+        selected_steps.append(f"representation_conflict_residual_{_blend_label(residual_trace.get('weight', 0.0))}")
 
     specialist_weight, specialist_idx = 0.0, None
     raw_specialist_weight = 0.0
@@ -1572,15 +1644,9 @@ def _module2_module3(state_dicts, base_merged, meta, cfg, info, reference, param
             info.get("class_morphology_separation", 0.0),
         )
         raw_specialist_weight = specialist_weight
-        specialist_coverage_cap = _specialist_conflict_cap(
-            raw_specialist_weight,
-            delta_filter,
-            head_conflict_pressure,
-            representation_pressure,
-        )
         specialist_weight = _apply_specialist_cap(raw_specialist_weight, specialist_coverage_cap)
-        if specialist_weight > 0:
-            specialist_state = OrderedDict((k, v.detach().clone()) for k, v in state_dicts[specialist_idx].items())
+        if specialist_weight > 0.0 and specialist_idx is not None:
+            specialist_state = OrderedDict((k, v.detach().clone()) for k, v in state_dicts[int(specialist_idx)].items())
             state = _blend_state_dicts(state, specialist_state, right_weight=specialist_weight)
         module2_pool.append("specialist_anchor")
         selected_steps.append(f"specialist_anchor_{_blend_label(specialist_weight)}")
@@ -1592,32 +1658,26 @@ def _module2_module3(state_dicts, base_merged, meta, cfg, info, reference, param
         if alignment_trace.get("bn_stat_aligned"):
             selected_steps.append(f"statistical_alignment_bn_stats{alignment_trace.get('aligned_bn_stat_tensors', 0)}")
 
+    conflict_stats = residual_trace.get("conflict_stats", _empty_conflict_stats())
+    delta_weight = float(residual_trace.get("weight", 0.0))
+    delta_filter = str(residual_trace.get("filter", "none"))
+    mean_client_coverage = _mean_client_class_coverage(meta, num_classes)
     routing.update({
-        "selection_rule": "deterministic_medical_evidence_layerwise_conflict_flow",
+        "selection_rule": "deterministic_medical_evidence_conflict_flow_v16",
         "validated_candidates": 0,
         "conflict_stats": conflict_stats,
         "group_conflict_stats": group_conflict_stats,
-        "representation_conflict_stats": representation_conflict_stats,
+        "representation_conflict_stats": conflict_stats,
         "head_conflict_stats": head_conflict_stats,
-        "delta_blend_weight": float(delta_weight),
+        "delta_blend_weight": delta_weight,
         "delta_filter": delta_filter,
-        "group_delta_blend_weights": group_delta_blend_weights,
-        "group_delta_filters": group_delta_filters,
-        "sign_delta_density": 0.50 if any(
-            group_delta_blend_weights.get(group, 0.0) > 0.0 and group_delta_filters.get(group) == "top_magnitude_0p50"
-            for group in PARAM_GROUPS
-        ) else 0.0,
-        "middle_delta_keep": 0.25 if any(
-            group_delta_blend_weights.get(group, 0.0) > 0.0 and str(group_delta_filters.get(group, "")).startswith("middle_keep")
-            for group in PARAM_GROUPS
-        ) else 0.0,
-        "middle_delta_remove_top": 0.10 if any(
-            group_delta_blend_weights.get(group, 0.0) > 0.0 and str(group_delta_filters.get(group, "")).startswith("middle_keep")
-            for group in PARAM_GROUPS
-        ) else 0.0,
+        "sign_delta_density": float(residual_trace.get("density", 0.0)),
+        "middle_delta_keep": float(residual_trace.get("middle_delta_keep", 0.0)),
+        "middle_delta_remove_top": float(residual_trace.get("middle_delta_remove_top", 0.0)),
         "mean_client_class_coverage": float(mean_client_coverage),
-        "representation_conflict_pressure": float(representation_pressure),
-        "representation_conflict_pressure_parts": representation_pressure_parts,
+        "class_head_routing_gate": float(routing.get("classifier_class_weight", 0.0)),
+        "representation_conflict_pressure": float(conflict_stats.get("conflict_score", 0.0)),
+        "representation_conflict_pressure_parts": {"representation_conflict_residual": residual_trace},
         "classifier_delta_mean_norm": float(classifier_delta_norm),
         "specialist_anchor_weight": float(specialist_weight),
         "raw_specialist_anchor_weight": float(raw_specialist_weight),
@@ -1626,8 +1686,17 @@ def _module2_module3(state_dicts, base_merged, meta, cfg, info, reference, param
         "specialist_client_index": None if specialist_idx is None else int(specialist_idx),
         "statistical_alignment": alignment_trace,
     })
+    residual_mode = str(residual_trace.get("gate", {}).get("mode", ""))
+    if residual_mode in {"sparse_middle_delta", "coherent_anatomy_delta"}:
+        residual_groups = set(PARAM_GROUPS)
+    else:
+        residual_groups = {"mid", "late"}
+    routing.update({
+        "group_delta_blend_weights": {group: (delta_weight if group in residual_groups else 0.0) for group in PARAM_GROUPS},
+        "group_delta_filters": {group: (delta_filter if group in residual_groups else "none") for group in PARAM_GROUPS},
+    })
     return state, {
-        "fusion_rule": "m1_medical_weighted_m2_layerwise_conflict_flow",
+        "fusion_rule": "m1_medical_evidence_m2_representation_conflict_flow",
         "module2_candidate_pool": module2_pool,
         "module3_candidate_pool": [],
         "candidate_pool": module2_pool,
@@ -1677,7 +1746,7 @@ def merge_my_merge(state_dicts, weights, meta=None, checkpoints=None, cfg=None):
         info, consistency_guard_trace = _apply_checkpoint_consistency(info, consistency_scores, cfg)
     merged, fusion = _module2_module3(state_dicts, base_merged, meta, cfg, info, reference, param_names)
 
-    implementation = "medical_evidence_layerwise_conflict_merge_v14"
+    implementation = "medical_evidence_conflict_merge_v16"
     return merged, {
         "implementation": implementation,
         "medical_only": True,
