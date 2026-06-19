@@ -8,14 +8,14 @@
 
 | ablation | rows | mean_acc | delta_vs_full | delta_vs_best_original | W/T/L |
 | --- | --- | --- | --- | --- | --- |
-| full | 225 | 0.2848 | 0.0000 | -0.0355 | 57/38/130 |
+| full | 180 | 0.2834 | 0.0000 | -0.0330 | 42/35/103 |
 
 ## Dataset Breakdown
 
 | ablation | dataset | rows | delta_vs_full | W/T/L |
 | --- | --- | --- | --- | --- |
-| full | bloodmnist | 45 | 0.0000 | 8/3/34 |
-| full | dermamnist | 45 | 0.0000 | 9/24/12 |
-| full | organcmnist | 45 | 0.0000 | 18/5/22 |
-| full | organsmnist | 45 | 0.0000 | 10/1/34 |
-| full | chaoshengmnist | 45 | 0.0000 | 12/5/28 |
+| full | bloodmnist | 36 | 0.0000 | 5/3/28 |
+| full | dermamnist | 36 | 0.0000 | 5/22/9 |
+| full | organcmnist | 36 | 0.0000 | 15/4/17 |
+| full | organsmnist | 36 | 0.0000 | 7/1/28 |
+| full | chaoshengmnist | 36 | 0.0000 | 10/5/21 |

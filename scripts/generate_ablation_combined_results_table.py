@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 import argparse
 import csv
+import json
 import re
 from copy import deepcopy
 from pathlib import Path
@@ -55,6 +56,9 @@ def load_lookup(grid_root):
             for row in csv.DictReader(f):
                 if row.get("method") != "my_merge":
                     continue
+                row = recover_eval_row(csv_path, row)
+                if not str(row.get("test_acc", "")).strip():
+                    continue
                 task_type = row["task_type"]
                 model_name = row["model"] if task_type == "small" else row["clip_model"]
                 key = (
@@ -69,6 +73,42 @@ def load_lookup(grid_root):
     if "avg_only" not in ablations:
         ablations.append("avg_only")
     return lookup, sorted(ablations, key=ablation_sort_key)
+
+
+def beta_token(beta):
+    return str(float(beta)).replace(".", "p")
+
+
+def recover_eval_row(csv_path, row):
+    if str(row.get("test_acc", "")).strip():
+        return row
+    task_type = row.get("task_type", "")
+    dataset = row.get("dataset", "")
+    model_name = row.get("model") if task_type == "small" else row.get("clip_model")
+    if not all([task_type, dataset, model_name, row.get("num_clients"), row.get("beta"), row.get("seed"), row.get("method")]):
+        return row
+    output_root = csv_path.parent.parent
+    eval_json = (
+        output_root
+        / "eval"
+        / task_type
+        / dataset
+        / model_name
+        / f"clients_{int(float(row['num_clients']))}"
+        / f"beta_{beta_token(row['beta'])}"
+        / f"seed_{int(float(row['seed']))}"
+        / row["method"]
+        / "eval.json"
+    )
+    if not eval_json.exists():
+        return row
+    with eval_json.open("r", encoding="utf-8") as f:
+        payload = json.load(f)
+    recovered = dict(row)
+    for field in ("test_acc", "test_loss", "num_samples", "source_image_size", "eval_image_size", "image_resize"):
+        if field in payload:
+            recovered[field] = payload[field]
+    return recovered
 
 
 def ablation_sort_key(name):
