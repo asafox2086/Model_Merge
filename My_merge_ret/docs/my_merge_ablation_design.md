@@ -1,68 +1,79 @@
-# my_merge Two-Module Ablation Design
+# my_merge BN-Only Ablation Design
 
 ## Goal
 
-消融实验只验证两个主模块是否有效，避免把方法拆成过多小技巧，也避免每个数据集各写一套特殊处理。
+消融只回答两个问题：Clinical Evidence Ledger 是否有用，Protocol-Calibrated Merge 是否有用。方法不包含医学形态特征、线性头二阶矩、候选池、客户端回传验证或按数据集写死的规则。
 
 ## Main Rows
 
 | ablation | meaning |
 | --- | --- |
-| `full` | 完整 `my_merge` |
-| `no_client_information` | 去掉 M1：Diagnostic Evidence Client Information Estimation |
-| `no_fusion_selection` | 去掉 M2：Medical Evidence Guided Fusion and Selection |
-| `avg_only` | 同时去掉 M1 和 M2，回到平均融合 |
+| `full` | 完整 `my_merge`：CEL + PCM |
+| `no_bml` | 关闭 Clinical Evidence Ledger，使用基础客户端权重 |
+| `no_bcm` | 关闭 Protocol-Calibrated Merge，使用 BN 权重普通平均 |
+| `avg_only` | sanity baseline，直接使用 client average |
 
-## M1
+## Module 1: CEL
 
-M1 估计医学诊断信息。它使用所有医学影像任务共用的图像证据：前景结构、边界、局部对比度、纹理异质性、形状紧致度、诊断显著性、类别稀有度、难例表现和预测 margin。
+CEL 使用客户端 checkpoint 中的 BN running moments 构造融合权重：
 
-关闭 M1 时，代码同时关闭：
+```text
+a_i = Normalize(n_i)
+s_i = Normalize(sqrt(n_i))
+g_e = Smooth(max_i a_i)
+p_i = Normalize((1 - g_e)(0.5 base_i + 0.5 s_i) + g_e a_i)
 
-- `image_space`
-- `diagnostic_evidence`
-- `diagnostic_client_information`
-- `class_rarity`
-- `focal_weight`
-- `domain_focus`
+d_i = mean_l [ ||mu_i^l - mu_bar^l||^2 / v_bar^l
+              + 0.5 ||log v_i^l - log v_bar^l||^2 ]
 
-因此 `no_client_information` 不再只是去掉某个弱先验，而是去掉整个客户端诊断信息估计模块。
+omega_i = Normalize( p_i * (0.35 + 0.65 exp(-d_i / tau)) )
+```
 
-## M2
+关闭 CEL 时，`my_merge` 不再利用客户端 BN 分布偏移，只保留基础平均/样本量先验。
 
-M2 使用 M1 的诊断信息做融合和选择。关闭 M2 时，代码同时关闭：
+## Module 2: PCM
 
-- `balanced_selection`
-- `layerwise_merge`
-- `sparse_residual`
-- `morph_anchor_candidate`
-- `specialist_candidate`
-- `reference_delta_candidate`
-- `prototype_head_candidate`
-- `consensus_candidate`
-- `candidate_selection`
-- `bn_recalibration`
-- `head_temperature`
+PCM 根据 CEL 权重做单次闭式融合：
 
-因此 `no_fusion_selection` 是干净的 M2 消融，结果应当回退到平均融合路径。
+- BN mean 使用算术加权平均。
+- BN variance 使用 log-space 几何平均。
+- 非分类头可训练参数使用 CEL 权重平均。
+- 分类头使用客户端类别覆盖元信息做行级融合。
+
+```text
+theta = sum_i omega_i theta_i
+
+omega_{i,c} = Normalize(omega_i * (epsilon + 1[c in C_i]))
+rho = Gate(class coverage forms a specialty partition)
+lambda_c = rho * (0.30 + 0.25 * max(0, 3 - |S_c|))
+theta_c = (1 - lambda_c) sum_i omega_i theta_{i,c}
+        + lambda_c sum_i omega_{i,c} theta_{i,c}
+```
+
+关闭 PCM 时，`my_merge` 不再执行分类头行级校准和类别先验，结果应退化到 BN 权重下的普通平均。
+
+## Observation Log
+
+当前保留/删除规则来自实际观察：
+
+- 保留 CEL：BN running moments 能表达医院、设备、染色、探头和窗宽窗位带来的 site/protocol shift，而且 checkpoint 已经包含这些聚合统计。
+- 保留 PCM：医学 silo 的类别覆盖常反映专科/器官/协议分工，分类头逐类路由能避免专科类别被无关客户端平均掉。
+- 修正 singleton-only gate：只看 singleton 比例会修复部分器官数据，但会伤害存在 broad client 的划分；因此现在额外检测 broad client，避免把普通 non-IID 当成专科。
+- 增加 compact-specialty gate：`organc` 观察到中等 singleton 比例且没有 broad client 时仍然是专科划分，因此需要保留轻量路由。
+- 增加 sparse-overlap specialty gate：`derma c7 b=0.01` 这类 case 不是清晰 singleton partition，而是平均类别支持数低、singleton 不高、没有 broad client、类别先验偏斜明显，符合多中心皮肤病专科之间少量转诊/重叠覆盖的结构；因此在 PCM 内允许路由。
+- 保留 fragmented support reliability：`organs c7 b=0.01` 显示高 singleton 碎片化下，低 CEL 支持质量的类别路由会过度信任少量客户端；现在只有 singleton 碎片化和类别先验偏斜同时出现时才降温，避免误伤 `organc c7` 和 `blood c5`。
+- 删除 protocol conflict filter：尝试用公共初始化上的 task-vector 符号一致性抑制跨站点冲突方向，但 36-case 探针中 blood c7、organc c3/c7 明显变差，且没有修复 chaosheng，所以不放入正式方法。
+- 删除无条件 support-mass head gate：0.13 阈值修复 `organs c7 b=0.01` 但伤害 `organc c7 b=0.01`，0.11 阈值又失去修复效果；正式方法只保留上面的 fragmented support reliability。
+- 删除候选池：效果可能好，但需要客户端给候选模型打分，隐私和 single-shot 设定不成立。
+- 禁用线性二阶矩：少数 case 有收益，但需要额外上传 `G_i`、运行慢、故事变成三模块，当前只保留兼容开关。
 
 ## Compatibility
 
-旧实验名仍可读取，但不作为默认主消融：
+历史脚本里的旧名字可以继续作为兼容标签处理，但正式论文表只报告：
 
-- `no_medical_prior`
-- `no_domain_preprocess`
-- `no_modality_features`
-- `no_medical_preprocess`
+- `full`
+- `no_bml`
+- `no_bcm`
+- `avg_only`
 
-这些旧入口现在都映射为关闭 M1，用来兼容历史脚本，而不是继续保留独立的医学先验模块。
-
-## Running
-
-推荐入口：
-
-```bash
-bash scripts/run_validated_my_merge_full.sh
-```
-
-该脚本会先用 `avg ties` 复现 `result/all_results.md` 中的确定结果；复现检查通过后，再跑 `full no_client_information no_fusion_selection avg_only`，最后自动生成总表和消融摘要。
+旧的形态特征、诊断统计和候选池相关消融不再是正式方法的一部分。

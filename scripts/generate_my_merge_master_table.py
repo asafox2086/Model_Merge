@@ -57,7 +57,12 @@ def parse_args():
 def load_eval_rows(output_roots):
     rows = []
     for output_root in output_roots:
-        for csv_path in sorted(output_root.glob("*/reports/eval_summary.csv")):
+        csv_paths = []
+        direct_path = output_root / "reports" / "eval_summary.csv"
+        if direct_path.exists():
+            csv_paths.append(direct_path)
+        csv_paths.extend(sorted(output_root.glob("*/reports/eval_summary.csv")))
+        for csv_path in csv_paths:
             with csv_path.open("r", encoding="utf-8", newline="") as f:
                 rows.extend(list(csv.DictReader(f)))
     return rows

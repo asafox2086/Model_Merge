@@ -74,6 +74,12 @@ def parse_args():
         default=model_hub_default,
     )
     p.add_argument(
+        '--manifest',
+        type=str,
+        default='',
+        help='Optional manifest CSV. Defaults to <model-hub-root>/manifest.csv.',
+    )
+    p.add_argument(
         '--data-root',
         type=str,
         default=data_root_default,
@@ -412,7 +418,8 @@ def main():
     if not args.output_root:
         stamp = datetime.now().strftime('%Y%m%d_%H%M%S')
         args.output_root = f'/data1/users/weiyipan/ML/MedMNSITMerge/outputs/{args.method}_{stamp}'
-    manifest = load_manifest(Path(args.model_hub_root) / 'manifest.csv')
+    manifest_path = Path(args.manifest) if args.manifest else Path(args.model_hub_root) / 'manifest.csv'
+    manifest = load_manifest(manifest_path)
     manifest = filter_manifest(manifest, args)
 
     status_csv = Path(args.output_root) / 'reports' / 'batch_status.csv'

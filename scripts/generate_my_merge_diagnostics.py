@@ -27,18 +27,18 @@ WEIGHT_FIELDS = [
     "num_clients",
     "beta",
     "seed",
-    "selected_candidate",
+    "fusion_path",
     "client_index",
     "client_name",
+    "num_samples",
     "seen_classes",
-    "prior_weight_pi",
-    "diagnostic_weight_alpha_all",
-    "medical_weight_alpha_morph",
-    "acc_A",
-    "medical_acc_M",
-    "margin_Q",
-    "class_coverage_gate",
-    "evidence_reliability",
+    "base_weight",
+    "sample_prior",
+    "bn_weight",
+    "bn_consistency",
+    "bn_distance",
+    "bn_mean_shift",
+    "bn_var_shift",
 ]
 
 VIZ_FIELDS = [
@@ -49,7 +49,7 @@ VIZ_FIELDS = [
     "num_clients",
     "beta",
     "seed",
-    "selected_candidate",
+    "fusion_path",
     "split",
     "embedding_source",
     "num_samples",
@@ -66,7 +66,7 @@ COMBINED_FIELDS = [
     "num_clients",
     "beta",
     "seed",
-    "selected_candidate",
+    "fusion_path",
     "client_weights",
     "plot_path",
     "status",
@@ -98,7 +98,7 @@ def case_fields(payload):
         "num_clients": payload.get("num_clients", ""),
         "beta": payload.get("beta", ""),
         "seed": payload.get("seed", ""),
-        "selected_candidate": payload.get("method_info", {}).get("selected_candidate", ""),
+        "fusion_path": payload.get("method_info", {}).get("fusion_path", ""),
     }
 
 
@@ -136,15 +136,15 @@ def build_weight_rows(payload):
                 {
                     "client_index": item.get("client_index", ""),
                     "client_name": item.get("client_name", ""),
+                    "num_samples": item.get("num_samples", ""),
                     "seen_classes": " ".join(str(cls) for cls in item.get("seen_classes", [])),
-                    "prior_weight_pi": safe_float(item.get("base_weight", "")),
-                    "diagnostic_weight_alpha_all": safe_float(item.get("overall_weight", "")),
-                    "medical_weight_alpha_morph": safe_float(item.get("morphology_weight", "")),
-                    "acc_A": safe_float(item.get("ordinary_accuracy", "")),
-                    "medical_acc_M": safe_float(item.get("medical_weighted_accuracy", "")),
-                    "margin_Q": safe_float(item.get("margin_confidence", "")),
-                    "class_coverage_gate": safe_float(item.get("class_coverage_gate", "")),
-                    "evidence_reliability": safe_float(item.get("evidence_reliability", "")),
+                    "base_weight": safe_float(item.get("base_weight", "")),
+                    "sample_prior": safe_float(item.get("sample_prior", "")),
+                    "bn_weight": safe_float(item.get("bn_weight", "")),
+                    "bn_consistency": safe_float(item.get("bn_consistency", "")),
+                    "bn_distance": safe_float(item.get("bn_distance", "")),
+                    "bn_mean_shift": safe_float(item.get("bn_mean_shift", "")),
+                    "bn_var_shift": safe_float(item.get("bn_var_shift", "")),
                 }
             )
             rows.append(row)
@@ -158,13 +158,15 @@ def build_weight_rows(payload):
             {
                 "client_index": client_idx,
                 "client_name": source_clients[client_idx] if client_idx < len(source_clients) else f"client_{client_idx}.pt",
+                "num_samples": "",
                 "seen_classes": "",
-                "prior_weight_pi": safe_float(weight),
-                "diagnostic_weight_alpha_all": "",
-                "medical_weight_alpha_morph": "",
-                "acc_A": "",
-                "medical_acc_M": "",
-                "margin_Q": "",
+                "base_weight": safe_float(weight),
+                "sample_prior": "",
+                "bn_weight": "",
+                "bn_consistency": "",
+                "bn_distance": "",
+                "bn_mean_shift": "",
+                "bn_var_shift": "",
             }
         )
         rows.append(row)
@@ -464,7 +466,7 @@ def compact_case_key(row):
         str(row.get("num_clients", "")),
         str(row.get("beta", "")),
         str(row.get("seed", "")),
-        row.get("selected_candidate", ""),
+        row.get("fusion_path", ""),
     )
 
 
@@ -480,12 +482,11 @@ def format_client_weight_summary(rows):
         chunks.append(
             (
                 f"{client}: "
-                f"pi={row.get('prior_weight_pi', '')}, "
-                f"alpha_all={row.get('diagnostic_weight_alpha_all', '')}, "
-                f"alpha_morph={row.get('medical_weight_alpha_morph', '')}, "
-                f"A={row.get('acc_A', '')}, "
-                f"M={row.get('medical_acc_M', '')}, "
-                f"Q={row.get('margin_Q', '')}"
+                f"base={row.get('base_weight', '')}, "
+                f"sample={row.get('sample_prior', '')}, "
+                f"bn={row.get('bn_weight', '')}, "
+                f"d={row.get('bn_distance', '')}, "
+                f"classes={row.get('seen_classes', '')}"
             )
         )
     return "<br>".join(chunks)
@@ -511,7 +512,7 @@ def build_combined_rows(weight_rows, viz_rows):
                 "num_clients": first.get("num_clients", ""),
                 "beta": first.get("beta", ""),
                 "seed": first.get("seed", ""),
-                "selected_candidate": first.get("selected_candidate", ""),
+                "fusion_path": first.get("fusion_path", ""),
                 "client_weights": format_client_weight_summary(weight_groups[key]),
                 "plot_path": viz.get("plot_path", ""),
                 "status": viz.get("status", "not_plotted"),
@@ -564,7 +565,7 @@ def build_visualization(
         if status != "ok" or embeddings.shape[0] == 0:
             return visualization_row(payload, split, "", "", "empty", note="no embeddings collected")
         coords = pca_2d(embeddings)
-        selected = payload.get("method_info", {}).get("selected_candidate", "unknown")
+        selected = payload.get("method_info", {}).get("fusion_path", "unknown")
         name_parts = [
             payload.get("task_type", ""),
             payload.get("dataset", ""),
@@ -657,7 +658,7 @@ def build_diagnostics(
     write_markdown(
         weights_md,
         "my_merge Client Diagnostic Weights",
-        "Each row is one source client model. Columns are limited to quantities that enter the diagnostic client-information formulas: prior weight pi, final diagnostic weights, and the information vector (A, M, H, Q, F).",
+        "Each row is one source client model. Columns are limited to the privacy-preserving BN moment ledger: base/sample weights, BN consistency, BN distance, and class coverage metadata.",
         weight_rows,
         WEIGHT_FIELDS,
         max_rows=300,
@@ -692,7 +693,7 @@ def build_diagnostics(
     write_markdown(
         combined_md,
         "my_merge Weight and PCA Visualization Table",
-        "Each row is one dataset/model/case. `client_weights` summarizes the diagnostic weights used by the fusion formula; the image column shows the corresponding PCA classification visualization when a checkpoint was available.",
+        "Each row is one dataset/model/case. `client_weights` summarizes the BN moment ledger used by the fusion formula; the image column shows the corresponding PCA classification visualization when a checkpoint was available.",
         combined_rows,
         COMBINED_FIELDS,
         image_field="image",

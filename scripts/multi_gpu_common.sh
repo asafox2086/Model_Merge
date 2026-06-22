@@ -56,6 +56,7 @@ export OPENBLAS_NUM_THREADS="${OPENBLAS_NUM_THREADS:-1}"
 export NUMEXPR_NUM_THREADS="${NUMEXPR_NUM_THREADS:-1}"
 
 REPRO_MODE="${REPRO_MODE:-1}"
+PREPARE_REFERENCE_CACHE="${PREPARE_REFERENCE_CACHE:-false}"
 case "${REPRO_MODE,,}" in
   0|false|no|off)
     HF_LOCAL_FILES_ONLY="${HF_LOCAL_FILES_ONLY:-0}"
@@ -148,6 +149,10 @@ validate_methods() {
 
 prepare_reference_cache() {
   local task_type="$1"
+  if [[ "${PREPARE_REFERENCE_CACHE}" != "true" ]]; then
+    echo "[$(date +%F\ %T)] skipping reference cache preparation | task_type=${task_type}"
+    return 0
+  fi
   local -a cmd=(
     "${PYTHON_BIN}" "${ROOT_DIR}/scripts/cache_reference_models.py"
     --model-hub-root "${MODEL_HUB_ROOT}"

@@ -94,7 +94,7 @@ def collect_linear_covariances(meta, checkpoint, cfg):
     def make_hook(module_name, in_features):
         def _hook(module, inputs, output):
             x = inputs[0].detach()
-            x = x.reshape(-1, x.shape[-1]).float().cpu()
+            x = x.reshape(-1, x.shape[-1]).float()
             if x.numel() == 0 or in_features > max_dim:
                 return
             xtx = x.transpose(0, 1).mm(x)
@@ -119,4 +119,4 @@ def collect_linear_covariances(meta, checkpoint, cfg):
     for handle in handles:
         handle.remove()
 
-    return {key: value for key, value in cov_sums.items() if counts[key] > 0}
+    return {key: value.detach().cpu() for key, value in cov_sums.items() if counts[key] > 0}

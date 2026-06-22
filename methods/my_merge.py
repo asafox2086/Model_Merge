@@ -3,51 +3,38 @@ import json
 from pathlib import Path
 
 import torch
-import torch.nn.functional as F
 
-from utils.runtime import build_reference_bundle, build_runtime
 from utils.state_dict import average_state_dicts
-
-from .common import (
-    build_task_matrix,
-    disjoint_merge,
-    elect_sign,
-    mask_smallest_magnitude,
-    overlay_param_dict,
-    vector_to_param_dict,
-)
 
 
 EPS = 1e-8
-FEATURE_DIM = 5
-DEFAULT_STATS_MAX_BATCHES = 16
-MIN_SPECIALIST_ANCHOR_WEIGHT = 0.15
-SPECIALIST_SEPARATION_START = 0.05
-SPECIALIST_SEPARATION_FULL = 0.17
-CLIP_IMAGE_MEAN = (0.48145466, 0.4578275, 0.40821073)
-CLIP_IMAGE_STD = (0.26862954, 0.26130258, 0.27577711)
 
-MEDICAL_IMAGE_DATASETS = {
-    "bloodmnist_224",
-    "dermamnist_224",
-    "organcmnist_224",
-    "organsmnist_224",
-    "chaoshengmnist_224",
-}
+BN_MOMENT_NAMES = [
+    "bn_running_mean",
+    "bn_running_var",
+    "bn_num_batches_tracked",
+]
 
-NATURAL_CONTROL_DATASETS = {
-    "cifar10_32",
-    "cifar100_32",
-    "svhn_32",
-    "tinyimagenet_64",
-}
+# Kept for older scripts that import FEATURE_NAMES from this module.
+FEATURE_NAMES = BN_MOMENT_NAMES
 
-M1 = {"image_space", "diagnostic_evidence", "diagnostic_client_information", "medical_weighted_fusion", "class_routing"}
-M2 = {"checkpoint_consistency", "delta_agreement_weighting", "conflict_stabilization", "specialist_anchor"}
-M3 = set()
-OPTIONAL_COMPONENTS = {"statistical_alignment"}
-PARAM_GROUPS = ("early", "mid", "late", "classifier")
-REPRESENTATION_GROUPS = ("early", "mid", "late")
+def _is_image_checkpoint_task(meta):
+    return (meta or {}).get("task_type") in {"small", "vlm"}
+
+
+def _domain_control_enabled(cfg):
+    value = (cfg or {}).get("my_merge_domain_control", False)
+    if isinstance(value, bool):
+        return value
+    return str(value).strip().lower() in {"1", "true", "yes", "y", "on"}
+
+
+def _bool_cfg(cfg, name, default=False):
+    value = (cfg or {}).get(name, default)
+    if isinstance(value, bool):
+        return value
+    return str(value).strip().lower() in {"1", "true", "yes", "y", "on"}
+
 
 def _tokens(value):
     if value in (None, "", False):
@@ -63,242 +50,785 @@ def _ablation_labels(cfg):
     return labels or ["full"]
 
 
-def _disabled_components(cfg):
-    disabled = set(OPTIONAL_COMPONENTS)
-    for raw in _ablation_labels(cfg):
-        name = raw.lower().replace("-", "_")
-        if name == "avg_only":
-            disabled.update(M1 | M2 | M3)
-        elif name in {"statistical_alignment", "with_statistical_alignment", "bn_recalibration"}:
-            disabled.discard("statistical_alignment")
-        elif name in {"no_client_information", "no_diagnostic_information", "no_m1"}:
-            disabled.update(M1)
-        elif name == "no_diagnostic_evidence":
-            disabled.add("diagnostic_evidence")
-        elif name in {"no_class_routing", "no_classifier_routing"}:
-            disabled.add("class_routing")
-        elif name in {"no_delta_agreement", "no_delta_agreement_weighting"}:
-            disabled.add("delta_agreement_weighting")
-        elif name in {"no_fusion_selection", "no_medical_fusion_selection", "no_m2"}:
-            disabled.update(M2)
-        elif name in {
-            "no_checkpoint_consistency",
-            "no_consistency_guard",
-        }:
-            disabled.add("checkpoint_consistency")
-        elif name in {
-            "no_conflict_stabilization",
-            "no_sign_delta",
-            "no_ties_delta",
-            "no_avg_sign_blend",
-            "no_sign_blend",
-        }:
-            disabled.add("conflict_stabilization")
-        elif name in {
-            "no_adaptive_candidates",
-            "no_adaptive_candidate_generation",
-            "no_m3",
-        }:
-            disabled.update(M3)
-        elif name == "specialist_client":
-            disabled.add("specialist_anchor")
-        elif name in {"no_calibration", "no_bn_recalibration", "no_statistical_alignment"}:
-            disabled.add("statistical_alignment")
-        elif name in {"prototype_head", "validated_selection"}:
+def _has_label(cfg, name):
+    target = str(name).lower().replace("-", "_")
+    return target in {raw.lower().replace("-", "_") for raw in _ablation_labels(cfg)}
+
+
+def _disable_bml(cfg):
+    return any(
+        _has_label(cfg, name)
+        for name in (
+            "no_bml",
+            "no_cel",
+            "no_mel",
+            "no_m1",
+            "no_client_information",
+            "no_medical_evidence_ledger",
+            "no_clinical_evidence_ledger",
+        )
+    )
+
+
+def _disable_bcm(cfg):
+    return any(
+        _has_label(cfg, name)
+        for name in (
+            "no_bcm",
+            "no_pcm",
+            "no_mccm",
+            "no_m2",
+            "no_fusion_selection",
+            "no_morphology_calibrated_conflict_merging",
+            "no_protocol_calibrated_merge",
+        )
+    )
+
+
+def _normalize(values, fallback=None):
+    values = torch.as_tensor(values, dtype=torch.float32)
+    values = torch.nan_to_num(values, nan=0.0, posinf=0.0, neginf=0.0).clamp_min(0.0)
+    total = values.sum()
+    if float(total.item()) > 0:
+        return values / total
+    if fallback is not None:
+        fallback = torch.as_tensor(fallback, dtype=torch.float32)
+        return fallback / fallback.sum().clamp_min(EPS)
+    return torch.ones_like(values) / float(max(1, values.numel()))
+
+
+def _smooth01(value):
+    x = max(0.0, min(1.0, float(value)))
+    return x * x * (3.0 - 2.0 * x)
+
+
+def _weighted_average(values, weights):
+    weights = torch.as_tensor(weights, dtype=torch.float32)
+    out = values[0].detach().float() * float(weights[0])
+    for value, weight in zip(values[1:], weights[1:]):
+        out.add_(value.detach().float(), alpha=float(weight))
+    return out
+
+
+def _bn_var_key(mean_key):
+    return mean_key[: -len("running_mean")] + "running_var"
+
+
+def _bn_num_batches_key(mean_key):
+    return mean_key[: -len("running_mean")] + "num_batches_tracked"
+
+
+def _is_bn_running_key(key):
+    return key.endswith("running_mean") or key.endswith("running_var")
+
+
+def _common_bn_pairs(state_dicts):
+    if not state_dicts:
+        return []
+    common = set(state_dicts[0].keys())
+    for state in state_dicts[1:]:
+        common &= set(state.keys())
+
+    pairs = []
+    for key in state_dicts[0].keys():
+        if not key.endswith("running_mean"):
             continue
-        elif name in M1 or name in M2 or name in M3 or name in OPTIONAL_COMPONENTS:
-            disabled.add(name)
-        elif name.startswith("no_"):
-            component = name[3:]
-            disabled.add("specialist_anchor" if component == "specialist_client" else component)
-        elif name.startswith("without_"):
-            disabled.add(name[8:])
-    return disabled
+        var_key = _bn_var_key(key)
+        if key not in common or var_key not in common:
+            continue
+        mean_shape = tuple(state_dicts[0][key].shape)
+        var_shape = tuple(state_dicts[0][var_key].shape)
+        if mean_shape != var_shape:
+            continue
+        ok = True
+        for state in state_dicts[1:]:
+            ok = ok and tuple(state[key].shape) == mean_shape and tuple(state[var_key].shape) == var_shape
+        if ok:
+            pairs.append((key, var_key, _bn_num_batches_key(key)))
+    return pairs
 
 
-def _enabled(cfg, name):
-    return name not in _disabled_components(cfg)
+def _client_sample_prior(meta, base_weights):
+    base = _normalize(base_weights)
+    return _sample_evidence_profile(meta, base)["sample_prior"]
 
 
-def _ablation_config(cfg):
-    components = [
-        "image_space",
-        "diagnostic_evidence",
-        "diagnostic_client_information",
-        "medical_weighted_fusion",
-        "class_routing",
-        "checkpoint_consistency",
-        "delta_agreement_weighting",
-        "conflict_stabilization",
-        "specialist_anchor",
-        "statistical_alignment",
+def _sample_evidence_profile(meta, base_weights):
+    base = _normalize(base_weights)
+    samples = []
+    clients = (meta or {}).get("clients", [])
+    for idx in range(base.numel()):
+        client = clients[idx] if idx < len(clients) else {}
+        samples.append(float(client.get("num_samples", 1.0)))
+    sample_counts = torch.tensor(samples, dtype=torch.float32).clamp_min(1.0)
+    sample = _normalize(sample_counts, base)
+    if sample.numel() <= 1:
+        return {
+            "sample_prior": sample,
+            "sample_mass": sample,
+            "mild_sample_prior": sample,
+            "max_case_share": float(sample.max().item()) if sample.numel() else 0.0,
+            "evidence_concentration_gate": 0.0,
+        }
+    mild_sample = _normalize(torch.sqrt(sample_counts), base)
+    mild_prior = _normalize(0.50 * base + 0.50 * mild_sample, base)
+    max_share = float(sample.max().item())
+    evidence_gate = _smooth01((max_share - 0.45) / 0.25)
+    return {
+        "sample_prior": _normalize((1.0 - evidence_gate) * mild_prior + evidence_gate * sample, base),
+        "sample_mass": sample,
+        "mild_sample_prior": mild_prior,
+        "max_case_share": max_share,
+        "evidence_concentration_gate": float(evidence_gate),
+    }
+
+
+def _bn_profile_distances(state_dicts, pairs, centroid_weights):
+    num_clients = len(state_dicts)
+    distances = torch.zeros(num_clients, dtype=torch.float32)
+    mean_terms = torch.zeros(num_clients, dtype=torch.float32)
+    var_terms = torch.zeros(num_clients, dtype=torch.float32)
+    used = 0
+
+    for mean_key, var_key, _num_key in pairs:
+        means = torch.stack([state[mean_key].detach().float() for state in state_dicts], dim=0)
+        variances = torch.stack([state[var_key].detach().float().clamp_min(EPS) for state in state_dicts], dim=0)
+        weight_shape = (len(state_dicts),) + (1,) * (means.ndim - 1)
+        w = torch.as_tensor(centroid_weights, dtype=torch.float32).view(weight_shape)
+        mean_bar = (w * means).sum(dim=0)
+        log_var = torch.log(variances)
+        log_var_bar = (w * log_var).sum(dim=0)
+        var_bar = torch.exp(log_var_bar).clamp_min(EPS)
+
+        layer_mean = ((means - mean_bar.view((1,) + tuple(mean_bar.shape))).square() / var_bar.view((1,) + tuple(var_bar.shape))).mean(
+            dim=tuple(range(1, means.ndim))
+        )
+        layer_var = (log_var - log_var_bar.view((1,) + tuple(log_var_bar.shape))).square().mean(
+            dim=tuple(range(1, log_var.ndim))
+        )
+        mean_terms += layer_mean.cpu()
+        var_terms += layer_var.cpu()
+        distances += (layer_mean + 0.50 * layer_var).cpu()
+        used += 1
+
+    if used > 0:
+        distances /= float(used)
+        mean_terms /= float(used)
+        var_terms /= float(used)
+    return distances, mean_terms, var_terms
+
+
+def _build_bn_moment_ledger(state_dicts, base_weights, meta, cfg):
+    base = _normalize(base_weights)
+    evidence_profile = _sample_evidence_profile(meta, base)
+    sample_prior = evidence_profile["sample_prior"]
+    pairs = _common_bn_pairs(state_dicts)
+    num_clients = len(state_dicts)
+
+    if not pairs:
+        if _bool_cfg(cfg, "my_merge_require_bn", False):
+            raise ValueError(
+                "my_merge BN-only mode requires client checkpoints with BatchNorm running_mean/running_var buffers."
+            )
+        return {
+            "has_bn": False,
+            "bn_pairs": [],
+            "base_weights": base,
+            "sample_prior": sample_prior,
+            "bn_weights": base,
+            "bn_consistency": torch.ones(num_clients, dtype=torch.float32),
+            "bn_distance": torch.zeros(num_clients, dtype=torch.float32),
+            "bn_mean_shift": torch.zeros(num_clients, dtype=torch.float32),
+            "bn_var_shift": torch.zeros(num_clients, dtype=torch.float32),
+            "heterogeneity": 0.0,
+            "merge_gate": 0.0,
+            "temperature": 1.0,
+            "evidence_profile": evidence_profile,
+            "trace": {
+                "enabled": False,
+                "reason": "no_batchnorm_running_statistics",
+                "max_case_share": float(evidence_profile["max_case_share"]),
+                "evidence_concentration_gate": float(evidence_profile["evidence_concentration_gate"]),
+                "privacy": "no BN moments were present; no raw samples were requested",
+            },
+        }
+
+    if _disable_bml(cfg):
+        return {
+            "has_bn": True,
+            "bn_pairs": pairs,
+            "base_weights": base,
+            "sample_prior": sample_prior,
+            "bn_weights": base,
+            "bn_consistency": torch.ones(num_clients, dtype=torch.float32),
+            "bn_distance": torch.zeros(num_clients, dtype=torch.float32),
+            "bn_mean_shift": torch.zeros(num_clients, dtype=torch.float32),
+            "bn_var_shift": torch.zeros(num_clients, dtype=torch.float32),
+            "heterogeneity": 0.0,
+            "merge_gate": 0.0,
+            "temperature": 1.0,
+            "client_rows": [],
+            "evidence_profile": evidence_profile,
+            "trace": {
+                "enabled": False,
+                "reason": "disabled_by_ablation",
+                "rule": "clinical_evidence_ledger",
+                "bn_layer_count": len(pairs),
+                "base_weights": [float(x) for x in base.tolist()],
+                "bn_weights": [float(x) for x in base.tolist()],
+                "max_case_share": float(evidence_profile["max_case_share"]),
+                "evidence_concentration_gate": float(evidence_profile["evidence_concentration_gate"]),
+                "privacy": "BN moments were available but CEL was disabled for ablation",
+            },
+        }
+
+    distances, mean_shift, var_shift = _bn_profile_distances(state_dicts, pairs, sample_prior)
+    positive = distances[distances > 0]
+    if positive.numel() > 0:
+        auto_temp = float(torch.median(positive).item()) * 1.50 + 0.05
+    else:
+        auto_temp = 1.0
+    temperature = float((cfg or {}).get("my_merge_bn_temperature", auto_temp))
+    temperature = max(temperature, 0.05)
+
+    consistency = torch.exp(-distances / temperature).clamp(0.05, 1.0)
+    bn_weights = _normalize(sample_prior * (0.35 + 0.65 * consistency), sample_prior)
+    heterogeneity = float((sample_prior * distances).sum().item() / temperature)
+    merge_gate = _smooth01(
+        (heterogeneity - float((cfg or {}).get("my_merge_bn_gate_floor", 0.15)))
+        / float((cfg or {}).get("my_merge_bn_gate_width", 0.85))
+    )
+
+    client_rows = []
+    clients = (meta or {}).get("clients", [])
+    for idx in range(num_clients):
+        client = clients[idx] if idx < len(clients) else {}
+        client_rows.append(
+            {
+                "client_index": idx,
+                "client_name": client.get("checkpoint", f"client_{idx}.pt"),
+                "num_samples": int(client.get("num_samples", 0)),
+                "seen_classes": [int(cls) for cls in client.get("classes", [])],
+                "base_weight": float(base[idx].item()),
+                "sample_prior": float(sample_prior[idx].item()),
+                "bn_weight": float(bn_weights[idx].item()),
+                "bn_consistency": float(consistency[idx].item()),
+                "bn_distance": float(distances[idx].item()),
+                "bn_mean_shift": float(mean_shift[idx].item()),
+                "bn_var_shift": float(var_shift[idx].item()),
+            }
+        )
+
+    return {
+        "has_bn": True,
+        "bn_pairs": pairs,
+        "base_weights": base,
+        "sample_prior": sample_prior,
+        "bn_weights": bn_weights,
+        "bn_consistency": consistency,
+        "bn_distance": distances,
+        "bn_mean_shift": mean_shift,
+        "bn_var_shift": var_shift,
+        "heterogeneity": heterogeneity,
+        "merge_gate": float(merge_gate),
+        "temperature": float(temperature),
+        "client_rows": client_rows,
+        "evidence_profile": evidence_profile,
+        "trace": {
+            "enabled": True,
+            "rule": "clinical_evidence_ledger",
+            "bn_layer_count": len(pairs),
+            "bn_layers": [mean_key[: -len(".running_mean")] if mean_key.endswith(".running_mean") else mean_key for mean_key, _var, _num in pairs],
+            "temperature": float(temperature),
+            "heterogeneity": float(heterogeneity),
+            "merge_gate": float(merge_gate),
+            "max_case_share": float(evidence_profile["max_case_share"]),
+            "evidence_concentration_gate": float(evidence_profile["evidence_concentration_gate"]),
+            "sample_mass": [float(x) for x in evidence_profile["sample_mass"].tolist()],
+            "mild_sample_prior": [float(x) for x in evidence_profile["mild_sample_prior"].tolist()],
+            "base_weights": [float(x) for x in base.tolist()],
+            "sample_prior": [float(x) for x in sample_prior.tolist()],
+            "bn_weights": [float(x) for x in bn_weights.tolist()],
+            "bn_consistency": [float(x) for x in consistency.tolist()],
+            "bn_distance": [float(x) for x in distances.tolist()],
+            "client_rows": client_rows,
+            "privacy": "clients upload checkpoints with aggregate BN running moments only; no raw images, per-sample logits, activations, or candidate feedback are used",
+        },
+    }
+
+
+def _merge_running_stat(values, weights, key, dtype):
+    weights = torch.as_tensor(weights, dtype=torch.float32)
+    if key.endswith("running_var"):
+        out = torch.zeros_like(values[0].detach().float())
+        for value, weight in zip(values, weights):
+            out.add_(torch.log(value.detach().float().clamp_min(EPS)), alpha=float(weight))
+        return torch.exp(out).to(dtype)
+    return _weighted_average(values, weights).to(dtype)
+
+
+def _is_classifier_tensor(key, tensor, num_classes):
+    lowered = key.lower()
+    return (
+        torch.is_floating_point(tensor)
+        and tensor.ndim in (1, 2)
+        and tensor.shape[0] == int(num_classes)
+        and any(token in lowered for token in ("fc", "classifier", "head", "logit", "proj"))
+    )
+
+
+def _client_class_sets(meta, num_classes):
+    sets = []
+    for client in (meta or {}).get("clients", []):
+        seen = sorted({int(x) for x in client.get("classes", []) if 0 <= int(x) < int(num_classes)})
+        sets.append(seen)
+    return sets
+
+
+def _class_support_profile(meta, num_classes):
+    class_sets = _client_class_sets(meta, num_classes)
+    if not class_sets or int(num_classes) <= 0:
+        return {
+            "support_counts": [],
+            "mean_support": 0.0,
+            "singleton_fraction": 0.0,
+            "non_singleton_fraction": 0.0,
+            "client_class_fractions": [],
+            "mean_client_class_fraction": 0.0,
+            "max_client_class_fraction": 0.0,
+            "partition_gate": 0.0,
+            "broad_client_gate": 0.0,
+            "clear_partition_gate": 0.0,
+            "false_specialty_gate": 0.0,
+            "specialization_gate": 0.0,
+        }
+    counts = []
+    for cls_idx in range(int(num_classes)):
+        counts.append(sum(1 for seen in class_sets if cls_idx in seen))
+    singleton_fraction = sum(1 for value in counts if value <= 1) / float(max(1, len(counts)))
+    client_class_fractions = [
+        len(seen) / float(max(1, int(num_classes)))
+        for seen in class_sets
     ]
+    max_client_class_fraction = max(client_class_fractions) if client_class_fractions else 0.0
+    mean_client_class_fraction = (
+        sum(client_class_fractions) / float(max(1, len(client_class_fractions)))
+        if client_class_fractions
+        else 0.0
+    )
+
+    # Clinical specialists should form a near-partition of labels.  A clear
+    # singleton partition is strong evidence, but a moderate singleton rate is
+    # still useful when no client broadly covers the label space.
+    partition_gate = _smooth01((singleton_fraction - 0.45) / 0.20)
+    clear_partition_gate = _smooth01((singleton_fraction - 0.78) / 0.10)
+    broad_client_gate = _smooth01((max_client_class_fraction - 0.40) / 0.20)
+    compact_specialty_gate = _smooth01((singleton_fraction - 0.35) / 0.25) * (1.0 - broad_client_gate)
+    false_specialty_gate = broad_client_gate * (1.0 - clear_partition_gate)
+    specialization_gate = max(
+        0.0,
+        min(1.0, max(partition_gate * (1.0 - false_specialty_gate), compact_specialty_gate)),
+    )
     return {
-        "labels": _ablation_labels(cfg),
-        "disabled_components": sorted(_disabled_components(cfg)),
-        "enabled": {name: _enabled(cfg, name) for name in components},
+        "support_counts": counts,
+        "mean_support": float(sum(counts) / float(max(1, len(counts)))),
+        "singleton_fraction": float(singleton_fraction),
+        "non_singleton_fraction": float(1.0 - singleton_fraction),
+        "client_class_fractions": [float(x) for x in client_class_fractions],
+        "mean_client_class_fraction": float(mean_client_class_fraction),
+        "max_client_class_fraction": float(max_client_class_fraction),
+        "partition_gate": float(partition_gate),
+        "broad_client_gate": float(broad_client_gate),
+        "compact_specialty_gate": float(compact_specialty_gate),
+        "clear_partition_gate": float(clear_partition_gate),
+        "false_specialty_gate": float(false_specialty_gate),
+        "specialization_gate": float(specialization_gate),
     }
 
 
-def _is_medical_image_task(meta):
-    return meta.get("task_type") in {"small", "vlm"} and meta.get("dataset") in MEDICAL_IMAGE_DATASETS
+def _class_head_weights(meta, base_weights, bn_weights, num_classes, cfg=None, prior_entropy_deficit=0.0):
+    base = torch.as_tensor(base_weights, dtype=torch.float32)
+    bn = torch.as_tensor(bn_weights, dtype=torch.float32)
+    class_sets = _client_class_sets(meta, num_classes)
+    if not class_sets:
+        return (
+            torch.stack([bn.clone() for _ in range(int(num_classes))], dim=0),
+            torch.zeros(int(num_classes)),
+            {"specialization_gate": 0.0},
+        )
+
+    support_profile = _class_support_profile(meta, num_classes)
+    sparse_overlap_gate = (
+        _smooth01((2.20 - float(support_profile["mean_support"])) / 0.45)
+        * (1.0 - _smooth01((float(support_profile["singleton_fraction"]) - 0.32) / 0.18))
+        * (1.0 - float(support_profile["broad_client_gate"]))
+        * _smooth01((float(prior_entropy_deficit) - 0.07) / 0.05)
+    )
+    specialization_gate = max(float(support_profile["specialization_gate"]), float(sparse_overlap_gate))
+    support_profile["sparse_overlap_specialty_gate"] = float(sparse_overlap_gate)
+    support_profile["specialization_gate"] = float(specialization_gate)
+    fragmentation_gate = _smooth01((float(support_profile["singleton_fraction"]) - 0.50) / 0.20)
+    imbalance_gate = fragmentation_gate * _smooth01(
+        (float(prior_entropy_deficit) - float((cfg or {}).get("my_merge_support_mass_prior_floor", 0.06)))
+        / float((cfg or {}).get("my_merge_support_mass_prior_width", 0.03))
+    )
+    support_mass_floor = float((cfg or {}).get("my_merge_support_mass_floor", 0.15))
+    support_mass_width = float((cfg or {}).get("my_merge_support_mass_width", 0.12))
+
+    rows = []
+    strengths = []
+    support_masses = []
+    support_reliability = []
+    for cls_idx in range(int(num_classes)):
+        support = torch.tensor([1.0 if cls_idx in seen else 0.0 for seen in class_sets[: bn.numel()]], dtype=torch.float32)
+        support_count = int(support.sum().item())
+        if support_count <= 0:
+            rows.append(bn.clone())
+            strengths.append(0.0)
+            support_masses.append(0.0)
+            support_reliability.append(0.0)
+            continue
+
+        support_floor = 0.05
+        support_mass = float((bn * support).sum().item())
+        reliability = _smooth01((support_mass - support_mass_floor) / support_mass_width)
+        routed = _normalize(bn * (support_floor + support), bn)
+        strength = specialization_gate * (0.30 + 0.25 * max(0, 3 - support_count))
+        strength *= 1.0 - imbalance_gate * (1.0 - reliability)
+        strength = max(0.0, min(0.98, strength))
+        rows.append(_normalize((1.0 - strength) * bn + strength * routed, base))
+        strengths.append(strength)
+        support_masses.append(support_mass)
+        support_reliability.append(float(reliability))
+    support_profile.update(
+        {
+            "support_mass_prior_gate": float(imbalance_gate),
+            "support_mass_fragmentation_gate": float(fragmentation_gate),
+            "support_mass_floor": float(support_mass_floor),
+            "support_mass_width": float(support_mass_width),
+            "class_support_mass": [float(x) for x in support_masses],
+            "class_support_reliability": [float(x) for x in support_reliability],
+        }
+    )
+    return torch.stack(rows, dim=0), torch.tensor(strengths, dtype=torch.float32), support_profile
 
 
-def _is_natural_control_task(meta):
-    return meta.get("task_type") == "small" and meta.get("dataset") in NATURAL_CONTROL_DATASETS
+def _reduce_non_diagonal(covariance, ratio):
+    ratio = float(ratio)
+    if ratio >= 1.0:
+        return covariance
+    eye = torch.eye(covariance.shape[0], dtype=covariance.dtype, device=covariance.device)
+    return covariance * eye + covariance * (1.0 - eye) * ratio
 
 
-def _domain_control_enabled(cfg):
-    value = (cfg or {}).get("my_merge_domain_control", False)
-    if isinstance(value, bool):
-        return value
-    return str(value).strip().lower() in {"1", "true", "yes", "y", "on"}
+def _linear_covariance_merge(key, values, cov_stats, weights, cfg):
+    if not key.endswith(".weight") or values[0].ndim != 2 or cov_stats is None:
+        return None
+    module_name = key[: -len(".weight")]
+    if not all(isinstance(stats, dict) and module_name in stats for stats in cov_stats):
+        return None
+    in_features = int(values[0].shape[1])
+    covariances = []
+    for stats in cov_stats:
+        cov = stats[module_name].detach().cpu().float()
+        if cov.ndim != 2 or cov.shape[0] != in_features or cov.shape[1] != in_features:
+            return None
+        covariances.append(
+            _reduce_non_diagonal(cov, float((cfg or {}).get("my_merge_cov_reduce_non_diagonal_ratio", 1.0)))
+        )
+
+    weights = torch.as_tensor(weights, dtype=torch.float32)
+    sum_cov = None
+    sum_cov_weight = None
+    for value, covariance, weight in zip(values, covariances, weights):
+        w = value.detach().cpu().float()
+        cov_weight = covariance @ w.transpose(0, 1)
+        if sum_cov is None:
+            sum_cov = covariance * float(weight)
+            sum_cov_weight = cov_weight * float(weight)
+        else:
+            sum_cov.add_(covariance, alpha=float(weight))
+            sum_cov_weight.add_(cov_weight, alpha=float(weight))
+    eps = float((cfg or {}).get("my_merge_cov_eps", (cfg or {}).get("regmean_eps", 1e-6)))
+    eye = torch.eye(sum_cov.shape[0], dtype=torch.float32)
+    merged = torch.linalg.pinv(sum_cov + eps * eye) @ sum_cov_weight
+    return merged.transpose(0, 1)
 
 
-def _model_family(meta):
-    if meta.get("task_type") == "vlm":
-        return "vlm"
-    return "medical_image_encoder"
-
-
-def _normalize(values, fallback):
-    scores = torch.as_tensor(values, dtype=torch.float32)
-    fallback = torch.as_tensor(fallback, dtype=torch.float32)
-    scores = torch.nan_to_num(scores, nan=0.0, posinf=0.0, neginf=0.0).clamp_min(0.0)
-    total = scores.sum()
-    return fallback if float(total.item()) <= 0 else scores / total
-
-
-def _stable_weights(scores, fallback, temperature=0.75, floor=0.025):
-    fallback = torch.as_tensor(fallback, dtype=torch.float32)
-    scores = torch.as_tensor(scores, dtype=torch.float32).clamp_min(EPS)
-    logits = torch.log(scores)
-    logits = logits - logits.mean()
-    scale = torch.clamp(logits.abs().median(), min=0.25)
-    probs = torch.softmax(logits / (temperature * scale + EPS), dim=0)
-    if floor > 0:
-        probs = (1.0 - floor) * probs + floor * fallback
-    return _normalize(probs, fallback)
-
-
-def _coverage_gate(labels, num_classes):
-    labels = torch.as_tensor(labels, dtype=torch.long).view(-1)
-    if labels.numel() == 0:
-        return 0.0, 0.0
-    counts = torch.bincount(labels, minlength=max(1, int(num_classes))).float()
-    present = float((counts > 0).sum().item()) / float(max(1, int(num_classes)))
-    probs = counts / (counts.sum() + EPS)
-    entropy = -torch.sum(probs * torch.log(probs + EPS))
-    max_entropy = torch.log(torch.tensor(float(max(2, int(num_classes))), dtype=torch.float32))
-    balance = float(torch.clamp(entropy / (max_entropy + EPS), min=0.0, max=1.0).item())
-    size = float(labels.numel()) / (float(labels.numel()) + 32.0 * float(max(1, int(num_classes))))
-    return present, max(0.0, min(1.0, size * balance))
-
-
-def _score_gate(scores, reliability):
-    scores = torch.as_tensor(scores, dtype=torch.float32).clamp_min(0.0)
-    if scores.numel() <= 1 or float(scores.mean().item()) <= 0:
-        return 0.0
-    separation = float(torch.clamp(scores.std(unbiased=False) / (scores.mean() + EPS), min=0.0, max=1.0).item())
-    return max(0.0, min(1.0, (reliability - 0.10) / 0.90)) * max(0.0, min(1.0, separation / 0.05))
-
-
-def _calibrated(scores, fallback, reliability, temperature=0.75, floor=0.025):
-    fallback = torch.as_tensor(fallback, dtype=torch.float32)
-    raw = _stable_weights(scores, fallback, temperature=temperature, floor=floor)
-    gate = _score_gate(scores, reliability)
-    return _normalize((1.0 - gate) * fallback + gate * raw, fallback)
-
-
-def _image01(meta, x, cfg):
-    x = x.detach().float()
-    if not _enabled(cfg, "image_space"):
-        return x
-    if meta.get("task_type") == "vlm" and x.shape[1] == 3:
-        mean = torch.tensor(CLIP_IMAGE_MEAN, dtype=x.dtype, device=x.device).view(1, 3, 1, 1)
-        std = torch.tensor(CLIP_IMAGE_STD, dtype=x.dtype, device=x.device).view(1, 3, 1, 1)
-        x = x * std + mean
-    return torch.clamp(x, 0.0, 1.0)
-
-
-def _safe_quantile(values, q):
-    return torch.quantile(values.reshape(values.shape[0], -1), q=float(q), dim=1).view(-1, 1, 1)
-
-
-def _sobel(gray):
-    sx = torch.tensor([[1.0, 0.0, -1.0], [2.0, 0.0, -2.0], [1.0, 0.0, -1.0]], device=gray.device).view(1, 1, 3, 3)
-    sy = sx.transpose(2, 3)
-    g = gray.unsqueeze(1)
-    return torch.sqrt(F.conv2d(g, sx, padding=1).square() + F.conv2d(g, sy, padding=1).square() + EPS).squeeze(1)
-
-
-def _local_var(gray, kernel=7):
-    g = gray.unsqueeze(1)
-    mean = F.avg_pool2d(g, kernel_size=kernel, stride=1, padding=kernel // 2)
-    mean2 = F.avg_pool2d(g * g, kernel_size=kernel, stride=1, padding=kernel // 2)
-    return torch.clamp(mean2 - mean.square(), min=0.0).squeeze(1)
-
-
-def _morph_features(meta, x, cfg):
-    x = _image01(meta, x, cfg)
-    gray = x[:, 0] if x.shape[1] == 1 else x.mean(dim=1)
-    low = _safe_quantile(gray, 0.04)
-    high = _safe_quantile(gray, 0.96)
-    gray = torch.clamp((gray - low) / (high - low + EPS), 0.0, 1.0)
-    if not _enabled(cfg, "diagnostic_evidence"):
-        return torch.ones((gray.shape[0], FEATURE_DIM), dtype=gray.dtype, device=gray.device)
-
-    edge = _sobel(gray)
-    local_mean = F.avg_pool2d(gray.unsqueeze(1), kernel_size=9, stride=1, padding=4).squeeze(1)
-    contrast_map = (gray - local_mean).abs()
-    texture_map = torch.sqrt(_local_var(gray, kernel=7) + EPS)
-    evidence = 0.42 * edge + 0.34 * contrast_map + 0.24 * texture_map
-    mask = (evidence >= _safe_quantile(evidence, 0.70)).float()
-    mass = mask.sum(dim=(1, 2)) + EPS
-    boundary = (edge * mask).sum(dim=(1, 2)) / mass
-    contrast = (contrast_map * mask).sum(dim=(1, 2)) / mass
-    texture = (texture_map * mask).sum(dim=(1, 2)) / mass
-    reliability = torch.clamp((0.55 * contrast + 0.45 * boundary) / 0.55, 0.05, 2.0)
-    salience = (0.35 + boundary) * (0.35 + contrast) * (0.35 + texture) * 0.95 * reliability
-    return torch.stack([boundary, contrast, texture, salience, reliability], dim=1)
-
-
-def _sample_weights(features):
-    importance = features[:, 3] / (features[:, 3].mean() + EPS)
-    reliability = torch.clamp(features[:, 4], min=0.15, max=1.5)
-    weights = importance * (0.65 + 0.35 * reliability)
-    return torch.clamp(weights / (weights.mean() + EPS), min=0.20, max=5.0)
-
-
-def _neutral_feature_summary(num_classes):
-    mean = torch.ones(FEATURE_DIM, dtype=torch.float32)
-    class_means = torch.stack([mean.clone() for _ in range(max(1, int(num_classes)))], dim=0)
-    return {
-        "class_means": class_means,
-        "class_counts": torch.zeros(max(1, int(num_classes)), dtype=torch.float32),
-        "global_mean": mean,
-        "global_std": torch.zeros(FEATURE_DIM, dtype=torch.float32),
-        "num_samples": 0,
-        "label_coverage_ratio": 0.0,
-        "source": "neutral_no_raw_data",
+def _linear_covariance_gate(weights, meta, num_classes, cfg):
+    weights = torch.as_tensor(weights, dtype=torch.float32)
+    effective_clients = float(1.0 / weights.square().sum().clamp_min(EPS).item())
+    support = _class_support_profile(meta, num_classes)
+    silo_gate = _smooth01(
+        (effective_clients - float((cfg or {}).get("my_merge_cov_effective_client_floor", 5.0)))
+        / float((cfg or {}).get("my_merge_cov_effective_client_width", 1.0))
+    )
+    overlap_gate = _smooth01(
+        (support["non_singleton_fraction"] - float((cfg or {}).get("my_merge_cov_overlap_floor", 0.20)))
+        / float((cfg or {}).get("my_merge_cov_overlap_width", 0.45))
+    )
+    return max(0.0, min(1.0, silo_gate * overlap_gate)), {
+        "effective_clients": effective_clients,
+        "class_support_counts": support["support_counts"],
+        "mean_class_support": support["mean_support"],
+        "singleton_class_fraction": support["singleton_fraction"],
+        "non_singleton_class_fraction": support["non_singleton_fraction"],
+        "silo_gate": float(silo_gate),
+        "overlap_gate": float(overlap_gate),
     }
 
 
-def _canonical_feature_summary(class_means, global_mean, global_std):
-    class_means = torch.as_tensor(class_means, dtype=torch.float32)
-    global_mean = torch.as_tensor(global_mean, dtype=torch.float32)
-    global_std = torch.as_tensor(global_std, dtype=torch.float32)
-    if class_means.ndim == 2 and class_means.shape[1] == FEATURE_DIM + 1:
-        class_means = class_means[:, 1:]
-    if global_mean.ndim == 1 and global_mean.numel() == FEATURE_DIM + 1:
-        global_mean = global_mean[1:]
-    if global_std.ndim == 1 and global_std.numel() == FEATURE_DIM + 1:
-        global_std = global_std[1:]
-    return class_means, global_mean, global_std
+def _collect_linear_covariances(meta, checkpoints, cfg, *, gate_trace=None):
+    if not _bool_cfg(cfg, "my_merge_use_linear_covariance", False):
+        return None, {"enabled": False, "reason": "disabled_by_config"}
+    if gate_trace is not None and float(gate_trace.get("linear_covariance_gate", 0.0)) <= 0.0:
+        return None, {
+            "enabled": False,
+            "reason": "gate_zero",
+            **gate_trace,
+            "privacy": "no linear covariance was requested because the case is handled by BN/class routing",
+        }
+    uploaded = (cfg or {}).get("my_merge_linear_covariances")
+    if uploaded is not None:
+        return uploaded, {
+            "enabled": True,
+            "source": "uploaded_client_linear_covariances",
+            "privacy": "aggregate linear input second moments only",
+        }
+    if not checkpoints:
+        return None, {"enabled": False, "reason": "missing_checkpoints"}
+    try:
+        from utils.statistics import collect_linear_covariances
+
+        stats = [collect_linear_covariances(meta, checkpoint, cfg) for checkpoint in checkpoints]
+    except Exception as exc:
+        return None, {"enabled": False, "reason": f"collection_failed: {exc}"}
+    module_names = sorted(set.intersection(*(set(item.keys()) for item in stats))) if stats else []
+    return stats, {
+        "enabled": True,
+        "source": "client_side_linear_covariance_simulation",
+        "module_names": module_names,
+        "privacy": "in deployment each client uploads aggregate G=E[z z^T] for linear heads; no raw images or per-sample features are sent",
+    }
+
+
+def _class_prior_logit(meta, num_classes):
+    counts = torch.zeros(int(num_classes), dtype=torch.float32)
+    for client in (meta or {}).get("clients", []):
+        seen = [int(x) for x in client.get("classes", []) if 0 <= int(x) < int(num_classes)]
+        if not seen:
+            continue
+        per_class = float(client.get("num_samples", 0.0)) / float(len(seen))
+        for cls_idx in seen:
+            counts[cls_idx] += per_class
+    if float(counts.sum().item()) <= 0:
+        return torch.zeros(int(num_classes), dtype=torch.float32), 0.0
+    prior = (counts + 1.0) / (counts.sum() + float(num_classes))
+    centered = torch.log(prior.clamp_min(EPS))
+    centered = centered - centered.mean()
+    entropy = -(prior * torch.log(prior.clamp_min(EPS))).sum() / torch.log(torch.tensor(float(num_classes)))
+    return centered, max(0.0, min(1.0, 1.0 - float(entropy.item())))
+
+
+def _is_classifier_bias_tensor(key, tensor, num_classes):
+    lowered = key.lower()
+    return (
+        torch.is_floating_point(tensor)
+        and tensor.ndim == 1
+        and tensor.shape[0] == int(num_classes)
+        and "bias" in lowered
+        and any(token in lowered for token in ("fc", "classifier", "head", "logit", "proj"))
+    )
+
+
+def _apply_bn_calibrated_merge(state_dicts, base_merged, ledger, meta, cfg, cov_stats=None):
+    if not ledger["has_bn"]:
+        return OrderedDict((k, v.detach().clone()) for k, v in base_merged.items()), {
+            "enabled": False,
+            "reason": "no_batchnorm_running_statistics",
+            "fusion_rule": "client_average_fallback",
+        }
+
+    weights = ledger["bn_weights"]
+    num_classes = int((meta or {}).get("num_classes", 0))
+    prior_logit, prior_entropy_deficit = _class_prior_logit(meta, num_classes)
+    class_weights, class_strength, specialization_profile = _class_head_weights(
+        meta,
+        ledger["base_weights"],
+        weights,
+        num_classes,
+        cfg=cfg,
+        prior_entropy_deficit=prior_entropy_deficit,
+    )
+    cov_gate, cov_gate_trace = _linear_covariance_gate(weights, meta, num_classes, cfg)
+    cov_weights = ledger["base_weights"]
+    prior_strength = (
+        0.0
+        if _disable_bcm(cfg)
+        else float((cfg or {}).get("my_merge_class_prior_strength", 0.20))
+        * _smooth01((prior_entropy_deficit - 0.08) / 0.30)
+    )
+
+    merged = OrderedDict()
+    updated_tensors = 0
+    running_stat_tensors = 0
+    covariance_tensors = 0
+
+    for key, base_value in base_merged.items():
+        values = [state[key] for state in state_dicts if key in state and tuple(state[key].shape) == tuple(base_value.shape)]
+        if len(values) != len(state_dicts):
+            merged[key] = base_value.detach().clone()
+            continue
+
+        if _is_bn_running_key(key):
+            merged[key] = _merge_running_stat(values, weights, key, base_value.dtype)
+            running_stat_tensors += 1
+            continue
+
+        if key.endswith("num_batches_tracked"):
+            try:
+                merged[key] = torch.stack([value.detach().cpu() for value in values], dim=0).max(dim=0).values.to(base_value.dtype)
+            except RuntimeError:
+                merged[key] = base_value.detach().clone()
+            continue
+
+        if not torch.is_floating_point(base_value):
+            merged[key] = base_value.detach().clone()
+            continue
+
+        if num_classes > 0 and _is_classifier_tensor(key, base_value, num_classes):
+            cov_out = _linear_covariance_merge(key, values, cov_stats, cov_weights, cfg)
+            out = _weighted_average(values, weights)
+            for cls_idx in range(int(num_classes)):
+                routed = _weighted_average([value[cls_idx] for value in values], class_weights[cls_idx])
+                strength = 0.0 if _disable_bcm(cfg) else float(class_strength[cls_idx].item())
+                out[cls_idx] = (1.0 - strength) * out[cls_idx] + strength * routed
+            if cov_out is not None and not _disable_bcm(cfg) and cov_gate > 0:
+                out = (1.0 - cov_gate) * out + cov_gate * cov_out.to(out.device)
+                covariance_tensors += 1
+            merged[key] = out.to(base_value.dtype)
+            updated_tensors += 1
+            continue
+
+        cov_out = _linear_covariance_merge(key, values, cov_stats, cov_weights, cfg)
+        if cov_out is not None and not _disable_bcm(cfg) and cov_gate > 0:
+            avg_out = _weighted_average(values, weights)
+            merged[key] = ((1.0 - cov_gate) * avg_out + cov_gate * cov_out.to(avg_out.device)).to(base_value.dtype)
+            covariance_tensors += 1
+        else:
+            merged[key] = _weighted_average(values, weights).to(base_value.dtype)
+        updated_tensors += 1
+
+    prior_bias_tensors = 0
+    if prior_strength > 0.0 and prior_logit.numel() == int(num_classes):
+        for key, value in list(merged.items()):
+            if _is_classifier_bias_tensor(key, value, num_classes):
+                merged[key] = (value.detach().float() + prior_strength * prior_logit.to(value.device)).to(value.dtype)
+                prior_bias_tensors += 1
+
+    return merged, {
+        "enabled": not _disable_bcm(cfg),
+        "rule": "protocol_calibrated_merge",
+        "reason": "disabled_by_ablation" if _disable_bcm(cfg) else "enabled",
+        "updated_tensors": int(updated_tensors),
+        "running_stat_tensors": int(running_stat_tensors),
+        "linear_covariance_gate": float(cov_gate),
+        "linear_covariance_gate_trace": cov_gate_trace,
+        "linear_covariance_weight_rule": "base_client_weights",
+        "linear_covariance_tensors": int(covariance_tensors),
+        "class_specialization_gate": float(specialization_profile.get("specialization_gate", 0.0)),
+        "class_specialization_profile": specialization_profile,
+        "class_head_strength": [float(x) for x in class_strength.tolist()],
+        "class_prior_entropy_deficit": float(prior_entropy_deficit),
+        "class_prior_strength": float(prior_strength),
+        "prior_bias_tensors": int(prior_bias_tensors),
+        "privacy": "server uses checkpoints, aggregate BN moments, and class/sample counts only in the main method; no raw images, per-sample logits, activations, or candidate validation feedback",
+    }
+
+
+def merge_my_merge(state_dicts, weights, meta=None, checkpoints=None, cfg=None):
+    if meta is None or cfg is None:
+        raise ValueError("my_merge requires task metadata and runtime config.")
+    domain_control = _domain_control_enabled(cfg)
+    if not _is_image_checkpoint_task(meta):
+        raise ValueError(
+            f"my_merge requires image checkpoint metadata with BN-compatible spatial features, got task_type={meta.get('task_type')}."
+        )
+
+    base_merged, base_weights = average_state_dicts(state_dicts, weights)
+    base = torch.as_tensor(base_weights, dtype=torch.float32)
+    ablation_labels = {x.lower().replace("-", "_") for x in _ablation_labels(cfg)}
+    if "avg_only" in ablation_labels:
+        return base_merged, {
+            "implementation": "clinical_evidence_ledger_pcm_avg_only",
+            "clinical_site_silo_method": True,
+            "domain_control": bool(domain_control),
+            "fusion_rule": "client_average",
+            "base_weights": [float(x) for x in base.tolist()],
+        }
+
+    ledger = _build_bn_moment_ledger(state_dicts, base, meta, cfg)
+    pre_cov_gate, pre_cov_trace = _linear_covariance_gate(
+        ledger["bn_weights"],
+        meta,
+        int((meta or {}).get("num_classes", 0)),
+        cfg,
+    )
+    pre_cov_trace = {"linear_covariance_gate": float(pre_cov_gate), **pre_cov_trace}
+    cov_stats, cov_trace = _collect_linear_covariances(meta, checkpoints, cfg, gate_trace=pre_cov_trace)
+    merged, merge_trace = _apply_bn_calibrated_merge(state_dicts, base_merged, ledger, meta, cfg, cov_stats=cov_stats)
+
+    fusion_path = "CEL + PCM" if ledger["has_bn"] else "client_average_fallback(no_bn)"
+    return merged, {
+        "implementation": "clinical_evidence_ledger_pcm_v1",
+        "clinical_site_silo_method": True,
+        "domain_control": bool(domain_control),
+        "fusion_solution": "single_shot_private_bn_moment_and_specialty_partition_merge",
+        "fusion_rule": "clinical_evidence_ledger_protocol_calibrated_merge",
+        "fusion_path": fusion_path,
+        "observed_medical_property": (
+            "medical image clients often differ by scanner, staining, acquisition protocol, organ window, and lesion scale; "
+            "these site shifts appear as channel-wise activation mean/variance changes in BN buffers, while NLP token models "
+            "usually use LayerNorm and do not expose image-channel spatial moment statistics"
+        ),
+        "module_1": "Clinical Evidence Ledger (CEL)",
+        "module_2": "Protocol-Calibrated Merge (PCM)",
+        "base_weights": [float(x) for x in ledger["base_weights"].tolist()],
+        "sample_prior": [float(x) for x in ledger["sample_prior"].tolist()],
+        "fusion_weights": [float(x) for x in ledger["bn_weights"].tolist()],
+        "bn_consistency": [float(x) for x in ledger["bn_consistency"].tolist()],
+        "bn_distance": [float(x) for x in ledger["bn_distance"].tolist()],
+        "bn_layer_count": int(len(ledger["bn_pairs"])),
+        "bn_heterogeneity": float(ledger["heterogeneity"]),
+        "client_diagnostic_information": ledger.get("client_rows", []),
+        "routing_summary": {
+            "module_1": ledger["trace"],
+            "module_2": merge_trace,
+            "fusion_equation": (
+                "For BN layer l and client i, CEL forms d_i = mean_l[ ||mu_i^l-mu_bar^l||^2/(sigma_bar^l)^2 "
+                "+ 0.5||log v_i^l-log v_bar^l||^2 ]. It sets omega_i = Norm(p_i(0.35+0.65 exp(-d_i/tau))), "
+                "where p_i is the sample evidence prior. PCM merges trainable tensors with omega, merges BN means "
+                "arithmetically, merges BN variances geometrically, and routes classifier rows only when the client "
+                "class layout forms a clinical-specialty partition."
+            ),
+            "privacy_audit": {
+                "server_raw_data_access": False,
+                "per_sample_logits": False,
+                "per_sample_activations": False,
+                "client_validation_feedback": False,
+                "uploaded_statistics": "checkpoint parameters plus aggregate BN running mean/variance and sample/class metadata; optional linear-head covariances are disabled in the main method",
+            },
+        },
+        "method_trace": {
+            "clinical_evidence_ledger": ledger["trace"],
+            "linear_covariance": cov_trace,
+            "protocol_calibrated_merge": merge_trace,
+        },
+    }
 
 
 def _feature_summary_path(meta, cfg):
-    root = cfg.get("my_merge_feature_summary_root")
+    root = (cfg or {}).get("my_merge_feature_summary_root")
     if not root:
         return None
     model_name = meta.get("model") if meta.get("task_type") == "small" else str(meta.get("clip_model", meta.get("model", ""))).split("/")[-1]
@@ -307,1469 +837,35 @@ def _feature_summary_path(meta, cfg):
     return Path(root) / name
 
 
+def _summary_from_payload(payload, num_classes=None):
+    out = dict(payload or {})
+    out.setdefault("source", "uploaded_bn_moment_summary")
+    out.setdefault("feature_names", BN_MOMENT_NAMES)
+    return out
+
+
 def _load_feature_summary_file(meta, cfg):
     path = _feature_summary_path(meta, cfg)
     if path is None or not path.exists():
         return None
     with path.open("r", encoding="utf-8") as f:
         payload = json.load(f)
-    payload.setdefault("source", "feature_summary_file")
+    payload.setdefault("source", "bn_moment_summary_file")
     return payload
 
 
 def _collect_feature_summary(meta, cfg):
-    num_classes = int(meta["num_classes"])
-    uploaded = cfg.get("my_merge_feature_summary") or _load_feature_summary_file(meta, cfg)
+    uploaded = (cfg or {}).get("my_merge_feature_summary") or _load_feature_summary_file(meta, cfg)
     if isinstance(uploaded, dict):
-        class_means = torch.as_tensor(uploaded.get("class_means"), dtype=torch.float32)
-        class_counts = torch.as_tensor(uploaded.get("class_counts"), dtype=torch.float32)
-        global_mean = torch.as_tensor(uploaded.get("global_mean", class_means.mean(dim=0)), dtype=torch.float32)
-        global_std = torch.as_tensor(uploaded.get("global_std", torch.zeros_like(global_mean)), dtype=torch.float32)
-        class_means, global_mean, global_std = _canonical_feature_summary(class_means, global_mean, global_std)
-        return {
-            "class_means": class_means,
-            "class_counts": class_counts,
-            "global_mean": global_mean,
-            "global_std": global_std,
-            "num_samples": int(uploaded.get("num_samples", int(class_counts.sum().item()))),
-            "label_coverage_ratio": float(uploaded.get("label_coverage_ratio", float((class_counts > 0).float().mean().item()))),
-            "source": uploaded.get("source", "uploaded_client_summary"),
-        }
-
-    require_summary = str(cfg.get("my_merge_require_feature_summary", False)).strip().lower() in {"1", "true", "yes", "on"}
-    if require_summary:
-        path = _feature_summary_path(meta, cfg)
-        raise FileNotFoundError(f"my_merge feature summary is required but missing: {path}")
-
-    runtime = build_runtime(
-        meta=meta,
-        data_root=cfg["data_root"],
-        split=cfg.get("stats_split", "val"),
-        batch_size=int(cfg.get("stats_batch_size", 32) or cfg.get("batch_size", 64)),
-        num_workers=int(cfg.get("stats_num_workers", cfg.get("num_workers", 4))),
-        device=torch.device("cpu"),
-    )
-    max_batches = int(cfg.get("my_merge_stats_max_batches", DEFAULT_STATS_MAX_BATCHES))
-    if meta.get("task_type") == "vlm" and "my_merge_stats_max_batches" not in cfg:
-        max_batches = 0
-    if max_batches <= 0:
-        return _neutral_feature_summary(num_classes)
-
-    features, labels = [], []
-    for batch_idx, (x, y) in enumerate(runtime["loader"]):
-        if batch_idx >= max_batches:
-            break
-        features.append(_morph_features(meta, x, cfg).cpu())
-        labels.append(y.clone())
-    if not features:
-        return _neutral_feature_summary(num_classes)
-
-    features = torch.cat(features, dim=0).float()
-    labels = torch.cat(labels, dim=0).long().view(-1)
-    global_mean = features.mean(dim=0)
-    global_std = features.std(dim=0, unbiased=False) if features.shape[0] > 1 else torch.zeros(FEATURE_DIM)
-    class_counts = torch.bincount(labels, minlength=num_classes).float()
-    class_means = []
-    for cls_idx in range(num_classes):
-        mask = labels == cls_idx
-        class_means.append(features[mask].mean(dim=0) if torch.any(mask) else global_mean)
+        return _summary_from_payload(uploaded, int(meta.get("num_classes", 0)))
     return {
-        "class_means": torch.stack(class_means, dim=0),
-        "class_counts": class_counts,
-        "global_mean": global_mean,
-        "global_std": global_std,
-        "num_samples": int(labels.numel()),
-        "label_coverage_ratio": float((class_counts > 0).float().mean().item()),
-        "source": "local_feature_summary_simulation",
+        "source": "bn_only_no_morphology_summary",
+        "feature_names": BN_MOMENT_NAMES,
+        "privacy_note": "BN-only my_merge does not collect morphology features or per-sample diagnostics.",
     }
 
 
-def _class_prior_from_meta(meta, num_classes):
-    priors = torch.zeros(num_classes, dtype=torch.float32)
-    for client in meta.get("clients", []):
-        samples = float(client.get("num_samples", 1.0))
-        classes = [int(x) for x in client.get("classes", [])]
-        if not classes:
-            continue
-        share = samples / float(len(classes))
-        for cls_idx in classes:
-            if 0 <= cls_idx < num_classes:
-                priors[cls_idx] += share
-    if float(priors.sum().item()) <= 0:
-        priors.fill_(1.0)
-    return priors / (priors.sum() + EPS)
-
-
-def _client_information(meta, feature_summary, cfg, base_weights):
-    base = torch.as_tensor(base_weights, dtype=torch.float32)
-    num_classes = int(meta["num_classes"])
-    class_means = torch.as_tensor(feature_summary["class_means"], dtype=torch.float32)
-    class_counts = torch.as_tensor(feature_summary["class_counts"], dtype=torch.float32)
-    global_mean = torch.as_tensor(feature_summary["global_mean"], dtype=torch.float32).clamp_min(EPS)
-    label_coverage = float(feature_summary.get("label_coverage_ratio", 0.0))
-    reliability = float(torch.clamp(global_mean[4] / (global_mean[4] + 0.50), min=0.0, max=1.0).item())
-    client_samples = torch.tensor([float(c.get("num_samples", 1.0)) for c in meta.get("clients", [])], dtype=torch.float32)
-    if client_samples.numel() != base.numel():
-        client_samples = torch.ones_like(base)
-    sample_prior = _normalize(torch.sqrt(client_samples.clamp_min(1.0)), fallback=base)
-    metadata_prior = _normalize(0.55 * base + 0.45 * sample_prior, fallback=base)
-
-    union_classes = set()
-    for client in meta.get("clients", []):
-        union_classes.update(int(x) for x in client.get("classes", []))
-    metadata_coverage = len([x for x in union_classes if 0 <= x < num_classes]) / float(max(1, num_classes))
-    support_gate = max(label_coverage, metadata_coverage)
-
-    if not _enabled(cfg, "diagnostic_client_information"):
-        class_weights = torch.stack([base.clone() for _ in range(num_classes)], dim=0)
-        rows = []
-        for idx, weight in enumerate(base.tolist()):
-            client = meta["clients"][idx] if idx < len(meta.get("clients", [])) else {}
-            rows.append({
-                "client_index": idx,
-                "client_name": client.get("checkpoint", f"client_{idx}.pt"),
-                "seen_classes": [int(x) for x in client.get("classes", [])],
-                "base_weight": float(weight),
-                "overall_weight": float(weight),
-                "morphology_weight": float(weight),
-                "support_score": float(weight),
-                "feature_salience": 1.0,
-                "feature_reliability": reliability,
-            })
-        return base, base, class_weights, rows, label_coverage, support_gate, reliability
-
-    class_prior = _class_prior_from_meta(meta, num_classes)
-    evidence_gate = 0.30 + 0.45 * support_gate
-    class_gate = 0.0 if not _enabled(cfg, "class_routing") else max(0.15 if label_coverage >= 0.50 else 0.0, support_gate)
-    overall_scores, morph_scores, summaries = [], [], []
-    class_scores = torch.zeros(num_classes, base.numel(), dtype=torch.float32)
-
-    for idx in range(base.numel()):
-        client = meta["clients"][idx] if idx < len(meta.get("clients", [])) else {}
-        seen = [int(x) for x in client.get("classes", []) if 0 <= int(x) < num_classes]
-        if seen:
-            counts = class_counts[seen].clamp_min(0.0)
-            if float(counts.sum().item()) <= 0:
-                counts = torch.ones(len(seen), dtype=torch.float32)
-            client_feature = (class_means[seen] * (counts / (counts.sum() + EPS)).view(-1, 1)).sum(dim=0)
-            class_coverage = len(seen) / float(max(1, num_classes))
-        else:
-            client_feature = global_mean
-            class_coverage = 1.0 / float(max(1, num_classes))
-        feature_ratio = torch.clamp(client_feature / global_mean, min=0.25, max=2.50)
-        boundary = float(feature_ratio[0].item())
-        contrast = float(feature_ratio[1].item())
-        texture = float(feature_ratio[2].item())
-        salience = float(feature_ratio[3].item())
-        feature_reliability = float(feature_ratio[4].item())
-        morph_quality = max(0.10, 0.26 * boundary + 0.24 * contrast + 0.20 * texture + 0.18 * salience + 0.12 * feature_reliability)
-        support_score = float(torch.sqrt(torch.tensor(float(client.get("num_samples", 1.0)))).item())
-        support_score = support_score / float(torch.sqrt(client_samples).mean().item() + EPS)
-        prior = float(metadata_prior[idx].item())
-        overall_score = prior * (0.35 + 0.30 * support_score + 0.20 * class_coverage + 0.15 * morph_quality)
-        morph_score = prior * (0.25 + 0.55 * morph_quality + 0.12 * class_coverage + 0.08 * support_score)
-        summaries.append({
-            "support_score": support_score,
-            "class_coverage": class_coverage,
-            "morph_quality": morph_quality,
-            "feature_salience": salience,
-            "feature_reliability": feature_reliability,
-            "overall_score": overall_score,
-            "morph_score": morph_score,
-        })
-        overall_scores.append(overall_score)
-        morph_scores.append(morph_score)
-
-        for cls_idx in range(num_classes):
-            cls_feature = torch.clamp(class_means[cls_idx] / global_mean, min=0.25, max=2.50)
-            cls_quality = 0.30 * cls_feature[0] + 0.25 * cls_feature[1] + 0.20 * cls_feature[2] + 0.15 * cls_feature[3] + 0.10 * cls_feature[4]
-            seen_bonus = 1.35 if cls_idx in seen else 0.42
-            rarity = torch.clamp((class_prior.mean() / (class_prior[cls_idx] + EPS)).sqrt(), min=0.75, max=1.40)
-            class_scores[cls_idx, idx] = prior * seen_bonus * float(rarity.item()) * float(0.25 + 0.75 * cls_quality.item())
-
-    overall = _normalize((1.0 - evidence_gate) * metadata_prior + evidence_gate * _calibrated(overall_scores, metadata_prior, reliability, 0.78, 0.025), metadata_prior)
-    morph = _normalize((1.0 - evidence_gate) * metadata_prior + evidence_gate * _calibrated(morph_scores, metadata_prior, reliability, 0.72, 0.025), metadata_prior)
-    class_weights = []
-    for cls_idx in range(num_classes):
-        cls_w = _calibrated(class_scores[cls_idx], morph, reliability, 0.84, 0.05)
-        class_weights.append(_normalize((1.0 - class_gate) * morph + class_gate * cls_w, morph))
-
-    rows = []
-    for idx, summary in enumerate(summaries):
-        client = meta["clients"][idx] if idx < len(meta.get("clients", [])) else {}
-        rows.append({
-            "client_index": idx,
-            "client_name": client.get("checkpoint", f"client_{idx}.pt"),
-            "seen_classes": [int(x) for x in client.get("classes", [])],
-            "base_weight": float(base[idx]),
-            "overall_weight": float(overall[idx]),
-            "morphology_weight": float(morph[idx]),
-            "support_score": float(summary["support_score"]),
-            "class_coverage": float(summary["class_coverage"]),
-            "morph_quality": float(summary["morph_quality"]),
-            "feature_salience": float(summary["feature_salience"]),
-            "feature_reliability": float(summary["feature_reliability"]),
-            "overall_score": float(summary["overall_score"]),
-            "morphology_score": float(summary["morph_score"]),
-            "evidence_reliability": reliability,
-            "class_routing_gate": class_gate,
-        })
-    return overall, morph, torch.stack(class_weights, dim=0), rows, label_coverage, support_gate, reliability
-
-
-def _module1(meta, cfg, base_weights):
-    feature_summary = _collect_feature_summary(meta, cfg)
-    overall, morph, class_weights, rows, label_coverage, support_gate, reliability = _client_information(meta, feature_summary, cfg, base_weights)
-    return {
-        "feature_summary": feature_summary,
-        "base_weights": torch.as_tensor(base_weights, dtype=torch.float32),
-        "overall_weights": overall,
-        "morphology_weights": morph,
-        "class_weights": class_weights,
-        "client_diagnostic_information": rows,
-        "evidence_support_gate": support_gate,
-        "label_coverage_ratio": label_coverage,
-        "evidence_reliability": reliability,
-        "class_morphology_separation": _class_morphology_separation(feature_summary),
-    }
-
-
-def _class_morphology_separation(feature_summary):
-    class_means = torch.as_tensor(feature_summary["class_means"], dtype=torch.float32)
-    global_mean = torch.as_tensor(feature_summary["global_mean"], dtype=torch.float32)
-    if class_means.ndim != 2 or class_means.shape[0] <= 1:
-        return 0.0
-    selected = class_means
-    denom = global_mean[:selected.shape[1]].abs().clamp_min(EPS)
-    normalized = selected / denom.view(1, -1)
-    return float(torch.clamp(normalized.std(dim=0, unbiased=False).mean(), min=0.0, max=1.0).item())
-
-
-def _param_group(key, meta):
-    early = (
-        "conv1",
-        "bn1",
-        "stem",
-        "patch_embed",
-        "embeddings",
-        "visual.conv1",
-        "layer1",
-        "layer2",
-        "features.0",
-        "features.1",
-        "blocks.0",
-        "blocks.1",
-        "layers.0",
-        "stages.0",
-    )
-    late = (
-        "layer4",
-        "features.16",
-        "features.17",
-        "blocks.10",
-        "blocks.11",
-        "layers.3",
-        "stages.3",
-        "visual.ln_post",
-        "visual.proj",
-        "fc",
-        "classifier",
-        "head",
-        "norm",
-    )
-    if any(t in key for t in early):
-        return "early"
-    if any(t in key for t in late):
-        return "late"
-    return "mid"
-
-
-def _is_classifier_tensor(key, tensor, num_classes):
-    return (
-        torch.is_floating_point(tensor)
-        and tensor.ndim in (1, 2)
-        and tensor.shape[0] == num_classes
-        and any(t in key for t in ("fc", "classifier", "head", "proj"))
-    )
-
-
-def _mean_client_class_coverage(meta, num_classes):
-    coverages = []
-    for client in meta.get("clients", []):
-        seen = {int(x) for x in client.get("classes", []) if 0 <= int(x) < int(num_classes)}
-        coverages.append(len(seen) / float(max(1, int(num_classes))))
-    return sum(coverages) / float(max(1, len(coverages)))
-
-
-def _conflict_pressure(conflict_stats, classifier_delta_norm, mean_coverage):
-    conflict_stats = conflict_stats or {}
-    sign_conflict = float(conflict_stats.get("sign_conflict", 0.0))
-    norm_dispersion = float(conflict_stats.get("norm_dispersion", 1.0))
-    direction_conflict = float(conflict_stats.get("direction_conflict", 0.0))
-    coverage_risk = max(0.0, min(1.0, (0.45 - float(mean_coverage)) / 0.30))
-    sign_pressure = max(0.0, min(1.0, (sign_conflict - 0.50) / 0.15))
-    direction_pressure = max(0.0, min(1.0, (direction_conflict - 0.45) / 0.12))
-    head_pressure = max(0.0, min(1.0, (float(classifier_delta_norm) - 2.0) / 0.60))
-    balanced_scale = max(0.0, min(1.0, (0.40 - norm_dispersion) / 0.20))
-    pressure = coverage_risk * (
-        0.38 * sign_pressure
-        + 0.27 * direction_pressure
-        + 0.23 * head_pressure
-        + 0.12 * balanced_scale
-    )
-    return max(0.0, min(1.0, pressure)), {
-        "coverage_risk": coverage_risk,
-        "sign_pressure": sign_pressure,
-        "direction_pressure": direction_pressure,
-        "head_pressure": head_pressure,
-        "balanced_scale_pressure": balanced_scale,
-    }
-
-
-def _smooth01(value):
-    x = max(0.0, min(1.0, float(value)))
-    return x * x * (3.0 - 2.0 * x)
-
-
-def _representation_conflict_pressure(conflict_stats, mean_coverage, num_classes):
-    conflict_stats = conflict_stats or {}
-    sign_conflict = float(conflict_stats.get("sign_conflict", 0.0))
-    direction_conflict = float(conflict_stats.get("direction_conflict", 0.0))
-    coverage_risk = max(0.0, min(1.0, (0.45 - float(mean_coverage)) / 0.30))
-    class_diversity = max(0.0, min(1.0, float(num_classes) / 10.0))
-    sign_pressure = max(0.0, min(1.0, (sign_conflict - 0.48) / 0.16))
-    direction_pressure = max(0.0, min(1.0, (direction_conflict - 0.45) / 0.12))
-    pressure = class_diversity * (0.50 + 0.50 * coverage_risk) * (0.60 * sign_pressure + 0.40 * direction_pressure)
-    return max(0.0, min(1.0, pressure)), {
-        "coverage_risk": coverage_risk,
-        "class_diversity": class_diversity,
-        "sign_pressure": sign_pressure,
-        "direction_pressure": direction_pressure,
-    }
-
-
-def _middle_delta_policy(conflict_stats, mean_coverage, num_classes):
-    conflict_stats = conflict_stats or {}
-    sign_conflict = float(conflict_stats.get("sign_conflict", 0.0))
-    direction_conflict = float(conflict_stats.get("direction_conflict", 0.0))
-    norm_dispersion = float(conflict_stats.get("norm_dispersion", 1.0))
-    use_middle = (
-        int(num_classes) >= 10
-        and float(mean_coverage) <= 0.30
-        and sign_conflict >= 0.52
-        and direction_conflict >= 0.488
-        and norm_dispersion <= 0.50
-    )
-    return use_middle, {
-        "rule": "low_coverage_high_sign_direction_conflict_scale_balanced",
-        "use_middle_delta": bool(use_middle),
-        "requires_num_classes_at_least_10": int(num_classes) >= 10,
-        "low_coverage": float(mean_coverage) <= 0.30,
-        "sign_conflict_high": sign_conflict >= 0.52,
-        "direction_conflict_high": direction_conflict >= 0.488,
-        "scale_balanced": norm_dispersion <= 0.50,
-        "sign_conflict_threshold": 0.52,
-        "direction_conflict_threshold": 0.488,
-        "norm_dispersion_threshold": 0.50,
-        "coverage_threshold": 0.30,
-    }
-
-
-def _classifier_routing_policy(meta, num_classes, cfg, classifier_delta_norm=0.0, conflict_stats=None):
-    mean_coverage = _mean_client_class_coverage(meta, num_classes)
-    if not _enabled(cfg, "class_routing"):
-        return "disabled", mean_coverage, 0.0, 0.0, {}
-    pressure, parts = _conflict_pressure(conflict_stats, classifier_delta_norm, mean_coverage)
-    damping = _smooth01((pressure - 0.42) / 0.18)
-    class_route_strength = 0.45 * (1.0 - damping)
-    policy = "conflict_damped_class_routing" if damping > 0 else "class_routing"
-    parts = {
-        **parts,
-        "damping": float(damping),
-    }
-    return policy, mean_coverage, class_route_strength, pressure, parts
-
-
-def _classifier_bias_keys(state_dict, num_classes):
-    return [
-        k for k, v in state_dict.items()
-        if torch.is_floating_point(v) and v.ndim == 1 and v.shape[0] == num_classes and any(t in k for t in ("fc", "classifier", "head", "proj"))
-    ]
-
-
-def _find_classifier_keys(state_dict, num_classes):
-    weight_key, bias_key = None, None
-    for key, value in state_dict.items():
-        if (
-            torch.is_floating_point(value)
-            and value.ndim == 2
-            and value.shape[0] == num_classes
-            and any(t in key for t in ("fc", "classifier", "head", "proj"))
-        ):
-            weight_key = key
-            prefix = key.rsplit(".", 1)[0] if "." in key else ""
-            for bias in _classifier_bias_keys(state_dict, num_classes):
-                if prefix and bias.startswith(prefix):
-                    bias_key = bias
-                    break
-            if bias_key is None:
-                biases = _classifier_bias_keys(state_dict, num_classes)
-                bias_key = biases[0] if biases else None
-            break
-    return weight_key, bias_key
-
-
-def _weighted_delta(values, reference, weights):
-    out = torch.zeros_like(reference.detach().float())
-    for value, weight in zip(values, weights):
-        out.add_(value.detach().float() - reference.detach().float(), alpha=float(weight))
-    return out
-
-
-def _weighted_average(values, weights):
-    out = values[0].detach().clone().float() * float(weights[0])
-    for value, weight in zip(values[1:], weights[1:]):
-        out.add_(value.detach().float(), alpha=float(weight))
-    return out
-
-
-def _consensus(overall, morph, base):
-    return _normalize(0.5 * torch.as_tensor(overall) + 0.5 * torch.as_tensor(morph), base)
-
-
-def _checkpoint_consistency_scores(state_dicts, reference, meta, num_classes):
-    num_clients = len(state_dicts)
-    if num_clients <= 2 or reference is None:
-        return torch.ones(num_clients, dtype=torch.float32), {"enabled": False}
-
-    pair_sums = torch.zeros(num_clients, num_clients, dtype=torch.float64)
-    used_tensors, used_params = 0, 0
-    for key, ref in reference.items():
-        if key not in state_dicts[0]:
-            continue
-        first = state_dicts[0][key]
-        if (
-            not torch.is_floating_point(first)
-            or not torch.is_floating_point(ref)
-            or tuple(first.shape) != tuple(ref.shape)
-            or _is_classifier_tensor(key, first, num_classes)
-            or _param_group(key, meta) == "early"
-        ):
-            continue
-        values = [sd[key].detach().float() - ref.detach().float() for sd in state_dicts]
-        for i in range(num_clients):
-            for j in range(i + 1, num_clients):
-                pair_sums[i, j] += float((values[i] - values[j]).square().sum().item())
-        used_tensors += 1
-        used_params += int(first.numel())
-
-    if used_tensors == 0:
-        return torch.ones(num_clients, dtype=torch.float32), {"enabled": False}
-
-    pair_dist = pair_sums + pair_sums.t()
-    mean_dist = torch.sqrt(pair_dist.sum(dim=1) / float(max(1, num_clients - 1))).float()
-    median = torch.clamp(mean_dist.median(), min=EPS)
-    consistency = torch.exp(-torch.clamp(mean_dist / median - 1.0, min=0.0)).clamp(0.05, 1.0)
-    trace = {
-        "enabled": True,
-        "used_tensors": int(used_tensors),
-        "used_params": int(used_params),
-        "mean_trunk_distance": [float(x) for x in mean_dist.tolist()],
-        "consistency_scores": [float(x) for x in consistency.tolist()],
-    }
-    return consistency, trace
-
-
-def _apply_checkpoint_consistency(info, consistency, cfg):
-    base = torch.as_tensor(info["base_weights"], dtype=torch.float32)
-    consistency = torch.as_tensor(consistency, dtype=torch.float32)
-    if consistency.numel() != base.numel() or not _enabled(cfg, "checkpoint_consistency"):
-        return info, {"applied": False}
-
-    info = dict(info)
-    rows = []
-    for idx, row in enumerate(info["client_diagnostic_information"]):
-        updated = dict(row)
-        updated["checkpoint_consistency"] = float(consistency[idx])
-        rows.append(updated)
-    info["client_diagnostic_information"] = rows
-
-    pre_consensus = _consensus(info["overall_weights"], info["morphology_weights"], base)
-    concentration = float(torch.clamp(pre_consensus.max() - pre_consensus.mean(), min=0.0, max=1.0).item())
-    outlier = float(torch.clamp(1.0 - consistency.min(), min=0.0, max=1.0).item())
-    top_idx = int(torch.argmax(pre_consensus).item())
-    outlier_idx = int(torch.argmin(consistency).item())
-    top_is_outlier = top_idx == outlier_idx
-    top_row = info["client_diagnostic_information"][top_idx] if top_idx < len(info["client_diagnostic_information"]) else {}
-    top_class_coverage = float(top_row.get("class_coverage", 0.0))
-    top_is_generalist = top_class_coverage >= 0.95
-    gate = 1.0 if concentration >= 0.33 and outlier >= 0.45 and top_is_outlier and top_is_generalist else 0.0
-    if gate <= 0.0:
-        return info, {
-            "applied": False,
-            "gate": 0.0,
-            "outlier_strength": outlier,
-            "weight_concentration": concentration,
-            "top_weight_client": top_idx,
-            "outlier_client": outlier_idx,
-            "top_is_outlier": bool(top_is_outlier),
-            "top_class_coverage": top_class_coverage,
-            "top_is_generalist": bool(top_is_generalist),
-        }
-
-    power = 2.0
-
-    def adjust(weights):
-        weights = torch.as_tensor(weights, dtype=torch.float32)
-        guarded = _normalize(weights * consistency.pow(power), weights)
-        return _normalize((1.0 - gate) * weights + gate * guarded, weights)
-
-    adjusted = dict(info)
-    adjusted["overall_weights"] = adjust(info["overall_weights"])
-    adjusted["morphology_weights"] = adjust(info["morphology_weights"])
-    adjusted["class_weights"] = torch.stack([adjust(row) for row in info["class_weights"]], dim=0)
-    rows = []
-    for idx, row in enumerate(info["client_diagnostic_information"]):
-        updated = dict(row)
-        updated["overall_weight"] = float(adjusted["overall_weights"][idx])
-        updated["morphology_weight"] = float(adjusted["morphology_weights"][idx])
-        updated["checkpoint_consistency"] = float(consistency[idx])
-        rows.append(updated)
-    adjusted["client_diagnostic_information"] = rows
-    return adjusted, {
-        "applied": True,
-        "gate": float(gate),
-        "power": float(power),
-        "outlier_strength": outlier,
-        "weight_concentration": concentration,
-        "top_weight_client": top_idx,
-        "outlier_client": outlier_idx,
-        "top_is_outlier": bool(top_is_outlier),
-        "top_class_coverage": top_class_coverage,
-        "top_is_generalist": bool(top_is_generalist),
-        "pre_consensus": [float(x) for x in pre_consensus.tolist()],
-        "post_consensus": [float(x) for x in _consensus(adjusted["overall_weights"], adjusted["morphology_weights"], base).tolist()],
-    }
-
-
-def _layer_weights(group, base, overall, morph, consensus):
-    if group == "early":
-        return _normalize(0.70 * base + 0.30 * morph, base)
-    if group == "late":
-        return _normalize(0.30 * base + 0.70 * overall, base)
-    return _normalize(0.45 * base + 0.55 * consensus, base)
-
-
-def _delta_agreement_weights(values, reference, weights, base, strength=0.35):
-    if reference is None or reference.numel() < 64 or len(values) <= 1:
-        return weights, 0.0
-    ref = reference.detach().float()
-    deltas = torch.stack([(value.detach().float() - ref).reshape(-1) for value in values], dim=0)
-    common = torch.zeros_like(deltas[0])
-    for delta, coef in zip(deltas, torch.as_tensor(base, dtype=torch.float32).tolist()):
-        common.add_(delta, alpha=float(coef))
-    common_norm = common.norm().clamp_min(EPS)
-    delta_norms = deltas.norm(dim=1).clamp_min(EPS)
-    cos = (deltas @ common) / (delta_norms * common_norm)
-    agreement = torch.clamp((cos + 1.0) * 0.5, min=0.05, max=1.0)
-    prior = torch.as_tensor(weights, dtype=torch.float32)
-    aligned = _normalize(prior * agreement, prior)
-    adjusted = _normalize((1.0 - float(strength)) * prior + float(strength) * aligned, prior)
-    return adjusted, float(torch.mean(torch.abs(adjusted - prior)).item())
-
-
-def _medical_weighted_merge(state_dicts, base_merged, reference, base, overall, morph, class_weights, num_classes, meta, cfg, classifier_delta_norm=0.0, conflict_stats=None, head_conflict_stats=None):
-    consensus = _consensus(overall, morph, base)
-    group_weights = {g: _layer_weights(g, base, overall, morph, consensus) for g in ("early", "mid", "late")}
-    classifier_policy, classifier_mean_coverage, classifier_class_weight, head_conflict_pressure, pressure_parts = _classifier_routing_policy(
-        meta,
-        num_classes,
-        cfg,
-        classifier_delta_norm,
-        conflict_stats,
-    )
-    merged = OrderedDict()
-    routed = {"early": 0, "mid": 0, "late": 0, "classifier": 0}
-    agreement_layers, agreement_shift = 0, 0.0
-
-    for key in state_dicts[0]:
-        values = [sd[key] for sd in state_dicts]
-        first = values[0]
-        if not torch.is_floating_point(first):
-            merged[key] = base_merged[key].detach().clone()
-            continue
-        ref = reference.get(key) if reference is not None else None
-        use_delta = ref is not None and torch.is_floating_point(ref) and tuple(ref.shape) == tuple(first.shape)
-
-        if _is_classifier_tensor(key, first, num_classes):
-            out = ref.detach().clone().float() if use_delta else first.detach().clone().float().zero_()
-            for cls_idx in range(first.shape[0]):
-                weights = _normalize(classifier_class_weight * class_weights[cls_idx] + (1.0 - classifier_class_weight) * consensus, consensus)
-                row_values = [v[cls_idx] for v in values]
-                out[cls_idx] = (ref[cls_idx].float() + _weighted_delta(row_values, ref[cls_idx], weights)).to(out.dtype) if use_delta else _weighted_average(row_values, weights)
-            merged[key] = out.to(first.dtype)
-            routed["classifier"] += 1
-            continue
-
-        group = _param_group(key, meta)
-        weights = group_weights[group]
-        if use_delta and _enabled(cfg, "delta_agreement_weighting"):
-            adjusted, shift = _delta_agreement_weights(values, ref, weights, base)
-            if shift > 0:
-                weights = adjusted
-                agreement_layers += 1
-                agreement_shift += shift
-        merged[key] = (ref.float() + _weighted_delta(values, ref, weights)).to(first.dtype) if use_delta else _weighted_average(values, weights).to(first.dtype)
-        routed[group] += 1
-    return merged, {
-        "fusion_weights": [float(x) for x in consensus.tolist()],
-        "group_weights": {g: [float(x) for x in w.tolist()] for g, w in group_weights.items()},
-        "routing_summary": {
-            **routed,
-            "delta_space": reference is not None,
-            "delta_agreement_layers": int(agreement_layers),
-            "delta_agreement_mean_shift": float(agreement_shift / max(1, agreement_layers)),
-            "classifier_routing_policy": classifier_policy,
-            "classifier_mean_client_coverage": float(classifier_mean_coverage),
-            "classifier_class_weight": float(classifier_class_weight),
-            "head_conflict_pressure": float(head_conflict_pressure),
-            "head_conflict_pressure_parts": pressure_parts,
-        },
-    }
-
-
-def _sign_delta_merge(state_dicts, base_merged, reference, param_names, weights, density=0.5):
-    task_matrix, base_vector = build_task_matrix(state_dicts, reference, param_names)
-    trimmed = mask_smallest_magnitude(task_matrix, preserve_density=density)
-    merged_delta = disjoint_merge(trimmed, elect_sign(trimmed), weights=weights)
-    params = vector_to_param_dict(base_vector + merged_delta, reference, param_names)
-    return overlay_param_dict(base_merged, params)
-
-
-def _sign_delta_params(state_dicts, reference, param_names, weights, density=0.5):
-    if not param_names:
-        return OrderedDict()
-    task_matrix, base_vector = build_task_matrix(state_dicts, reference, param_names)
-    trimmed = mask_smallest_magnitude(task_matrix, preserve_density=density)
-    merged_delta = disjoint_merge(trimmed, elect_sign(trimmed), weights=weights)
-    return vector_to_param_dict(base_vector + merged_delta, reference, param_names)
-
-
-def _middle_delta_merge(state_dicts, base_merged, reference, param_names, weights, keep=0.25, remove_top=0.10):
-    task_matrix, base_vector = build_task_matrix(state_dicts, reference, param_names)
-    filtered = torch.zeros_like(task_matrix)
-    for idx, row in enumerate(task_matrix):
-        flat = row.reshape(-1)
-        total = flat.numel()
-        if total == 0:
-            continue
-        magnitude = flat.abs()
-        available = torch.ones_like(flat, dtype=torch.bool)
-        remove_count = int(total * float(remove_top))
-        if remove_count > 0:
-            _, remove_idx = torch.topk(magnitude, min(remove_count, total))
-            available[remove_idx] = False
-        keep_count = min(int(total * float(keep)), int(available.sum().item()))
-        if keep_count <= 0:
-            continue
-        scores = magnitude.masked_fill(~available, -1.0)
-        _, keep_idx = torch.topk(scores, keep_count)
-        out = torch.zeros_like(flat)
-        out[keep_idx] = flat[keep_idx]
-        filtered[idx] = out.reshape_as(row)
-    merged_delta = disjoint_merge(filtered, elect_sign(filtered), weights=weights)
-    params = vector_to_param_dict(base_vector + merged_delta, reference, param_names)
-    return overlay_param_dict(base_merged, params)
-
-
-def _middle_delta_params(state_dicts, reference, param_names, weights, keep=0.25, remove_top=0.10):
-    if not param_names:
-        return OrderedDict()
-    task_matrix, base_vector = build_task_matrix(state_dicts, reference, param_names)
-    filtered = torch.zeros_like(task_matrix)
-    for idx, row in enumerate(task_matrix):
-        flat = row.reshape(-1)
-        total = flat.numel()
-        if total == 0:
-            continue
-        magnitude = flat.abs()
-        available = torch.ones_like(flat, dtype=torch.bool)
-        remove_count = int(total * float(remove_top))
-        if remove_count > 0:
-            _, remove_idx = torch.topk(magnitude, min(remove_count, total))
-            available[remove_idx] = False
-        keep_count = min(int(total * float(keep)), int(available.sum().item()))
-        if keep_count <= 0:
-            continue
-        scores = magnitude.masked_fill(~available, -1.0)
-        _, keep_idx = torch.topk(scores, keep_count)
-        out = torch.zeros_like(flat)
-        out[keep_idx] = flat[keep_idx]
-        filtered[idx] = out.reshape_as(row)
-    merged_delta = disjoint_merge(filtered, elect_sign(filtered), weights=weights)
-    return vector_to_param_dict(base_vector + merged_delta, reference, param_names)
-
-
-def _blend_params_into_state(state, params, right_weight):
-    right_weight = float(right_weight)
-    if right_weight <= 0.0 or not params:
-        return OrderedDict((k, v.detach().clone()) for k, v in state.items())
-    left_weight = 1.0 - right_weight
-    merged = OrderedDict()
-    for key, value in state.items():
-        if key in params and torch.is_floating_point(value):
-            merged[key] = (left_weight * value.detach().float() + right_weight * params[key].detach().float()).to(value.dtype)
-        else:
-            merged[key] = value.detach().clone()
-    return merged
-
-
-def _classifier_delta_mean_norm(state_dicts, reference, num_classes):
-    client_chunks = [[] for _ in state_dicts]
-    for key, ref in reference.items():
-        if key not in state_dicts[0]:
-            continue
-        first = state_dicts[0][key]
-        if (
-            not torch.is_floating_point(first)
-            or not torch.is_floating_point(ref)
-            or tuple(first.shape) != tuple(ref.shape)
-            or not _is_classifier_tensor(key, first, num_classes)
-        ):
-            continue
-        for idx, state in enumerate(state_dicts):
-            client_chunks[idx].append((state[key].detach().float() - ref.detach().float()).reshape(-1))
-    vectors = [torch.cat(chunks) for chunks in client_chunks if chunks]
-    if not vectors:
-        return 0.0
-    return float(torch.stack(vectors, dim=0).norm(dim=1).mean().item())
-
-
-def _empty_conflict_stats():
-    return {
-        "sign_conflict": 0.0,
-        "direction_conflict": 0.0,
-        "norm_dispersion": 0.0,
-        "conflict_score": 0.0,
-        "mean_norm": 0.0,
-        "num_params": 0,
-        "num_tensors": 0,
-    }
-
-
-def _mergeable_param_names(state_dicts, reference, param_names):
-    names = []
-    for key in param_names or []:
-        if key not in reference or key not in state_dicts[0]:
-            continue
-        first = state_dicts[0][key]
-        ref = reference[key]
-        if not torch.is_floating_point(first) or not torch.is_floating_point(ref):
-            continue
-        if tuple(first.shape) != tuple(ref.shape):
-            continue
-        compatible = True
-        for state in state_dicts[1:]:
-            value = state.get(key)
-            if value is None or not torch.is_floating_point(value) or tuple(value.shape) != tuple(first.shape):
-                compatible = False
-                break
-        if compatible:
-            names.append(key)
-    return names
-
-
-def _group_param_names(state_dicts, reference, param_names, meta, num_classes):
-    groups = {name: [] for name in PARAM_GROUPS}
-    for key in _mergeable_param_names(state_dicts, reference, param_names):
-        value = state_dicts[0][key]
-        if _is_classifier_tensor(key, value, num_classes):
-            groups["classifier"].append(key)
-        else:
-            groups[_param_group(key, meta)].append(key)
-    return groups
-
-
-def _aggregate_conflict_stats(group_stats, groups=None):
-    selected = groups or group_stats.keys()
-    weighted = {name: 0.0 for name in ("sign_conflict", "direction_conflict", "norm_dispersion", "mean_norm")}
-    total_params = 0
-    total_tensors = 0
-    for group in selected:
-        stats = group_stats.get(group) or {}
-        params = int(stats.get("num_params", 0) or 0)
-        if params <= 0:
-            continue
-        total_params += params
-        total_tensors += int(stats.get("num_tensors", 0) or 0)
-        for name in weighted:
-            weighted[name] += float(stats.get(name, 0.0)) * float(params)
-    if total_params <= 0:
-        return _empty_conflict_stats()
-    out = {name: value / float(total_params) for name, value in weighted.items()}
-    out["conflict_score"] = max(
-        0.0,
-        min(
-            1.0,
-            0.45 * out["sign_conflict"]
-            + 0.35 * out["direction_conflict"]
-            + 0.20 * out["norm_dispersion"],
-        ),
-    )
-    out["num_params"] = int(total_params)
-    out["num_tensors"] = int(total_tensors)
-    return out
-
-
-def _task_conflict_stats(state_dicts, reference, param_names):
-    if not param_names:
-        return _empty_conflict_stats()
-    task_matrix, _ = build_task_matrix(state_dicts, reference, param_names)
-    abs_mass = task_matrix.abs().sum(dim=0)
-    active = abs_mass > EPS
-    if torch.any(active):
-        sign_agree = task_matrix.sum(dim=0).abs() / (abs_mass + EPS)
-        sign_conflict = 1.0 - float((sign_agree[active] * abs_mass[active]).sum().item() / (abs_mass[active].sum().item() + EPS))
-    else:
-        sign_conflict = 0.0
-
-    flat = task_matrix.float()
-    norms = flat.norm(dim=1).clamp_min(EPS)
-    if flat.shape[0] > 1:
-        unit = flat / norms.view(-1, 1)
-        cos = unit @ unit.t()
-        pair_mask = ~torch.eye(flat.shape[0], dtype=torch.bool, device=flat.device)
-        direction_conflict = float(torch.clamp((1.0 - cos[pair_mask].mean()) * 0.5, min=0.0, max=1.0).item())
-    else:
-        direction_conflict = 0.0
-    norm_dispersion = float(torch.clamp(norms.std(unbiased=False) / (norms.mean() + EPS), min=0.0, max=1.0).item())
-    conflict = max(0.0, min(1.0, 0.45 * sign_conflict + 0.35 * direction_conflict + 0.20 * norm_dispersion))
-    return {
-        "sign_conflict": sign_conflict,
-        "direction_conflict": direction_conflict,
-        "norm_dispersion": norm_dispersion,
-        "conflict_score": conflict,
-        "mean_norm": float(norms.mean().item()),
-        "num_params": int(task_matrix.shape[1]),
-        "num_tensors": int(len(param_names)),
-    }
-
-
-def _delta_blend_weight(conflict_stats, reliability, num_classes):
-    if int(num_classes) < 10:
-        return 0.0
-    conflict = float(conflict_stats.get("conflict_score", 0.0))
-    reliability = float(max(0.0, min(1.0, reliability)))
-    cap = 0.35
-    raw = cap * max(0.0, conflict - 0.20) / 0.80
-    return max(0.0, min(cap, raw * (0.55 + 0.45 * reliability)))
-
-
-def _group_middle_delta_policy(group, conflict_stats, mean_coverage, num_classes):
-    if group not in {"mid", "late"}:
-        return False, {
-            "rule": "representation_groups_only",
-            "use_middle_delta": False,
-        }
-    use_middle, policy = _middle_delta_policy(conflict_stats, mean_coverage, num_classes)
-    policy = dict(policy)
-    policy["group"] = group
-    if not use_middle:
-        sign_conflict = float(conflict_stats.get("sign_conflict", 0.0))
-        direction_conflict = float(conflict_stats.get("direction_conflict", 0.0))
-        norm_dispersion = float(conflict_stats.get("norm_dispersion", 1.0))
-        high_scale_dispersion = (
-            int(num_classes) >= 10
-            and float(mean_coverage) <= 0.30
-            and sign_conflict >= 0.56
-            and direction_conflict >= 0.49
-            and norm_dispersion <= 0.62
-        )
-        if high_scale_dispersion:
-            use_middle = True
-            policy.update({
-                "rule": "low_coverage_high_conflict_scale_heterogeneous",
-                "use_middle_delta": True,
-                "high_scale_dispersion": True,
-                "sign_conflict_threshold": 0.56,
-                "direction_conflict_threshold": 0.49,
-                "norm_dispersion_ceiling": 0.62,
-                "coverage_threshold": 0.30,
-            })
-    return use_middle, policy
-
-
-def _group_delta_blend_weight(group, conflict_stats, reliability, num_classes, middle_delta=False, head_pressure=0.0):
-    base = _delta_blend_weight(conflict_stats, reliability, num_classes)
-    if base <= 0.0:
-        return 0.0
-    if group == "early":
-        multiplier = 0.35
-        cap = 0.12
-    elif group == "mid":
-        norm_dispersion = float(conflict_stats.get("norm_dispersion", 0.0))
-        multiplier = 0.85 if middle_delta and norm_dispersion >= 0.52 else (1.10 if middle_delta else 1.00)
-        cap = 0.35
-    elif group == "late":
-        multiplier = 1.00 if middle_delta else 0.90
-        cap = 0.32
-    elif group == "classifier":
-        pressure_gate = _smooth01((float(head_pressure) - 0.35) / 0.30)
-        multiplier = 0.25 + 0.45 * pressure_gate
-        cap = 0.18
-    else:
-        multiplier = 1.0
-        cap = 0.35
-    return max(0.0, min(cap, base * multiplier))
-
-
-def _coupled_middle_delta_policy(conflict_stats, group_conflict_stats, head_pressure, mean_coverage, num_classes):
-    use_middle, policy = _middle_delta_policy(conflict_stats, mean_coverage, num_classes)
-    representation_scores = [
-        float((group_conflict_stats.get(group) or {}).get("conflict_score", 0.0))
-        for group in REPRESENTATION_GROUPS
-        if int((group_conflict_stats.get(group) or {}).get("num_params", 0) or 0) > 0
-    ]
-    if representation_scores:
-        score_spread = max(representation_scores) - min(representation_scores)
-        score_floor = min(representation_scores)
-    else:
-        score_spread = 1.0
-        score_floor = 0.0
-    coupled = bool(
-        use_middle
-        and len(representation_scores) >= 2
-        and score_floor >= 0.48
-        and score_spread <= 0.07
-        and float(head_pressure) < 0.30
-    )
-    policy = dict(policy)
-    policy.update({
-        "rule": "representation_coupled_middle_delta" if coupled else policy.get("rule", "not_applicable"),
-        "use_coupled_middle_delta": coupled,
-        "head_conflict_low": float(head_pressure) < 0.30,
-        "head_conflict_threshold": 0.30,
-        "representation_conflict_score_floor": float(score_floor),
-        "representation_conflict_score_spread": float(score_spread),
-        "representation_conflict_score_floor_threshold": 0.48,
-        "representation_conflict_score_spread_threshold": 0.07,
-    })
-    return coupled, policy
-
-
-def _coherent_top_delta_policy(conflict_stats, head_pressure, mean_coverage, representation_pressure, num_classes):
-    conflict_stats = conflict_stats or {}
-    conflict_score = float(conflict_stats.get("conflict_score", 0.0))
-    coherent = bool(
-        int(num_classes) >= 10
-        and float(mean_coverage) >= 0.55
-        and float(representation_pressure) <= 0.18
-        and float(head_pressure) <= 0.08
-        and conflict_score >= 0.40
-    )
-    return coherent, {
-        "rule": "broad_coverage_low_representation_pressure_coherent_top_delta",
-        "use_coherent_top_delta": coherent,
-        "broad_coverage": float(mean_coverage) >= 0.55,
-        "low_representation_pressure": float(representation_pressure) <= 0.18,
-        "low_head_pressure": float(head_pressure) <= 0.08,
-        "conflict_score_active": conflict_score >= 0.40,
-        "coverage_threshold": 0.55,
-        "representation_pressure_threshold": 0.18,
-        "head_pressure_threshold": 0.08,
-        "conflict_score_threshold": 0.40,
-    }
-
-
-def _specialist_scores(client_rows):
-    def score(row):
-        overall = float(row.get("overall_weight", 0.0))
-        morph = float(row.get("morphology_weight", overall))
-        support = float(row.get("support_score", 1.0))
-        coverage = float(row.get("class_coverage", 0.0))
-        salience = float(row.get("feature_salience", 1.0))
-        reliability = float(row.get("feature_reliability", 1.0))
-        return 0.30 * morph + 0.26 * overall + 0.16 * coverage + 0.12 * support + 0.10 * salience + 0.06 * reliability
-
-    return torch.tensor([score(row) for row in client_rows], dtype=torch.float32)
-
-
-def _specialist_separation_gate(separation):
-    separation = float(max(0.0, min(1.0, separation)))
-    return max(0.0, min(1.0, (separation - SPECIALIST_SEPARATION_START) / (SPECIALIST_SEPARATION_FULL - SPECIALIST_SEPARATION_START + EPS)))
-
-
-def _specialist_anchor_weight(scores, consensus, reliability, class_separation):
-    if scores.numel() <= 1:
-        return 0.0, 0
-    scores = torch.nan_to_num(scores.float(), nan=0.0, posinf=0.0, neginf=0.0).clamp_min(0.0)
-    order = torch.argsort(scores, descending=True)
-    best_idx = int(order[0].item())
-    best = float(scores[best_idx].item())
-    second = float(scores[int(order[1].item())].item())
-    dominance = (best - second) / (best + EPS)
-    consensus = torch.as_tensor(consensus, dtype=torch.float32)
-    concentration = float(torch.clamp(consensus.max() - consensus.mean(), min=0.0, max=1.0).item())
-    reliability = float(max(0.0, min(1.0, reliability)))
-    cap = 0.35
-    gate = max(0.0, min(1.0, (dominance - 0.06) / 0.24))
-    gate *= _specialist_separation_gate(class_separation)
-    weight = cap * gate * (0.50 + 0.50 * reliability) * (0.70 + 0.30 * min(1.0, concentration * len(consensus)))
-    weight = max(0.0, min(cap, weight))
-    if weight < MIN_SPECIALIST_ANCHOR_WEIGHT:
-        weight = 0.0
-    return weight, best_idx
-
-
-def _specialist_conflict_cap(raw_weight, delta_filter, head_conflict_pressure, representation_pressure):
-    raw_weight = float(max(0.0, raw_weight))
-    if "middle" not in str(delta_filter):
-        return 1.0
-    if raw_weight >= 0.24:
-        return 0.80
-    return 1.0
-
-
-def _apply_specialist_cap(raw_weight, cap):
-    raw_weight = float(raw_weight)
-    weight = raw_weight * float(cap)
-    if raw_weight >= MIN_SPECIALIST_ANCHOR_WEIGHT and weight > 0.0:
-        weight = max(weight, MIN_SPECIALIST_ANCHOR_WEIGHT)
-    return 0.0 if weight < MIN_SPECIALIST_ANCHOR_WEIGHT else weight
-
-
-def _blend_state_dicts(left, right, right_weight):
-    right_weight = float(right_weight)
-    left_weight = 1.0 - right_weight
-    merged = OrderedDict()
-    for key, left_value in left.items():
-        right_value = right[key]
-        if torch.is_floating_point(left_value):
-            merged[key] = (left_weight * left_value.detach().float() + right_weight * right_value.detach().float()).to(left_value.dtype)
-        else:
-            merged[key] = left_value.detach().clone()
-    return merged
-
-
-def _blend_label(value):
-    return f"{float(value):.2f}".replace(".", "p")
-
-
-def _statistical_alignment(state_dicts, state, weights):
-    aligned = OrderedDict((k, v.detach().clone()) for k, v in state.items())
-    weights = torch.as_tensor(weights, dtype=torch.float32)
-    aligned_keys = []
-    for key, value in state.items():
-        if "running_mean" not in key and "running_var" not in key and "num_batches_tracked" not in key:
-            continue
-        values = [sd[key] for sd in state_dicts if key in sd and tuple(sd[key].shape) == tuple(value.shape)]
-        if len(values) != len(state_dicts):
-            continue
-        if torch.is_floating_point(value):
-            aligned[key] = _weighted_average(values, weights).to(value.dtype)
-        else:
-            aligned[key] = values[int(torch.argmax(weights).item())].detach().clone()
-        aligned_keys.append(key)
-    return aligned, {
-        "bn_stat_aligned": bool(aligned_keys),
-        "aligned_bn_stat_tensors": len(aligned_keys),
-        "privacy": "client_uploaded_running_statistics_only",
-    }
-
-
-def _anatomy_conflict_weight(conflict_stats, mean_coverage, reliability, num_classes):
-    if int(num_classes) < 2:
-        return 0.0, {
-            "sign_gate": 0.0,
-            "direction_gate": 0.0,
-            "sparse_coverage_gate": 0.0,
-            "support_gate": 0.0,
-        }
-    sign_conflict = float(conflict_stats.get("sign_conflict", 0.0))
-    direction_conflict = float(conflict_stats.get("direction_conflict", 0.0))
-    conflict_score = float(conflict_stats.get("conflict_score", 0.0))
-    sign_gate = _smooth01((sign_conflict - 0.48) / 0.14)
-    direction_gate = _smooth01((direction_conflict - 0.46) / 0.12)
-    sparse_gate = _smooth01((0.65 - float(mean_coverage)) / 0.50)
-    support_gate = max(sparse_gate, 0.40 * sign_gate)
-    conflict_gate = 0.65 * sign_gate + 0.35 * direction_gate
-    reliability = max(0.0, min(1.0, float(reliability)))
-    base_weight = _delta_blend_weight(conflict_stats, reliability, num_classes)
-    sign_support = 0.30 + 0.70 * sign_gate
-    weight = min(0.18, base_weight * support_gate * sign_support)
-    return max(0.0, weight), {
-        "sign_gate": float(sign_gate),
-        "direction_gate": float(direction_gate),
-        "sparse_coverage_gate": float(sparse_gate),
-        "support_gate": float(support_gate),
-        "conflict_gate": float(conflict_gate),
-        "base_delta_weight": float(base_weight),
-        "sign_support": float(sign_support),
-    }
-
-
-def _coherent_anatomy_delta_gate(conflict_stats, representation_pressure, head_pressure, mean_coverage, num_classes):
-    class_gate = max(0.0, min(1.0, float(num_classes) / 10.0))
-    coverage_gate = _smooth01((float(mean_coverage) - 0.55) / 0.20)
-    head_gate = _smooth01((0.12 - float(head_pressure)) / 0.12)
-    representation_gate = _smooth01((0.24 - float(representation_pressure)) / 0.24)
-    conflict_gate = _smooth01((float(conflict_stats.get("conflict_score", 0.0)) - 0.38) / 0.12)
-    gate = class_gate * coverage_gate * head_gate * representation_gate * conflict_gate
-    return max(0.0, min(1.0, gate)), {
-        "class_gate": float(class_gate),
-        "coverage_gate": float(coverage_gate),
-        "head_gate": float(head_gate),
-        "representation_gate": float(representation_gate),
-        "conflict_gate": float(conflict_gate),
-    }
-
-
-def _use_sparse_middle_delta(conflict_stats, mean_coverage, num_classes, head_pressure=0.0):
-    sign_conflict = float(conflict_stats.get("sign_conflict", 0.0))
-    direction_conflict = float(conflict_stats.get("direction_conflict", 0.0))
-    norm_dispersion = float(conflict_stats.get("norm_dispersion", 1.0))
-    head_pressure = float(head_pressure)
-    head_compatible = head_pressure <= 0.35 or sign_conflict >= 0.64
-    use_middle = bool(
-        int(num_classes) >= 10
-        and float(mean_coverage) <= 0.30
-        and sign_conflict >= 0.52
-        and direction_conflict >= 0.488
-        and norm_dispersion <= 0.55
-        and head_compatible
-    )
-    return use_middle, {
-        "low_coverage": float(mean_coverage) <= 0.30,
-        "sign_conflict_high": sign_conflict >= 0.52,
-        "direction_conflict_high": direction_conflict >= 0.488,
-        "scale_not_extreme": norm_dispersion <= 0.55,
-        "head_compatible": bool(head_compatible),
-        "head_pressure": float(head_pressure),
-        "coverage_threshold": 0.30,
-        "sign_conflict_threshold": 0.52,
-        "high_head_sign_conflict_threshold": 0.64,
-        "direction_conflict_threshold": 0.488,
-        "norm_dispersion_ceiling": 0.55,
-        "head_pressure_threshold": 0.35,
-    }
-
-
-def _medical_conflict_residual(state_dicts, state, reference, groups, group_conflict_stats, weights, meta, cfg, info, num_classes, head_pressure=0.0):
-    if not (_enabled(cfg, "conflict_stabilization") and reference is not None and groups):
-        return state, {
-            "applied": False,
-            "weight": 0.0,
-            "filter": "none",
-            "density": 0.0,
-            "conflict_stats": _empty_conflict_stats(),
-            "gate": {},
-        }
-    rep_names = []
-    for group in ("mid", "late"):
-        rep_names.extend(groups.get(group, []))
-    conflict_stats = _aggregate_conflict_stats(group_conflict_stats, groups=("mid", "late"))
-    mean_coverage = _mean_client_class_coverage(meta, num_classes)
-    representation_pressure, pressure_parts = _representation_conflict_pressure(
-        conflict_stats,
-        mean_coverage,
-        num_classes,
-    )
-    coherent_gate, coherent_parts = _coherent_anatomy_delta_gate(
-        conflict_stats,
-        representation_pressure,
-        head_pressure,
-        mean_coverage,
-        num_classes,
-    )
-    reliability = info.get("evidence_reliability", 0.0)
-    params = OrderedDict()
-    density = 0.50
-    middle_delta_keep = 0.0
-    middle_delta_remove_top = 0.0
-    all_names = []
-    for group in PARAM_GROUPS:
-        all_names.extend(groups.get(group, []))
-    use_middle_delta, middle_parts = _use_sparse_middle_delta(conflict_stats, mean_coverage, num_classes, head_pressure)
-    if use_middle_delta and all_names:
-        weight = _delta_blend_weight(conflict_stats, reliability, num_classes)
-        gate = {
-            "mode": "sparse_middle_delta",
-            "middle_delta_policy": middle_parts,
-            "coherent_gate": float(coherent_gate),
-            "coherent_gate_parts": coherent_parts,
-            "representation_pressure": float(representation_pressure),
-            "representation_pressure_parts": pressure_parts,
-            "base_delta_weight": float(weight),
-        }
-        names = all_names
-        middle_delta_keep = 0.25
-        middle_delta_remove_top = 0.10
-        params = _middle_delta_params(state_dicts, reference, all_names, weights.tolist(), keep=0.25, remove_top=0.10)
-        delta_filter = "sparse_middle_keep_0p25_remove_top_0p10"
-    elif coherent_gate > 0.20 and all_names:
-        base_weight = _delta_blend_weight(conflict_stats, reliability, num_classes)
-        weight = min(0.18, base_weight * (0.65 + 0.35 * coherent_gate))
-        gate = {
-            "mode": "coherent_anatomy_delta",
-            "coherent_gate": float(coherent_gate),
-            "coherent_gate_parts": coherent_parts,
-            "representation_pressure": float(representation_pressure),
-            "representation_pressure_parts": pressure_parts,
-            "base_delta_weight": float(base_weight),
-        }
-        names = all_names
-        delta_filter = "coherent_anatomy_delta_density_0p50"
-    else:
-        weight, gate = _anatomy_conflict_weight(
-            conflict_stats,
-            mean_coverage,
-            reliability,
-            num_classes,
-        )
-        gate = {
-            "mode": "representation_delta",
-            **gate,
-            "coherent_gate": float(coherent_gate),
-            "coherent_gate_parts": coherent_parts,
-            "representation_pressure": float(representation_pressure),
-            "representation_pressure_parts": pressure_parts,
-        }
-        names = rep_names
-        delta_filter = "representation_ties_delta_density_0p50"
-    if weight > 0.0 and not params and names:
-        params = _sign_delta_params(state_dicts, reference, names, weights.tolist(), density=density)
-    if params:
-        state = _blend_params_into_state(state, params, right_weight=weight)
-    return state, {
-        "applied": bool(params),
-        "weight": float(weight if params else 0.0),
-        "filter": delta_filter if params else "none",
-        "density": float(density if params else 0.0),
-        "middle_delta_keep": float(middle_delta_keep if params else 0.0),
-        "middle_delta_remove_top": float(middle_delta_remove_top if params else 0.0),
-        "conflict_stats": conflict_stats,
-        "gate": gate,
-        "group_param_counts": {group: len(groups.get(group, [])) for group in PARAM_GROUPS},
-    }
-
-
-def _module2_module3(state_dicts, base_merged, meta, cfg, info, reference, param_names):
-    num_classes = int(meta["num_classes"])
-    base = torch.as_tensor(info["base_weights"], dtype=torch.float32)
-    consensus = _consensus(info["overall_weights"], info["morphology_weights"], base)
-    module2_pool = []
-    selected_steps = []
-    fusion_weights = [float(x) for x in consensus.tolist()]
-    group_weights = {group: [float(x) for x in consensus.tolist()] for group in PARAM_GROUPS}
-    classifier_delta_norm = 0.0
-    if meta.get("task_type") == "small" and reference is not None:
-        classifier_delta_norm = _classifier_delta_mean_norm(state_dicts, reference, num_classes)
-
-    groups = {name: [] for name in PARAM_GROUPS}
-    group_conflict_stats = {}
-    representation_conflict_stats = _empty_conflict_stats()
-    head_conflict_stats = _empty_conflict_stats()
-    conflict_enabled = _enabled(cfg, "conflict_stabilization") and reference is not None and param_names is not None
-    if conflict_enabled:
-        groups = _group_param_names(state_dicts, reference, param_names, meta, num_classes)
-        group_conflict_stats = {group: _task_conflict_stats(state_dicts, reference, names) for group, names in groups.items()}
-        representation_conflict_stats = _aggregate_conflict_stats(group_conflict_stats, groups=("mid", "late"))
-        head_conflict_stats = group_conflict_stats.get("classifier") or _empty_conflict_stats()
-
-    if _enabled(cfg, "medical_weighted_fusion"):
-        state, medical_trace = _medical_weighted_merge(
-            state_dicts,
-            base_merged,
-            reference,
-            base,
-            info["overall_weights"],
-            info["morphology_weights"],
-            info["class_weights"],
-            num_classes,
-            meta,
-            cfg,
-            classifier_delta_norm,
-            representation_conflict_stats,
-            head_conflict_stats,
-        )
-        module2_pool.append("medical_weighted_fusion")
-        selected_steps.append("medical_weighted_fusion")
-        routing = dict(medical_trace.get("routing_summary", {}))
-        fusion_weights = medical_trace.get("fusion_weights", fusion_weights)
-        group_weights = medical_trace.get("group_weights", group_weights)
-    else:
-        state = base_merged
-        routing = {
-            "early": 0,
-            "mid": 0,
-            "late": 0,
-            "classifier": 0,
-            "delta_space": reference is not None,
-            "delta_agreement_layers": 0,
-            "delta_agreement_mean_shift": 0.0,
-            "classifier_routing_policy": "disabled",
-            "classifier_mean_client_coverage": _mean_client_class_coverage(meta, num_classes),
-            "classifier_class_weight": 0.0,
-            "head_conflict_pressure": 0.0,
-            "head_conflict_pressure_parts": {},
-        }
-        selected_steps.append("avg")
-
-    state, residual_trace = _medical_conflict_residual(
-        state_dicts,
-        state,
-        reference,
-        groups,
-        group_conflict_stats,
-        consensus,
-        meta,
-        cfg,
-        info,
-        num_classes,
-        float(routing.get("head_conflict_pressure", 0.0)),
-    )
-    if residual_trace.get("applied"):
-        module2_pool.append("representation_conflict_residual")
-        selected_steps.append(f"representation_conflict_residual_{_blend_label(residual_trace.get('weight', 0.0))}")
-
-    specialist_weight, specialist_idx = 0.0, None
-    raw_specialist_weight = 0.0
-    specialist_coverage_cap = 1.0
-    if _enabled(cfg, "specialist_anchor"):
-        scores = _specialist_scores(info["client_diagnostic_information"])
-        specialist_weight, specialist_idx = _specialist_anchor_weight(
-            scores,
-            consensus,
-            info.get("evidence_reliability", 0.0),
-            info.get("class_morphology_separation", 0.0),
-        )
-        raw_specialist_weight = specialist_weight
-        specialist_weight = _apply_specialist_cap(raw_specialist_weight, specialist_coverage_cap)
-        if specialist_weight > 0.0 and specialist_idx is not None:
-            specialist_state = OrderedDict((k, v.detach().clone()) for k, v in state_dicts[int(specialist_idx)].items())
-            state = _blend_state_dicts(state, specialist_state, right_weight=specialist_weight)
-        module2_pool.append("specialist_anchor")
-        selected_steps.append(f"specialist_anchor_{_blend_label(specialist_weight)}")
-
-    alignment_trace = {"bn_stat_aligned": False, "aligned_bn_stat_tensors": 0}
-    if _enabled(cfg, "statistical_alignment"):
-        state, alignment_trace = _statistical_alignment(state_dicts, state, consensus)
-        module2_pool.append("statistical_alignment")
-        if alignment_trace.get("bn_stat_aligned"):
-            selected_steps.append(f"statistical_alignment_bn_stats{alignment_trace.get('aligned_bn_stat_tensors', 0)}")
-
-    conflict_stats = residual_trace.get("conflict_stats", _empty_conflict_stats())
-    delta_weight = float(residual_trace.get("weight", 0.0))
-    delta_filter = str(residual_trace.get("filter", "none"))
-    mean_client_coverage = _mean_client_class_coverage(meta, num_classes)
-    routing.update({
-        "selection_rule": "deterministic_medical_evidence_conflict_flow_v16",
-        "validated_candidates": 0,
-        "conflict_stats": conflict_stats,
-        "group_conflict_stats": group_conflict_stats,
-        "representation_conflict_stats": conflict_stats,
-        "head_conflict_stats": head_conflict_stats,
-        "delta_blend_weight": delta_weight,
-        "delta_filter": delta_filter,
-        "sign_delta_density": float(residual_trace.get("density", 0.0)),
-        "middle_delta_keep": float(residual_trace.get("middle_delta_keep", 0.0)),
-        "middle_delta_remove_top": float(residual_trace.get("middle_delta_remove_top", 0.0)),
-        "mean_client_class_coverage": float(mean_client_coverage),
-        "class_head_routing_gate": float(routing.get("classifier_class_weight", 0.0)),
-        "representation_conflict_pressure": float(conflict_stats.get("conflict_score", 0.0)),
-        "representation_conflict_pressure_parts": {"representation_conflict_residual": residual_trace},
-        "classifier_delta_mean_norm": float(classifier_delta_norm),
-        "specialist_anchor_weight": float(specialist_weight),
-        "raw_specialist_anchor_weight": float(raw_specialist_weight),
-        "specialist_coverage_cap": float(specialist_coverage_cap),
-        "specialist_separation_gate": float(_specialist_separation_gate(info.get("class_morphology_separation", 0.0))),
-        "specialist_client_index": None if specialist_idx is None else int(specialist_idx),
-        "statistical_alignment": alignment_trace,
-    })
-    residual_mode = str(residual_trace.get("gate", {}).get("mode", ""))
-    if residual_mode in {"sparse_middle_delta", "coherent_anatomy_delta"}:
-        residual_groups = set(PARAM_GROUPS)
-    else:
-        residual_groups = {"mid", "late"}
-    routing.update({
-        "group_delta_blend_weights": {group: (delta_weight if group in residual_groups else 0.0) for group in PARAM_GROUPS},
-        "group_delta_filters": {group: (delta_filter if group in residual_groups else "none") for group in PARAM_GROUPS},
-    })
-    return state, {
-        "fusion_rule": "m1_medical_evidence_m2_representation_conflict_flow",
-        "module2_candidate_pool": module2_pool,
-        "module3_candidate_pool": [],
-        "candidate_pool": module2_pool,
-        "candidate_metrics": {},
-        "selected_candidate": " + ".join(selected_steps),
-        "routing_summary": routing,
-        "fusion_weights": fusion_weights,
-        "group_weights": group_weights,
-        "evidence_reliability": info.get("evidence_reliability"),
-        "class_morphology_separation": info.get("class_morphology_separation", 0.0),
-    }
-
-
-def merge_my_merge(state_dicts, weights, meta=None, checkpoints=None, cfg=None):
-    if meta is None or cfg is None:
-        raise ValueError("my_merge requires task metadata and runtime config.")
-    natural_control = _is_natural_control_task(meta) and _domain_control_enabled(cfg)
-    if not _is_medical_image_task(meta) and not natural_control:
-        raise ValueError(f"my_merge is defined only for medical image tasks, got dataset={meta.get('dataset')}.")
-
-    base_merged, base_weights = average_state_dicts(state_dicts, weights)
-    ablation = _ablation_config(cfg)
-    if "avg_only" in {x.lower().replace("-", "_") for x in ablation["labels"]}:
-        return base_merged, {
-            "implementation": "medical_evidence_three_module_merge_v12_ablation_avg_only",
-            "medical_only": True,
-            "natural_domain_control": bool(natural_control),
-            "ablation_config": ablation,
-            "selected_candidate": "avg",
-            "base_weights": [float(x) for x in base_weights],
-            "normalized_weights": base_weights,
-        }
-
-    info = _module1(meta, cfg, base_weights)
-    reference = param_names = None
-    if _enabled(cfg, "medical_weighted_fusion") or _enabled(cfg, "conflict_stabilization"):
-        reference, param_names = build_reference_bundle(meta, device="cpu")
-    consistency_trace = {"enabled": False}
-    consistency_guard_trace = {"applied": False}
-    if _enabled(cfg, "checkpoint_consistency") and reference is not None:
-        consistency_scores, consistency_trace = _checkpoint_consistency_scores(
-            state_dicts,
-            reference,
-            meta,
-            int(meta["num_classes"]),
-        )
-        info, consistency_guard_trace = _apply_checkpoint_consistency(info, consistency_scores, cfg)
-    merged, fusion = _module2_module3(state_dicts, base_merged, meta, cfg, info, reference, param_names)
-
-    implementation = "medical_evidence_conflict_merge_v16"
-    return merged, {
-        "implementation": implementation,
-        "medical_only": True,
-        "natural_domain_control": bool(natural_control),
-        "ablation_config": ablation,
-        "modality": meta.get("dataset"),
-        "model_family": _model_family(meta),
-        "base_weights": [float(x) for x in base_weights],
-        "overall_weights": [float(x) for x in info["overall_weights"].tolist()],
-        "morphology_weights": [float(x) for x in info["morphology_weights"].tolist()],
-        "class_weights": [[float(v) for v in row] for row in info["class_weights"].tolist()],
-        "client_diagnostic_information": info["client_diagnostic_information"],
-        "module2_candidate_pool": fusion["module2_candidate_pool"],
-        "module3_candidate_pool": fusion["module3_candidate_pool"],
-        "candidate_pool": fusion["candidate_pool"],
-        "candidate_metrics": fusion["candidate_metrics"],
-        "selected_candidate": fusion["selected_candidate"],
-        "fusion_rule": fusion["fusion_rule"],
-        "fusion_weights": fusion["fusion_weights"],
-        "group_weights": fusion["group_weights"],
-        "routing_summary": fusion["routing_summary"],
-        "checkpoint_consistency": consistency_trace,
-        "checkpoint_consistency_guard": consistency_guard_trace,
-        "evidence_reliability": fusion["evidence_reliability"],
-        "class_morphology_separation": fusion["class_morphology_separation"],
-    }
+def _param_group(key, value=None, num_classes=None):
+    if _is_bn_running_key(key) or key.endswith("num_batches_tracked"):
+        return "normalization_stat"
+    return "representation"
