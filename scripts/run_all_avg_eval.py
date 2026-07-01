@@ -74,12 +74,6 @@ def parse_args():
         default=model_hub_default,
     )
     p.add_argument(
-        '--manifest',
-        type=str,
-        default='',
-        help='Optional manifest CSV. Defaults to <model-hub-root>/manifest.csv.',
-    )
-    p.add_argument(
         '--data-root',
         type=str,
         default=data_root_default,
@@ -131,13 +125,19 @@ def parse_args():
     p.add_argument('--my-merge-stats-max-batches', type=int, default=-1)
     p.add_argument('--my-merge-eval-max-batches', type=int, default=-1)
     p.add_argument('--my-merge-bn-batches', type=int, default=-1)
-    p.add_argument('--my-merge-feature-summary-root', type=str, default='')
-    p.add_argument('--my-merge-require-feature-summary', action=argparse.BooleanOptionalAction, default=False)
+    p.add_argument('--my-merge-public-data-root', type=str, default='')
+    p.add_argument('--my-merge-public-dataset', type=str, default='')
+    p.add_argument('--my-merge-public-split', type=str, default='val')
+    p.add_argument('--my-merge-public-use-labels', action=argparse.BooleanOptionalAction, default=True)
+    p.add_argument('--my-merge-selection-public-split', type=str, default='')
+    p.add_argument('--my-merge-selection-stats-max-batches', type=int, default=-2)
+    p.add_argument('--my-merge-public-fisher-max-batches', type=int, default=-1)
+    p.add_argument('--my-merge-public-fisher-batch-size', type=int, default=16)
     p.add_argument(
         '--my-merge-ablation',
         type=str,
         default='',
-        help='Comma-separated my_merge ablation presets, e.g. full,no_client_information or avg_only.',
+        help='Comma-separated my_merge ablation presets, e.g. full,no_adaptive_candidates or avg_only.',
     )
     p.add_argument(
         '--my-merge-disable',
@@ -147,12 +147,6 @@ def parse_args():
     )
     p.add_argument('--my-merge-export-diagnostics', action=argparse.BooleanOptionalAction, default=True)
     p.add_argument('--my-merge-diagnostics-plot', action=argparse.BooleanOptionalAction, default=False)
-    p.add_argument(
-        '--my-merge-domain-control',
-        action=argparse.BooleanOptionalAction,
-        default=False,
-        help='Allow my_merge to run on non-medical image datasets for domain-control experiments only.',
-    )
     p.add_argument('--my-merge-viz-split', type=str, default='test')
     p.add_argument('--my-merge-viz-max-batches', type=int, default=2)
     p.add_argument('--my-merge-viz-max-plots', type=int, default=0)
@@ -211,7 +205,6 @@ def build_cfg(row, args):
         'method': args.method,
         'merge_weight_mode': resolve_merge_weight_mode(args),
         'model_hub_root': args.model_hub_root,
-        'meta_path': str(Path(args.model_hub_root) / row['meta_path']),
         'data_root': args.data_root,
         'device': args.device,
         'num_workers': args.num_workers,
@@ -255,16 +248,25 @@ def build_cfg(row, args):
         cfg['my_merge_eval_max_batches'] = args.my_merge_eval_max_batches
     if args.my_merge_bn_batches >= 0:
         cfg['my_merge_bn_batches'] = args.my_merge_bn_batches
-    if args.my_merge_feature_summary_root:
-        cfg['my_merge_feature_summary_root'] = args.my_merge_feature_summary_root
-    if args.my_merge_require_feature_summary:
-        cfg['my_merge_require_feature_summary'] = True
+    if args.my_merge_public_data_root:
+        cfg['my_merge_public_data_root'] = args.my_merge_public_data_root
+    if args.my_merge_public_dataset:
+        cfg['my_merge_public_dataset'] = args.my_merge_public_dataset
+    if args.my_merge_public_split:
+        cfg['my_merge_public_split'] = args.my_merge_public_split
+    cfg['my_merge_public_use_labels'] = args.my_merge_public_use_labels
+    if args.my_merge_selection_public_split:
+        cfg['my_merge_selection_public_split'] = args.my_merge_selection_public_split
+    if args.my_merge_selection_stats_max_batches >= -1:
+        cfg['my_merge_selection_stats_max_batches'] = args.my_merge_selection_stats_max_batches
+    if args.my_merge_public_fisher_max_batches >= 0:
+        cfg['my_merge_public_fisher_max_batches'] = args.my_merge_public_fisher_max_batches
+    if args.my_merge_public_fisher_batch_size > 0:
+        cfg['my_merge_public_fisher_batch_size'] = args.my_merge_public_fisher_batch_size
     if args.my_merge_ablation:
         cfg['my_merge_ablation'] = args.my_merge_ablation
     if args.my_merge_disable:
         cfg['my_merge_disable'] = args.my_merge_disable
-    if args.my_merge_domain_control:
-        cfg['my_merge_domain_control'] = True
     if item['task_type'] == 'small':
         cfg['model'] = item['model']
         cfg['batch_size'] = args.small_batch_size
@@ -272,20 +274,6 @@ def build_cfg(row, args):
         cfg['clip_model'] = row['clip_model']
         cfg['batch_size'] = args.vlm_batch_size
     return cfg
-
-
-def _expected_eval_image_size(cfg):
-    dataset = str(cfg.get('dataset', ''))
-    if dataset not in {'cifar10_32', 'cifar100_32', 'svhn_32', 'tinyimagenet_64'}:
-        return None
-    meta_path = cfg.get('meta_path')
-    if not meta_path:
-        return None
-    meta = load_json(meta_path)
-    image_size = int(meta.get('image_size') or 0)
-    if image_size <= 0:
-        return None
-    return [image_size, image_size]
 
 
 def build_eval_path(cfg):
@@ -406,9 +394,6 @@ def load_valid_eval_payload(cfg):
         float(payload['test_loss'])
     except (KeyError, TypeError, ValueError):
         return None, eval_json
-    expected_eval_size = _expected_eval_image_size(cfg)
-    if expected_eval_size is not None and payload.get('eval_image_size') != expected_eval_size:
-        return None, eval_json
     return payload, eval_json
 
 
@@ -418,8 +403,7 @@ def main():
     if not args.output_root:
         stamp = datetime.now().strftime('%Y%m%d_%H%M%S')
         args.output_root = f'/data1/users/weiyipan/ML/MedMNSITMerge/outputs/{args.method}_{stamp}'
-    manifest_path = Path(args.manifest) if args.manifest else Path(args.model_hub_root) / 'manifest.csv'
-    manifest = load_manifest(manifest_path)
+    manifest = load_manifest(Path(args.model_hub_root) / 'manifest.csv')
     manifest = filter_manifest(manifest, args)
 
     status_csv = Path(args.output_root) / 'reports' / 'batch_status.csv'

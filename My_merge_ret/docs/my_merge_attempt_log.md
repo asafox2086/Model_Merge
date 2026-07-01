@@ -8,11 +8,59 @@
 - 当前目标：针对医学影像任务设计专用模型融合方法，而不是做通用模型平均
 - 明确约束：方法应只服务医学影像，不追求在 NLP 或通用视觉场景可直接复用
 
-## Design Principle
+## Current Method: Public-Probe Guided Medical Model Fusion
 
-当前方法围绕“医学影像中的物理边界、组织结构、病灶几何比自然图像更稳定且更有诊断意义”这个切入点展开。
+当前版本把旧候选池改造成“公开医学数据集 probe + 固定候选族 + public selection”。
 
-按数据集区分的医学特征分支已经写入 [methods/my_merge.py](/data/liyapeng_grp/program/MedMNISTMerge/methods/my_merge.py:46)：
+硬边界：
+
+- 服务端不读客户端私有 raw image、private validation sample、per-sample activation、logit、candidate feedback。
+- 融合阶段不把候选模型发回客户端，也没有多轮通信，因此不是联邦学习。
+- 服务端可以使用公开医学参考图像，例如公开 MedMNIST-style probe set。
+
+主方法：
+
+```text
+1. Public Morphological Evidence
+   - 在公开医学 probe 图像上提取 edge / contrast / texture / salience / reliability
+   - 用公开 probe 评估每个 client checkpoint，得到 overall / morphology / class weights
+   - 如果公开标签兼容，用 supervised public score；否则用 confidence / margin / ensemble agreement
+
+2. Fixed Candidate Family + Public Selection
+   - 固定生成 avg、medical_weighted_fusion、sign_consistent_delta、avg_sign_blend
+   - 加入 breadcrumbs、from、robustmerge、iso_c、public_fisher 等论文型权重空间候选
+   - public_fisher 只用公开 probe 图像，micro-batch 反传，避免私有数据和 OOM
+   - 所有候选先用公开 probe recalibrate BN，再用统一公式选择：
+     score = 0.85 * public_acc + 0.15 * morphology_acc - 0.005 * public_loss
+```
+
+为什么这样实现：
+
+- 旧“服务端用目标 val 图像选候选”的版本效果最好，但隐私不合规。
+- 医学影像与 NLP 的关键差异是：可以用公开医学参考图像保留 acquisition / anatomy / texture / lesion-boundary phenotype。
+- 候选族不是数据集特判，而是固定的权重空间解法集合；public probe 负责选择哪一种几何假设适合当前医疗任务。
+- `iso_c` 加入后修复了器官类多模型 miss；`public_fisher` 对 ResNet/Vit 的 organs c5 有明显收益；提高 public loss 惩罚避免高损失候选被形态加权准确率误选。
+
+当前关键 16 个 client-average 结果：
+
+- 数据集/设置：`dermamnist c5_avg`, `organcmnist c3_avg`, `organsmnist c5_avg`, `chaoshengmnist c3_avg`
+- 模型：`resnet`, `convnext`, `vit_t`, `swin_tiny`
+- result roots:
+  - `outputs/codex_public_final_keygroups_g0_20260630`
+  - `outputs/codex_public_final_keygroups_g1_20260630`
+- `my_merge >= best existing method = 13/16`
+- `my_merge > best existing method = 13/16`
+- 旧恢复候选池版本是 `10/16`
+
+剩余 miss：
+
+- `convnext / organsmnist_224 / c5_avg`: `0.1442` vs `0.1554`
+- `swin_tiny / organcmnist_224 / c3_avg`: `0.1596` vs `0.1601`
+- `vit_t / organcmnist_224 / c3_avg`: `0.1964` vs `0.2148`
+
+## Historical Attempts
+
+历史版本曾经尝试按数据集区分医学特征分支：
 
 - `bloodmnist_224`：胞核/胞质比例、染色质对比、边界强度、圆整度
 - `dermamnist_224`：病灶不对称性、边界不规则、颜色杂色
@@ -370,3 +418,108 @@ ablation-ready medical merge
 
 - 现在可以系统证明某个医学组件是否真的贡献性能，而不是只报告最终结果
 - 后续全量消融应重点看“关闭匹配医学组件是否定向掉分”，尤其是 `Derma` 的颜色/毛发/长尾，`Organ` 的 CT 窗位/空间先验，`Chaosheng` 的去 speckle/边界/声影
+
+## Attempt 11
+
+unified evidence protocol
+
+做法：
+
+- 放弃 BN-only 和“有某类统计就使用”的分支，所有客户端统一上传同一套证据 `E_i = {n_i, C_i, q_i,c, protocol_mean_i, protocol_var_i}`
+- 删除未进入公式的上传项：class prototypes、feature variance、pixel moments、Fourier bands、class_correct 等
+- `MEL` 只用 protocol moment distance、class coverage、本地聚合 QA 和样本量先验构造 `omega_i`
+- `SPM` 只保留分类头行级专科保持，其他共享浮点参数统一按 `omega_i` 融合
+- 服务端缺少任一客户端的 protocol moments 或 class evidence 时直接报错，不再静默回退为 avg
+
+理由：
+
+- 论文方法必须是一套统一客户端协议，而不是架构条件分支
+- 上传项必须被公式使用；不用的统计会增加隐私叙述成本，并让方法像工程堆叠
+- 医学专用性来自 clinical site-silo 的 protocol shift 和 anatomy/pathology specialty coverage，而不是某个具体网络结构是否含 BN
+
+## Attempt 12
+
+MEL-CPM after removing negative SPM
+
+观测：
+
+- `bloodmnist_224 / resnet / c3` 中，分类头行级 SPM 在 `b=0.1` 明显负优化
+- 关闭 SPM 后，MEL-only 结果从 `0.3166 / 0.4066 / 0.2511` 提升到 `0.3160 / 0.4528 / 0.3932`
+- ViT 上 MEL-CPM 与 avg 基本持平，说明共识锚点没有显著伤害敏感架构
+- CLIP 上 MEL-CPM 小幅优于 avg
+
+改动：
+
+- 删除分类头行级专科路由、class prior bias 和相关未稳定模块
+- 主方法改为 **MEL-CPM**：MEL 产生医学证据权重 `u_i`，CPM 用类别覆盖拓扑控制 `gamma`，得到 `omega_i = Normalize((1-gamma)b_i + gamma u_i)`
+- 所有共享浮点参数统一使用同一组 `omega_i` 融合
+
+理由：
+
+- 论文方法应简洁，并且负优化模块必须删除
+- 第二模块仍然有医学含义：医学证据不应无限偏离多客户端共识，偏离强度由 clinical specialty topology 决定
+
+## Attempt 13
+
+MEL-MCS: medical topology-gated conflict surgery
+
+观测：
+
+- 只调客户端权重的 MEL-CPM 在 `bloodmnist_224 / resnet / c3` 有收益，但本质仍接近 weighted average，难以追上 Fisher/DARE/TIES/From 等会处理 task-vector 冲突的方法
+- 旧的分类头/候选池路线要么负优化，要么侵犯“服务端不把候选发回客户端验证”的隐私边界
+- 初版冲突手术如果保留固定基础强度，会在类别覆盖重叠的设置伤害 ViT；这说明 M2 不能作为通用工程补丁，必须由医学专科拓扑触发
+
+改动：
+
+- 主方法改为 **MEL-MCS**
+- M1 保持统一上传协议：`class_total / class_accuracy / class_confidence / class_margin / protocol_mean / protocol_var`
+- M2 使用公开初始化模型构造 task vector `Delta_i = theta_i - theta_0`
+- 对每个参数坐标做医学证据加权符号投票，只保留与投票方向一致的客户端更新，形成 conflict-surgery delta
+- 冲突手术强度改为 `lambda = 0.50 * specialty_gate`：没有明显 clinical specialty/site silo 时不做手术，退回证据加权共识
+- 用 client-average task vector 做 norm guard，避免手术结果偏离多客户端共识
+
+验证：
+
+- `bloodmnist_224 / resnet / c3`: MEL-MCS `0.3186 / 0.4674 / 0.3932`，旧 MEL-CPM `0.3160 / 0.4528 / 0.3932`，avg `0.3017 / 0.3069 / 0.3949`
+- `chaoshengmnist_224 / resnet / c3`: MEL-MCS `0.2624 / 0.2956 / 0.1752`，旧 MEL-CPM `0.2462 / 0.2911 / 0.1752`，avg `0.2552 / 0.3010 / 0.1743`
+- `bloodmnist_224 / vit_t / c3`: `0.1704 / 0.0830 / 0.1505`，b=0.1 不再被 M2 拉低
+
+理由：
+
+- 医学专用性不是来自 BN 或模型结构，而是来自客户端上传的 protocol moments、临床类别覆盖和本地聚合 QA
+- MCS 借鉴 task-vector conflict resolution，但不是 NLP 通用候选选择；它只在医学专科拓扑表明客户端确实是 clinical site/specialty silo 时启用
+- 没有 raw data、逐样本 logits/activations、候选模型回传，也没有模型名/数据集名特判
+## 2026-06-22 FedSoup Reproduction
+
+- Reproduced the client-side selective interpolation core from the medical FL paper FedSoup.
+- Client upload: selected local/global interpolation coefficient, scalar local validation metrics, sample count and class metadata.
+- Privacy status: server sees no raw validation samples, logits, or activations.
+- Direct global collapse tested on resnet/c3:
+  - bloodmnist_224 c3_avg=0.2757
+  - dermamnist_224 c3_avg=0.5850
+  - organcmnist_224 c3_avg=0.2467
+  - organsmnist_224 c3_avg=0.3047
+  - chaoshengmnist_224 c3_avg=0.1887
+- Interpretation: FedSoup is designed to output personalized client soups. Averaging those personalized soups back into one global checkpoint is a negative transfer step, especially for medical BN/site statistics. The paper is useful for the client-side selection signal, but its original output form does not directly match this benchmark's single global checkpoint requirement.
+
+## 2026-06-22 MedMerge Probe
+
+- Tested a lightweight MedMerge-style learned fusion probe on resnet/c3 using validation labels to optimize layer-wise client weights.
+- Probe results:
+  - bloodmnist_224 b=0.0 test_acc=0.2882
+  - dermamnist_224 b=0.0 test_acc=0.6688
+  - organcmnist_224 b=0.0 test_acc=0.2477
+- Interpretation: learning fusion weights from validation data is not automatically enough in this repository's cross-client single-checkpoint setting. The medical papers are useful as design references, but their original assumptions do not transfer unchanged: FedSoup is personalized-FL, while MedMerge is target-transfer/kernel-weight learning rather than post-hoc multi-client global merging.
+
+## 2026-06-22 Client-Uploaded MedMerge Evidence
+
+- Followed the proposed privacy conversion: replace server-side raw-image evidence extraction with client-side aggregate upload.
+- Client upload tested: per-layer/per-kernel activation energy `E[h^2]` and counts, with no raw image, per-sample activation, logit, or candidate feedback.
+- Result:
+  - Kernel-wise fusion broke CNN channel coherence: `organcmnist_224 / resnet / c3_b0 = 0.121957`.
+  - Layer-wise fusion recovered stability and beat plain avg on several cells, e.g. `organc c3 = 0.3922 / 0.3092 / 0.3535`, but its c3 average `0.3516` was still below the simpler BN/protocol method.
+  - Adding BN protocol calibration back to the activation branch improved some single cells but did not fix the average (`organc c3_avg = 0.3391` to `0.3397` depending on depth gate).
+- Decision:
+  - Delete the activation-evidence branch from the formal method.
+  - Keep the negative result as a paper motivation: server-side raw-image model-fusion papers do not automatically survive a privacy conversion unless their extracted statistic is sufficient for the fusion rule.
+  - Final `my_merge` returns to the simpler client-uploaded protocol moment soup: BN moments calibrate normalization buffers; trainable tensors use client case-count consensus.
