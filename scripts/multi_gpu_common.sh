@@ -5,7 +5,13 @@ COMMON_ROOT_DIR="$(cd "${COMMON_DIR}/.." && pwd)"
 
 ROOT_DIR="${ROOT_DIR:-${COMMON_ROOT_DIR}}"
 if [[ -z "${PYTHON_BIN:-}" ]]; then
-  if [[ -x "${ROOT_DIR}/.gpuenv/bin/python" ]]; then
+  if [[ -n "${CONDA_PREFIX:-}" && -x "${CONDA_PREFIX}/bin/python" ]]; then
+    PYTHON_BIN="${CONDA_PREFIX}/bin/python"
+  elif [[ -x "${HOME}/.conda/envs/MM/bin/python" ]]; then
+    PYTHON_BIN="${HOME}/.conda/envs/MM/bin/python"
+  elif [[ -x "/data2/liyapeng_grp/.conda/envs/MM/bin/python" ]]; then
+    PYTHON_BIN="/data2/liyapeng_grp/.conda/envs/MM/bin/python"
+  elif [[ -x "${ROOT_DIR}/.gpuenv/bin/python" ]]; then
     PYTHON_BIN="${ROOT_DIR}/.gpuenv/bin/python"
   else
     PYTHON_BIN="python3"

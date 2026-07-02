@@ -17,7 +17,6 @@ from methods import (
     merge_iso_cts,
     merge_model_stock,
     merge_my_merge,
-    merge_my_merge_extra,
     merge_regmean,
     merge_robustmerge,
     merge_ties,
@@ -158,14 +157,6 @@ def merge_with_method(method, state_dicts, weights, meta, checkpoints, cfg):
         )
     elif method == 'my_merge':
         merged_state_dict, method_info = merge_my_merge(
-            state_dicts,
-            weights,
-            meta=meta,
-            checkpoints=checkpoints,
-            cfg=cfg,
-        )
-    elif method == 'my_merge_extra':
-        merged_state_dict, method_info = merge_my_merge_extra(
             state_dicts,
             weights,
             meta=meta,

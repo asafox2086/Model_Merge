@@ -9,8 +9,10 @@ logs/
 .miniforge/
 .gpuenv/
 Med_data/
+PublicMed_data/
+PublicMedLabeled_data/
 result/
 reference_cache/
 methods/*
 !methods/__init__.py
-!methods/my_merge_extra.py
+!methods/my_merge.py

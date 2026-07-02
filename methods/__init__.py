@@ -8,7 +8,6 @@ from .free_merge import merge_free
 from .iso import merge_iso_c, merge_iso_cts
 from .model_stock import merge_model_stock
 from .my_merge import merge_my_merge
-from .my_merge_extra import merge_my_merge_extra
 from .regmean import merge_regmean
 from .robustmerge import merge_robustmerge
 from .ties import merge_ties
@@ -27,9 +26,6 @@ METHOD_ALIASES = {
     'my_merge': 'my_merge',
     'my_method': 'my_merge',
     'my-merge': 'my_merge',
-    'my_merge_extra': 'my_merge_extra',
-    'my-extra': 'my_merge_extra',
-    'my_extra': 'my_merge_extra',
     'adamerging': 'adamerging',
     'from': 'from',
     'free_merge': 'free_merge',
@@ -58,7 +54,6 @@ __all__ = [
     'merge_breadcrumbs',
     'merge_model_stock',
     'merge_my_merge',
-    'merge_my_merge_extra',
     'merge_adamerging',
     'merge_from',
     'merge_free',

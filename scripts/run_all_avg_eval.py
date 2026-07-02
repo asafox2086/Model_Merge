@@ -8,6 +8,8 @@ from datetime import datetime
 from pathlib import Path
 import sys
 
+csv.field_size_limit(sys.maxsize)
+
 ROOT = Path(__file__).resolve().parents[1]
 if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
@@ -123,33 +125,9 @@ def parse_args():
     p.add_argument('--regmean-max-batches', type=int, default=METHOD_DEFAULTS['regmean_max_batches'])
     p.add_argument('--regmean-max-dim', type=int, default=METHOD_DEFAULTS['regmean_max_dim'])
     p.add_argument('--my-merge-stats-max-batches', type=int, default=-1)
-    p.add_argument('--my-merge-eval-max-batches', type=int, default=-1)
-    p.add_argument('--my-merge-bn-batches', type=int, default=-1)
     p.add_argument('--my-merge-public-data-root', type=str, default='')
     p.add_argument('--my-merge-public-dataset', type=str, default='')
     p.add_argument('--my-merge-public-split', type=str, default='val')
-    p.add_argument('--my-merge-public-use-labels', action=argparse.BooleanOptionalAction, default=True)
-    p.add_argument('--my-merge-selection-public-split', type=str, default='')
-    p.add_argument('--my-merge-selection-stats-max-batches', type=int, default=-2)
-    p.add_argument('--my-merge-public-fisher-max-batches', type=int, default=-1)
-    p.add_argument('--my-merge-public-fisher-batch-size', type=int, default=16)
-    p.add_argument(
-        '--my-merge-ablation',
-        type=str,
-        default='',
-        help='Comma-separated my_merge ablation presets, e.g. full,no_adaptive_candidates or avg_only.',
-    )
-    p.add_argument(
-        '--my-merge-disable',
-        type=str,
-        default='',
-        help='Comma-separated my_merge components to disable, e.g. diagnostic_evidence,class_rarity.',
-    )
-    p.add_argument('--my-merge-export-diagnostics', action=argparse.BooleanOptionalAction, default=True)
-    p.add_argument('--my-merge-diagnostics-plot', action=argparse.BooleanOptionalAction, default=False)
-    p.add_argument('--my-merge-viz-split', type=str, default='test')
-    p.add_argument('--my-merge-viz-max-batches', type=int, default=2)
-    p.add_argument('--my-merge-viz-max-plots', type=int, default=0)
     return p.parse_args()
 
 
@@ -244,29 +222,12 @@ def build_cfg(row, args):
     }
     if args.my_merge_stats_max_batches >= 0:
         cfg['my_merge_stats_max_batches'] = args.my_merge_stats_max_batches
-    if args.my_merge_eval_max_batches >= 0:
-        cfg['my_merge_eval_max_batches'] = args.my_merge_eval_max_batches
-    if args.my_merge_bn_batches >= 0:
-        cfg['my_merge_bn_batches'] = args.my_merge_bn_batches
     if args.my_merge_public_data_root:
         cfg['my_merge_public_data_root'] = args.my_merge_public_data_root
     if args.my_merge_public_dataset:
         cfg['my_merge_public_dataset'] = args.my_merge_public_dataset
     if args.my_merge_public_split:
         cfg['my_merge_public_split'] = args.my_merge_public_split
-    cfg['my_merge_public_use_labels'] = args.my_merge_public_use_labels
-    if args.my_merge_selection_public_split:
-        cfg['my_merge_selection_public_split'] = args.my_merge_selection_public_split
-    if args.my_merge_selection_stats_max_batches >= -1:
-        cfg['my_merge_selection_stats_max_batches'] = args.my_merge_selection_stats_max_batches
-    if args.my_merge_public_fisher_max_batches >= 0:
-        cfg['my_merge_public_fisher_max_batches'] = args.my_merge_public_fisher_max_batches
-    if args.my_merge_public_fisher_batch_size > 0:
-        cfg['my_merge_public_fisher_batch_size'] = args.my_merge_public_fisher_batch_size
-    if args.my_merge_ablation:
-        cfg['my_merge_ablation'] = args.my_merge_ablation
-    if args.my_merge_disable:
-        cfg['my_merge_disable'] = args.my_merge_disable
     if item['task_type'] == 'small':
         cfg['model'] = item['model']
         cfg['batch_size'] = args.small_batch_size
@@ -325,14 +286,6 @@ def append_csv_row(path, row, fields):
         if not exists:
             writer.writeheader()
         writer.writerow({field: row.get(field, '') for field in fields})
-
-
-def count_existing_ok_plots(output_root):
-    viz_csv = Path(output_root) / 'reports' / 'my_merge_visualization_index.csv'
-    if not viz_csv.exists() or viz_csv.stat().st_size == 0:
-        return 0
-    with viz_csv.open('r', newline='', encoding='utf-8') as f:
-        return sum(1 for row in csv.DictReader(f) if row.get('status') == 'ok')
 
 
 def build_status_row(cfg, *, status, eval_json='', merged_deleted='', seconds='', test_acc='', test_loss='', error=''):
@@ -409,7 +362,6 @@ def main():
     status_csv = Path(args.output_root) / 'reports' / 'batch_status.csv'
     status_rows = load_status_rows(status_csv)
     save_json(Path(args.output_root) / 'reports' / 'batch_config.json', vars(args))
-    incremental_plot_count = count_existing_ok_plots(args.output_root)
 
     print(f'[{ts()}] batch start | tasks={len(manifest)} | output_root={args.output_root} | method={args.method}')
     for idx, row in enumerate(manifest, start=1):
@@ -438,37 +390,6 @@ def main():
             print(f'[{ts()}] start ({idx}/{len(manifest)}) {label}')
             merge_info = run_merge(cfg)
             payload, eval_path = run_evaluate(cfg, merged_dir=merge_info['merged_dir'])
-            if (
-                args.method == 'my_merge'
-                and args.my_merge_export_diagnostics
-                and args.my_merge_diagnostics_plot
-                and (args.my_merge_viz_max_plots <= 0 or incremental_plot_count < args.my_merge_viz_max_plots)
-            ):
-                try:
-                    from generate_my_merge_diagnostics import VIZ_FIELDS, build_visualization
-
-                    merge_payload = load_json(merge_info['merge_result_path'])
-                    viz_row = build_visualization(
-                        payload=merge_payload,
-                        result_path=Path(merge_info['merge_result_path']),
-                        output_root=args.output_root,
-                        data_root=args.data_root,
-                        split=args.my_merge_viz_split,
-                        device=args.device,
-                        batch_size=args.small_batch_size if cfg['task_type'] == 'small' else args.vlm_batch_size,
-                        num_workers=0,
-                        max_batches=args.my_merge_viz_max_batches,
-                        plot_subdir='diagnostic_figures',
-                    )
-                    append_csv_row(
-                        Path(args.output_root) / 'reports' / 'my_merge_visualization_index.csv',
-                        viz_row,
-                        VIZ_FIELDS,
-                    )
-                    if viz_row.get('status') == 'ok':
-                        incremental_plot_count += 1
-                except Exception as exc:
-                    print(f'[{ts()}] incremental my_merge visualization failed ({idx}/{len(manifest)}) {label} | {exc}')
             merged_ckpt = Path(merge_info['merged_checkpoint'])
             removed = False
             if args.delete_merged and merged_ckpt.exists():
@@ -502,28 +423,6 @@ def main():
             )
             print(f'[{ts()}] fail ({idx}/{len(manifest)}) {label} | {exc}')
     print(f'[{ts()}] batch done | output_root={args.output_root}')
-    if args.method == 'my_merge' and args.my_merge_export_diagnostics:
-        try:
-            from generate_my_merge_diagnostics import build_diagnostics
-
-            diagnostics = build_diagnostics(
-                output_root=args.output_root,
-                data_root=args.data_root,
-                device=args.device,
-                split=args.my_merge_viz_split,
-                batch_size=args.small_batch_size if args.task_type != 'vlm' else args.vlm_batch_size,
-                num_workers=0,
-                max_batches=args.my_merge_viz_max_batches,
-                make_plots=args.my_merge_diagnostics_plot,
-                max_plots=args.my_merge_viz_max_plots,
-            )
-            print(
-                f"[{ts()}] my_merge diagnostics exported | "
-                f"weights={diagnostics['weights_md']} | "
-                f"visualizations={diagnostics.get('visualization_md', '')}"
-            )
-        except Exception as exc:
-            print(f'[{ts()}] my_merge diagnostics export failed | {exc}')
 
 
 if __name__ == '__main__':
