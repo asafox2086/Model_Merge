@@ -1,0 +1,2 @@
+task_type,dataset,model,clip_model,num_clients,beta,seed,method,merge_weight_mode,merged_checkpoint,meta_path
+small,bloodmnist_224,resnet,,3,0.0,42,avg,equal,medmerge_empirical_study/results/experiment3_blood_smoke/merge_runs/no_image_stats/merged/small/bloodmnist_224/resnet/clients_3/beta_0/seed_42/avg/merged.pt,medmerge_empirical_study/results/experiment3_blood_smoke/merge_runs/no_image_stats/merged/small/bloodmnist_224/resnet/clients_3/beta_0/seed_42/avg/meta.json

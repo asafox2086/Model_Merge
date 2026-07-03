@@ -1,0 +1,31 @@
+{
+  "task_type": "small",
+  "dataset": "bloodmnist_224",
+  "model": "resnet",
+  "clip_model": "",
+  "num_clients": 3,
+  "beta": 0.0,
+  "seed": 42,
+  "method": "adamerging",
+  "merge_weight_mode": "equal",
+  "method_info": {
+    "implementation": "official_adamerging_taskwise_adapted_for_single_dataset",
+    "epochs": 50,
+    "lr": 0.01,
+    "prior": 0.3,
+    "max_batches": 1,
+    "learned_lambdas": [
+      0.6188239455223083,
+      0.004388818051666021,
+      0.0054106758907437325
+    ],
+    "stats_split": "val"
+  },
+  "source_clients": [
+    "client_0.pt",
+    "client_1.pt",
+    "client_2.pt"
+  ],
+  "merged_checkpoint": "medmerge_empirical_study/results/experiment3/merge_runs/source_val_512/merged/small/bloodmnist_224/resnet/clients_3/beta_0/seed_42/adamerging/merged.pt",
+  "meta_path": "medmerge_empirical_study/results/experiment3/merge_runs/source_val_512/merged/small/bloodmnist_224/resnet/clients_3/beta_0/seed_42/adamerging/meta.json"
+}

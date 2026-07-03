@@ -1,0 +1,32 @@
+{
+  "task_type": "small",
+  "dataset": "dermamnist_224",
+  "model": "resnet",
+  "clip_model": "",
+  "num_clients": 3,
+  "beta": 0.1,
+  "seed": 42,
+  "method": "from",
+  "merge_weight_mode": "equal",
+  "method_info": {
+    "implementation": "paper_from_closed_form_task_vector_scaling",
+    "k": 1.0,
+    "effective_scaling": [
+      0.3144270420788034,
+      0.36462143707349465,
+      0.32095152084770207
+    ],
+    "normalized_weights": [
+      0.3333333333333333,
+      0.3333333333333333,
+      0.3333333333333333
+    ]
+  },
+  "source_clients": [
+    "client_0.pt",
+    "client_1.pt",
+    "client_2.pt"
+  ],
+  "merged_checkpoint": "medmerge_empirical_study/results/experiment1/prediction_runs/merged/small/dermamnist_224/resnet/clients_3/beta_0p1/seed_42/from/merged.pt",
+  "meta_path": "medmerge_empirical_study/results/experiment1/prediction_runs/merged/small/dermamnist_224/resnet/clients_3/beta_0p1/seed_42/from/meta.json"
+}

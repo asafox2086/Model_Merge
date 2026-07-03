@@ -1,0 +1,101 @@
+[
+  {
+    "dataset": "bloodmnist_224",
+    "calibration_source": "source_val_512",
+    "path": "medmerge_empirical_study/results/experiment3/calibration_roots/source_val_512/bloodmnist_224.npz",
+    "num_samples": 512,
+    "class_counts": {
+      "0": 37,
+      "1": 93,
+      "2": 46,
+      "3": 87,
+      "4": 36,
+      "5": 43,
+      "6": 100,
+      "7": 70
+    },
+    "used_replacement": false
+  },
+  {
+    "dataset": "bloodmnist_224",
+    "calibration_source": "public_labeled_val_512",
+    "path": "medmerge_empirical_study/results/experiment3/calibration_roots/public_labeled_val_512/bloodmnist_224.npz",
+    "num_samples": 512,
+    "class_counts": {
+      "0": 62,
+      "1": 55,
+      "2": 70,
+      "3": 74,
+      "4": 69,
+      "5": 65,
+      "6": 55,
+      "7": 62
+    },
+    "used_replacement": false
+  },
+  {
+    "dataset": "bloodmnist_224",
+    "calibration_source": "public_labeled_reweighted_512",
+    "path": "medmerge_empirical_study/results/experiment3/calibration_roots/public_labeled_reweighted_512/bloodmnist_224.npz",
+    "num_samples": 512,
+    "class_counts": {
+      "0": 37,
+      "1": 93,
+      "2": 46,
+      "3": 87,
+      "4": 36,
+      "5": 43,
+      "6": 100,
+      "7": 70
+    },
+    "used_replacement": true
+  },
+  {
+    "dataset": "dermamnist_224",
+    "calibration_source": "source_val_512",
+    "path": "medmerge_empirical_study/results/experiment3/calibration_roots/source_val_512/dermamnist_224.npz",
+    "num_samples": 512,
+    "class_counts": {
+      "0": 17,
+      "1": 27,
+      "2": 56,
+      "3": 6,
+      "4": 57,
+      "5": 342,
+      "6": 7
+    },
+    "used_replacement": false
+  },
+  {
+    "dataset": "dermamnist_224",
+    "calibration_source": "public_labeled_val_512",
+    "path": "medmerge_empirical_study/results/experiment3/calibration_roots/public_labeled_val_512/dermamnist_224.npz",
+    "num_samples": 512,
+    "class_counts": {
+      "0": 67,
+      "1": 74,
+      "2": 76,
+      "3": 84,
+      "4": 75,
+      "5": 66,
+      "6": 70
+    },
+    "used_replacement": false
+  },
+  {
+    "dataset": "dermamnist_224",
+    "calibration_source": "public_labeled_reweighted_512",
+    "path": "medmerge_empirical_study/results/experiment3/calibration_roots/public_labeled_reweighted_512/dermamnist_224.npz",
+    "num_samples": 512,
+    "class_counts": {
+      "0": 17,
+      "1": 27,
+      "2": 56,
+      "3": 6,
+      "4": 57,
+      "5": 342,
+      "6": 7
+    },
+    "used_replacement": true
+  }
+]

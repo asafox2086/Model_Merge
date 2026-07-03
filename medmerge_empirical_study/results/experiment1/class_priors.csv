@@ -1,0 +1,8 @@
+dataset,npz_path,num_classes,num_test_samples,majority_class,majority_prior,random_prior,class_counts
+bloodmnist,program/MedMNISTMerge/Med_data/bloodmnist_224.npz,8,3421,6,0.19467991815258695,0.125,244 624 311 579 243 284 666 470
+chaoshengmnist,program/MedMNISTMerge/Med_data/chaoshengmnist_224.npz,8,1113,6,0.1734052111410602,0.125,121 121 117 180 100 141 193 140
+dermamnist,program/MedMNISTMerge/Med_data/dermamnist_224.npz,7,2005,5,0.6688279301745635,0.14285714285714285,66 103 220 23 223 1341 29
+organamnist,program/MedMNISTMerge/Med_data/organamnist_224.npz,11,17778,6,0.1847789402632467,0.09090909090909091,1036 784 793 785 2064 1965 3285 1747 1813 1622 1884
+organcmnist,program/MedMNISTMerge/Med_data/organcmnist_224.npz,11,8216,6,0.22334469328140213,0.09090909090909091,828 431 421 421 727 735 1835 549 557 750 962
+organsmnist,program/MedMNISTMerge/Med_data/organsmnist_224.npz,11,8827,6,0.23541407046561685,0.09090909090909091,811 439 445 510 704 693 2078 397 439 1343 968
+pathmnist,program/MedMNISTMerge/Med_data/pathmnist_224.npz,9,7180,0,0.18635097493036212,0.1111111111111111,1338 847 339 634 1035 592 741 421 1233

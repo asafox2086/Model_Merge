@@ -1,0 +1,28 @@
+{
+  "task_type": "small",
+  "dataset": "dermamnist_224",
+  "model": "resnet",
+  "clip_model": "",
+  "num_clients": 3,
+  "beta": 0.0,
+  "seed": 42,
+  "method": "model_stock",
+  "merge_weight_mode": "equal",
+  "method_info": {
+    "implementation": "paper_model_stock_core_with_weighted_multiclient_extension",
+    "k": 2.0,
+    "normalized_weights": [
+      0.3333333333333333,
+      0.3333333333333333,
+      0.3333333333333333
+    ],
+    "num_models": 3
+  },
+  "source_clients": [
+    "client_0.pt",
+    "client_1.pt",
+    "client_2.pt"
+  ],
+  "merged_checkpoint": "medmerge_empirical_study/results/experiment2_all_methods/prediction_runs/merged/small/dermamnist_224/resnet/clients_3/beta_0/seed_42/model_stock/merged.pt",
+  "meta_path": "medmerge_empirical_study/results/experiment2_all_methods/prediction_runs/merged/small/dermamnist_224/resnet/clients_3/beta_0/seed_42/model_stock/meta.json"
+}

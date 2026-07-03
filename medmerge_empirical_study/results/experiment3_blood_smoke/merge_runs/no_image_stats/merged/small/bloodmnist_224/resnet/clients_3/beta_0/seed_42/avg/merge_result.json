@@ -1,0 +1,23 @@
+{
+  "task_type": "small",
+  "dataset": "bloodmnist_224",
+  "model": "resnet",
+  "clip_model": "",
+  "num_clients": 3,
+  "beta": 0.0,
+  "seed": 42,
+  "method": "avg",
+  "merge_weight_mode": "equal",
+  "method_info": [
+    0.3333333333333333,
+    0.3333333333333333,
+    0.3333333333333333
+  ],
+  "source_clients": [
+    "client_0.pt",
+    "client_1.pt",
+    "client_2.pt"
+  ],
+  "merged_checkpoint": "medmerge_empirical_study/results/experiment3_blood_smoke/merge_runs/no_image_stats/merged/small/bloodmnist_224/resnet/clients_3/beta_0/seed_42/avg/merged.pt",
+  "meta_path": "medmerge_empirical_study/results/experiment3_blood_smoke/merge_runs/no_image_stats/merged/small/bloodmnist_224/resnet/clients_3/beta_0/seed_42/avg/meta.json"
+}
