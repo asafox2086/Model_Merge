@@ -1,0 +1,97 @@
+{
+  "task_type": "small",
+  "dataset": "bloodmnist_224",
+  "model": "resnet",
+  "train_mode": "fl",
+  "num_clients": 3,
+  "beta": 0.1,
+  "seed": 42,
+  "num_classes": 8,
+  "observed_num_classes": 8,
+  "in_channels": 3,
+  "epochs": 50,
+  "batch_size": 64,
+  "lr": 0.001,
+  "weight_decay": 0.0001,
+  "image_size": 224,
+  "pretrained": true,
+  "source_batch_dir": "20260307_125359_small_8bb",
+  "source_run_name": "20260307_131736_bloodmnist_224_resnet_c3_b0p1_s42",
+  "source_log_dir": "/data1/users/weiyipan/ML/MedModelMerging/logs/20260307_125359_small_8bb/20260307_131736_bloodmnist_224_resnet_c3_b0p1_s42",
+  "source_ckpt_dir": "/data1/users/weiyipan/ML/MedModelMerging/checkpoints/20260307_125359_small_8bb/20260307_131736_bloodmnist_224_resnet_c3_b0p1_s42",
+  "client_classes": {
+    "0": [
+      0,
+      2,
+      3,
+      4,
+      5,
+      6,
+      7
+    ],
+    "1": [
+      0,
+      1,
+      3,
+      4,
+      5,
+      6
+    ],
+    "2": [
+      0,
+      3,
+      7
+    ]
+  },
+  "clients": [
+    {
+      "client_id": 0,
+      "num_samples": 4780,
+      "classes": [
+        0,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7
+      ],
+      "best_val_acc": 0.7932242990654206,
+      "test_acc": 0.7874890382928968,
+      "test_loss": 1.5319958329026513,
+      "checkpoint": "client_0.pt",
+      "source_checkpoint": "/data1/users/weiyipan/ML/MedModelMerging/checkpoints/20260307_125359_small_8bb/20260307_131736_bloodmnist_224_resnet_c3_b0p1_s42/client_0_best.pt"
+    },
+    {
+      "client_id": 1,
+      "num_samples": 5774,
+      "classes": [
+        0,
+        1,
+        3,
+        4,
+        5,
+        6
+      ],
+      "best_val_acc": 0.6232476635514018,
+      "test_acc": 0.6246711487869044,
+      "test_loss": 3.0075370989428456,
+      "checkpoint": "client_1.pt",
+      "source_checkpoint": "/data1/users/weiyipan/ML/MedModelMerging/checkpoints/20260307_125359_small_8bb/20260307_131736_bloodmnist_224_resnet_c3_b0p1_s42/client_1_best.pt"
+    },
+    {
+      "client_id": 2,
+      "num_samples": 1405,
+      "classes": [
+        0,
+        3,
+        7
+      ],
+      "best_val_acc": 0.375,
+      "test_acc": 0.3762057877813505,
+      "test_loss": 7.728608503009938,
+      "checkpoint": "client_2.pt",
+      "source_checkpoint": "/data1/users/weiyipan/ML/MedModelMerging/checkpoints/20260307_125359_small_8bb/20260307_131736_bloodmnist_224_resnet_c3_b0p1_s42/client_2_best.pt"
+    }
+  ]
+}

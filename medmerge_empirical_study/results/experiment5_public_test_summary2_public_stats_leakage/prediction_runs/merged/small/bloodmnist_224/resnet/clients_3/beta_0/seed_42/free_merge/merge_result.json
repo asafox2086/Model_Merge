@@ -1,0 +1,32 @@
+{
+  "task_type": "small",
+  "dataset": "bloodmnist_224",
+  "model": "resnet",
+  "clip_model": "",
+  "num_clients": 3,
+  "beta": 0.0,
+  "seed": 42,
+  "method": "free_merge",
+  "merge_weight_mode": "equal",
+  "method_info": {
+    "implementation": "paper_free_frequency_filter_core_adapted_without_router",
+    "paper_family": "FREE-Merging / FR-Merging",
+    "venue": "ICCV",
+    "year": 2025,
+    "filter_ratio": 0.7,
+    "scaling": 1.0,
+    "include_all_2d": false,
+    "normalized_weights": [
+      0.3333333333333333,
+      0.3333333333333333,
+      0.3333333333333333
+    ]
+  },
+  "source_clients": [
+    "client_0.pt",
+    "client_1.pt",
+    "client_2.pt"
+  ],
+  "merged_checkpoint": "medmerge_empirical_study/results/experiment5_public_test_summary2/prediction_runs/merged/small/bloodmnist_224/resnet/clients_3/beta_0/seed_42/free_merge/merged.pt",
+  "meta_path": "medmerge_empirical_study/results/experiment5_public_test_summary2/prediction_runs/merged/small/bloodmnist_224/resnet/clients_3/beta_0/seed_42/free_merge/meta.json"
+}

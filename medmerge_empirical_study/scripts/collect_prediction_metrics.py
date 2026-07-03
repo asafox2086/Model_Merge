@@ -45,6 +45,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--repo-root", type=Path, default=Path("program/MedMNISTMerge"))
     parser.add_argument("--model-hub-root", type=Path, default=None)
     parser.add_argument("--data-root", type=Path, default=None)
+    parser.add_argument("--eval-data-root", type=Path, default=None)
     parser.add_argument("--output-root", type=Path, default=Path("medmerge_empirical_study/results/experiment1/prediction_runs"))
     parser.add_argument("--metrics-csv", type=Path, default=Path("medmerge_empirical_study/results/experiment1/prediction_metrics.csv"))
     parser.add_argument("--task-type", choices=["small", "vlm"], default="small")
@@ -320,6 +321,7 @@ def main() -> None:
 
     args.model_hub_root = args.model_hub_root or args.repo_root / "model_hub"
     args.data_root = args.data_root or args.repo_root / "Med_data"
+    args.eval_data_root = args.eval_data_root or args.data_root
     manifest = filter_manifest(load_manifest(args.model_hub_root / "manifest.csv"), args)
     if not manifest:
         raise SystemExit("No manifest rows matched the requested filters.")
@@ -353,6 +355,8 @@ def main() -> None:
         "predicted_class_counts",
         "confusion_matrix_json",
         "merged_checkpoint",
+        "merge_data_root",
+        "eval_data_root",
         "updated_at",
     ]
     existing_keys = read_existing_keys(args.metrics_csv) if args.resume else set()
@@ -398,7 +402,9 @@ def main() -> None:
                 checkpoint_path = Path(str(merge_info["merged_checkpoint"]))
                 meta = load_json(Path(str(merge_info["meta_path"])))
                 checkpoint = load_checkpoint(checkpoint_path, device="cpu")
-                metrics = evaluate_checkpoint_predictions(meta, checkpoint, cfg)
+                eval_cfg = dict(cfg)
+                eval_cfg["data_root"] = str(args.eval_data_root)
+                metrics = evaluate_checkpoint_predictions(meta, checkpoint, eval_cfg)
                 result = dict(base_row)
                 result.update(metrics)
                 result.update(
@@ -407,6 +413,8 @@ def main() -> None:
                         "error": "",
                         "seconds": f"{time.time() - start:.2f}",
                         "merged_checkpoint": str(checkpoint_path),
+                        "merge_data_root": str(args.data_root),
+                        "eval_data_root": str(args.eval_data_root),
                     }
                 )
                 append_csv(args.metrics_csv, result, fields)
@@ -420,6 +428,8 @@ def main() -> None:
                         "status": "FAIL",
                         "error": str(exc),
                         "seconds": f"{time.time() - start:.2f}",
+                        "merge_data_root": str(args.data_root),
+                        "eval_data_root": str(args.eval_data_root),
                     }
                 )
                 append_csv(args.metrics_csv, result, fields)

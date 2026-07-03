@@ -309,6 +309,89 @@ merged_model - oracle_client
 
 > 融合后的医学模型不仅需要合并权重，还需要恢复与源域匹配的模型状态统计。
 
+### 7.5 公开验证集选择客户端
+
+#### 目的
+
+检验一个非常强但简单的替代策略：
+
+> 不做模型融合，而是用同类型公开验证集给每个已训练客户端打分，直接采用 public validation 上表现最好的客户端。
+
+#### 流程
+
+对每个 `dataset / backbone / num_clients / beta / seed`：
+
+1. 固定所有已训练客户端 checkpoint。
+2. 在 `PublicMedLabeled_data` 的 validation split 上评估每个客户端。
+3. 选择 public validation accuracy 最高的客户端。
+4. 在源域 test set 上评估该客户端。
+5. 与以下选择规则对比：
+   - `source_val_accuracy_best`：用源域 validation set 选客户端。
+   - `source_val_balanced_accuracy_best`：用源域 balanced accuracy 选客户端。
+   - `oracle_test_accuracy_best`：用源域 test set 选客户端，只作为不可用上界。
+
+#### 关键指标
+
+- `source-test accuracy / balanced accuracy / macro F1`：最终落到源域测试集的效果。
+- `selection regret`：
+
+```text
+regret = source-test acc(source-val selected client)
+       - source-test acc(public-val selected client)
+```
+
+- `Spearman(public-val score, source-test score)`：public 排名是否能代表源域测试排名。
+
+#### 期望结果
+
+如果 public validation 可以替代源域图像，那么 public-selected client 应接近 source-val selected client，且 public score 与 source-test score 排名相关性较高。
+
+如果 public-selected client 明显差于 source-val selected client，则说明：
+
+> 即使公开数据类别覆盖完整、输入格式一致，它仍不能稳定承担源域模型选择的角色。
+
+### 7.6 公开数据集作为 Test Set 的汇总表2
+
+#### 目的
+
+检验一个更直接的问题：
+
+> 如果训练好的客户端和融合过程仍然来自源域，但最终测试集换成同类型公开医学数据，模型融合方法的 accuracy 和排名是否会大幅改变？
+
+这不是用错误数据集做测试，而是把同类型公开医学数据当作外部 test set，观察模型是否只在源域 test 上表现稳定。
+
+#### 流程
+
+对 `bloodmnist_224 / dermamnist_224 + resnet + 3 clients + beta in {0, 0.01, 0.1} + seed 42`：
+
+1. 使用 `Med_data` 作为融合/统计数据来源。
+2. 使用 `PublicMedFingerprint_data/test` 作为公开测试集。
+3. 运行 12 个已有融合基线：
+   - Avg, TIES, DARE-Linear, DARE-TIES
+   - RegMean, Fisher
+   - Breadcrumbs, Model Stock, FROM, ISO-C, FreeMerge, RobustMerge
+4. 记录 accuracy、balanced accuracy、macro F1、预测类别塌缩指标。
+5. 与源域 formal accuracy 表中同 setting 的结果比较：
+   - `source mean acc` vs `public mean acc`
+   - `public - source`
+   - 每个 setting 的 top method 是否切换
+   - rank Spearman
+
+注意：公开 test 图像不应参与融合统计。若为了检查数据依赖方法额外跑 `PublicMedFingerprint_data` 作为统计来源的版本，必须标注为辅助检查，不作为主结论。
+
+#### 期望结果
+
+如果医学模型融合只学到了源域局部解，换成同类型公开 test 后应观察到：
+
+- 整体 accuracy 明显下降。
+- 最优方法从源域 test 到 public test 大量切换。
+- rank Spearman 较低，说明方法排名不稳定。
+- balanced accuracy / macro F1 暴露出 accuracy 被类别分布影响的问题。
+
+该实验支撑的结论是：
+
+> 医学模型融合的有效性高度依赖源域分布；即使公开数据类别覆盖相同，作为外部 test set 时也会暴露出融合方法的鲁棒性不足。
+
 ## 8. 主表和图设计
 
 ### 8.1 主表一：整体 benchmark

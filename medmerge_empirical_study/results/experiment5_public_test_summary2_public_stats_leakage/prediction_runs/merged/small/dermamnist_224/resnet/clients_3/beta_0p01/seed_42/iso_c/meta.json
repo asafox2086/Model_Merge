@@ -1,0 +1,81 @@
+{
+  "task_type": "small",
+  "dataset": "dermamnist_224",
+  "model": "resnet",
+  "train_mode": "fl",
+  "num_clients": 3,
+  "beta": 0.01,
+  "seed": 42,
+  "num_classes": 7,
+  "observed_num_classes": 7,
+  "in_channels": 3,
+  "epochs": 50,
+  "batch_size": 64,
+  "lr": 0.001,
+  "weight_decay": 0.0001,
+  "image_size": 224,
+  "pretrained": true,
+  "source_batch_dir": "20260307_125359_small_8bb",
+  "source_run_name": "20260307_230501_dermamnist_224_resnet_c3_b0p01_s42",
+  "source_log_dir": "/data1/users/weiyipan/ML/MedModelMerging/logs/20260307_125359_small_8bb/20260307_230501_dermamnist_224_resnet_c3_b0p01_s42",
+  "source_ckpt_dir": "/data1/users/weiyipan/ML/MedModelMerging/checkpoints/20260307_125359_small_8bb/20260307_230501_dermamnist_224_resnet_c3_b0p01_s42",
+  "client_classes": {
+    "0": [
+      1,
+      3
+    ],
+    "1": [
+      0,
+      5,
+      6
+    ],
+    "2": [
+      2,
+      3,
+      4
+    ]
+  },
+  "clients": [
+    {
+      "client_id": 0,
+      "num_samples": 422,
+      "classes": [
+        1,
+        3
+      ],
+      "best_val_acc": 0.06380857427716849,
+      "test_acc": 0.05785536159600998,
+      "test_loss": 9.509722248277164,
+      "checkpoint": "client_0.pt",
+      "source_checkpoint": "/data1/users/weiyipan/ML/MedModelMerging/checkpoints/20260307_125359_small_8bb/20260307_230501_dermamnist_224_resnet_c3_b0p01_s42/client_0_best.pt"
+    },
+    {
+      "client_id": 1,
+      "num_samples": 5020,
+      "classes": [
+        0,
+        5,
+        6
+      ],
+      "best_val_acc": 0.7068793619142573,
+      "test_acc": 0.7037406483790524,
+      "test_loss": 3.780763204436647,
+      "checkpoint": "client_1.pt",
+      "source_checkpoint": "/data1/users/weiyipan/ML/MedModelMerging/checkpoints/20260307_125359_small_8bb/20260307_230501_dermamnist_224_resnet_c3_b0p01_s42/client_1_best.pt"
+    },
+    {
+      "client_id": 2,
+      "num_samples": 1565,
+      "classes": [
+        2,
+        3,
+        4
+      ],
+      "best_val_acc": 0.2033898305084746,
+      "test_acc": 0.20149625935162094,
+      "test_loss": 8.79131396381635,
+      "checkpoint": "client_2.pt",
+      "source_checkpoint": "/data1/users/weiyipan/ML/MedModelMerging/checkpoints/20260307_125359_small_8bb/20260307_230501_dermamnist_224_resnet_c3_b0p01_s42/client_2_best.pt"
+    }
+  ]
+}

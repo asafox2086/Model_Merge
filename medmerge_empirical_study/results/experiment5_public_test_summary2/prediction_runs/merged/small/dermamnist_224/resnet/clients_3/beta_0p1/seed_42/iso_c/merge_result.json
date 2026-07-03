@@ -1,0 +1,30 @@
+{
+  "task_type": "small",
+  "dataset": "dermamnist_224",
+  "model": "resnet",
+  "clip_model": "",
+  "num_clients": 3,
+  "beta": 0.1,
+  "seed": 42,
+  "method": "iso_c",
+  "merge_weight_mode": "equal",
+  "method_info": {
+    "implementation": "paper_iso_merging_iso_c_weighted_2d_adapted",
+    "paper": "No Task Left Behind: Isotropic Model Merging with Common and Task-Specific Subspaces",
+    "venue": "ICML",
+    "year": 2025,
+    "num_models": 3,
+    "normalized_weights": [
+      0.3333333333333333,
+      0.3333333333333333,
+      0.3333333333333333
+    ]
+  },
+  "source_clients": [
+    "client_0.pt",
+    "client_1.pt",
+    "client_2.pt"
+  ],
+  "merged_checkpoint": "medmerge_empirical_study/results/experiment5_public_test_summary2/prediction_runs/merged/small/dermamnist_224/resnet/clients_3/beta_0p1/seed_42/iso_c/merged.pt",
+  "meta_path": "medmerge_empirical_study/results/experiment5_public_test_summary2/prediction_runs/merged/small/dermamnist_224/resnet/clients_3/beta_0p1/seed_42/iso_c/meta.json"
+}

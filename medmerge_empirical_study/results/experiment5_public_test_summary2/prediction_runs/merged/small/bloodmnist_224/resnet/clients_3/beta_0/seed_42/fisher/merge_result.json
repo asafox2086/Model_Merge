@@ -1,0 +1,34 @@
+{
+  "task_type": "small",
+  "dataset": "bloodmnist_224",
+  "model": "resnet",
+  "clip_model": "",
+  "num_clients": 3,
+  "beta": 0.0,
+  "seed": 42,
+  "method": "fisher",
+  "merge_weight_mode": "equal",
+  "method_info": {
+    "implementation": "official_fisher_core",
+    "eps": 1e-08,
+    "normalize_fisher_weight": true,
+    "minimal_fisher_weight": 1e-06,
+    "normalized_weights": [
+      0.3333333333333333,
+      0.3333333333333333,
+      0.3333333333333333
+    ],
+    "effective_scaling": [
+      0.2312588393688202,
+      0.04790621995925903,
+      0.05416828393936157
+    ]
+  },
+  "source_clients": [
+    "client_0.pt",
+    "client_1.pt",
+    "client_2.pt"
+  ],
+  "merged_checkpoint": "medmerge_empirical_study/results/experiment5_public_test_summary2/prediction_runs/merged/small/bloodmnist_224/resnet/clients_3/beta_0/seed_42/fisher/merged.pt",
+  "meta_path": "medmerge_empirical_study/results/experiment5_public_test_summary2/prediction_runs/merged/small/bloodmnist_224/resnet/clients_3/beta_0/seed_42/fisher/meta.json"
+}
