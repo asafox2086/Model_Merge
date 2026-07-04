@@ -1,0 +1,136 @@
+{
+  "hub_dir": "medmerge_empirical_study/results/experiment14_strict_domain_control/natural_probe_hub/small/cifar7_derma_strict/resnet/clients_3/partial_label/seed_42",
+  "dataset": "cifar7_derma_strict",
+  "model": "resnet",
+  "groups": {
+    "0": [
+      3,
+      4,
+      0
+    ],
+    "1": [
+      2,
+      1
+    ],
+    "2": [
+      6,
+      5
+    ]
+  },
+  "image_size": 224,
+  "max_train_per_class": 0,
+  "group_class_counts": {
+    "0": {
+      "3": 80,
+      "4": 779,
+      "0": 228
+    },
+    "1": {
+      "2": 769,
+      "1": 359
+    },
+    "2": {
+      "6": 99,
+      "5": 4693
+    }
+  },
+  "avg_test": {
+    "loss": 1.1883177791747666,
+    "accuracy": 0.6992518901824951,
+    "balanced_accuracy": 0.1915481815563075,
+    "macro_f1": 0.17471038446648204,
+    "num_samples": 2005,
+    "pred_counts": [
+      0,
+      0,
+      0,
+      0,
+      187,
+      1818,
+      0
+    ],
+    "support": [
+      66,
+      103,
+      220,
+      23,
+      223,
+      1341,
+      29
+    ],
+    "collapse_ratio": 0.9067331670822942,
+    "effective_pred_classes": 2,
+    "top_pred_class": 5,
+    "mean_confidence": 0.3897261321544647,
+    "mean_top1_top2_margin": 0.3573199510574341,
+    "min_top1_top2_margin": 0.00048828125,
+    "per_class_recall": [
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.3542600896860987,
+      0.9865771812080537,
+      0.0
+    ],
+    "per_class_precision": [
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.42245989304812837,
+      0.7277227722772277,
+      0.0
+    ],
+    "per_class_f1": [
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.38536585365853665,
+      0.8376068376068376,
+      0.0
+    ]
+  },
+  "client_rows": [
+    {
+      "client_id": 0,
+      "classes": "[3, 4, 0]",
+      "sampled_num_samples": 1087,
+      "sampled_class_counts": "{\"3\": 80, \"4\": 779, \"0\": 228}",
+      "best_val_acc": "0.147557",
+      "test_acc": "0.144140",
+      "test_bacc": "0.358081",
+      "test_collapse": "0.477307",
+      "effective_pred_classes": 3,
+      "top_pred_class": 4,
+      "test_pred_counts": "[199, 0, 0, 849, 957, 0, 0]"
+    },
+    {
+      "client_id": 1,
+      "classes": "[2, 1]",
+      "sampled_num_samples": 1128,
+      "sampled_class_counts": "{\"2\": 769, \"1\": 359}",
+      "best_val_acc": "0.161515",
+      "test_acc": "0.161097",
+      "test_bacc": "0.285714",
+      "test_collapse": "0.922195",
+      "effective_pred_classes": 2,
+      "top_pred_class": 2,
+      "test_pred_counts": "[0, 156, 1849, 0, 0, 0, 0]"
+    },
+    {
+      "client_id": 2,
+      "classes": "[6, 5]",
+      "sampled_num_samples": 4792,
+      "sampled_class_counts": "{\"6\": 99, \"5\": 4693}",
+      "best_val_acc": "0.677966",
+      "test_acc": "0.674813",
+      "test_bacc": "0.254986",
+      "test_collapse": "0.948628",
+      "effective_pred_classes": 2,
+      "top_pred_class": 5,
+      "test_pred_counts": "[0, 0, 0, 0, 0, 1902, 103]"
+    }
+  ]
+}

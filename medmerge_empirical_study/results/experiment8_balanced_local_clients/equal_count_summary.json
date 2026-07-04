@@ -1,0 +1,171 @@
+{
+  "hub_dir": "medmerge_empirical_study/results/experiment8_balanced_local_clients/equal_count_hub/small/dermamnist_224/resnet/clients_3/balanced_local/seed_42",
+  "target_total_per_client": 1087,
+  "balanced_per_class": 80,
+  "sampling_mode": "balanced_local",
+  "available_per_client": {
+    "0": 1087,
+    "1": 1128,
+    "2": 4792
+  },
+  "avg_source": {
+    "loss": 1.6851941760935985,
+    "accuracy": 0.4498753249645233,
+    "balanced_accuracy": 0.4036081048400765,
+    "macro_f1": 0.32545259259042547,
+    "num_samples": 2005,
+    "pred_counts": [
+      284,
+      146,
+      410,
+      34,
+      230,
+      863,
+      38
+    ],
+    "support": [
+      66,
+      103,
+      220,
+      23,
+      223,
+      1341,
+      29
+    ],
+    "collapse_ratio": 0.4304239401496259,
+    "effective_pred_classes": 7,
+    "top_pred_class": 5,
+    "mean_confidence": 0.22515027225017548,
+    "mean_top1_top2_margin": 0.2040104866027832,
+    "min_top1_top2_margin": 2.5510787963867188e-05,
+    "per_class_recall": [
+      0.5909090909090909,
+      0.4174757281553398,
+      0.2909090909090909,
+      0.30434782608695654,
+      0.18834080717488788,
+      0.5160328113348247,
+      0.5172413793103449
+    ],
+    "per_class_precision": [
+      0.13732394366197184,
+      0.2945205479452055,
+      0.15609756097560976,
+      0.20588235294117646,
+      0.1826086956521739,
+      0.8018539976825029,
+      0.39473684210526316
+    ],
+    "per_class_f1": [
+      0.22285714285714286,
+      0.3453815261044177,
+      0.20317460317460317,
+      0.2456140350877193,
+      0.18543046357615894,
+      0.6279491833030854,
+      0.44776119402985076
+    ]
+  },
+  "avg_public": {
+    "loss": 1.8969578870021513,
+    "accuracy": 0.18832117319107056,
+    "balanced_accuracy": 0.1825716099380879,
+    "macro_f1": 0.17987656923874398,
+    "num_samples": 685,
+    "pred_counts": [
+      157,
+      51,
+      269,
+      61,
+      9,
+      110,
+      28
+    ],
+    "support": [
+      128,
+      128,
+      103,
+      71,
+      81,
+      101,
+      73
+    ],
+    "collapse_ratio": 0.3927007299270073,
+    "effective_pred_classes": 7,
+    "top_pred_class": 2,
+    "mean_confidence": 0.20421580970287323,
+    "mean_top1_top2_margin": 0.15940509736537933,
+    "min_top1_top2_margin": 0.0003873109817504883,
+    "per_class_recall": [
+      0.1796875,
+      0.125,
+      0.4174757281553398,
+      0.08450704225352113,
+      0.06172839506172839,
+      0.21782178217821782,
+      0.1917808219178082
+    ],
+    "per_class_precision": [
+      0.1464968152866242,
+      0.3137254901960784,
+      0.15985130111524162,
+      0.09836065573770492,
+      0.5555555555555556,
+      0.2,
+      0.5
+    ],
+    "per_class_f1": [
+      0.16140350877192983,
+      0.1787709497206704,
+      0.2311827956989247,
+      0.09090909090909091,
+      0.1111111111111111,
+      0.20853080568720378,
+      0.2772277227722772
+    ]
+  },
+  "client_rows": [
+    {
+      "client_id": 0,
+      "classes": "[3, 4, 0]",
+      "available_num_samples": 1087,
+      "sampled_num_samples": 240,
+      "sampled_class_counts": "{\"3\": 80, \"4\": 80, \"0\": 80}",
+      "best_val_acc": "0.130608",
+      "source_test_acc": "0.128678",
+      "source_test_bacc": "0.350887",
+      "source_test_pred_counts": "[301, 0, 0, 643, 1061, 0, 0]",
+      "public_test_acc": "0.192701",
+      "public_test_bacc": "0.236549",
+      "public_test_pred_counts": "[85, 0, 0, 367, 233, 0, 0]"
+    },
+    {
+      "client_id": 1,
+      "classes": "[2, 1]",
+      "available_num_samples": 1128,
+      "sampled_num_samples": 160,
+      "sampled_class_counts": "{\"2\": 80, \"1\": 80}",
+      "best_val_acc": "0.142572",
+      "source_test_acc": "0.143142",
+      "source_test_bacc": "0.250536",
+      "source_test_pred_counts": "[0, 209, 1796, 0, 0, 0, 0]",
+      "public_test_acc": "0.173723",
+      "public_test_bacc": "0.157734",
+      "public_test_pred_counts": "[0, 81, 604, 0, 0, 0, 0]"
+    },
+    {
+      "client_id": 2,
+      "classes": "[6, 5]",
+      "available_num_samples": 4792,
+      "sampled_num_samples": 160,
+      "sampled_class_counts": "{\"6\": 80, \"5\": 80}",
+      "best_val_acc": "0.677966",
+      "source_test_acc": "0.676808",
+      "source_test_bacc": "0.279510",
+      "source_test_pred_counts": "[0, 0, 0, 0, 0, 1929, 76]",
+      "public_test_acc": "0.214599",
+      "public_test_bacc": "0.237759",
+      "public_test_pred_counts": "[0, 0, 0, 0, 0, 570, 115]"
+    }
+  ]
+}

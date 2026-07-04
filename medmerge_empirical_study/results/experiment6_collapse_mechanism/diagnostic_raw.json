@@ -1,0 +1,426 @@
+{
+  "case_dir": "model_hub/small/dermamnist_224/resnet/clients_3/beta_0/seed_42",
+  "device": "cuda:0",
+  "avg_weights": [
+    0.3333333333333333,
+    0.3333333333333333,
+    0.3333333333333333
+  ],
+  "meta": {
+    "task_type": "small",
+    "dataset": "dermamnist_224",
+    "model": "resnet",
+    "train_mode": "fl",
+    "num_clients": 3,
+    "beta": 0.0,
+    "seed": 42,
+    "num_classes": 7,
+    "observed_num_classes": 7,
+    "in_channels": 3,
+    "epochs": 50,
+    "batch_size": 64,
+    "lr": 0.001,
+    "weight_decay": 0.0001,
+    "image_size": 224,
+    "pretrained": true,
+    "source_batch_dir": "20260307_125359_small_8bb",
+    "source_run_name": "20260307_222430_dermamnist_224_resnet_c3_b0p0_s42",
+    "source_log_dir": "/data1/users/weiyipan/ML/MedModelMerging/logs/20260307_125359_small_8bb/20260307_222430_dermamnist_224_resnet_c3_b0p0_s42",
+    "source_ckpt_dir": "/data1/users/weiyipan/ML/MedModelMerging/checkpoints/20260307_125359_small_8bb/20260307_222430_dermamnist_224_resnet_c3_b0p0_s42",
+    "client_classes": {
+      "0": [
+        3,
+        4,
+        0
+      ],
+      "1": [
+        2,
+        1
+      ],
+      "2": [
+        6,
+        5
+      ]
+    },
+    "clients": [
+      {
+        "client_id": 0,
+        "num_samples": 1087,
+        "classes": [
+          3,
+          4,
+          0
+        ],
+        "best_val_acc": 0.1415752741774676,
+        "test_acc": 0.13865336658354116,
+        "test_loss": 8.702146384127419,
+        "checkpoint": "client_0.pt",
+        "source_checkpoint": "/data1/users/weiyipan/ML/MedModelMerging/checkpoints/20260307_125359_small_8bb/20260307_222430_dermamnist_224_resnet_c3_b0p0_s42/client_0_best.pt"
+      },
+      {
+        "client_id": 1,
+        "num_samples": 1128,
+        "classes": [
+          2,
+          1
+        ],
+        "best_val_acc": 0.15653040877367896,
+        "test_acc": 0.15211970074812967,
+        "test_loss": 7.948284876435772,
+        "checkpoint": "client_1.pt",
+        "source_checkpoint": "/data1/users/weiyipan/ML/MedModelMerging/checkpoints/20260307_125359_small_8bb/20260307_222430_dermamnist_224_resnet_c3_b0p0_s42/client_1_best.pt"
+      },
+      {
+        "client_id": 2,
+        "num_samples": 4792,
+        "classes": [
+          6,
+          5
+        ],
+        "best_val_acc": 0.6799601196410767,
+        "test_acc": 0.6798004987531172,
+        "test_loss": 3.994285801818543,
+        "checkpoint": "client_2.pt",
+        "source_checkpoint": "/data1/users/weiyipan/ML/MedModelMerging/checkpoints/20260307_125359_small_8bb/20260307_222430_dermamnist_224_resnet_c3_b0p0_s42/client_2_best.pt"
+      }
+    ]
+  },
+  "models": {
+    "client_0": {
+      "source_test": {
+        "classifier_name": "fc",
+        "n": 2005,
+        "accuracy": 0.021446384489536285,
+        "balanced_accuracy": 0.15924220057579386,
+        "macro_f1": 0.02650576349884303,
+        "collapse_ratio": 0.8952618453865336,
+        "effective_pred_classes": 3,
+        "top_pred_class": 3,
+        "top_pred_fraction": 0.8952618453865336,
+        "pred_counts": [
+          148,
+          0,
+          0,
+          1795,
+          62,
+          0,
+          0
+        ],
+        "true_counts": [
+          66,
+          103,
+          220,
+          23,
+          223,
+          1341,
+          29
+        ],
+        "mean_confidence": 0.7546698451042175,
+        "mean_top1_top2_margin": 1.8757561445236206,
+        "min_top1_top2_margin": 0.00318300724029541,
+        "top1_class_hist": [
+          148,
+          0,
+          0,
+          1795,
+          62,
+          0,
+          0
+        ]
+      },
+      "public_test": {
+        "classifier_name": "fc",
+        "n": 685,
+        "accuracy": 0.10218977928161621,
+        "balanced_accuracy": 0.14084507042253522,
+        "macro_f1": 0.027247956403269758,
+        "collapse_ratio": 0.9678832116788321,
+        "effective_pred_classes": 3,
+        "top_pred_class": 3,
+        "top_pred_fraction": 0.9678832116788321,
+        "pred_counts": [
+          16,
+          0,
+          0,
+          663,
+          6,
+          0,
+          0
+        ],
+        "true_counts": [
+          128,
+          128,
+          103,
+          71,
+          81,
+          101,
+          73
+        ],
+        "mean_confidence": 0.757982611656189,
+        "mean_top1_top2_margin": 1.9483156204223633,
+        "min_top1_top2_margin": 0.034645795822143555,
+        "top1_class_hist": [
+          16,
+          0,
+          0,
+          663,
+          6,
+          0,
+          0
+        ]
+      }
+    },
+    "client_1": {
+      "source_test": {
+        "classifier_name": "fc",
+        "n": 2005,
+        "accuracy": 0.06633416563272476,
+        "balanced_accuracy": 0.160124826629681,
+        "macro_f1": 0.03067278995925376,
+        "collapse_ratio": 0.6344139650872818,
+        "effective_pred_classes": 2,
+        "top_pred_class": 1,
+        "top_pred_fraction": 0.6344139650872818,
+        "pred_counts": [
+          0,
+          1272,
+          733,
+          0,
+          0,
+          0,
+          0
+        ],
+        "true_counts": [
+          66,
+          103,
+          220,
+          23,
+          223,
+          1341,
+          29
+        ],
+        "mean_confidence": 0.8193030953407288,
+        "mean_top1_top2_margin": 2.4739108085632324,
+        "min_top1_top2_margin": 0.0006403923034667969,
+        "top1_class_hist": [
+          0,
+          1272,
+          733,
+          0,
+          0,
+          0,
+          0
+        ]
+      },
+      "public_test": {
+        "classifier_name": "fc",
+        "n": 685,
+        "accuracy": 0.19270072877407074,
+        "balanced_accuracy": 0.15463548890429957,
+        "macro_f1": 0.0744488728359696,
+        "collapse_ratio": 0.7182481751824817,
+        "effective_pred_classes": 2,
+        "top_pred_class": 1,
+        "top_pred_fraction": 0.7182481751824817,
+        "pred_counts": [
+          0,
+          492,
+          193,
+          0,
+          0,
+          0,
+          0
+        ],
+        "true_counts": [
+          128,
+          128,
+          103,
+          71,
+          81,
+          101,
+          73
+        ],
+        "mean_confidence": 0.6799989342689514,
+        "mean_top1_top2_margin": 1.2680890560150146,
+        "min_top1_top2_margin": 1.3709068298339844e-05,
+        "top1_class_hist": [
+          0,
+          492,
+          193,
+          0,
+          0,
+          0,
+          0
+        ]
+      }
+    },
+    "client_2": {
+      "source_test": {
+        "classifier_name": "fc",
+        "n": 2005,
+        "accuracy": 0.5770573616027832,
+        "balanced_accuracy": 0.210007971405796,
+        "macro_f1": 0.12272474433019465,
+        "collapse_ratio": 0.7885286783042394,
+        "effective_pred_classes": 2,
+        "top_pred_class": 5,
+        "top_pred_fraction": 0.7885286783042394,
+        "pred_counts": [
+          0,
+          0,
+          0,
+          0,
+          0,
+          1581,
+          424
+        ],
+        "true_counts": [
+          66,
+          103,
+          220,
+          23,
+          223,
+          1341,
+          29
+        ],
+        "mean_confidence": 0.8886911273002625,
+        "mean_top1_top2_margin": 5.286524772644043,
+        "min_top1_top2_margin": 0.001707911491394043,
+        "top1_class_hist": [
+          0,
+          0,
+          0,
+          0,
+          0,
+          1581,
+          424
+        ]
+      },
+      "public_test": {
+        "classifier_name": "fc",
+        "n": 685,
+        "accuracy": 0.1576642394065857,
+        "balanced_accuracy": 0.16903373311890876,
+        "macro_f1": 0.06837076307836333,
+        "collapse_ratio": 0.6642335766423357,
+        "effective_pred_classes": 2,
+        "top_pred_class": 5,
+        "top_pred_fraction": 0.6642335766423357,
+        "pred_counts": [
+          0,
+          0,
+          0,
+          0,
+          0,
+          455,
+          230
+        ],
+        "true_counts": [
+          128,
+          128,
+          103,
+          71,
+          81,
+          101,
+          73
+        ],
+        "mean_confidence": 0.7934460639953613,
+        "mean_top1_top2_margin": 2.571239948272705,
+        "min_top1_top2_margin": 0.0081864595413208,
+        "top1_class_hist": [
+          0,
+          0,
+          0,
+          0,
+          0,
+          455,
+          230
+        ]
+      }
+    },
+    "avg": {
+      "source_test": {
+        "classifier_name": "fc",
+        "n": 2005,
+        "accuracy": 0.6688279509544373,
+        "balanced_accuracy": 0.14285714285714285,
+        "macro_f1": 0.11450772777730338,
+        "collapse_ratio": 1.0,
+        "effective_pred_classes": 1,
+        "top_pred_class": 5,
+        "top_pred_fraction": 1.0,
+        "pred_counts": [
+          0,
+          0,
+          0,
+          0,
+          0,
+          2005,
+          0
+        ],
+        "true_counts": [
+          66,
+          103,
+          220,
+          23,
+          223,
+          1341,
+          29
+        ],
+        "mean_confidence": 0.32432931661605835,
+        "mean_top1_top2_margin": 0.5390297770500183,
+        "min_top1_top2_margin": 0.07143139839172363,
+        "top1_class_hist": [
+          0,
+          0,
+          0,
+          0,
+          0,
+          2005,
+          0
+        ]
+      },
+      "public_test": {
+        "classifier_name": "fc",
+        "n": 685,
+        "accuracy": 0.14744526147842407,
+        "balanced_accuracy": 0.14285714285714285,
+        "macro_f1": 0.03671392221010542,
+        "collapse_ratio": 1.0,
+        "effective_pred_classes": 1,
+        "top_pred_class": 5,
+        "top_pred_fraction": 1.0,
+        "pred_counts": [
+          0,
+          0,
+          0,
+          0,
+          0,
+          685,
+          0
+        ],
+        "true_counts": [
+          128,
+          128,
+          103,
+          71,
+          81,
+          101,
+          73
+        ],
+        "mean_confidence": 0.2654065489768982,
+        "mean_top1_top2_margin": 0.38415905833244324,
+        "min_top1_top2_margin": 0.028132855892181396,
+        "top1_class_hist": [
+          0,
+          0,
+          0,
+          0,
+          0,
+          685,
+          0
+        ]
+      }
+    }
+  }
+}

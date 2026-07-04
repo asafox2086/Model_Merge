@@ -1,0 +1,769 @@
+{
+  "case_dir": "medmerge_empirical_study/results/experiment10_natural_image_imbalance_probe/natural_probe_hub/small/cifar10_32/resnet/clients_5/partial_label/seed_42",
+  "device": "cuda:0",
+  "avg_weights": [
+    0.2,
+    0.2,
+    0.2,
+    0.2,
+    0.2
+  ],
+  "meta": {
+    "task_type": "small",
+    "dataset": "cifar10_32",
+    "model": "resnet",
+    "train_mode": "natural_partial_label_probe",
+    "num_clients": 5,
+    "beta": 0.0,
+    "seed": 42,
+    "num_classes": 10,
+    "observed_num_classes": 10,
+    "in_channels": 3,
+    "epochs": 8,
+    "batch_size": 256,
+    "lr": 0.001,
+    "weight_decay": 0.0001,
+    "image_size": 32,
+    "pretrained": true,
+    "client_classes": {
+      "0": [
+        0,
+        1
+      ],
+      "1": [
+        2,
+        3
+      ],
+      "2": [
+        4,
+        5
+      ],
+      "3": [
+        6,
+        7
+      ],
+      "4": [
+        8,
+        9
+      ]
+    },
+    "group_class_counts": {
+      "0": {
+        "0": 300,
+        "1": 300
+      },
+      "1": {
+        "2": 300,
+        "3": 300
+      },
+      "2": {
+        "4": 300,
+        "5": 300
+      },
+      "3": {
+        "6": 300,
+        "7": 300
+      },
+      "4": {
+        "8": 4000,
+        "9": 80
+      }
+    },
+    "clients": [
+      {
+        "client_id": 0,
+        "num_samples": 600,
+        "classes": [
+          0,
+          1
+        ],
+        "sampled_class_counts": {
+          "0": 300,
+          "1": 300
+        },
+        "best_val_acc": 0.17000000178813934,
+        "test_acc": 0.16359999775886536,
+        "test_loss": 3.5588940795898436,
+        "checkpoint": "client_0.pt"
+      },
+      {
+        "client_id": 1,
+        "num_samples": 600,
+        "classes": [
+          2,
+          3
+        ],
+        "sampled_class_counts": {
+          "2": 300,
+          "3": 300
+        },
+        "best_val_acc": 0.149399995803833,
+        "test_acc": 0.1404999941587448,
+        "test_loss": 4.126860784912109,
+        "checkpoint": "client_1.pt"
+      },
+      {
+        "client_id": 2,
+        "num_samples": 600,
+        "classes": [
+          4,
+          5
+        ],
+        "sampled_class_counts": {
+          "4": 300,
+          "5": 300
+        },
+        "best_val_acc": 0.14380000531673431,
+        "test_acc": 0.147599995136261,
+        "test_loss": 3.877546563720703,
+        "checkpoint": "client_2.pt"
+      },
+      {
+        "client_id": 3,
+        "num_samples": 600,
+        "classes": [
+          6,
+          7
+        ],
+        "sampled_class_counts": {
+          "6": 300,
+          "7": 300
+        },
+        "best_val_acc": 0.164000004529953,
+        "test_acc": 0.1670999974012375,
+        "test_loss": 3.596000769042969,
+        "checkpoint": "client_3.pt"
+      },
+      {
+        "client_id": 4,
+        "num_samples": 4080,
+        "classes": [
+          8,
+          9
+        ],
+        "sampled_class_counts": {
+          "8": 4000,
+          "9": 80
+        },
+        "best_val_acc": 0.1136000007390976,
+        "test_acc": 0.11159999668598175,
+        "test_loss": 8.34601478881836,
+        "checkpoint": "client_4.pt"
+      }
+    ]
+  },
+  "models": {
+    "client_0": {
+      "source_test": {
+        "classifier_name": "fc",
+        "n": 10000,
+        "accuracy": 0.16329999268054962,
+        "balanced_accuracy": 0.1633,
+        "macro_f1": 0.054516599891918704,
+        "collapse_ratio": 0.5222,
+        "effective_pred_classes": 2,
+        "top_pred_class": 1,
+        "top_pred_fraction": 0.5222,
+        "pred_counts": [
+          4778,
+          5222,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        "true_counts": [
+          1000,
+          1000,
+          1000,
+          1000,
+          1000,
+          1000,
+          1000,
+          1000,
+          1000,
+          1000
+        ],
+        "mean_confidence": 0.5308532118797302,
+        "mean_top1_top2_margin": 0.8184180855751038,
+        "min_top1_top2_margin": 3.528594970703125e-05,
+        "top1_class_hist": [
+          4778,
+          5222,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ]
+      },
+      "public_test": {
+        "classifier_name": "fc",
+        "n": 10000,
+        "accuracy": 0.16329999268054962,
+        "balanced_accuracy": 0.1633,
+        "macro_f1": 0.054516599891918704,
+        "collapse_ratio": 0.5222,
+        "effective_pred_classes": 2,
+        "top_pred_class": 1,
+        "top_pred_fraction": 0.5222,
+        "pred_counts": [
+          4778,
+          5222,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        "true_counts": [
+          1000,
+          1000,
+          1000,
+          1000,
+          1000,
+          1000,
+          1000,
+          1000,
+          1000,
+          1000
+        ],
+        "mean_confidence": 0.5308532118797302,
+        "mean_top1_top2_margin": 0.8184180855751038,
+        "min_top1_top2_margin": 3.528594970703125e-05,
+        "top1_class_hist": [
+          4778,
+          5222,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ]
+      }
+    },
+    "client_1": {
+      "source_test": {
+        "classifier_name": "fc",
+        "n": 10000,
+        "accuracy": 0.14069999754428864,
+        "balanced_accuracy": 0.1407,
+        "macro_f1": 0.047972271662763466,
+        "collapse_ratio": 0.6625,
+        "effective_pred_classes": 2,
+        "top_pred_class": 3,
+        "top_pred_fraction": 0.6625,
+        "pred_counts": [
+          0,
+          0,
+          3375,
+          6625,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        "true_counts": [
+          1000,
+          1000,
+          1000,
+          1000,
+          1000,
+          1000,
+          1000,
+          1000,
+          1000,
+          1000
+        ],
+        "mean_confidence": 0.558569610118866,
+        "mean_top1_top2_margin": 0.7550349235534668,
+        "min_top1_top2_margin": 0.0001125335693359375,
+        "top1_class_hist": [
+          0,
+          0,
+          3375,
+          6625,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ]
+      },
+      "public_test": {
+        "classifier_name": "fc",
+        "n": 10000,
+        "accuracy": 0.14069999754428864,
+        "balanced_accuracy": 0.1407,
+        "macro_f1": 0.047972271662763466,
+        "collapse_ratio": 0.6625,
+        "effective_pred_classes": 2,
+        "top_pred_class": 3,
+        "top_pred_fraction": 0.6625,
+        "pred_counts": [
+          0,
+          0,
+          3375,
+          6625,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        "true_counts": [
+          1000,
+          1000,
+          1000,
+          1000,
+          1000,
+          1000,
+          1000,
+          1000,
+          1000,
+          1000
+        ],
+        "mean_confidence": 0.558569610118866,
+        "mean_top1_top2_margin": 0.7550349235534668,
+        "min_top1_top2_margin": 0.0001125335693359375,
+        "top1_class_hist": [
+          0,
+          0,
+          3375,
+          6625,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ]
+      }
+    },
+    "client_2": {
+      "source_test": {
+        "classifier_name": "fc",
+        "n": 10000,
+        "accuracy": 0.1477999985218048,
+        "balanced_accuracy": 0.1478,
+        "macro_f1": 0.050442299512192965,
+        "collapse_ratio": 0.6445,
+        "effective_pred_classes": 2,
+        "top_pred_class": 5,
+        "top_pred_fraction": 0.6445,
+        "pred_counts": [
+          0,
+          0,
+          0,
+          0,
+          3555,
+          6445,
+          0,
+          0,
+          0,
+          0
+        ],
+        "true_counts": [
+          1000,
+          1000,
+          1000,
+          1000,
+          1000,
+          1000,
+          1000,
+          1000,
+          1000,
+          1000
+        ],
+        "mean_confidence": 0.5456830263137817,
+        "mean_top1_top2_margin": 0.8535855412483215,
+        "min_top1_top2_margin": 8.475780487060547e-05,
+        "top1_class_hist": [
+          0,
+          0,
+          0,
+          0,
+          3555,
+          6445,
+          0,
+          0,
+          0,
+          0
+        ]
+      },
+      "public_test": {
+        "classifier_name": "fc",
+        "n": 10000,
+        "accuracy": 0.1477999985218048,
+        "balanced_accuracy": 0.1478,
+        "macro_f1": 0.050442299512192965,
+        "collapse_ratio": 0.6445,
+        "effective_pred_classes": 2,
+        "top_pred_class": 5,
+        "top_pred_fraction": 0.6445,
+        "pred_counts": [
+          0,
+          0,
+          0,
+          0,
+          3555,
+          6445,
+          0,
+          0,
+          0,
+          0
+        ],
+        "true_counts": [
+          1000,
+          1000,
+          1000,
+          1000,
+          1000,
+          1000,
+          1000,
+          1000,
+          1000,
+          1000
+        ],
+        "mean_confidence": 0.5456830263137817,
+        "mean_top1_top2_margin": 0.8535855412483215,
+        "min_top1_top2_margin": 8.475780487060547e-05,
+        "top1_class_hist": [
+          0,
+          0,
+          0,
+          0,
+          3555,
+          6445,
+          0,
+          0,
+          0,
+          0
+        ]
+      }
+    },
+    "client_3": {
+      "source_test": {
+        "classifier_name": "fc",
+        "n": 10000,
+        "accuracy": 0.1670999974012375,
+        "balanced_accuracy": 0.16709999999999997,
+        "macro_f1": 0.058293559549056816,
+        "collapse_ratio": 0.6225,
+        "effective_pred_classes": 3,
+        "top_pred_class": 7,
+        "top_pred_fraction": 0.6225,
+        "pred_counts": [
+          0,
+          1,
+          0,
+          0,
+          0,
+          0,
+          3774,
+          6225,
+          0,
+          0
+        ],
+        "true_counts": [
+          1000,
+          1000,
+          1000,
+          1000,
+          1000,
+          1000,
+          1000,
+          1000,
+          1000,
+          1000
+        ],
+        "mean_confidence": 0.5574655532836914,
+        "mean_top1_top2_margin": 0.8867413997650146,
+        "min_top1_top2_margin": 0.0001245737075805664,
+        "top1_class_hist": [
+          0,
+          1,
+          0,
+          0,
+          0,
+          0,
+          3774,
+          6225,
+          0,
+          0
+        ]
+      },
+      "public_test": {
+        "classifier_name": "fc",
+        "n": 10000,
+        "accuracy": 0.1670999974012375,
+        "balanced_accuracy": 0.16709999999999997,
+        "macro_f1": 0.058293559549056816,
+        "collapse_ratio": 0.6225,
+        "effective_pred_classes": 3,
+        "top_pred_class": 7,
+        "top_pred_fraction": 0.6225,
+        "pred_counts": [
+          0,
+          1,
+          0,
+          0,
+          0,
+          0,
+          3774,
+          6225,
+          0,
+          0
+        ],
+        "true_counts": [
+          1000,
+          1000,
+          1000,
+          1000,
+          1000,
+          1000,
+          1000,
+          1000,
+          1000,
+          1000
+        ],
+        "mean_confidence": 0.5574655532836914,
+        "mean_top1_top2_margin": 0.8867413997650146,
+        "min_top1_top2_margin": 0.0001245737075805664,
+        "top1_class_hist": [
+          0,
+          1,
+          0,
+          0,
+          0,
+          0,
+          3774,
+          6225,
+          0,
+          0
+        ]
+      }
+    },
+    "client_4": {
+      "source_test": {
+        "classifier_name": "fc",
+        "n": 10000,
+        "accuracy": 0.11159999668598175,
+        "balanced_accuracy": 0.1116,
+        "macro_f1": 0.037775673476507246,
+        "collapse_ratio": 0.9774,
+        "effective_pred_classes": 2,
+        "top_pred_class": 8,
+        "top_pred_fraction": 0.9774,
+        "pred_counts": [
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          9774,
+          226
+        ],
+        "true_counts": [
+          1000,
+          1000,
+          1000,
+          1000,
+          1000,
+          1000,
+          1000,
+          1000,
+          1000,
+          1000
+        ],
+        "mean_confidence": 0.9552037119865417,
+        "mean_top1_top2_margin": 5.746369361877441,
+        "min_top1_top2_margin": 0.00023651123046875,
+        "top1_class_hist": [
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          9774,
+          226
+        ]
+      },
+      "public_test": {
+        "classifier_name": "fc",
+        "n": 10000,
+        "accuracy": 0.11159999668598175,
+        "balanced_accuracy": 0.1116,
+        "macro_f1": 0.037775673476507246,
+        "collapse_ratio": 0.9774,
+        "effective_pred_classes": 2,
+        "top_pred_class": 8,
+        "top_pred_fraction": 0.9774,
+        "pred_counts": [
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          9774,
+          226
+        ],
+        "true_counts": [
+          1000,
+          1000,
+          1000,
+          1000,
+          1000,
+          1000,
+          1000,
+          1000,
+          1000,
+          1000
+        ],
+        "mean_confidence": 0.9552037119865417,
+        "mean_top1_top2_margin": 5.746369361877441,
+        "min_top1_top2_margin": 0.00023651123046875,
+        "top1_class_hist": [
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          9774,
+          226
+        ]
+      }
+    },
+    "avg": {
+      "source_test": {
+        "classifier_name": "fc",
+        "n": 10000,
+        "accuracy": 0.08309999853372574,
+        "balanced_accuracy": 0.0831,
+        "macro_f1": 0.06316510702570674,
+        "collapse_ratio": 0.4315,
+        "effective_pred_classes": 10,
+        "top_pred_class": 8,
+        "top_pred_fraction": 0.4315,
+        "pred_counts": [
+          293,
+          983,
+          637,
+          2069,
+          143,
+          379,
+          869,
+          195,
+          4315,
+          117
+        ],
+        "true_counts": [
+          1000,
+          1000,
+          1000,
+          1000,
+          1000,
+          1000,
+          1000,
+          1000,
+          1000,
+          1000
+        ],
+        "mean_confidence": 0.19445613026618958,
+        "mean_top1_top2_margin": 0.2697976231575012,
+        "min_top1_top2_margin": 5.0067901611328125e-06,
+        "top1_class_hist": [
+          293,
+          983,
+          637,
+          2069,
+          143,
+          379,
+          869,
+          195,
+          4315,
+          117
+        ]
+      },
+      "public_test": {
+        "classifier_name": "fc",
+        "n": 10000,
+        "accuracy": 0.08309999853372574,
+        "balanced_accuracy": 0.0831,
+        "macro_f1": 0.06316510702570674,
+        "collapse_ratio": 0.4315,
+        "effective_pred_classes": 10,
+        "top_pred_class": 8,
+        "top_pred_fraction": 0.4315,
+        "pred_counts": [
+          293,
+          983,
+          637,
+          2069,
+          143,
+          379,
+          869,
+          195,
+          4315,
+          117
+        ],
+        "true_counts": [
+          1000,
+          1000,
+          1000,
+          1000,
+          1000,
+          1000,
+          1000,
+          1000,
+          1000,
+          1000
+        ],
+        "mean_confidence": 0.19445613026618958,
+        "mean_top1_top2_margin": 0.2697976231575012,
+        "min_top1_top2_margin": 5.0067901611328125e-06,
+        "top1_class_hist": [
+          293,
+          983,
+          637,
+          2069,
+          143,
+          379,
+          869,
+          195,
+          4315,
+          117
+        ]
+      }
+    }
+  }
+}

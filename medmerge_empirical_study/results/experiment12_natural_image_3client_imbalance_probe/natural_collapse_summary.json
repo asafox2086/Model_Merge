@@ -1,0 +1,153 @@
+{
+  "hub_dir": "medmerge_empirical_study/results/experiment12_natural_image_3client_imbalance_probe/natural_probe_hub/small/cifar10_32/resnet/clients_3/partial_label/seed_42",
+  "dataset": "cifar10_32",
+  "model": "resnet",
+  "groups": {
+    "0": [
+      0,
+      1,
+      2
+    ],
+    "1": [
+      3,
+      4,
+      5
+    ],
+    "2": [
+      8,
+      9
+    ]
+  },
+  "image_size": 32,
+  "max_train_per_class": 0,
+  "group_class_counts": {
+    "0": {
+      "0": 300,
+      "1": 300,
+      "2": 300
+    },
+    "1": {
+      "3": 300,
+      "4": 300,
+      "5": 300
+    },
+    "2": {
+      "8": 4000,
+      "9": 80
+    }
+  },
+  "avg_test": {
+    "loss": 2.5717195922851563,
+    "accuracy": 0.11110000312328339,
+    "balanced_accuracy": 0.1111,
+    "macro_f1": 0.07134498540482148,
+    "num_samples": 10000,
+    "pred_counts": [
+      252,
+      425,
+      329,
+      594,
+      209,
+      235,
+      0,
+      0,
+      7804,
+      152
+    ],
+    "support": [
+      1000,
+      1000,
+      1000,
+      1000,
+      1000,
+      1000,
+      1000,
+      1000,
+      1000,
+      1000
+    ],
+    "collapse_ratio": 0.7804,
+    "effective_pred_classes": 8,
+    "top_pred_class": 8,
+    "mean_confidence": 0.290077269077301,
+    "mean_top1_top2_margin": 0.5175837278366089,
+    "min_top1_top2_margin": 0.0,
+    "per_class_recall": [
+      0.067,
+      0.1,
+      0.07,
+      0.062,
+      0.039,
+      0.021,
+      0.0,
+      0.0,
+      0.743,
+      0.009
+    ],
+    "per_class_precision": [
+      0.26587301587301587,
+      0.23529411764705882,
+      0.2127659574468085,
+      0.10437710437710437,
+      0.18660287081339713,
+      0.08936170212765958,
+      0.0,
+      0.0,
+      0.09520758585340851,
+      0.05921052631578947
+    ],
+    "per_class_f1": [
+      0.10702875399361024,
+      0.14035087719298245,
+      0.10534236267870578,
+      0.07779171894604767,
+      0.06451612903225806,
+      0.0340080971659919,
+      0.0,
+      0.0,
+      0.1687869150386188,
+      0.015625
+    ]
+  },
+  "client_rows": [
+    {
+      "client_id": 0,
+      "classes": "[0, 1, 2]",
+      "sampled_num_samples": 900,
+      "sampled_class_counts": "{\"0\": 300, \"1\": 300, \"2\": 300}",
+      "best_val_acc": "0.239000",
+      "test_acc": "0.230400",
+      "test_bacc": "0.230400",
+      "test_collapse": "0.398300",
+      "effective_pred_classes": 3,
+      "top_pred_class": 2,
+      "test_pred_counts": "[2265, 3752, 3983, 0, 0, 0, 0, 0, 0, 0]"
+    },
+    {
+      "client_id": 1,
+      "classes": "[3, 4, 5]",
+      "sampled_num_samples": 900,
+      "sampled_class_counts": "{\"3\": 300, \"4\": 300, \"5\": 300}",
+      "best_val_acc": "0.177400",
+      "test_acc": "0.177300",
+      "test_bacc": "0.177300",
+      "test_collapse": "0.419100",
+      "effective_pred_classes": 3,
+      "top_pred_class": 4,
+      "test_pred_counts": "[0, 0, 0, 4044, 4191, 1765, 0, 0, 0, 0]"
+    },
+    {
+      "client_id": 2,
+      "classes": "[8, 9]",
+      "sampled_num_samples": 4080,
+      "sampled_class_counts": "{\"8\": 4000, \"9\": 80}",
+      "best_val_acc": "0.120800",
+      "test_acc": "0.115600",
+      "test_bacc": "0.115600",
+      "test_collapse": "0.941700",
+      "effective_pred_classes": 2,
+      "top_pred_class": 8,
+      "test_pred_counts": "[0, 0, 0, 0, 0, 0, 0, 0, 9417, 583]"
+    }
+  ]
+}

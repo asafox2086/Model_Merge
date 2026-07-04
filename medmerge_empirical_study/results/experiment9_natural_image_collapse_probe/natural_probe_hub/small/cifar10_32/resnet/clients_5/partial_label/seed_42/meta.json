@@ -1,0 +1,122 @@
+{
+  "task_type": "small",
+  "dataset": "cifar10_32",
+  "model": "resnet",
+  "train_mode": "natural_partial_label_probe",
+  "num_clients": 5,
+  "beta": 0.0,
+  "seed": 42,
+  "num_classes": 10,
+  "observed_num_classes": 10,
+  "in_channels": 3,
+  "epochs": 8,
+  "batch_size": 256,
+  "lr": 0.001,
+  "weight_decay": 0.0001,
+  "image_size": 32,
+  "pretrained": true,
+  "client_classes": {
+    "0": [
+      0,
+      1
+    ],
+    "1": [
+      2,
+      3
+    ],
+    "2": [
+      4,
+      5
+    ],
+    "3": [
+      6,
+      7
+    ],
+    "4": [
+      8,
+      9
+    ]
+  },
+  "clients": [
+    {
+      "client_id": 0,
+      "num_samples": 8985,
+      "classes": [
+        0,
+        1
+      ],
+      "sampled_class_counts": {
+        "0": 4527,
+        "1": 4458
+      },
+      "best_val_acc": 0.1964000016450882,
+      "test_acc": 0.19249999523162842,
+      "test_loss": 9.015991708374024,
+      "checkpoint": "client_0.pt"
+    },
+    {
+      "client_id": 1,
+      "num_samples": 8983,
+      "classes": [
+        2,
+        3
+      ],
+      "sampled_class_counts": {
+        "2": 4465,
+        "3": 4518
+      },
+      "best_val_acc": 0.18019999563694,
+      "test_acc": 0.17470000684261322,
+      "test_loss": 8.49998664855957,
+      "checkpoint": "client_1.pt"
+    },
+    {
+      "client_id": 2,
+      "num_samples": 9004,
+      "classes": [
+        4,
+        5
+      ],
+      "sampled_class_counts": {
+        "4": 4477,
+        "5": 4527
+      },
+      "best_val_acc": 0.18299999833106995,
+      "test_acc": 0.18219999969005585,
+      "test_loss": 8.162585954284667,
+      "checkpoint": "client_2.pt"
+    },
+    {
+      "client_id": 3,
+      "num_samples": 9029,
+      "classes": [
+        6,
+        7
+      ],
+      "sampled_class_counts": {
+        "6": 4498,
+        "7": 4531
+      },
+      "best_val_acc": 0.188400000333786,
+      "test_acc": 0.19349999725818634,
+      "test_loss": 9.670237260437013,
+      "checkpoint": "client_3.pt"
+    },
+    {
+      "client_id": 4,
+      "num_samples": 8999,
+      "classes": [
+        8,
+        9
+      ],
+      "sampled_class_counts": {
+        "8": 4482,
+        "9": 4517
+      },
+      "best_val_acc": 0.19059999287128448,
+      "test_acc": 0.188400000333786,
+      "test_loss": 9.00860477294922,
+      "checkpoint": "client_4.pt"
+    }
+  ]
+}

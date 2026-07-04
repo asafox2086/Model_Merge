@@ -459,6 +459,161 @@ y 轴使用 balanced accuracy、macro F1、collapse rate。
 
 用来说明 accuracy 在不均衡医学数据上会误导。
 
+### 8.6 机制补充图：医学坍缩的特异点
+
+在发现 AVG 或其他融合方法出现单类预测后，额外记录以下机制指标：
+
+- 每层 feature effective rank：`bn1 / layer1 / layer2 / layer3 / layer4 / classifier_input`
+- dominant class pairwise margin：
+
+```text
+logit_dominant - logit_competitor
+```
+
+- margin 的 `mean / std / p05 / min / pct_positive`
+- logit 分解：
+
+```text
+logit_d - logit_c = (w_d - w_c)^T h + (b_d - b_c)
+```
+
+- classifier、BN running stats、layer4 的 client-to-avg parameter dispersion
+- client task-vector cosine：
+
+```text
+delta_i = client_i - reference/init
+cosine(delta_i, delta_j)
+```
+
+- feature/head 互换：
+
+```text
+client_i feature + client_j head
+avg feature + client_j head
+avg feature + avg head
+```
+
+- frozen AVG feature 的 linear probe：
+
+```text
+冻结 avg feature extractor，只重新训练 linear head
+```
+
+当前 DermaMNIST 与 CIFAR-10 3-client 对照的初步结论是：
+
+> 医学坍缩的直接机制不是 classifier bias，而是融合后最终特征在 dominant-vs-competitor 方向上的投影低尾部全部为正。自然图像也有 dominant-class drift，但 margin 仍有负尾部，所以不会完全单类坍缩。
+
+后续 E13 诊断进一步修正：
+
+> 医学 AVG 不是把 feature 完全毁掉；linear probe 能恢复 Derma BAcc `0.142857 -> 0.573081`。更准确的失败点是 feature extractor、BN running statistics、classifier head 的配套关系被 AVG 打乱。Derma 的 `layer4` task-vector cosine 只有 `0.030976`，而 CIFAR 是 `0.960982`，说明医学高层更新方向几乎没有共同方向。
+
+该机制图不替代主 benchmark，而是解释为什么 accuracy 和 pred_counts 会变成单类预测。
+
+### 8.7 严格控制变量：医学图像 vs 自然图像
+
+为回应“唯一的区别只能是医学图像和自然图像”的控制变量要求，新增一个严格对照实验。
+
+#### 设置
+
+医学端固定使用：
+
+```text
+model_hub/small/dermamnist_224/resnet/clients_3/beta_0/seed_42
+```
+
+自然图像端构造 `cifar7_derma_strict`，强制匹配 DermaMNIST 的：
+
+- 7 个类别。
+- train/val/test 每类样本数。
+- 3 个客户端。
+- 每个客户端拥有的类别集合。
+- 每个客户端内每个类别的样本数。
+- ResNet、224 输入、pretrained、50 epochs、batch size 64、lr 0.001、weight decay 0.0001。
+- 权重 AVG 融合。
+
+具体分布：
+
+| split/client | counts |
+| --- | --- |
+| train classes 0-6 | `[228, 359, 769, 80, 779, 4693, 99]` |
+| val classes 0-6 | `[33, 52, 110, 12, 111, 671, 14]` |
+| test classes 0-6 | `[66, 103, 220, 23, 223, 1341, 29]` |
+| client 0 | `3:80, 4:779, 0:228` |
+| client 1 | `2:769, 1:359` |
+| client 2 | `6:99, 5:4693` |
+
+技术限制：CIFAR class 5 因唯一图片数量不足，使用了有放回采样；论文中要披露。
+
+#### 结果
+
+| domain | accuracy | balanced accuracy | collapse ratio | effective predicted classes | pred counts |
+| --- | ---: | ---: | ---: | ---: | --- |
+| DermaMNIST | 0.668828 | 0.142857 | 1.000000 | 1 | `[0, 0, 0, 0, 0, 2005, 0]` |
+| CIFAR strict | 0.699252 | 0.191548 | 0.906733 | 2 | `[0, 0, 0, 0, 187, 1818, 0]` |
+
+严格控制后的解释要写成：
+
+```text
+同样的 partial-label + long-tail 分布会让自然图像也出现强 dominant-class drift；
+但医学图像在相同条件下坍缩更彻底，直接退化为单类预测。
+```
+
+不要再写成：
+
+```text
+自然图像不会坍缩，医学图像才会坍缩。
+```
+
+#### 机制
+
+Derma AVG 的 class 5 对所有竞争类的 margin 在所有测试样本上都为正：
+
+| compare | p05 delta | min delta | pct positive |
+| --- | ---: | ---: | ---: |
+| 5-0 | 0.635670 | 0.359340 | 1.000000 |
+| 5-1 | 0.411551 | 0.123354 | 1.000000 |
+| 5-2 | 0.268922 | 0.133353 | 1.000000 |
+| 5-3 | 0.381957 | 0.080625 | 1.000000 |
+| 5-4 | 0.463657 | 0.071431 | 1.000000 |
+| 5-6 | 0.688538 | 0.283340 | 1.000000 |
+
+CIFAR strict 的关键竞争类 `5-4` 仍有负尾部：
+
+| compare | p05 delta | min delta | pct positive |
+| --- | ---: | ---: | ---: |
+| 5-4 | -0.061839 | -0.344914 | 0.906733 |
+
+因此 CIFAR strict 仍能把 187 个样本判成 class 4，而 Derma 全部判成 class 5。
+
+高层 task-vector cosine：
+
+| group | Derma | CIFAR strict |
+| --- | ---: | ---: |
+| BN running stats | 0.607558 | 0.932364 |
+| layer3 | 0.030653 | 0.958356 |
+| layer4 | 0.030976 | 0.960622 |
+
+这支持以下机制表述：
+
+```text
+非IID和样本不均衡提供坍缩压力；
+医学客户端的高层更新方向更不兼容，AVG 后 feature extractor、BN running statistics 和 classifier head 的配套关系被打乱；
+最终 AVG head 把剩余特征证据全部读成 class 5。
+```
+
+linear probe 结果要同时报告，避免过度声称“医学特征被完全破坏”：
+
+| domain | original AVG BAcc | frozen AVG feature + linear head BAcc |
+| --- | ---: | ---: |
+| Derma | 0.142857 | 0.551806 |
+| CIFAR strict | 0.191548 | 0.774773 |
+
+详细报告：
+
+```text
+medmerge_empirical_study/results/experiment14_strict_domain_control/strict_domain_control_report_cn.md
+```
+
 ## 9. 论文叙事结构
 
 ### 9.1 引言

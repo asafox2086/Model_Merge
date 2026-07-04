@@ -1,0 +1,5 @@
+domain,model,train_samples,val_samples,test_samples,best_epoch,accuracy,balanced_accuracy,macro_f1,collapse_ratio,effective_pred_classes,top_class,pred_counts
+medical_derma,avg_original_head,7007,1003,2005,,0.668828,0.142857,0.114508,1.000000,1,5,"[0, 0, 0, 0, 0, 2005, 0]"
+medical_derma,avg_feature_linear_probe,7007,1003,2005,31,0.755112,0.551806,0.556322,0.691272,7,5,"[92, 99, 153, 14, 234, 1386, 27]"
+natural_cifar_3client,avg_original_head,7007,1003,2005,,0.699252,0.191548,0.174710,0.906733,2,5,"[0, 0, 0, 0, 187, 1818, 0]"
+natural_cifar_3client,avg_feature_linear_probe,7007,1003,2005,46,0.901746,0.774773,0.769985,0.655362,7,5,"[70, 112, 240, 17, 224, 1314, 28]"

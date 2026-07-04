@@ -1,0 +1,11 @@
+domain,head,top_class,collapse_ratio,effective_pred_classes,balanced_accuracy,dominant_logit_mean,dominant_pred_fraction,pred_counts
+medical_derma,client_0,4,0.943641,3,0.174999,-3.544897,0.000000,"[6, 0, 0, 107, 1892, 0, 0]"
+medical_derma,client_1,2,0.993516,2,0.152566,-3.044729,0.000000,"[0, 13, 1992, 0, 0, 0, 0]"
+medical_derma,client_2,5,1.000000,1,0.142857,3.513413,1.000000,"[0, 0, 0, 0, 0, 2005, 0]"
+medical_derma,avg_head,5,1.000000,1,0.142857,-1.025404,1.000000,"[0, 0, 0, 0, 0, 2005, 0]"
+natural_cifar_imbalanced,client_0,1,0.697600,2,0.129500,-1.862083,0.000000,"[3024, 6976, 0, 0, 0, 0, 0, 0, 0, 0]"
+natural_cifar_imbalanced,client_1,3,0.624200,2,0.125800,-1.769946,0.000000,"[0, 0, 3758, 6242, 0, 0, 0, 0, 0, 0]"
+natural_cifar_imbalanced,client_2,5,0.611600,2,0.108900,-1.722165,0.000000,"[0, 0, 0, 0, 3884, 6116, 0, 0, 0, 0]"
+natural_cifar_imbalanced,client_3,6,0.573400,2,0.129100,-1.771466,0.000000,"[0, 0, 0, 0, 0, 0, 5734, 4266, 0, 0]"
+natural_cifar_imbalanced,client_4,8,0.999500,2,0.100000,2.680784,0.999500,"[0, 0, 0, 0, 0, 0, 0, 0, 9995, 5]"
+natural_cifar_imbalanced,avg_head,8,0.431500,10,0.083100,-0.888975,0.431500,"[293, 983, 637, 2069, 143, 379, 869, 195, 4315, 117]"

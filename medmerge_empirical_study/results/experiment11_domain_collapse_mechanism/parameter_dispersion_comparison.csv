@@ -1,0 +1,17 @@
+domain,group,weighted_relative_l2_to_avg,mean_delta_norm_per_tensor,param_count,tensor_count
+medical_derma,bn_affine,0.007805,0.197981,7808,34
+medical_derma,bn_running_stats,0.207082,452.724888,9600,40
+medical_derma,classifier,0.787614,0.884577,3591,2
+medical_derma,layer1,0.048367,2.412096,147456,4
+medical_derma,layer2,0.055280,3.074045,524544,7
+medical_derma,layer3,0.060866,6.257296,2097664,7
+medical_derma,layer4,0.064024,11.530469,8389632,7
+medical_derma,stem_conv,0.034641,0.791770,9408,1
+natural_cifar_imbalanced,bn_affine,0.006481,0.152787,7808,34
+natural_cifar_imbalanced,bn_running_stats,0.124661,128.293867,9600,40
+natural_cifar_imbalanced,classifier,0.444480,0.551882,5130,2
+natural_cifar_imbalanced,layer1,0.022167,1.095264,147456,4
+natural_cifar_imbalanced,layer2,0.025022,1.364313,524544,7
+natural_cifar_imbalanced,layer3,0.043432,4.131680,2097664,7
+natural_cifar_imbalanced,layer4,0.114771,17.306285,8389632,7
+natural_cifar_imbalanced,stem_conv,0.019318,0.439600,9408,1

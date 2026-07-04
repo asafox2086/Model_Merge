@@ -1,0 +1,13 @@
+domain,stage,mean_cka,num_pairs
+medical_derma,bn1,0.994642,3
+medical_derma,classifier_input,0.316591,3
+medical_derma,layer1,0.842579,3
+medical_derma,layer2,0.800724,3
+medical_derma,layer3,0.624328,3
+medical_derma,layer4,0.316591,3
+natural_cifar_3client,bn1,0.992404,3
+natural_cifar_3client,classifier_input,0.239942,3
+natural_cifar_3client,layer1,0.837278,3
+natural_cifar_3client,layer2,0.233668,3
+natural_cifar_3client,layer3,0.364615,3
+natural_cifar_3client,layer4,0.239942,3

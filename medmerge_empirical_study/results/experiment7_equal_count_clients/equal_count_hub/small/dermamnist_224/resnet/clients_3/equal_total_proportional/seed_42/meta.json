@@ -1,0 +1,97 @@
+{
+  "task_type": "small",
+  "dataset": "dermamnist_224",
+  "model": "resnet",
+  "train_mode": "equal_count_control",
+  "num_clients": 3,
+  "beta": 0.0,
+  "seed": 42,
+  "num_classes": 7,
+  "observed_num_classes": 7,
+  "in_channels": 3,
+  "epochs": 50,
+  "batch_size": 64,
+  "lr": 0.001,
+  "weight_decay": 0.0001,
+  "image_size": 224,
+  "pretrained": true,
+  "source_batch_dir": "20260307_125359_small_8bb",
+  "source_run_name": "20260307_222430_dermamnist_224_resnet_c3_b0p0_s42",
+  "source_log_dir": "/data1/users/weiyipan/ML/MedModelMerging/logs/20260307_125359_small_8bb/20260307_222430_dermamnist_224_resnet_c3_b0p0_s42",
+  "source_ckpt_dir": "/data1/users/weiyipan/ML/MedModelMerging/checkpoints/20260307_125359_small_8bb/20260307_222430_dermamnist_224_resnet_c3_b0p0_s42",
+  "client_classes": {
+    "0": [
+      3,
+      4,
+      0
+    ],
+    "1": [
+      2,
+      1
+    ],
+    "2": [
+      6,
+      5
+    ]
+  },
+  "clients": [
+    {
+      "client_id": 0,
+      "num_samples": 1087,
+      "classes": [
+        3,
+        4,
+        0
+      ],
+      "available_num_samples": 1087,
+      "sampled_class_counts": {
+        "3": 80,
+        "4": 779,
+        "0": 228
+      },
+      "best_val_acc": 0.14456629753112793,
+      "test_acc": 0.1436408907175064,
+      "test_loss": 7.953379376808604,
+      "checkpoint": "client_0.pt",
+      "source_checkpoint": ""
+    },
+    {
+      "client_id": 1,
+      "num_samples": 1087,
+      "classes": [
+        2,
+        1
+      ],
+      "available_num_samples": 1128,
+      "sampled_class_counts": {
+        "2": 741,
+        "1": 346
+      },
+      "best_val_acc": 0.15752741694450378,
+      "test_acc": 0.15112219750881195,
+      "test_loss": 8.053005828286643,
+      "checkpoint": "client_1.pt",
+      "source_checkpoint": ""
+    },
+    {
+      "client_id": 2,
+      "num_samples": 1087,
+      "classes": [
+        6,
+        5
+      ],
+      "available_num_samples": 4792,
+      "sampled_class_counts": {
+        "6": 22,
+        "5": 1065
+      },
+      "best_val_acc": 0.6789631247520447,
+      "test_acc": 0.6758104562759399,
+      "test_loss": 2.390903281689879,
+      "checkpoint": "client_2.pt",
+      "source_checkpoint": ""
+    }
+  ],
+  "equal_count_variant": "equal_total_proportional_with_original_client_classes",
+  "source_case_dir": "model_hub/small/dermamnist_224/resnet/clients_3/beta_0/seed_42"
+}

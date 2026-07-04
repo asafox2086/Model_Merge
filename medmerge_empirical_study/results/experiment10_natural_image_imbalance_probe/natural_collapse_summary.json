@@ -1,0 +1,191 @@
+{
+  "hub_dir": "medmerge_empirical_study/results/experiment10_natural_image_imbalance_probe/natural_probe_hub/small/cifar10_32/resnet/clients_5/partial_label/seed_42",
+  "dataset": "cifar10_32",
+  "model": "resnet",
+  "groups": {
+    "0": [
+      0,
+      1
+    ],
+    "1": [
+      2,
+      3
+    ],
+    "2": [
+      4,
+      5
+    ],
+    "3": [
+      6,
+      7
+    ],
+    "4": [
+      8,
+      9
+    ]
+  },
+  "image_size": 32,
+  "max_train_per_class": 0,
+  "group_class_counts": {
+    "0": {
+      "0": 300,
+      "1": 300
+    },
+    "1": {
+      "2": 300,
+      "3": 300
+    },
+    "2": {
+      "4": 300,
+      "5": 300
+    },
+    "3": {
+      "6": 300,
+      "7": 300
+    },
+    "4": {
+      "8": 4000,
+      "9": 80
+    }
+  },
+  "avg_test": {
+    "loss": 2.422552490234375,
+    "accuracy": 0.08320000022649765,
+    "balanced_accuracy": 0.08320000000000001,
+    "macro_f1": 0.06314880297742094,
+    "num_samples": 10000,
+    "pred_counts": [
+      290,
+      987,
+      636,
+      2073,
+      142,
+      382,
+      872,
+      194,
+      4307,
+      117
+    ],
+    "support": [
+      1000,
+      1000,
+      1000,
+      1000,
+      1000,
+      1000,
+      1000,
+      1000,
+      1000,
+      1000
+    ],
+    "collapse_ratio": 0.4307,
+    "effective_pred_classes": 10,
+    "top_pred_class": 8,
+    "mean_confidence": 0.1944635808467865,
+    "mean_top1_top2_margin": 0.26978665590286255,
+    "min_top1_top2_margin": 0.0,
+    "per_class_recall": [
+      0.038,
+      0.097,
+      0.055,
+      0.174,
+      0.009,
+      0.02,
+      0.052,
+      0.022,
+      0.351,
+      0.014
+    ],
+    "per_class_precision": [
+      0.1310344827586207,
+      0.09827760891590678,
+      0.08647798742138364,
+      0.08393632416787265,
+      0.06338028169014084,
+      0.05235602094240838,
+      0.05963302752293578,
+      0.1134020618556701,
+      0.08149524030647783,
+      0.11965811965811966
+    ],
+    "per_class_f1": [
+      0.05891472868217054,
+      0.09763462506290892,
+      0.06723716381418092,
+      0.11324438659290595,
+      0.01576182136602452,
+      0.028943560057887122,
+      0.05555555555555556,
+      0.03685092127303182,
+      0.13227812323346524,
+      0.025067144136078783
+    ]
+  },
+  "client_rows": [
+    {
+      "client_id": 0,
+      "classes": "[0, 1]",
+      "sampled_num_samples": 600,
+      "sampled_class_counts": "{\"0\": 300, \"1\": 300}",
+      "best_val_acc": "0.170000",
+      "test_acc": "0.163600",
+      "test_bacc": "0.163600",
+      "test_collapse": "0.522300",
+      "effective_pred_classes": 2,
+      "top_pred_class": 1,
+      "test_pred_counts": "[4777, 5223, 0, 0, 0, 0, 0, 0, 0, 0]"
+    },
+    {
+      "client_id": 1,
+      "classes": "[2, 3]",
+      "sampled_num_samples": 600,
+      "sampled_class_counts": "{\"2\": 300, \"3\": 300}",
+      "best_val_acc": "0.149400",
+      "test_acc": "0.140500",
+      "test_bacc": "0.140500",
+      "test_collapse": "0.661500",
+      "effective_pred_classes": 2,
+      "top_pred_class": 3,
+      "test_pred_counts": "[0, 0, 3385, 6615, 0, 0, 0, 0, 0, 0]"
+    },
+    {
+      "client_id": 2,
+      "classes": "[4, 5]",
+      "sampled_num_samples": 600,
+      "sampled_class_counts": "{\"4\": 300, \"5\": 300}",
+      "best_val_acc": "0.143800",
+      "test_acc": "0.147600",
+      "test_bacc": "0.147600",
+      "test_collapse": "0.644600",
+      "effective_pred_classes": 2,
+      "top_pred_class": 5,
+      "test_pred_counts": "[0, 0, 0, 0, 3554, 6446, 0, 0, 0, 0]"
+    },
+    {
+      "client_id": 3,
+      "classes": "[6, 7]",
+      "sampled_num_samples": 600,
+      "sampled_class_counts": "{\"6\": 300, \"7\": 300}",
+      "best_val_acc": "0.164000",
+      "test_acc": "0.167100",
+      "test_bacc": "0.167100",
+      "test_collapse": "0.622500",
+      "effective_pred_classes": 3,
+      "top_pred_class": 7,
+      "test_pred_counts": "[0, 1, 0, 0, 0, 0, 3774, 6225, 0, 0]"
+    },
+    {
+      "client_id": 4,
+      "classes": "[8, 9]",
+      "sampled_num_samples": 4080,
+      "sampled_class_counts": "{\"8\": 4000, \"9\": 80}",
+      "best_val_acc": "0.113600",
+      "test_acc": "0.111600",
+      "test_bacc": "0.111600",
+      "test_collapse": "0.977400",
+      "effective_pred_classes": 2,
+      "top_pred_class": 8,
+      "test_pred_counts": "[0, 0, 0, 0, 0, 0, 0, 0, 9774, 226]"
+    }
+  ]
+}

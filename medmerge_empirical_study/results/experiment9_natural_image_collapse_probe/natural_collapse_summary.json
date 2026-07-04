@@ -1,0 +1,169 @@
+{
+  "hub_dir": "medmerge_empirical_study/results/experiment9_natural_image_collapse_probe/natural_probe_hub/small/cifar10_32/resnet/clients_5/partial_label/seed_42",
+  "dataset": "cifar10_32",
+  "model": "resnet",
+  "groups": {
+    "0": [
+      0,
+      1
+    ],
+    "1": [
+      2,
+      3
+    ],
+    "2": [
+      4,
+      5
+    ],
+    "3": [
+      6,
+      7
+    ],
+    "4": [
+      8,
+      9
+    ]
+  },
+  "image_size": 32,
+  "max_train_per_class": 0,
+  "avg_test": {
+    "loss": 2.255306201171875,
+    "accuracy": 0.16210000216960907,
+    "balanced_accuracy": 0.1621,
+    "macro_f1": 0.15686789399992535,
+    "num_samples": 10000,
+    "pred_counts": [
+      705,
+      682,
+      1105,
+      2425,
+      540,
+      630,
+      964,
+      578,
+      1197,
+      1174
+    ],
+    "support": [
+      1000,
+      1000,
+      1000,
+      1000,
+      1000,
+      1000,
+      1000,
+      1000,
+      1000,
+      1000
+    ],
+    "collapse_ratio": 0.2425,
+    "effective_pred_classes": 10,
+    "top_pred_class": 3,
+    "mean_confidence": 0.2230457216501236,
+    "mean_top1_top2_margin": 0.324767142534256,
+    "min_top1_top2_margin": 0.0,
+    "per_class_recall": [
+      0.106,
+      0.139,
+      0.182,
+      0.343,
+      0.112,
+      0.107,
+      0.147,
+      0.102,
+      0.23,
+      0.153
+    ],
+    "per_class_precision": [
+      0.150354609929078,
+      0.20381231671554254,
+      0.16470588235294117,
+      0.14144329896907218,
+      0.2074074074074074,
+      0.16984126984126985,
+      0.1524896265560166,
+      0.17647058823529413,
+      0.1921470342522974,
+      0.1303236797274276
+    ],
+    "per_class_f1": [
+      0.12434017595307918,
+      0.1652794292508918,
+      0.17292161520190022,
+      0.20029197080291972,
+      0.14545454545454545,
+      0.1312883435582822,
+      0.14969450101832993,
+      0.12927756653992395,
+      0.2093764223941739,
+      0.14075436982520698
+    ]
+  },
+  "client_rows": [
+    {
+      "client_id": 0,
+      "classes": "[0, 1]",
+      "sampled_num_samples": 8985,
+      "sampled_class_counts": "{\"0\": 4527, \"1\": 4458}",
+      "best_val_acc": "0.196400",
+      "test_acc": "0.192500",
+      "test_bacc": "0.192500",
+      "test_collapse": "0.630400",
+      "effective_pred_classes": 2,
+      "top_pred_class": 0,
+      "test_pred_counts": "[6304, 3696, 0, 0, 0, 0, 0, 0, 0, 0]"
+    },
+    {
+      "client_id": 1,
+      "classes": "[2, 3]",
+      "sampled_num_samples": 8983,
+      "sampled_class_counts": "{\"2\": 4465, \"3\": 4518}",
+      "best_val_acc": "0.180200",
+      "test_acc": "0.174700",
+      "test_bacc": "0.174700",
+      "test_collapse": "0.527500",
+      "effective_pred_classes": 2,
+      "top_pred_class": 2,
+      "test_pred_counts": "[0, 0, 5275, 4725, 0, 0, 0, 0, 0, 0]"
+    },
+    {
+      "client_id": 2,
+      "classes": "[4, 5]",
+      "sampled_num_samples": 9004,
+      "sampled_class_counts": "{\"4\": 4477, \"5\": 4527}",
+      "best_val_acc": "0.183000",
+      "test_acc": "0.182200",
+      "test_bacc": "0.182200",
+      "test_collapse": "0.578100",
+      "effective_pred_classes": 2,
+      "top_pred_class": 4,
+      "test_pred_counts": "[0, 0, 0, 0, 5781, 4219, 0, 0, 0, 0]"
+    },
+    {
+      "client_id": 3,
+      "classes": "[6, 7]",
+      "sampled_num_samples": 9029,
+      "sampled_class_counts": "{\"6\": 4498, \"7\": 4531}",
+      "best_val_acc": "0.188400",
+      "test_acc": "0.193500",
+      "test_bacc": "0.193500",
+      "test_collapse": "0.552000",
+      "effective_pred_classes": 2,
+      "top_pred_class": 7,
+      "test_pred_counts": "[0, 0, 0, 0, 0, 0, 4480, 5520, 0, 0]"
+    },
+    {
+      "client_id": 4,
+      "classes": "[8, 9]",
+      "sampled_num_samples": 8999,
+      "sampled_class_counts": "{\"8\": 4482, \"9\": 4517}",
+      "best_val_acc": "0.190600",
+      "test_acc": "0.188400",
+      "test_bacc": "0.188400",
+      "test_collapse": "0.594100",
+      "effective_pred_classes": 2,
+      "top_pred_class": 9,
+      "test_pred_counts": "[0, 0, 0, 0, 0, 0, 0, 0, 4059, 5941]"
+    }
+  ]
+}

@@ -1,0 +1,17 @@
+domain,group,mean_cosine,num_pairs
+medical_derma,bn_affine,0.264170,3
+medical_derma,bn_running_stats,0.607558,3
+medical_derma,classifier,0.107055,3
+medical_derma,layer1,0.034975,3
+medical_derma,layer2,0.026724,3
+medical_derma,layer3,0.030653,3
+medical_derma,layer4,0.030976,3
+medical_derma,stem_conv,0.127831,3
+natural_cifar_3client,bn_affine,0.921041,3
+natural_cifar_3client,bn_running_stats,0.932364,3
+natural_cifar_3client,classifier,0.163867,3
+natural_cifar_3client,layer1,0.833544,3
+natural_cifar_3client,layer2,0.918150,3
+natural_cifar_3client,layer3,0.958356,3
+natural_cifar_3client,layer4,0.960622,3
+natural_cifar_3client,stem_conv,0.742400,3
