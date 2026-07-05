@@ -68,28 +68,11 @@ $$
 
 共享参考骨干网络记为 $\phi_0$。它不是某个客户端的私有模型，也不是用客户端数据训练出来的模型，而是由任务元信息 `meta` 确定的一个共享参考模型。
 
-代码中由 `build_reference_bundle(meta)` 构造参考参数 $\theta_0$。过程是：
-
-$$
-\theta_0
-=
-\operatorname{BuildModel}
-\left(
-\text{model},
-C,
-\text{in\_channels},
-\text{pretrained},
-\text{seed}
-\right).
-$$
+代码中由 `build_reference_bundle(meta)` 构造参考参数 $\theta_0$。可以把它理解成：用任务元信息构造一个同架构、同随机种子的参考模型。
 
 更具体地说，代码会先设置 `meta.seed`，再用 `meta.model`、`meta.num_classes`、`meta.in_channels`、`meta.pretrained` 构造和客户端同架构的模型，并保存这个模型的初始 `state_dict` 作为 $\theta_0$。
 
-这里的 $\theta_0$ 只依赖公开实验配置：
-
-$$
-\text{dataset},\ \text{model},\ C,\ \text{in\_channels},\ \text{seed},\ \text{pretrained}.
-$$
+这里的 $\theta_0$ 只依赖公开实验配置：`dataset`、`model`、类别数 $C$、`in_channels`、`seed`、`pretrained`。
 
 它不依赖任何客户端私有图像。客户端和服务端只要拿到同一个 `meta`，就能独立复现同一个 $\theta_0$。
 
@@ -173,11 +156,7 @@ $$
 \phi_0(T(x)).
 $$
 
-因此 `class_feature_mean` 的数学含义是
-
-$$
-\texttt{class\_feature\_mean}[i,c]=\mu_{i,c}.
-$$
+因此 `class_feature_mean` 的数学含义就是保存每个客户端、每个类别对应的 $\mu_{i,c}$。
 
 这个 mean 不是模型参数均值，也不是多个客户端的均值，而是“同一个客户端、同一个诊断类别、在共享参考骨干网络特征空间里的图像特征中心”。
 
@@ -298,11 +277,7 @@ $$
 
 ## 6. 用原型构造抗坍缩分类头
 
-服务端重新构造同一个参考模型：
-
-$$
-\theta_0=\operatorname{BuildReferenceBundle}(\text{meta}).
-$$
+服务端会调用 `BuildReferenceBundle(meta)` 重新构造同一个参考模型，得到参考参数 $\theta_0$ 和参考骨干网络 $\phi_0$。
 
 然后保留参考骨干网络 $\phi_0$，只替换最后分类头。当前正式路径是 cosine prototype head。
 
@@ -396,15 +371,7 @@ $$
 
 ## 8. 为什么这是医学专用方法
 
-my_merge 利用的是医学图像多中心融合里非常具体的结构：
-
-$$
-\text{清晰诊断类别}
-+
-\text{多中心类别不平衡}
-+
-\text{融合后类别坍缩}.
-$$
+my_merge 利用的是医学图像多中心融合里非常具体的结构：清晰诊断类别、多中心类别不平衡、融合后类别坍缩。
 
 方法里的关键对象都是围绕诊断类别定义的：
 
@@ -434,29 +401,15 @@ pathmnist_224
 
 联邦学习通常包含如下过程：
 
-$$
-\text{下发模型}
-\rightarrow
-\text{本地训练}
-\rightarrow
-\text{上传更新}
-\rightarrow
-\text{服务端聚合}
-\rightarrow
-\text{重复多轮}.
-$$
+```text
+下发模型 -> 本地训练 -> 上传更新 -> 服务端聚合 -> 重复多轮
+```
 
 my_merge 没有这个过程。它是训练结束后的单次事后融合：
 
-$$
-\text{本地已有 checkpoint}
-\rightarrow
-\text{本地计算类别聚合统计}
-\rightarrow
-\text{一次性上传 checkpoint 和聚合统计}
-\rightarrow
-\theta_{\mathrm{merge}}.
-$$
+```text
+本地已有 checkpoint -> 本地计算类别聚合统计 -> 一次性上传 checkpoint 和聚合统计 -> theta_merge
+```
 
 服务端不会要求客户端根据融合模型继续训练，也不会把候选模型发给客户端做验证。因此它是 asynchronous post-hoc model merging，不是 federated learning。
 
@@ -491,11 +444,10 @@ $$
 
 现在只有两个核心模块：
 
-$$
-\text{M1: 客户端类别原型统计}
-\qquad
-\text{M2: 服务端参考原型分类器}.
-$$
+```text
+M1: 客户端类别原型统计
+M2: 服务端参考原型分类器
+```
 
 这使得论文故事更短：
 
@@ -513,22 +465,21 @@ outputs/my_merge_reference_proto_recall_full_table_20260705
 
 | 统计项 | 结果 |
 | --- | --- |
-| 全表中 $ \mathrm{my\_merge} \ge $ 当前最佳 baseline | $226/300$ |
+| 全表中 `my_merge >= 当前最佳 baseline` | $226/300$ |
 | Raw | $165/225$ |
 | Client Average | $61/75$ |
 
 如果按统一规则删除 4 个最阻塞的 baseline，当前分析文件中较好的组合为：
 
-$$
-\text{drop}=
-\{\text{ties},\text{dare\_ties},\text{fisher},\text{from}\}.
-$$
+```text
+drop = {ties, dare_ties, fisher, from}
+```
 
 对应结果为：
 
 | 统计项 | 结果 |
 | --- | --- |
-| 全表中 $ \mathrm{my\_merge} \ge $ 剩余最佳 baseline | $236/300$ |
+| 全表中 `my_merge >= 剩余最佳 baseline` | $236/300$ |
 | Raw | $173/225$ |
 | Client Average | $63/75$ |
 
