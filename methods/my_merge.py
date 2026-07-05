@@ -683,9 +683,15 @@ def merge_my_merge(state_dicts, weights, meta=None, checkpoints=None, cfg=None):
             ],
         },
         "modules": {
-            "prototype_upload": "clients summarize each diagnostic class as a prototype in the shared reference backbone space",
-            "prototype_head": "server builds a cosine classifier from the uploaded diagnostic prototypes",
-            "discarded_prevalence_prior": "disabled by default after full-table ablation",
+            "M1_diagnostic_prototype_upload": (
+                "clients summarize each diagnostic class with support counts and "
+                "reference-backbone feature means"
+            ),
+            "M2_collapse_free_head_synthesis": (
+                "server aggregates class-wise prototypes and synthesizes a cosine "
+                "prototype classifier without prevalence-bias correction"
+            ),
+            "discarded_prevalence_prior": "not part of the formal two-module method",
         },
         "task_density": float(cfg.get("my_merge_task_density", 0.55)),
         "task_alpha": float(cfg.get("my_merge_task_alpha", 1.0)),

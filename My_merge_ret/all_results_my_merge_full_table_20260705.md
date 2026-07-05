@@ -2,7 +2,7 @@
 
 - Layout: aligned with `result/all_results.md`.
 - Source output root: `outputs/ablation_m1_full_table_20260705, outputs/ablation_m1_full_table_part2_20260705`.
-- Ablation rows: M1+M2: `outputs/my_merge_reference_proto_recall_full_table_20260705`, avg+M2: `outputs/ablation_avg_m2_full_table_20260705`, `outputs/ablation_avg_m2_full_table_part2_20260705`.
+- Ablation rows: +prior: `outputs/my_merge_reference_proto_recall_full_table_20260705`, avg+prior: `outputs/ablation_avg_m2_full_table_20260705`, `outputs/ablation_avg_m2_full_table_part2_20260705`.
 - Values are filled from real `eval_summary.csv` results for `my_merge`; missing combinations are shown as `-`.
 
 ## Small
@@ -119,7 +119,7 @@
       <td>0.4762</td>
     </tr>
     <tr>
-      <td>M1+M2</td>
+      <td>+prior</td>
       <td>0.7995</td>
       <td>0.7989</td>
       <td>0.8021</td>
@@ -167,7 +167,7 @@
       <td>0.4762</td>
     </tr>
     <tr>
-      <td>avg+M2</td>
+      <td>avg+prior</td>
       <td>0.3017</td>
       <td>0.3069</td>
       <td>0.3949</td>
@@ -267,7 +267,7 @@
       <td>0.4762</td>
     </tr>
     <tr>
-      <td>M1+M2</td>
+      <td>+prior</td>
       <td>0.8002</td>
       <td>0.7999</td>
       <td>0.8007</td>
@@ -285,7 +285,7 @@
       <td>0.4762</td>
     </tr>
     <tr>
-      <td>avg+M2</td>
+      <td>avg+prior</td>
       <td>0.3345</td>
       <td>0.2465</td>
       <td>0.2821</td>
@@ -417,7 +417,7 @@
       <td>0.4259</td>
     </tr>
     <tr>
-      <td>M1+M2</td>
+      <td>+prior</td>
       <td>0.8506</td>
       <td>0.8471</td>
       <td>0.8468</td>
@@ -465,7 +465,7 @@
       <td>0.4259</td>
     </tr>
     <tr>
-      <td>avg+M2</td>
+      <td>avg+prior</td>
       <td>0.1947</td>
       <td>0.1374</td>
       <td>0.1374</td>
@@ -565,7 +565,7 @@
       <td>0.4259</td>
     </tr>
     <tr>
-      <td>M1+M2</td>
+      <td>+prior</td>
       <td>0.8482</td>
       <td>0.8483</td>
       <td>0.8493</td>
@@ -583,7 +583,7 @@
       <td>0.4259</td>
     </tr>
     <tr>
-      <td>avg+M2</td>
+      <td>avg+prior</td>
       <td>0.1565</td>
       <td>0.1122</td>
       <td>0.1384</td>
@@ -715,7 +715,7 @@
       <td>0.4645</td>
     </tr>
     <tr>
-      <td>M1+M2</td>
+      <td>+prior</td>
       <td>0.8527</td>
       <td>0.8524</td>
       <td>0.8518</td>
@@ -763,7 +763,7 @@
       <td>0.4645</td>
     </tr>
     <tr>
-      <td>avg+M2</td>
+      <td>avg+prior</td>
       <td>0.1692</td>
       <td>0.0836</td>
       <td>0.1505</td>
@@ -863,7 +863,7 @@
       <td>0.4645</td>
     </tr>
     <tr>
-      <td>M1+M2</td>
+      <td>+prior</td>
       <td>0.8523</td>
       <td>0.8522</td>
       <td>0.8516</td>
@@ -881,7 +881,7 @@
       <td>0.4645</td>
     </tr>
     <tr>
-      <td>avg+M2</td>
+      <td>avg+prior</td>
       <td>0.1345</td>
       <td>0.1082</td>
       <td>0.1160</td>
@@ -1013,7 +1013,7 @@
       <td>0.4816</td>
     </tr>
     <tr>
-      <td>M1+M2</td>
+      <td>+prior</td>
       <td>0.7752</td>
       <td>0.7723</td>
       <td>0.7735</td>
@@ -1061,7 +1061,7 @@
       <td>0.4816</td>
     </tr>
     <tr>
-      <td>avg+M2</td>
+      <td>avg+prior</td>
       <td>0.1947</td>
       <td>0.1374</td>
       <td>0.1374</td>
@@ -1161,7 +1161,7 @@
       <td>0.4816</td>
     </tr>
     <tr>
-      <td>M1+M2</td>
+      <td>+prior</td>
       <td>0.7737</td>
       <td>0.7753</td>
       <td>0.7748</td>
@@ -1179,7 +1179,7 @@
       <td>0.4816</td>
     </tr>
     <tr>
-      <td>avg+M2</td>
+      <td>avg+prior</td>
       <td>0.1565</td>
       <td>0.1186</td>
       <td>0.1524</td>
@@ -1313,7 +1313,7 @@
       <td>0.1635</td>
     </tr>
     <tr>
-      <td>M1+M2</td>
+      <td>+prior</td>
       <td>0.3063</td>
       <td>0.2955</td>
       <td>0.5706</td>
@@ -1361,7 +1361,7 @@
       <td>0.1635</td>
     </tr>
     <tr>
-      <td>avg+M2</td>
+      <td>avg+prior</td>
       <td>0.2675</td>
       <td>0.2713</td>
       <td>0.3043</td>
@@ -1461,7 +1461,7 @@
       <td>0.1602</td>
     </tr>
     <tr>
-      <td>M1+M2</td>
+      <td>+prior</td>
       <td>0.3908</td>
       <td>0.2679</td>
       <td>0.2483</td>
@@ -1479,7 +1479,7 @@
       <td>0.1602</td>
     </tr>
     <tr>
-      <td>avg+M2</td>
+      <td>avg+prior</td>
       <td>0.2810</td>
       <td>0.0856</td>
       <td>0.1663</td>
