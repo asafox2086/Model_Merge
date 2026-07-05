@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 import argparse
 import csv
+from collections import OrderedDict
 from pathlib import Path
 
 
@@ -65,7 +66,7 @@ def parse_args():
 
 
 def parse_extra_rows(items):
-    parsed = []
+    parsed = OrderedDict()
     for item in items:
         if "=" not in item:
             raise SystemExit(f"--extra-row must be LABEL=OUTPUT_ROOT, got: {item}")
@@ -74,8 +75,8 @@ def parse_extra_rows(items):
         root = root.strip()
         if not label or not root:
             raise SystemExit(f"--extra-row must be LABEL=OUTPUT_ROOT, got: {item}")
-        parsed.append((label, Path(root)))
-    return parsed
+        parsed.setdefault(label, []).append(Path(root))
+    return list(parsed.items())
 
 
 def load_eval_rows(output_roots):
@@ -189,10 +190,13 @@ def build_model_section(lines, row_lookups, *, task_type, model_name, dataset_na
 
 def build_markdown(output_roots, extra_rows):
     row_lookups = [("my_merge", build_lookup(load_eval_rows(output_roots)))]
-    for label, root in extra_rows:
-        row_lookups.append((label, build_lookup(load_eval_rows([root]))))
+    for label, roots in extra_rows:
+        row_lookups.append((label, build_lookup(load_eval_rows(roots))))
     roots_label = ", ".join(str(root) for root in output_roots)
-    extra_label = ", ".join(f"{label}: `{root}`" for label, root in extra_rows)
+    extra_label = ", ".join(
+        f"{label}: " + ", ".join(f"`{root}`" for root in roots)
+        for label, roots in extra_rows
+    )
     lines = [
         "# Experiment Master Tables",
         "",
