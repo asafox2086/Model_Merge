@@ -89,6 +89,9 @@ def parse_args():
     p.add_argument('--datasets', nargs='*', default=None)
     p.add_argument('--small-models', nargs='*', default=None)
     p.add_argument('--clip-models', nargs='*', default=None)
+    p.add_argument('--num-clients', nargs='*', type=int, default=None)
+    p.add_argument('--betas', nargs='*', type=float, default=None)
+    p.add_argument('--skip', type=int, default=0)
     p.add_argument('--limit', type=int, default=0)
     p.add_argument('--resume', action=argparse.BooleanOptionalAction, default=True)
     p.add_argument('--delete-merged', action=argparse.BooleanOptionalAction, default=True)
@@ -128,6 +131,30 @@ def parse_args():
     p.add_argument('--my-merge-public-data-root', type=str, default='')
     p.add_argument('--my-merge-public-dataset', type=str, default='')
     p.add_argument('--my-merge-public-split', type=str, default='val')
+    p.add_argument('--my-merge-client-fingerprint-root', type=str, default='')
+    p.add_argument('--my-merge-client-fingerprint-path', type=str, default='')
+    p.add_argument('--my-merge-force-candidate', type=str, default='')
+    p.add_argument('--my-merge-fingerprint-tau', type=float, default=2.0)
+    p.add_argument('--my-merge-fingerprint-min-class-count', type=int, default=8)
+    p.add_argument('--my-merge-prototype-root', type=str, default='')
+    p.add_argument('--my-merge-class-count-power', type=float, default=0.70)
+    p.add_argument('--my-merge-proto-count-power', type=float, default=0.45)
+    p.add_argument('--my-merge-proto-calibration-steps', type=int, default=120)
+    p.add_argument('--my-merge-proto-head-blend', type=float, default=0.70)
+    p.add_argument('--my-merge-proto-prior-tau', type=float, default=0.20)
+    p.add_argument('--my-merge-prior-bias-tau', type=float, default=0.85)
+    p.add_argument('--my-merge-confidence-bias-tau', type=float, default=0.60)
+    p.add_argument('--my-merge-head-norm-gamma', type=float, default=0.45)
+    p.add_argument('--my-merge-use-prototype-calibration', action=argparse.BooleanOptionalAction, default=False)
+    p.add_argument('--my-merge-sensitivity-gamma', type=float, default=0.50)
+    p.add_argument('--my-merge-sensitivity-floor', type=float, default=1e-5)
+    p.add_argument('--my-merge-sensitivity-cap', type=float, default=25.0)
+    p.add_argument('--my-merge-reference-head-mode', choices=['cosine', 'euclidean'], default='cosine')
+    p.add_argument('--my-merge-reference-head-scale', type=float, default=20.0)
+    p.add_argument('--my-merge-reference-prior-tau', type=float, default=-1.0)
+    p.add_argument('--my-merge-reference-prior-threshold', type=float, default=2.5)
+    p.add_argument('--my-merge-reference-prior-max-tau', type=float, default=6.0)
+    p.add_argument('--my-merge-reference-prior-saturation', type=float, default=3.0)
     return p.parse_args()
 
 
@@ -149,6 +176,14 @@ def filter_manifest(rows, args):
     if args.clip_models:
         cm = set(args.clip_models)
         selected = [row for row in selected if row['task_type'] != 'vlm' or row['clip_model'] in cm]
+    if args.num_clients:
+        client_counts = {int(x) for x in args.num_clients}
+        selected = [row for row in selected if int(row['num_clients']) in client_counts]
+    if args.betas:
+        betas = {format(float(x), 'g') for x in args.betas}
+        selected = [row for row in selected if format(float(row['beta']), 'g') in betas]
+    if args.skip > 0:
+        selected = selected[args.skip:]
     if args.limit > 0:
         selected = selected[:args.limit]
     return selected
@@ -228,6 +263,34 @@ def build_cfg(row, args):
         cfg['my_merge_public_dataset'] = args.my_merge_public_dataset
     if args.my_merge_public_split:
         cfg['my_merge_public_split'] = args.my_merge_public_split
+    if args.my_merge_client_fingerprint_root:
+        cfg['my_merge_client_fingerprint_root'] = args.my_merge_client_fingerprint_root
+    if args.my_merge_client_fingerprint_path:
+        cfg['my_merge_client_fingerprint_path'] = args.my_merge_client_fingerprint_path
+    if args.my_merge_force_candidate:
+        cfg['my_merge_force_candidate'] = args.my_merge_force_candidate
+    cfg['my_merge_fingerprint_tau'] = args.my_merge_fingerprint_tau
+    cfg['my_merge_fingerprint_min_class_count'] = args.my_merge_fingerprint_min_class_count
+    if args.my_merge_prototype_root:
+        cfg['my_merge_prototype_root'] = args.my_merge_prototype_root
+    cfg['my_merge_class_count_power'] = args.my_merge_class_count_power
+    cfg['my_merge_proto_count_power'] = args.my_merge_proto_count_power
+    cfg['my_merge_proto_calibration_steps'] = args.my_merge_proto_calibration_steps
+    cfg['my_merge_proto_head_blend'] = args.my_merge_proto_head_blend
+    cfg['my_merge_proto_prior_tau'] = args.my_merge_proto_prior_tau
+    cfg['my_merge_prior_bias_tau'] = args.my_merge_prior_bias_tau
+    cfg['my_merge_confidence_bias_tau'] = args.my_merge_confidence_bias_tau
+    cfg['my_merge_head_norm_gamma'] = args.my_merge_head_norm_gamma
+    cfg['my_merge_use_prototype_calibration'] = args.my_merge_use_prototype_calibration
+    cfg['my_merge_sensitivity_gamma'] = args.my_merge_sensitivity_gamma
+    cfg['my_merge_sensitivity_floor'] = args.my_merge_sensitivity_floor
+    cfg['my_merge_sensitivity_cap'] = args.my_merge_sensitivity_cap
+    cfg['my_merge_reference_head_mode'] = args.my_merge_reference_head_mode
+    cfg['my_merge_reference_head_scale'] = args.my_merge_reference_head_scale
+    cfg['my_merge_reference_prior_tau'] = args.my_merge_reference_prior_tau
+    cfg['my_merge_reference_prior_threshold'] = args.my_merge_reference_prior_threshold
+    cfg['my_merge_reference_prior_max_tau'] = args.my_merge_reference_prior_max_tau
+    cfg['my_merge_reference_prior_saturation'] = args.my_merge_reference_prior_saturation
     if item['task_type'] == 'small':
         cfg['model'] = item['model']
         cfg['batch_size'] = args.small_batch_size
