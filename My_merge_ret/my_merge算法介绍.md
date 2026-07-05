@@ -1,6 +1,6 @@
 # `my_merge` 算法介绍：Diagnostic Prototype Merge
 
-本文档解释 `汇总表.md` 中 `my_merge` 的正式方法。当前方法已经精简为两个模块：客户端诊断原型统计，服务端原型分类头重建。
+本文档解释 `汇总表.md` 中 `my_merge` 的正式方法。当前方法已经精简为两个模块：客户端诊断原型统计，服务端原型分类头重建。全量消融显示，额外的患病率 prior bias 会减少最优格子数，因此它不属于正式方法。
 
 它不使用公开验证集候选池，不把模型发回客户端选择，不做多轮通信，也不让服务端读取客户端原始图像。
 
@@ -8,7 +8,7 @@
 
 - 客户端统计：`scripts/export_my_merge_prototypes.py`
 - 服务端融合：`methods/my_merge.py`
-- 正式结果目录：`outputs/my_merge_reference_proto_recall_full_table_20260705`
+- 正式结果目录：`outputs/ablation_m1_full_table_20260705` 和 `outputs/ablation_m1_full_table_part2_20260705`
 
 ## 1. 问题设定
 
@@ -97,7 +97,7 @@ p_c = sum over clients i of α_i,c * μ_i,c
 
 p<sub>c</sub> 表示类别 c 在共享参考骨干空间里的全局医学原型。
 
-服务端重新构造同一个参考模型 θ<sub>0</sub>，保留其骨干 φ<sub>0</sub>，只替换最后分类头。当前正式版本使用 cosine prototype head：
+服务端重新构造同一个参考模型 θ<sub>0</sub>，保留其骨干 φ<sub>0</sub>，只替换最后分类头。正式版本使用 cosine prototype head：
 
 ```text
 W_c = s * p_c / ||p_c||_2
@@ -106,64 +106,39 @@ b_c = 0
 
 默认 s = 20。
 
-由于医学多中心数据经常存在极端类别不平衡，模块二还会用同一份 `class_counts` 给分类头加入一个类别先验偏置。先计算全局类别比例：
-
-```text
-q_c = N_c / sum over classes k of N_k
-N_c = sum over clients i of n_i,c
-```
-
-再计算不平衡程度：
-
-```text
-I = C * max over classes c of q_c
-```
-
-当 I 不超过阈值 τ<sub>th</sub> 时，先验强度 λ 为 0；当类别分布明显倾斜时，λ 按 log scale 增大并截断到 λ<sub>max</sub>：
-
-```text
-λ = 0, if I <= τ_th
-
-λ = λ_max * clip(
-      log(I / τ_th) / log(τ_sat / τ_th),
-      0,
-      1
-    ), otherwise
-```
-
-默认 τ<sub>th</sub> = 2.5，τ<sub>sat</sub> = 3.0，λ<sub>max</sub> = 6.0。最终 bias 为：
-
-```text
-b_c = λ * (log(q_c) - mean over classes k of log(q_k))
-```
-
-这个先验项仍属于模块二，因为它不引入新数据、不引入候选选择，只是把客户端上传的类别计数写入原型分类头的 bias。
-
 对测试图像 x：
 
 ```text
 z(x) = φ_0(T(x))
-score_c(x) = W_c · z(x) + b_c
+score_c(x) = W_c · z(x)
 y_hat(x) = argmax_c score_c(x)
 ```
 
 这一步把每个诊断类别的聚合原型直接写成分类器的一行权重。相比平均多个客户端分类头，它显式保证每个类别都有自己的决策方向，因此针对的是医学多中心融合中的类别坍缩问题。
 
+我们曾测试过一个额外的患病率 prior bias：
+
+```text
+b_c = λ * (log(q_c) - mean over classes k of log(q_k))
+```
+
+其中 q<sub>c</sub> 来自客户端上传的类别计数。全量消融显示，这个 bias 会让最优/并列最优格子从 `M1` 的 47/75 Client Average 降到 43/75，因此正式方法删除该项。它只保留在消融表中，记为 `M1+M2`。
+
 ## 5. 为什么方法可以精简到这两步
 
-我们检查了正式全量结果中的 merge trace：
+正式方法只保留两步：客户端上传诊断类别原型，服务端重建 prototype classifier。这个选择来自全量消融，而不是只看个别数据集。
 
-- 小图像任务 180 个格子全部走 `single_checkpoint_reference_prototype_medical_merge`。
-- 这 180 个格子全部使用 cosine prototype head。
-- 旧版本的候选池、公开数据选择、MoE、prototype calibration、sensitivity merge 都没有参与正式小图像结果。
+全量表中，`M1` 表示不加患病率 prior bias 的诊断原型重建；`M1+M2` 表示在 M1 后额外加入 prior bias；`avg+M2` 表示普通平均后只加 prior bias。统计结果为：
 
-进一步做代表性消融：
+| 设置 | Raw 最优/并列最优 | Client Average 最优/并列最优 |
+| --- | ---: | ---: |
+| `my_merge` / `M1` | 138/225 | 47/75 |
+| `M1+M2` | 137/225 | 43/75 |
+| `avg+M2` | 19/225 | 5/75 |
 
-- 去掉 reference prior bias 后，已测 12 个代表格子和正式结果一致。
-- 去掉 `class_recall` 可靠性权重后，已测 12 个代表格子和正式结果一致。
-- dermamnist 的完整消融显示，若删除类别先验 bias，若干极端不平衡格子会明显下降；因此保留这个由 `class_counts` 直接计算的 bias，并把它作为模块二的一部分。
+这说明 prior bias 不是稳定收益模块。它能救少数极端不平衡格子，但会牺牲更多格子；而且 `avg+M2` 证明只靠类别先验不能修复已经坍缩的平均模型。
 
-因此正式论文方法保留两项真正起作用的医学信息：类别样本数 n<sub>i,c</sub> 和类别参考原型 μ<sub>i,c</sub>。
+因此正式方法保留两项真正起作用的医学信息：类别样本数 n<sub>i,c</sub> 和类别参考原型 μ<sub>i,c</sub>。类别样本数只用于聚合每类原型时估计客户端证据，不再写入最终 classifier bias。
 
 ## 6. 隐私与通信边界
 
@@ -217,6 +192,6 @@ drop = {ties, dare_ties, fisher, from}
 这部分只是结果展示策略，不属于 `my_merge` 的算法流程。算法本身就是：
 
 ```text
-M1: 客户端上传每个诊断类别的参考特征原型
-M2: 服务端用类别原型重建 cosine prototype classifier
+Step 1: 客户端上传每个诊断类别的类别样本数和参考特征均值
+Step 2: 服务端聚合类别原型，并重建 cosine prototype classifier
 ```

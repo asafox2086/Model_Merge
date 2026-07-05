@@ -135,7 +135,7 @@ def parse_args():
     p.add_argument('--my-merge-reference-prior-threshold', type=float, default=2.5)
     p.add_argument('--my-merge-reference-prior-max-tau', type=float, default=6.0)
     p.add_argument('--my-merge-reference-prior-saturation', type=float, default=3.0)
-    p.add_argument('--my-merge-ablation-mode', choices=['full', 'm1_only', 'avg_m2'], default='full')
+    p.add_argument('--my-merge-ablation-mode', choices=['full', 'm1_only', 'm1_m2', 'avg_m2'], default='full')
     return p.parse_args()
 
 

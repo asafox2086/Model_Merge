@@ -416,10 +416,9 @@ def _merge_reference_prototype_model(base_state, proto_stats, meta, stats, cfg):
     scale = float(cfg.get("my_merge_reference_head_scale", 20.0))
     class_prior = proto["class_counts"] / proto["class_counts"].sum().clamp_min(EPS)
     ablation_mode = str(cfg.get("my_merge_ablation_mode", "full")).lower()
-    prior_enabled = ablation_mode != "m1_only"
-    prior_tau, imbalance_ratio = _reference_prior_tau(class_prior, num_classes, cfg)
-    if not prior_enabled:
-        prior_tau = 0.0
+    prior_enabled = ablation_mode == "m1_m2"
+    raw_prior_tau, imbalance_ratio = _reference_prior_tau(class_prior, num_classes, cfg)
+    prior_tau = raw_prior_tau if prior_enabled else 0.0
 
     if mode == "euclidean":
         head_weight = 2.0 * prototypes
@@ -453,6 +452,10 @@ def _merge_reference_prototype_model(base_state, proto_stats, meta, stats, cfg):
         "head_scale": scale,
         "prior_tau": prior_tau,
         "prior_enabled": prior_enabled,
+        "prior_disabled_reason": (
+            "" if prior_enabled
+            else "full_table_ablation_showed_prevalence_prior_reduces_best_cell_count"
+        ),
         "imbalance_ratio": imbalance_ratio,
         "class_counts": [float(x) for x in proto["class_counts"].tolist()],
         "prototype_class_counts": [float(x) for x in proto["prototype_class_counts"].tolist()],
@@ -603,7 +606,7 @@ def merge_my_merge(state_dicts, weights, meta=None, checkpoints=None, cfg=None):
     client_stats, client_stats_path = _load_prototype_stats(meta, cfg)
     stats = _class_client_weights(meta, cfg, client_stats=client_stats)
     ablation_mode = str(cfg.get("my_merge_ablation_mode", "full")).lower()
-    if ablation_mode not in {"full", "m1_only", "avg_m2"}:
+    if ablation_mode not in {"full", "m1_only", "m1_m2", "avg_m2"}:
         raise ValueError(f"Unsupported my_merge_ablation_mode: {ablation_mode}")
 
     if ablation_mode == "avg_m2":
@@ -680,8 +683,9 @@ def merge_my_merge(state_dicts, weights, meta=None, checkpoints=None, cfg=None):
             ],
         },
         "modules": {
-            "M1": "clients summarize each diagnostic class as a prototype in the shared reference backbone space",
-            "M2": "server builds a prototype classifier on the common backbone to avoid weight-space class collapse",
+            "prototype_upload": "clients summarize each diagnostic class as a prototype in the shared reference backbone space",
+            "prototype_head": "server builds a cosine classifier from the uploaded diagnostic prototypes",
+            "discarded_prevalence_prior": "disabled by default after full-table ablation",
         },
         "task_density": float(cfg.get("my_merge_task_density", 0.55)),
         "task_alpha": float(cfg.get("my_merge_task_alpha", 1.0)),
