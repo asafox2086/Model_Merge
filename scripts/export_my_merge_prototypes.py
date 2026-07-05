@@ -15,7 +15,7 @@ if str(ROOT) not in sys.path:
 
 from dataset import NpzTensorDataset, load_npz_splits
 from model import build_model
-from utils import extract_state_dict, load_checkpoint, load_json
+from utils import load_json
 from utils.hub import beta_to_dirname
 from utils.runtime import build_reference_bundle
 
@@ -37,7 +37,6 @@ def parse_args():
     p.add_argument("--num-workers", type=int, default=4)
     p.add_argument("--max-samples-per-client", type=int, default=4096)
     p.add_argument("--max-samples-per-class", type=int, default=1024)
-    p.add_argument("--feature-space", choices=["client", "reference"], default="reference")
     return p.parse_args()
 
 
@@ -154,21 +153,6 @@ def extract_features(model, x):
         handle.remove()
 
 
-def build_client_model(meta, meta_path, client, client_idx, device):
-    model, _, _, _ = build_model(
-        name=meta["model"],
-        num_classes=int(meta["num_classes"]),
-        in_channels=int(meta.get("in_channels", 3)),
-        pretrained=False,
-    )
-    ckpt_path = meta_path.parent / client.get("checkpoint", f"client_{client_idx}.pt")
-    checkpoint = load_checkpoint(ckpt_path, device="cpu")
-    model.load_state_dict(extract_state_dict(checkpoint), strict=True)
-    model.to(device)
-    model.eval()
-    return model
-
-
 def export_one(meta_path, args):
     meta = load_json(meta_path)
     if meta.get("task_type") != "small":
@@ -182,18 +166,16 @@ def export_one(meta_path, args):
     device = torch.device(args.device if torch.cuda.is_available() or not str(args.device).startswith("cuda") else "cpu")
     clients_payload = []
 
-    reference_model = None
-    if args.feature_space == "reference":
-        reference_model, _, _, _ = build_model(
-            name=meta["model"],
-            num_classes=int(meta["num_classes"]),
-            in_channels=int(meta.get("in_channels", 3)),
-            pretrained=False,
-        )
-        reference_state, _ = build_reference_bundle(meta, device="cpu")
-        reference_model.load_state_dict(reference_state, strict=True)
-        reference_model.to(device)
-        reference_model.eval()
+    reference_model, _, _, _ = build_model(
+        name=meta["model"],
+        num_classes=int(meta["num_classes"]),
+        in_channels=int(meta.get("in_channels", 3)),
+        pretrained=False,
+    )
+    reference_state, _ = build_reference_bundle(meta, device="cpu")
+    reference_model.load_state_dict(reference_state, strict=True)
+    reference_model.to(device)
+    reference_model.eval()
 
     for client_idx, client in enumerate(meta.get("clients", [])):
         classes = [int(c) for c in client.get("classes", [])]
@@ -211,25 +193,15 @@ def export_one(meta_path, args):
             num_workers=int(args.num_workers),
             pin_memory=str(device).startswith("cuda"),
         )
-        if args.feature_space == "reference":
-            feature_model = reference_model
-            reliability_model = build_client_model(meta, meta_path, client, client_idx, device)
-        else:
-            feature_model = build_client_model(meta, meta_path, client, client_idx, device)
-            reliability_model = feature_model
-
         num_classes = int(meta["num_classes"])
         sums = None
         counts = torch.zeros(num_classes, dtype=torch.float32)
-        correct = torch.zeros(num_classes, dtype=torch.float32)
 
         with torch.no_grad():
             for x, y in loader:
                 x = x.to(device, non_blocking=True)
                 y = y.to(device, non_blocking=True)
-                feat = extract_features(feature_model, x).detach().float().cpu()
-                logits = reliability_model(x)
-                pred = logits.argmax(dim=1).detach().cpu()
+                feat = extract_features(reference_model, x).detach().float().cpu()
                 y_cpu = y.detach().cpu()
                 if sums is None:
                     sums = torch.zeros(num_classes, feat.shape[1], dtype=torch.float32)
@@ -238,33 +210,26 @@ def export_one(meta_path, args):
                     mask = y_cpu == cls
                     sums[cls] += feat[mask].sum(dim=0)
                     counts[cls] += float(mask.sum().item())
-                    correct[cls] += float((pred[mask] == cls).sum().item())
 
         if sums is None:
             raise ValueError(f"No samples selected for client {client_idx}: {meta_path}")
         means = sums / counts.clamp_min(1.0).view(-1, 1)
-        recall = correct / counts.clamp_min(1.0)
         clients_payload.append(
             {
                 "client_id": int(client.get("client_id", client_idx)),
                 "classes": classes,
                 "num_selected_samples": int(counts.sum().item()),
                 "class_counts": counts.tolist(),
-                "class_recall": recall.tolist(),
                 "class_feature_mean": means.tolist(),
             }
         )
-        if args.feature_space == "reference":
-            del reliability_model
-        else:
-            del feature_model
         if device.type == "cuda":
             torch.cuda.empty_cache()
 
     payload = {
         "format": "my_merge_client_prototype_stats_v1",
         "privacy": "client-side aggregate statistics only; no raw image and no per-sample feature is stored",
-        "feature_space": "reference_model" if args.feature_space == "reference" else "client_model",
+        "feature_space": "reference_model",
         "source_split": args.split,
         "meta_path": str(meta_path),
         "task_type": meta["task_type"],

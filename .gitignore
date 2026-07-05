@@ -11,6 +11,7 @@ logs/
 Med_data/
 PublicMed_data/
 PublicMedLabeled_data/
+PublicMedFingerprint_data/
 result/
 reference_cache/
 methods/*

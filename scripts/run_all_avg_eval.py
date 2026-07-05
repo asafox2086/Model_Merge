@@ -128,33 +128,14 @@ def parse_args():
     p.add_argument('--regmean-max-batches', type=int, default=METHOD_DEFAULTS['regmean_max_batches'])
     p.add_argument('--regmean-max-dim', type=int, default=METHOD_DEFAULTS['regmean_max_dim'])
     p.add_argument('--my-merge-stats-max-batches', type=int, default=-1)
-    p.add_argument('--my-merge-public-data-root', type=str, default='')
-    p.add_argument('--my-merge-public-dataset', type=str, default='')
-    p.add_argument('--my-merge-public-split', type=str, default='val')
-    p.add_argument('--my-merge-client-fingerprint-root', type=str, default='')
-    p.add_argument('--my-merge-client-fingerprint-path', type=str, default='')
-    p.add_argument('--my-merge-force-candidate', type=str, default='')
-    p.add_argument('--my-merge-fingerprint-tau', type=float, default=2.0)
-    p.add_argument('--my-merge-fingerprint-min-class-count', type=int, default=8)
     p.add_argument('--my-merge-prototype-root', type=str, default='')
-    p.add_argument('--my-merge-class-count-power', type=float, default=0.70)
     p.add_argument('--my-merge-proto-count-power', type=float, default=0.45)
-    p.add_argument('--my-merge-proto-calibration-steps', type=int, default=120)
-    p.add_argument('--my-merge-proto-head-blend', type=float, default=0.70)
-    p.add_argument('--my-merge-proto-prior-tau', type=float, default=0.20)
-    p.add_argument('--my-merge-prior-bias-tau', type=float, default=0.85)
-    p.add_argument('--my-merge-confidence-bias-tau', type=float, default=0.60)
-    p.add_argument('--my-merge-head-norm-gamma', type=float, default=0.45)
-    p.add_argument('--my-merge-use-prototype-calibration', action=argparse.BooleanOptionalAction, default=False)
-    p.add_argument('--my-merge-sensitivity-gamma', type=float, default=0.50)
-    p.add_argument('--my-merge-sensitivity-floor', type=float, default=1e-5)
-    p.add_argument('--my-merge-sensitivity-cap', type=float, default=25.0)
     p.add_argument('--my-merge-reference-head-mode', choices=['cosine', 'euclidean'], default='cosine')
     p.add_argument('--my-merge-reference-head-scale', type=float, default=20.0)
-    p.add_argument('--my-merge-reference-prior-tau', type=float, default=-1.0)
     p.add_argument('--my-merge-reference-prior-threshold', type=float, default=2.5)
     p.add_argument('--my-merge-reference-prior-max-tau', type=float, default=6.0)
     p.add_argument('--my-merge-reference-prior-saturation', type=float, default=3.0)
+    p.add_argument('--my-merge-ablation-mode', choices=['full', 'm1_only', 'avg_m2'], default='full')
     return p.parse_args()
 
 
@@ -257,40 +238,15 @@ def build_cfg(row, args):
     }
     if args.my_merge_stats_max_batches >= 0:
         cfg['my_merge_stats_max_batches'] = args.my_merge_stats_max_batches
-    if args.my_merge_public_data_root:
-        cfg['my_merge_public_data_root'] = args.my_merge_public_data_root
-    if args.my_merge_public_dataset:
-        cfg['my_merge_public_dataset'] = args.my_merge_public_dataset
-    if args.my_merge_public_split:
-        cfg['my_merge_public_split'] = args.my_merge_public_split
-    if args.my_merge_client_fingerprint_root:
-        cfg['my_merge_client_fingerprint_root'] = args.my_merge_client_fingerprint_root
-    if args.my_merge_client_fingerprint_path:
-        cfg['my_merge_client_fingerprint_path'] = args.my_merge_client_fingerprint_path
-    if args.my_merge_force_candidate:
-        cfg['my_merge_force_candidate'] = args.my_merge_force_candidate
-    cfg['my_merge_fingerprint_tau'] = args.my_merge_fingerprint_tau
-    cfg['my_merge_fingerprint_min_class_count'] = args.my_merge_fingerprint_min_class_count
     if args.my_merge_prototype_root:
         cfg['my_merge_prototype_root'] = args.my_merge_prototype_root
-    cfg['my_merge_class_count_power'] = args.my_merge_class_count_power
     cfg['my_merge_proto_count_power'] = args.my_merge_proto_count_power
-    cfg['my_merge_proto_calibration_steps'] = args.my_merge_proto_calibration_steps
-    cfg['my_merge_proto_head_blend'] = args.my_merge_proto_head_blend
-    cfg['my_merge_proto_prior_tau'] = args.my_merge_proto_prior_tau
-    cfg['my_merge_prior_bias_tau'] = args.my_merge_prior_bias_tau
-    cfg['my_merge_confidence_bias_tau'] = args.my_merge_confidence_bias_tau
-    cfg['my_merge_head_norm_gamma'] = args.my_merge_head_norm_gamma
-    cfg['my_merge_use_prototype_calibration'] = args.my_merge_use_prototype_calibration
-    cfg['my_merge_sensitivity_gamma'] = args.my_merge_sensitivity_gamma
-    cfg['my_merge_sensitivity_floor'] = args.my_merge_sensitivity_floor
-    cfg['my_merge_sensitivity_cap'] = args.my_merge_sensitivity_cap
     cfg['my_merge_reference_head_mode'] = args.my_merge_reference_head_mode
     cfg['my_merge_reference_head_scale'] = args.my_merge_reference_head_scale
-    cfg['my_merge_reference_prior_tau'] = args.my_merge_reference_prior_tau
     cfg['my_merge_reference_prior_threshold'] = args.my_merge_reference_prior_threshold
     cfg['my_merge_reference_prior_max_tau'] = args.my_merge_reference_prior_max_tau
     cfg['my_merge_reference_prior_saturation'] = args.my_merge_reference_prior_saturation
+    cfg['my_merge_ablation_mode'] = args.my_merge_ablation_mode
     if item['task_type'] == 'small':
         cfg['model'] = item['model']
         cfg['batch_size'] = args.small_batch_size

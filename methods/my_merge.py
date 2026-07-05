@@ -6,6 +6,7 @@ import torch.nn.functional as F
 
 from utils.runtime import build_reference_bundle
 from utils.hub import beta_to_dirname
+from utils.state_dict import average_state_dicts
 
 
 EPS = 1e-8
@@ -70,18 +71,14 @@ def _client_class_matrix(meta, client_stats=None):
             row.fill_(num_samples / float(max(1, num_classes)))
         rows.append(row)
         supports.append(num_samples)
-        uploaded_recall = _uploaded_client_value(client_stats, idx, "class_recall")
-        if isinstance(uploaded_recall, (list, tuple)) and len(uploaded_recall) == num_classes:
-            reliability_row = torch.tensor([float(x) for x in uploaded_recall], dtype=torch.float32).clamp(0.05, 1.0)
+        val_acc = client.get("best_val_acc", None)
+        if val_acc is None:
+            reliability = 1.0
         else:
-            val_acc = client.get("best_val_acc", None)
-            if val_acc is None:
-                reliability = 1.0
-            else:
-                random_prior = 1.0 / float(max(1, len(seen) or num_classes))
-                score = (float(val_acc) - random_prior) / max(1.0 - random_prior, EPS)
-                reliability = max(0.05, score + 0.20)
-            reliability_row = torch.full((num_classes,), float(reliability), dtype=torch.float32)
+            random_prior = 1.0 / float(max(1, len(seen) or num_classes))
+            score = (float(val_acc) - random_prior) / max(1.0 - random_prior, EPS)
+            reliability = max(0.05, score + 0.20)
+        reliability_row = torch.full((num_classes,), float(reliability), dtype=torch.float32)
         reliability_rows.append(reliability_row)
 
     if not rows:
@@ -240,151 +237,6 @@ def _merge_running_var(key, state_dicts, weights, merged):
     return out.clamp_min(0.0).to(dtype=values[0].dtype)
 
 
-def _client_parameter_sensitivity(client_stats, idx, key):
-    if not client_stats:
-        return None
-    clients = client_stats.get("clients", [])
-    if idx >= len(clients):
-        return None
-    sensitivity = clients[idx].get("parameter_sensitivity")
-    if not isinstance(sensitivity, dict):
-        return None
-    return sensitivity.get(key)
-
-
-def _has_parameter_sensitivity(client_stats, state_dicts):
-    if not client_stats or not state_dicts:
-        return False
-    for idx in range(len(state_dicts)):
-        clients = client_stats.get("clients", [])
-        if idx < len(clients) and isinstance(clients[idx].get("parameter_sensitivity"), dict):
-            return True
-    return False
-
-
-def _sensitivity_client_scales(client_stats, num_clients):
-    scales = []
-    for idx in range(num_clients):
-        clients = client_stats.get("clients", []) if client_stats else []
-        sensitivity = clients[idx].get("parameter_sensitivity") if idx < len(clients) else None
-        if not isinstance(sensitivity, dict) or not sensitivity:
-            scales.append(1.0)
-            continue
-        means = []
-        for value in sensitivity.values():
-            tensor = torch.as_tensor(value, dtype=torch.float32)
-            if tensor.numel() > 0 and torch.isfinite(tensor).any():
-                means.append(tensor.clamp_min(0.0).mean())
-        if not means:
-            scales.append(1.0)
-            continue
-        mean_sensitivity = torch.stack(means).mean().clamp_min(EPS)
-        scales.append(float((1.0 / mean_sensitivity).item()))
-    scale = torch.tensor(scales, dtype=torch.float32)
-    scale = scale / scale.mean().clamp_min(EPS)
-    return scale.clamp(0.05, 20.0)
-
-
-def _merge_sensitivity_tensor(key, state_dicts, weights, client_stats, sensitivity_scales, cfg):
-    first = state_dicts[0][key]
-    gamma = float(cfg.get("my_merge_sensitivity_gamma", 0.50))
-    floor = float(cfg.get("my_merge_sensitivity_floor", 1e-5))
-    cap = float(cfg.get("my_merge_sensitivity_cap", 25.0))
-    numerator = torch.zeros_like(first.detach().cpu().float())
-    denominator = torch.zeros_like(numerator)
-    used = 0
-    for idx, state_dict in enumerate(state_dicts):
-        raw = _client_parameter_sensitivity(client_stats, idx, key)
-        if raw is None:
-            continue
-        sensitivity = torch.as_tensor(raw, dtype=torch.float32)
-        if tuple(sensitivity.shape) != tuple(first.shape):
-            continue
-        coeff = (sensitivity.clamp_min(0.0) * float(sensitivity_scales[idx])).pow(gamma)
-        if cap > 0:
-            positive = coeff[coeff > 0]
-            if positive.numel() > 0:
-                coeff = coeff.clamp_max(positive.median().clamp_min(EPS) * cap)
-        coeff = coeff + floor * float(weights[idx])
-        numerator.add_(coeff * state_dict[key].detach().cpu().float())
-        denominator.add_(coeff)
-        used += 1
-    if used == 0:
-        return None, 0
-    out = torch.zeros_like(numerator)
-    valid = denominator > 0
-    out[valid] = numerator[valid] / denominator[valid]
-    if (~valid).any():
-        out[~valid] = _weighted_tensor([sd[key] for sd in state_dicts], weights).float()[~valid]
-    return out.to(dtype=first.dtype), used
-
-
-def _merge_state_dicts_with_sensitivity(state_dicts, base_state, stats, meta, cfg, client_stats):
-    num_classes = int(meta["num_classes"])
-    client_weights = stats["client_weights"]
-    class_weights = stats["class_weights"]
-    sample_weights = stats["sample_weights"]
-    class_prior = stats["class_prior"]
-    sensitivity_scales = _sensitivity_client_scales(client_stats, len(state_dicts))
-    state = OrderedDict()
-    sensitivity_keys = []
-    fallback_keys = []
-    classifier_keys = []
-    bn_mean_keys = []
-    bn_var_keys = []
-
-    for key, first in state_dicts[0].items():
-        if not torch.is_floating_point(first):
-            if key.endswith("num_batches_tracked"):
-                state[key] = torch.stack([sd[key].detach().cpu() for sd in state_dicts]).max(dim=0).values
-            else:
-                state[key] = first.detach().cpu().clone()
-            continue
-        if key.endswith("running_mean"):
-            values = [sd[key] for sd in state_dicts]
-            state[key] = _weighted_tensor(values, client_weights).to(dtype=first.dtype)
-            bn_mean_keys.append(key)
-            continue
-        if key.endswith("running_var"):
-            bn_var_keys.append(key)
-            continue
-
-        merged_tensor, used = _merge_sensitivity_tensor(
-            key, state_dicts, client_weights, client_stats, sensitivity_scales, cfg
-        )
-        if merged_tensor is not None:
-            state[key] = merged_tensor
-            sensitivity_keys.append(key)
-            if _is_classifier_tensor(key, first, num_classes):
-                classifier_keys.append(key)
-            continue
-
-        fallback_keys.append(key)
-        if _is_classifier_tensor(key, first, num_classes):
-            state[key] = _merge_classifier_task_tensor(key, state_dicts, base_state, class_weights, class_prior, cfg)
-            classifier_keys.append(key)
-        else:
-            state[key] = _merge_task_tensor(key, state_dicts, base_state, client_weights, cfg)
-
-    for key in bn_var_keys:
-        state[key] = _merge_running_var(key, state_dicts, client_weights, state)
-
-    return state, {
-        "classifier_keys": classifier_keys,
-        "bn_running_mean_keys": bn_mean_keys,
-        "bn_running_var_keys": bn_var_keys,
-        "sensitivity_keys": sensitivity_keys,
-        "sensitivity_key_count": int(len(sensitivity_keys)),
-        "fallback_key_count": int(len(fallback_keys)),
-        "sensitivity_client_scales": [float(x) for x in sensitivity_scales.tolist()],
-        "client_weights": [float(x) for x in client_weights.tolist()],
-        "sample_weights": [float(x) for x in sample_weights.tolist()],
-        "class_prior": [float(x) for x in class_prior.tolist()],
-        "class_weights": [[float(v) for v in row] for row in class_weights.tolist()],
-        "client_reliability": [float(x) for x in stats["reliability"].tolist()],
-    }
-
-
 def _prototype_stats_path(meta, cfg):
     direct = (
         cfg.get("my_merge_prototype_stats_path")
@@ -452,14 +304,8 @@ def _global_prototypes(proto_stats, meta, stats, cfg):
     counts = _stack_client_stat(proto_stats, "class_counts", num_clients, num_classes)
     if float(counts.sum().item()) <= 0:
         counts = stats["class_counts"]
-    reliability = _stack_client_stat(proto_stats, "class_recall", num_clients, num_classes)
-    if float(reliability.sum().item()) <= 0:
-        reliability = stats["reliability"].view(-1, 1).expand_as(counts)
-    reliability = reliability.clamp_min(0.05)
-
     rho = float(cfg.get("my_merge_proto_count_power", 0.45))
-    eta = float(cfg.get("my_merge_proto_reliability_power", 0.30))
-    evidence = (counts + 1.0).pow(rho) * reliability.pow(eta)
+    evidence = (counts + 1.0).pow(rho)
     evidence = evidence * (counts > 0).to(evidence.dtype)
     weights = evidence / evidence.sum(dim=0, keepdim=True).clamp_min(EPS)
     prototypes = (means * weights.unsqueeze(-1)).sum(dim=0)
@@ -496,6 +342,55 @@ def _is_reference_prototype_stats(client_stats):
     return isinstance(client_stats, dict) and client_stats.get("feature_space") == "reference_model"
 
 
+def _reference_prior_tau(class_prior, num_classes, cfg):
+    imbalance_ratio = float((class_prior.max() * float(num_classes)).item())
+    threshold = float(cfg.get("my_merge_reference_prior_threshold", 2.5))
+    max_tau = float(cfg.get("my_merge_reference_prior_max_tau", 6.0))
+    saturation = float(cfg.get("my_merge_reference_prior_saturation", 3.0))
+    if imbalance_ratio <= threshold or max_tau <= 0:
+        return 0.0, imbalance_ratio
+
+    denom = torch.log(torch.tensor(max(saturation / threshold, 1.0001))).item()
+    ratio = torch.log(torch.tensor(max(imbalance_ratio / threshold, 1.0))).item()
+    prior_tau = max_tau * max(0.0, min(1.0, ratio / max(denom, EPS)))
+    return prior_tau, imbalance_ratio
+
+
+def _apply_prevalence_bias(state, meta, class_counts, cfg, *, enabled=True):
+    num_classes = int(meta["num_classes"])
+    weight_key, bias_key = _classifier_pair(state, num_classes)
+    class_counts = class_counts.detach().cpu().float().clamp_min(0.0)
+    class_prior = class_counts / class_counts.sum().clamp_min(EPS)
+    prior_tau, imbalance_ratio = _reference_prior_tau(class_prior, num_classes, cfg)
+    if not enabled:
+        prior_tau = 0.0
+
+    trace = {
+        "used": bool(prior_tau != 0.0 and bias_key is not None),
+        "weight_key": weight_key,
+        "bias_key": bias_key,
+        "prior_tau": float(prior_tau),
+        "imbalance_ratio": float(imbalance_ratio),
+        "class_counts": [float(x) for x in class_counts.tolist()],
+        "class_prior": [float(x) for x in class_prior.tolist()],
+    }
+    if weight_key is None:
+        trace.update({"used": False, "reason": "classifier_weight_not_found"})
+        return trace
+    if bias_key is None:
+        trace.update({"used": False, "reason": "classifier_bias_not_found"})
+        return trace
+    if prior_tau == 0.0:
+        trace.update({"used": False, "reason": "balanced_or_disabled"})
+        return trace
+
+    centered_log_prior = torch.log(class_prior.clamp_min(EPS))
+    centered_log_prior = centered_log_prior - centered_log_prior.mean()
+    bias = state[bias_key].detach().cpu().float()
+    state[bias_key] = (bias + prior_tau * centered_log_prior).to(dtype=state[bias_key].dtype)
+    return trace
+
+
 def _merge_reference_prototype_model(base_state, proto_stats, meta, stats, cfg):
     proto = _global_prototypes(proto_stats, meta, stats, cfg)
     if proto is None:
@@ -519,19 +414,12 @@ def _merge_reference_prototype_model(base_state, proto_stats, meta, stats, cfg):
 
     mode = str(cfg.get("my_merge_reference_head_mode", "cosine")).lower()
     scale = float(cfg.get("my_merge_reference_head_scale", 20.0))
-    prior_tau = float(cfg.get("my_merge_reference_prior_tau", -1.0))
     class_prior = proto["class_counts"] / proto["class_counts"].sum().clamp_min(EPS)
-    imbalance_ratio = float((class_prior.max() * float(num_classes)).item())
-    if prior_tau < 0:
-        threshold = float(cfg.get("my_merge_reference_prior_threshold", 2.5))
-        max_tau = float(cfg.get("my_merge_reference_prior_max_tau", 6.0))
-        saturation = float(cfg.get("my_merge_reference_prior_saturation", 3.0))
-        if imbalance_ratio <= threshold:
-            prior_tau = 0.0
-        else:
-            denom = torch.log(torch.tensor(max(saturation / threshold, 1.0001))).item()
-            ratio = torch.log(torch.tensor(max(imbalance_ratio / threshold, 1.0))).item()
-            prior_tau = max_tau * max(0.0, min(1.0, ratio / max(denom, EPS)))
+    ablation_mode = str(cfg.get("my_merge_ablation_mode", "full")).lower()
+    prior_enabled = ablation_mode != "m1_only"
+    prior_tau, imbalance_ratio = _reference_prior_tau(class_prior, num_classes, cfg)
+    if not prior_enabled:
+        prior_tau = 0.0
 
     if mode == "euclidean":
         head_weight = 2.0 * prototypes
@@ -564,10 +452,23 @@ def _merge_reference_prototype_model(base_state, proto_stats, meta, stats, cfg):
         "head_mode": mode,
         "head_scale": scale,
         "prior_tau": prior_tau,
+        "prior_enabled": prior_enabled,
         "imbalance_ratio": imbalance_ratio,
         "class_counts": [float(x) for x in proto["class_counts"].tolist()],
         "prototype_class_counts": [float(x) for x in proto["prototype_class_counts"].tolist()],
         "prototype_weights": [[float(v) for v in row] for row in proto["prototype_weights"].tolist()],
+    }
+
+
+def _merge_avg_with_prevalence_bias(state_dicts, weights, meta, stats, cfg):
+    merged, normalized_weights = average_state_dicts(state_dicts, weights)
+    merged = OrderedDict((key, value.detach().cpu().clone()) for key, value in merged.items())
+    prevalence_trace = _apply_prevalence_bias(merged, meta, stats["class_counts"].sum(dim=0), cfg, enabled=True)
+    return merged, {
+        "avg_weights": [float(x) for x in normalized_weights],
+        "prevalence_bias": prevalence_trace,
+        "class_prior": [float(x) for x in stats["class_prior"].tolist()],
+        "class_counts": [[float(v) for v in row] for row in stats["class_counts"].tolist()],
     }
 
 
@@ -623,75 +524,6 @@ def _apply_anti_collapse_head_correction(state, meta, stats, cfg):
         "head_norm_clip": [norm_min, norm_max],
         "class_prior": [float(x) for x in class_prior.tolist()],
         "row_scale": [float(x) for x in scale.tolist()],
-    }
-
-
-def _calibrate_classifier_with_prototypes(state, proto_stats, meta, stats, cfg):
-    proto = _global_prototypes(proto_stats, meta, stats, cfg)
-    if proto is None:
-        return {"used": False, "reason": "missing_or_invalid_prototypes"}
-    num_classes = int(meta["num_classes"])
-    weight_key, bias_key = _classifier_pair(state, num_classes)
-    if weight_key is None or bias_key is None:
-        return {"used": False, "reason": "classifier_pair_not_found"}
-
-    weight0 = state[weight_key].detach().cpu().float()
-    bias0 = state[bias_key].detach().cpu().float()
-    prototypes = proto["prototypes"].detach().cpu().float()
-    valid = proto["valid"].detach().cpu().bool()
-    if prototypes.ndim != 2 or prototypes.shape[0] != num_classes or prototypes.shape[1] != weight0.shape[1] or int(valid.sum()) < 2:
-        return {
-            "used": False,
-            "reason": "prototype_classifier_shape_mismatch",
-            "prototype_shape": list(prototypes.shape),
-            "classifier_shape": list(weight0.shape),
-        }
-
-    steps = int(cfg.get("my_merge_proto_calibration_steps", 120))
-    lr = float(cfg.get("my_merge_proto_calibration_lr", 0.05))
-    l2 = float(cfg.get("my_merge_proto_calibration_l2", 0.05))
-    collapse = float(cfg.get("my_merge_proto_collapse_weight", 0.10))
-    blend = float(cfg.get("my_merge_proto_head_blend", 0.70))
-    prior_tau = float(cfg.get("my_merge_proto_prior_tau", 0.20))
-
-    x = prototypes[valid]
-    y = torch.arange(num_classes, dtype=torch.long)[valid]
-    weight = weight0.clone().requires_grad_(True)
-    bias = bias0.clone().requires_grad_(True)
-    optimizer = torch.optim.Adam([weight, bias], lr=lr)
-    for _ in range(max(0, steps)):
-        logits = x @ weight.t() + bias
-        loss = F.cross_entropy(logits, y)
-        mean_prob = torch.softmax(logits, dim=1).mean(dim=0).clamp_min(EPS)
-        uniform_loss = -(torch.log(mean_prob).mean())
-        reg = (weight - weight0).square().mean() + (bias - bias0).square().mean()
-        total = loss + collapse * uniform_loss + l2 * reg
-        optimizer.zero_grad()
-        total.backward()
-        optimizer.step()
-
-    with torch.no_grad():
-        calibrated_weight = (1.0 - blend) * weight0 + blend * weight.detach()
-        calibrated_bias = (1.0 - blend) * bias0 + blend * bias.detach()
-        class_prior = proto["class_counts"] / proto["class_counts"].sum().clamp_min(EPS)
-        centered_log_prior = torch.log(class_prior.clamp_min(EPS))
-        centered_log_prior = centered_log_prior - centered_log_prior.mean()
-        calibrated_bias = calibrated_bias - prior_tau * centered_log_prior
-        state[weight_key] = calibrated_weight.to(dtype=state[weight_key].dtype)
-        state[bias_key] = calibrated_bias.to(dtype=state[bias_key].dtype)
-
-    return {
-        "used": True,
-        "weight_key": weight_key,
-        "bias_key": bias_key,
-        "valid_classes": int(valid.sum().item()),
-        "steps": steps,
-        "lr": lr,
-        "l2": l2,
-        "collapse_weight": collapse,
-        "head_blend": blend,
-        "prior_tau": prior_tau,
-        "count_power": float(cfg.get("my_merge_proto_count_power", 0.45)),
     }
 
 
@@ -770,6 +602,41 @@ def merge_my_merge(state_dicts, weights, meta=None, checkpoints=None, cfg=None):
     cfg = cfg or {}
     client_stats, client_stats_path = _load_prototype_stats(meta, cfg)
     stats = _class_client_weights(meta, cfg, client_stats=client_stats)
+    ablation_mode = str(cfg.get("my_merge_ablation_mode", "full")).lower()
+    if ablation_mode not in {"full", "m1_only", "avg_m2"}:
+        raise ValueError(f"Unsupported my_merge_ablation_mode: {ablation_mode}")
+
+    if ablation_mode == "avg_m2":
+        merged, trace = _merge_avg_with_prevalence_bias(state_dicts, weights, meta, stats, cfg)
+        fusion_rule = "avg_plus_prevalence_bias_ablation"
+        trace["reference_prototype_head"] = {"used": False, "reason": "avg_m2_ablation"}
+        trace["anti_collapse_head"] = {"used": False, "reason": "not_used_by_two_module_ablation"}
+        trace["client_stats_path"] = client_stats_path
+        return merged, {
+            "implementation": "diagnostic_prototype_merge_v1",
+            "ablation_mode": ablation_mode,
+            "medical_only": True,
+            "fusion_rule": fusion_rule,
+            "privacy": {
+                "server_reads_private_images": False,
+                "uses_public_probe": False,
+                "uses_candidate_selection": False,
+                "client_uploads": [
+                    "checkpoint",
+                    "effective_class_support_counts",
+                ],
+            },
+            "modules": {
+                "M1": "disabled for ablation",
+                "M2": "server calibrates the averaged classifier with the uploaded class prevalence",
+            },
+            "modality": meta.get("dataset"),
+            "num_clients": int(len(state_dicts)),
+            "base_input_weights": [float(x) for x in weights],
+            "client_medical_evidence": _client_rows(meta, stats),
+            **trace,
+        }
+
     base_state, _ = build_reference_bundle(meta, device="cpu")
     reference_trace = None
     if _is_reference_prototype_stats(client_stats):
@@ -789,9 +656,6 @@ def merge_my_merge(state_dicts, weights, meta=None, checkpoints=None, cfg=None):
             merged, trace = _merge_state_dicts(state_dicts, base_state, stats, meta, cfg)
             trace["reference_prototype_head"] = reference_trace
             fusion_rule = "single_checkpoint_source_confidence_signed_task_merge"
-    elif _has_parameter_sensitivity(client_stats, state_dicts):
-        merged, trace = _merge_state_dicts_with_sensitivity(state_dicts, base_state, stats, meta, cfg, client_stats)
-        fusion_rule = "single_checkpoint_class_balanced_sensitivity_merge"
     else:
         merged, trace = _merge_state_dicts(state_dicts, base_state, stats, meta, cfg)
         fusion_rule = "single_checkpoint_source_confidence_signed_task_merge"
@@ -800,14 +664,9 @@ def merge_my_merge(state_dicts, weights, meta=None, checkpoints=None, cfg=None):
     else:
         trace["anti_collapse_head"] = _apply_anti_collapse_head_correction(merged, meta, stats, cfg)
     trace["client_stats_path"] = client_stats_path
-    if client_stats is not None and bool(cfg.get("my_merge_use_prototype_calibration", False)):
-        trace["prototype_calibration"] = _calibrate_classifier_with_prototypes(merged, client_stats, meta, stats, cfg)
-        trace["prototype_stats_path"] = client_stats_path
-    else:
-        reason = "disabled" if client_stats is not None else "no_client_stats"
-        trace["prototype_calibration"] = {"used": False, "reason": reason}
     return merged, {
-        "implementation": "reference_prototype_anti_collapse_medical_merge_v5",
+        "implementation": "diagnostic_prototype_merge_v1",
+        "ablation_mode": ablation_mode,
         "medical_only": True,
         "fusion_rule": fusion_rule,
         "privacy": {
@@ -817,7 +676,6 @@ def merge_my_merge(state_dicts, weights, meta=None, checkpoints=None, cfg=None):
             "client_uploads": [
                 "checkpoint",
                 "effective_class_support_counts",
-                "local_class_recall_statistics",
                 "reference_backbone_class_prototypes",
             ],
         },
