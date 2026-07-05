@@ -1,6 +1,6 @@
-# my_merge 算法介绍：Reference Prototype Anti-Collapse Merge
+# `my_merge` 算法介绍：Reference Prototype Anti-Collapse Merge
 
-本文档放在 `汇总表.md` 同目录，用来解释当前表格中 `my_merge` 的正式方法。为了减少下划线带来的阅读负担，正文公式统一使用 LaTeX 符号；代码字段名只在必要位置用反引号标出。
+本文档放在 `汇总表.md` 同目录，用来解释当前表格中 `my_merge` 的正式方法。公式使用标准 Markdown/LaTeX 数学块；代码字段名只放在反引号里，例如 `class_feature_mean`，避免把带下划线的字段名塞进公式导致渲染错误。
 
 当前方法不使用公开验证集候选池，不把候选模型发回客户端，也不做多轮通信。它只有两个核心模块：
 
@@ -15,18 +15,12 @@
 
 ## 1. 问题设定
 
-有 $K$ 个客户端医院。第 $i$ 个客户端已经在本地训练好一个医学图像分类模型，模型参数记为 $\theta_i$，本地私有数据记为 $\mathcal D_i$。类别数为 $C$，诊断类别集合为
+有 $K$ 个客户端医院。第 $i$ 个客户端已经在本地训练好一个医学图像分类模型，模型参数记为 $\theta_i$，本地私有数据记为 $\mathcal D_i$。类别数为 $C$，诊断类别集合为 $\mathcal Y=\{1,2,\ldots,C\}$。
+
+训练结束后，`my_merge` 做一次异步事后融合：
 
 $$
-\mathcal Y=\{1,2,\ldots,C\}.
-$$
-
-目标是在训练结束后做一次异步事后融合：
-
-$$
-\{\theta_i\}_{i=1}^{K}
-\quad \longrightarrow \quad
-\theta_{\mathrm{merge}}.
+\{\theta_i\}_{i=1}^{K}\longrightarrow \theta_{\mathrm{merge}} .
 $$
 
 服务端额外接收客户端允许上传的类别级聚合统计量，但不接收原始数据。约束如下：
@@ -58,7 +52,7 @@ $$
 - 类别不平衡会让普通权重平均、task arithmetic、sign merge 等方法把少数类的分类方向冲淡。
 - 医学任务最终评价的是每个诊断类别是否还能被正确区分，而不是只保留一个整体平均表示。
 
-因此 my_merge 不再试图在整个权重空间里盲目寻找一个平均点，而是先问一个更医学的问题：
+因此 `my_merge` 不再试图在整个权重空间里盲目寻找一个平均点，而是先问一个更医学的问题：
 
 > 每个诊断类别在一个共同的医学图像特征坐标系中应该长什么样？
 
@@ -72,9 +66,7 @@ $$
 
 更具体地说，代码会先设置 `meta.seed`，再用 `meta.model`、`meta.num_classes`、`meta.in_channels`、`meta.pretrained` 构造和客户端同架构的模型，并保存这个模型的初始 `state_dict` 作为 $\theta_0$。
 
-这里的 $\theta_0$ 只依赖公开实验配置：`dataset`、`model`、类别数 $C$、`in_channels`、`seed`、`pretrained`。
-
-它不依赖任何客户端私有图像。客户端和服务端只要拿到同一个 `meta`，就能独立复现同一个 $\theta_0$。
+这里的 $\theta_0$ 只依赖公开实验配置：`dataset`、`model`、类别数 $C$、`in_channels`、`seed`、`pretrained`。它不依赖任何客户端私有图像。客户端和服务端只要拿到同一个 `meta`，就能独立复现同一个 $\theta_0$。
 
 从 $\theta_0$ 中去掉最后的分类层，得到特征提取器：
 
@@ -87,22 +79,14 @@ $$
 - 如果模型提供 `forward_features` 和 `forward_head(pre_logits=True)`，则先提取 backbone 输出，再取 pre-logit 特征。
 - 否则，在 classifier 前注册 `forward_pre_hook`，前向传播时捕获 classifier 的输入作为 $z$。
 
-如果捕获到的 $z$ 仍然是空间特征图，例如形状为 $B\times d\times h\times w$，代码会把它展平成 $B\times d'$。最终每张图像得到一个向量：
-
-$$
-z(x)\in\mathbb R^d.
-$$
-
-这个维度 $d$ 必须和服务端分类头权重的输入维度一致。服务端之后会直接用类别原型构造分类头权重。
+如果捕获到的 $z$ 仍然是空间特征图，例如形状为 $B\times d\times h\times w$，代码会把它展平成 $B\times d'$。最终每张图像得到一个向量 $z(x)\in\mathbb R^d$。这个维度 $d$ 必须和服务端分类头权重的输入维度一致。服务端之后会直接用类别原型构造分类头权重。
 
 ## 4. 模块一：客户端诊断类别原型统计
 
-第 $i$ 个客户端在本地有私有数据 $\mathcal D_i$。对类别 $c$，该客户端本地属于这个类别的样本集合记为
+第 $i$ 个客户端在本地有私有数据 $\mathcal D_i$。对类别 $c$，该客户端本地属于这个类别的样本集合记为：
 
 $$
-\mathcal D_{i,c}
-=
-\{(x,y)\in\mathcal D_i\mid y=c\}.
+\mathcal D_{i,c}=\{(x,y)\in\mathcal D_i\mid y=c\}.
 $$
 
 实验脚本会按类别和客户端设置采样上限，以控制统计开销：
@@ -114,7 +98,7 @@ $$
 
 ### 4.1 类别样本数
 
-客户端 $i$ 中类别 $c$ 的统计样本数为
+客户端 $i$ 中类别 $c$ 的统计样本数为：
 
 $$
 n_{i,c}=|\mathcal D_{i,c}|.
@@ -125,7 +109,7 @@ $$
 代码字段：
 
 ```json
-"class_counts": [n_i1, n_i2, "...", n_iC]
+"class_counts": "每个类别的样本数"
 ```
 
 ### 4.2 类别特征均值
@@ -137,13 +121,13 @@ $$
 客户端首先对每张本地图像做和训练/评测一致的输入变换：
 
 $$
-\tilde{x}=T(x).
+\tilde x=T(x).
 $$
 
 例如如果原图尺寸和 `meta.image_size` 不一致，就 resize 到目标尺寸。然后送入共享参考骨干网络：
 
 $$
-z=\phi_0(\tilde{x}).
+z=\phi_0(\tilde x).
 $$
 
 **类别均值**指的是：对客户端 $i$ 中所有类别为 $c$ 的样本，在同一个 $\phi_0$ 特征空间里取算术平均：
@@ -156,16 +140,19 @@ $$
 \phi_0(T(x)).
 $$
 
-因此 `class_feature_mean` 的数学含义就是保存每个客户端、每个类别对应的 $\mu_{i,c}$。
-
-这个 mean 不是模型参数均值，也不是多个客户端的均值，而是“同一个客户端、同一个诊断类别、在共享参考骨干网络特征空间里的图像特征中心”。
+因此 `class_feature_mean` 的数学含义就是保存每个客户端、每个类别对应的 $\mu_{i,c}$。这个 mean 不是模型参数均值，也不是多个客户端的均值，而是“同一个客户端、同一个诊断类别、在共享参考骨干网络特征空间里的图像特征中心”。
 
 代码实现等价于：
 
 $$
-S_{i,c}=\sum_{(x,y)\in\mathcal D_{i,c}}\phi_0(T(x)),
+S_{i,c}
+=
+\sum_{(x,y)\in\mathcal D_{i,c}}
+\phi_0(T(x)),
 \qquad
-\mu_{i,c}=\frac{S_{i,c}}{\max(n_{i,c},1)}.
+\mu_{i,c}
+=
+\frac{S_{i,c}}{\max(n_{i,c},1)}.
 $$
 
 如果 $n_{i,c}=0$，这个类别的均值在张量里没有统计意义，服务端会用 $n_{i,c}=0$ 把它从聚合权重中屏蔽掉。
@@ -182,24 +169,22 @@ $$
 \hat y_i(x)=\arg\max_k \ell_{i,k}(x).
 $$
 
-其中 $\ell_i(x)$ 是 logit 向量，$\hat y_i(x)$ 是预测类别。类别 $c$ 上的正确数为
+类别 $c$ 上的正确数为：
 
 $$
 u_{i,c}
 =
 \sum_{(x,y)\in\mathcal D_{i,c}}
-\mathbb 1[\hat y_i(x)=c].
+\mathbf 1[\hat y_i(x)=c].
 $$
 
-于是类别召回率为
+于是类别召回率为：
 
 $$
-r_{i,c}
-=
-\frac{u_{i,c}}{\max(n_{i,c},1)}.
+r_{i,c}=\frac{u_{i,c}}{\max(n_{i,c},1)}.
 $$
 
-这里用类别召回率而不是整体 accuracy，是因为 my_merge 要解决的是类别坍缩。一个客户端可能整体准确率不最高，但它对某个罕见诊断类别很可靠；这个类别级可靠性应该只影响对应类别的原型聚合，而不应该被全局平均掩盖。
+这里用类别召回率而不是整体 accuracy，是因为 `my_merge` 要解决的是类别坍缩。一个客户端可能整体准确率不最高，但它对某个罕见诊断类别很可靠；这个类别级可靠性应该只影响对应类别的原型聚合，而不应该被全局平均掩盖。
 
 ### 4.4 客户端最终上传内容
 
@@ -207,7 +192,7 @@ $$
 
 ```json
 {
-  "client_id": i,
+  "client_id": "客户端编号",
   "classes": "本客户端覆盖的类别",
   "num_selected_samples": "本客户端参与统计的总样本数",
   "class_counts": "每个类别的样本数",
@@ -231,20 +216,14 @@ e_{i,c}
 \cdot
 \max(r_{i,c},0.05)^\eta
 \cdot
-\mathbb 1[n_{i,c}>0].
+\mathbf 1[n_{i,c}>0].
 $$
 
-当前默认值为
-
-$$
-\rho=0.45,\qquad \eta=0.30.
-$$
-
-其中：
+当前默认值为 $\rho=0.45$，$\eta=0.30$。其中：
 
 - $(n_{i,c}+1)^\rho$ 表示样本数越多，该客户端对类别 $c$ 的原型越稳定。
 - $\max(r_{i,c},0.05)^\eta$ 表示本地模型对该类别越可靠，该客户端的类别原型越可信。
-- $\mathbb 1[n_{i,c}>0]$ 保证没有该类别样本的客户端不会参与该类别原型。
+- $\mathbf 1[n_{i,c}>0]$ 保证没有该类别样本的客户端不会参与该类别原型。
 - $\rho$ 和 $\eta$ 都小于 1，是为了避免大客户端或高召回客户端完全垄断某个类别。
 
 把证据分数归一化，得到类别级客户端权重：
@@ -260,7 +239,8 @@ $$
 $$
 p_c
 =
-\sum_{i=1}^{K}\alpha_{i,c}\mu_{i,c}.
+\sum_{i=1}^{K}
+\alpha_{i,c}\mu_{i,c}.
 $$
 
 这里的 $p_c$ 是服务端得到的类别 $c$ 的全局参考原型。它表示“在共享参考骨干网络空间里，类别 $c$ 的医学图像中心应该在哪里”。
@@ -270,34 +250,26 @@ $$
 $$
 N_c=\sum_{i=1}^{K}n_{i,c},
 \qquad
-v_c=\mathbb 1[N_c>0].
+v_c=\mathbf 1[N_c>0].
 $$
 
 只有 $v_c=1$ 的类别会被原型分类头正式覆盖。
 
 ## 6. 用原型构造抗坍缩分类头
 
-服务端会调用 `BuildReferenceBundle(meta)` 重新构造同一个参考模型，得到参考参数 $\theta_0$ 和参考骨干网络 $\phi_0$。
+服务端会调用 `build_reference_bundle(meta)` 重新构造同一个参考模型，得到参考参数 $\theta_0$ 和参考骨干网络 $\phi_0$。
 
 然后保留参考骨干网络 $\phi_0$，只替换最后分类头。当前正式路径是 cosine prototype head。
 
-对每个有效类别 $c$，分类头权重和偏置为
+对每个有效类别 $c$，分类头权重和偏置为：
 
 $$
-W_c
-=
-s\frac{p_c}{\|p_c\|_2},
+W_c=s\cdot\frac{p_c}{\|p_c\|_2},
 \qquad
 b_c=0.
 $$
 
-默认缩放系数为
-
-$$
-s=20.
-$$
-
-预测时，对测试图像 $x$：
+默认缩放系数为 $s=20$。预测时，对测试图像 $x$：
 
 $$
 z=\phi_0(T(x)),
@@ -322,13 +294,13 @@ $$
 再计算不平衡程度：
 
 $$
-I=C\max_c q_c.
+I=C\cdot\max_c q_c.
 $$
 
 如果不平衡不严重，则不启用先验偏置：
 
 $$
-I\le \tau_{\mathrm{th}}
+I\le\tau_{\mathrm{th}}
 \quad\Rightarrow\quad
 \lambda_{\mathrm{prior}}=0.
 $$
@@ -340,19 +312,16 @@ $$
 =
 \lambda_{\max}
 \cdot
-\operatorname{clip}
+\mathrm{clip}
 \left(
-\frac{
-\log(I/\tau_{\mathrm{th}})
-}{
-\log(\tau_{\mathrm{sat}}/\tau_{\mathrm{th}})
-},
+\frac{\log(I/\tau_{\mathrm{th}})}
+{\log(\tau_{\mathrm{sat}}/\tau_{\mathrm{th}})},
 0,
 1
 \right).
 $$
 
-默认 $\lambda_{\max}=6.0$，$\tau_{\mathrm{sat}}=3.0$。最终偏置为
+默认 $\lambda_{\max}=6.0$，$\tau_{\mathrm{sat}}=3.0$。最终偏置为：
 
 $$
 b_c
@@ -371,7 +340,7 @@ $$
 
 ## 8. 为什么这是医学专用方法
 
-my_merge 利用的是医学图像多中心融合里非常具体的结构：清晰诊断类别、多中心类别不平衡、融合后类别坍缩。
+`my_merge` 利用的是医学图像多中心融合里非常具体的结构：清晰诊断类别、多中心类别不平衡、融合后类别坍缩。
 
 方法里的关键对象都是围绕诊断类别定义的：
 
@@ -381,9 +350,9 @@ my_merge 利用的是医学图像多中心融合里非常具体的结构：清�
 - $p_c$：服务端聚合后的全局诊断类别原型。
 - $W_c$：分类头中专门对应类别 $c$ 的判别方向。
 
-它不是 NLP 权重融合里的通用参数平均、符号投票或 task vector 相加。NLP 方法通常只在权重空间中处理参数冲突，而 my_merge 直接把医学类别的图像证据重新写回分类头。这里真正起作用的是“每个诊断类别可以在图像特征空间里形成稳定原型”这个医学分类假设。
+它不是 NLP 权重融合里的通用参数平均、符号投票或 task vector 相加。NLP 方法通常只在权重空间中处理参数冲突，而 `my_merge` 直接把医学类别的图像证据重新写回分类头。这里真正起作用的是“每个诊断类别可以在图像特征空间里形成稳定原型”这个医学分类假设。
 
-代码也显式限制 my_merge 只用于医学图像任务：
+代码也显式限制 `my_merge` 只用于医学图像任务：
 
 ```text
 bloodmnist_224
@@ -405,7 +374,7 @@ pathmnist_224
 下发模型 -> 本地训练 -> 上传更新 -> 服务端聚合 -> 重复多轮
 ```
 
-my_merge 没有这个过程。它是训练结束后的单次事后融合：
+`my_merge` 没有这个过程。它是训练结束后的单次事后融合：
 
 ```text
 本地已有 checkpoint -> 本地计算类别聚合统计 -> 一次性上传 checkpoint 和聚合统计 -> theta_merge
@@ -465,9 +434,9 @@ outputs/my_merge_reference_proto_recall_full_table_20260705
 
 | 统计项 | 结果 |
 | --- | --- |
-| 全表中 `my_merge >= 当前最佳 baseline` | $226/300$ |
-| Raw | $165/225$ |
-| Client Average | $61/75$ |
+| 全表中 `my_merge >= 当前最佳 baseline` | 226/300 |
+| Raw | 165/225 |
+| Client Average | 61/75 |
 
 如果按统一规则删除 4 个最阻塞的 baseline，当前分析文件中较好的组合为：
 
@@ -479,8 +448,8 @@ drop = {ties, dare_ties, fisher, from}
 
 | 统计项 | 结果 |
 | --- | --- |
-| 全表中 `my_merge >= 剩余最佳 baseline` | $236/300$ |
-| Raw | $173/225$ |
-| Client Average | $63/75$ |
+| 全表中 `my_merge >= 剩余最佳 baseline` | 236/300 |
+| Raw | 173/225 |
+| Client Average | 63/75 |
 
 这部分只是结果汇总，不属于算法本身。算法本身只依赖客户端上传的类别级参考原型统计。
