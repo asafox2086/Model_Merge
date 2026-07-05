@@ -137,9 +137,11 @@ def merge_tables(base_tables, my_tables):
         rows = deepcopy(base_table["rows"])
         mine = my_tables.get(key)
         if mine and mine["rows"]:
-            my_row = mine["rows"][0]
-            if all(row["method"] != my_row["method"] for row in rows):
-                rows.append(my_row)
+            existing_methods = {row["method"] for row in rows}
+            for my_row in mine["rows"]:
+                if my_row["method"] not in existing_methods:
+                    rows.append(my_row)
+                    existing_methods.add(my_row["method"])
         merged[key] = {
             "header_lines": base_table["header_lines"],
             "footer_lines": base_table["footer_lines"],
@@ -178,7 +180,7 @@ def build_output(base_intro, merged_tables):
         "# Experiment Master Tables",
         "",
         "- Combined from `result/all_results.md` and the generated my_merge result table.",
-        "- Original values are preserved; this file only adds `my_merge` as a new row.",
+        "- Original baseline values are preserved; this file adds `my_merge` and its ablation rows.",
         "- Highlight rule: highest value in each column is `<strong>bold</strong>`, second-highest distinct value is `<ins>underlined</ins>`.",
         "",
     ]

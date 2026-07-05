@@ -50,8 +50,32 @@ def parse_args():
         nargs="+",
         help="One or more batch output roots, e.g. outputs/custom_methods_<run_tag>",
     )
+    p.add_argument(
+        "--extra-row",
+        action="append",
+        default=[],
+        metavar="LABEL=OUTPUT_ROOT",
+        help=(
+            "Append an additional row from another my_merge eval root. "
+            "Example: --extra-row M1=outputs/ablation_m1_only"
+        ),
+    )
     p.add_argument("--dest", required=True, help="Destination markdown file")
     return p.parse_args()
+
+
+def parse_extra_rows(items):
+    parsed = []
+    for item in items:
+        if "=" not in item:
+            raise SystemExit(f"--extra-row must be LABEL=OUTPUT_ROOT, got: {item}")
+        label, root = item.split("=", 1)
+        label = label.strip()
+        root = root.strip()
+        if not label or not root:
+            raise SystemExit(f"--extra-row must be LABEL=OUTPUT_ROOT, got: {item}")
+        parsed.append((label, Path(root)))
+    return parsed
 
 
 def load_eval_rows(output_roots):
@@ -123,48 +147,58 @@ def emit_header(lines, dataset_names, subheaders):
     lines.append("  <tbody>")
 
 
-def emit_single_method_row(lines, values):
-    lines.append("    <tr>")
-    lines.append("      <td>my_merge</td>")
-    for value in values:
-        lines.append(f"      <td>{fmt(value)}</td>")
-    lines.append("    </tr>")
+def emit_method_rows(lines, rows):
+    for method, values in rows:
+        lines.append("    <tr>")
+        lines.append(f"      <td>{method}</td>")
+        for value in values:
+            lines.append(f"      <td>{fmt(value)}</td>")
+        lines.append("    </tr>")
     lines.append("  </tbody>")
     lines.append("</table>")
 
 
-def build_model_section(lines, lookup, *, task_type, model_name, dataset_names, raw_headers, avg_headers):
+def build_model_section(lines, row_lookups, *, task_type, model_name, dataset_names, raw_headers, avg_headers):
     lines.append(f"### {model_name}")
     lines.append("")
     lines.append("#### Raw")
     lines.append("")
     emit_header(lines, dataset_names, raw_headers)
-    raw_values = []
-    for dataset in dataset_names:
-        for num_clients, beta, _label in SETTINGS:
-            raw_values.append(get_raw_value(lookup, task_type, dataset, model_name, num_clients, beta))
-    emit_single_method_row(lines, raw_values)
+    raw_rows = []
+    for method, lookup in row_lookups:
+        raw_values = []
+        for dataset in dataset_names:
+            for num_clients, beta, _label in SETTINGS:
+                raw_values.append(get_raw_value(lookup, task_type, dataset, model_name, num_clients, beta))
+        raw_rows.append((method, raw_values))
+    emit_method_rows(lines, raw_rows)
     lines.append("")
     lines.append("#### Client Average")
     lines.append("")
     emit_header(lines, dataset_names, avg_headers)
-    avg_values = []
-    for dataset in dataset_names:
-        for num_clients, _label in CLIENT_AVG_GROUPS:
-            avg_values.append(get_client_average(lookup, task_type, dataset, model_name, num_clients))
-    emit_single_method_row(lines, avg_values)
+    avg_rows = []
+    for method, lookup in row_lookups:
+        avg_values = []
+        for dataset in dataset_names:
+            for num_clients, _label in CLIENT_AVG_GROUPS:
+                avg_values.append(get_client_average(lookup, task_type, dataset, model_name, num_clients))
+        avg_rows.append((method, avg_values))
+    emit_method_rows(lines, avg_rows)
     lines.append("")
 
 
-def build_markdown(output_roots):
-    rows = load_eval_rows(output_roots)
-    lookup = build_lookup(rows)
+def build_markdown(output_roots, extra_rows):
+    row_lookups = [("my_merge", build_lookup(load_eval_rows(output_roots)))]
+    for label, root in extra_rows:
+        row_lookups.append((label, build_lookup(load_eval_rows([root]))))
     roots_label = ", ".join(str(root) for root in output_roots)
+    extra_label = ", ".join(f"{label}: `{root}`" for label, root in extra_rows)
     lines = [
         "# Experiment Master Tables",
         "",
         "- Layout: aligned with `result/all_results.md`.",
         f"- Source output root: `{roots_label}`.",
+        f"- Ablation rows: {extra_label if extra_label else 'none'}.",
         "- Values are filled from real `eval_summary.csv` results for `my_merge`; missing combinations are shown as `-`.",
         "",
         "## Small",
@@ -177,7 +211,7 @@ def build_markdown(output_roots):
     for model_name in SMALL_MODELS:
         build_model_section(
             lines,
-            lookup,
+            row_lookups,
             task_type="small",
             model_name=model_name,
             dataset_names=SMALL_DATASETS,
@@ -192,7 +226,7 @@ def build_markdown(output_roots):
     for model_name in VLM_MODELS:
         build_model_section(
             lines,
-            lookup,
+            row_lookups,
             task_type="vlm",
             model_name=model_name,
             dataset_names=SMALL_DATASETS,
@@ -206,8 +240,9 @@ def build_markdown(output_roots):
 def main():
     args = parse_args()
     output_roots = [Path(item) for item in args.output_root]
+    extra_rows = parse_extra_rows(args.extra_row)
     dest = Path(args.dest)
-    content = build_markdown(output_roots)
+    content = build_markdown(output_roots, extra_rows)
     dest.parent.mkdir(parents=True, exist_ok=True)
     dest.write_text(content, encoding="utf-8")
     print(f"wrote {dest}")
