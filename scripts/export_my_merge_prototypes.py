@@ -119,6 +119,24 @@ def select_client_indices(labels, classes, client_idx, max_samples, max_per_clas
     return indices
 
 
+def client_prevalence_counts(labels, classes, num_classes, num_samples=None):
+    counts = np.bincount(np.asarray(labels).reshape(-1).astype(np.int64), minlength=num_classes)
+    out = np.zeros(num_classes, dtype=np.int64)
+    for cls in classes:
+        cls = int(cls)
+        if 0 <= cls < num_classes:
+            out[cls] = int(counts[cls])
+    if num_samples is not None and out.sum() > 0:
+        scaled = out.astype(np.float64) * (float(num_samples) / float(out.sum()))
+        rounded = np.floor(scaled).astype(np.int64)
+        remainder = int(num_samples) - int(rounded.sum())
+        if remainder > 0:
+            order = np.argsort(-(scaled - rounded))
+            rounded[order[:remainder]] += 1
+        out = rounded
+    return out
+
+
 def extract_features(model, x):
     if hasattr(model, "forward_features") and hasattr(model, "forward_head"):
         z = model.forward_features(x)
@@ -179,6 +197,12 @@ def export_one(meta_path, args):
 
     for client_idx, client in enumerate(meta.get("clients", [])):
         classes = [int(c) for c in client.get("classes", [])]
+        prevalence_counts = client_prevalence_counts(
+            labels,
+            classes,
+            int(meta["num_classes"]),
+            num_samples=int(client.get("num_samples", 0) or 0),
+        )
         indices = select_client_indices(
             labels,
             classes,
@@ -220,6 +244,8 @@ def export_one(meta_path, args):
                 "classes": classes,
                 "num_selected_samples": int(counts.sum().item()),
                 "class_counts": counts.tolist(),
+                "class_feature_counts": counts.tolist(),
+                "class_prevalence_counts": prevalence_counts.tolist(),
                 "class_feature_mean": means.tolist(),
             }
         )

@@ -286,6 +286,17 @@ def _stack_client_stat(proto_stats, field, num_clients, num_classes):
     return torch.stack(rows, dim=0)
 
 
+def _uploaded_prevalence_counts(proto_stats, stats, num_clients, num_classes):
+    if not isinstance(proto_stats, dict):
+        return stats["class_counts"].sum(dim=0).detach().cpu().float().clamp_min(0.0)
+    counts = _stack_client_stat(proto_stats, "class_prevalence_counts", num_clients, num_classes)
+    if float(counts.sum().item()) <= 0:
+        counts = _stack_client_stat(proto_stats, "label_counts", num_clients, num_classes)
+    if float(counts.sum().item()) <= 0:
+        counts = stats["class_counts"]
+    return counts.sum(dim=0).detach().cpu().float().clamp_min(0.0)
+
+
 def _global_prototypes(proto_stats, meta, stats, cfg):
     num_clients = len(meta.get("clients", []))
     num_classes = int(meta["num_classes"])
@@ -309,7 +320,7 @@ def _global_prototypes(proto_stats, meta, stats, cfg):
     evidence = evidence * (counts > 0).to(evidence.dtype)
     weights = evidence / evidence.sum(dim=0, keepdim=True).clamp_min(EPS)
     prototypes = (means * weights.unsqueeze(-1)).sum(dim=0)
-    class_counts = counts.sum(dim=0).clamp_min(0.0)
+    class_counts = _uploaded_prevalence_counts(proto_stats, stats, num_clients, num_classes)
     valid = counts.sum(dim=0) > 0
     return {
         "prototypes": prototypes,
@@ -354,6 +365,13 @@ def _reference_prior_tau(class_prior, num_classes, cfg):
     ratio = torch.log(torch.tensor(max(imbalance_ratio / threshold, 1.0))).item()
     prior_tau = max_tau * max(0.0, min(1.0, ratio / max(denom, EPS)))
     return prior_tau, imbalance_ratio
+
+
+def _prevalence_calibration_strength(class_prior, num_classes):
+    dominant_prior = float(class_prior.max().item())
+    if dominant_prior <= 0.5:
+        return 0.0
+    return float(num_classes) * dominant_prior
 
 
 def _apply_prevalence_bias(state, meta, class_counts, cfg, *, enabled=True):
@@ -416,9 +434,9 @@ def _merge_reference_prototype_model(base_state, proto_stats, meta, stats, cfg):
     scale = float(cfg.get("my_merge_reference_head_scale", 20.0))
     class_prior = proto["class_counts"] / proto["class_counts"].sum().clamp_min(EPS)
     ablation_mode = str(cfg.get("my_merge_ablation_mode", "full")).lower()
-    prior_enabled = ablation_mode == "m1_m2"
-    raw_prior_tau, imbalance_ratio = _reference_prior_tau(class_prior, num_classes, cfg)
-    prior_tau = raw_prior_tau if prior_enabled else 0.0
+    prior_enabled = ablation_mode in {"full", "m1_m2"}
+    prevalence_strength = _prevalence_calibration_strength(class_prior, num_classes) if prior_enabled else 0.0
+    imbalance_ratio = float((class_prior.max() * float(num_classes)).item())
 
     if mode == "euclidean":
         head_weight = 2.0 * prototypes
@@ -427,10 +445,10 @@ def _merge_reference_prototype_model(base_state, proto_stats, meta, stats, cfg):
         head_weight = scale * F.normalize(prototypes, dim=1)
         head_bias = torch.zeros(num_classes, dtype=torch.float32)
 
-    if prior_tau != 0:
+    if prevalence_strength != 0.0:
         centered_log_prior = torch.log(class_prior.clamp_min(EPS))
         centered_log_prior = centered_log_prior - centered_log_prior.mean()
-        head_bias = head_bias + prior_tau * centered_log_prior
+        head_bias = head_bias + prevalence_strength * centered_log_prior
 
     missing = ~valid
     if missing.any():
@@ -450,11 +468,11 @@ def _merge_reference_prototype_model(base_state, proto_stats, meta, stats, cfg):
         "valid_classes": int(valid.sum().item()),
         "head_mode": mode,
         "head_scale": scale,
-        "prior_tau": prior_tau,
+        "prevalence_bias_scale": prevalence_strength,
         "prior_enabled": prior_enabled,
         "prior_disabled_reason": (
-            "" if prior_enabled
-            else "full_table_ablation_showed_prevalence_prior_reduces_best_cell_count"
+            "" if prevalence_strength != 0.0
+            else "no_absolute_dominant_diagnosis_or_m1_only_ablation"
         ),
         "imbalance_ratio": imbalance_ratio,
         "class_counts": [float(x) for x in proto["class_counts"].tolist()],
