@@ -202,7 +202,7 @@ def build_markdown(output_roots, extra_rows):
         "",
         "- Layout: aligned with `result/all_results.md`.",
         f"- Source output root: `{roots_label}`.",
-        f"- Ablation rows: {extra_label if extra_label else 'none'}.",
+        "- Extra comparison rows: " + (extra_label if extra_label else "none") + ".",
         "- Values are filled from real `eval_summary.csv` results for `my_merge`; missing combinations are shown as `-`.",
         "",
         "## Small",

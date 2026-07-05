@@ -180,7 +180,7 @@ def build_output(base_intro, merged_tables):
         "# Experiment Master Tables",
         "",
         "- Combined from `result/all_results.md` and the generated my_merge result table.",
-        "- Original baseline values are preserved; this file adds `my_merge` and its ablation rows.",
+        "- Original baseline values are preserved; this file adds the formal `my_merge` row.",
         "- Highlight rule: highest value in each column is `<strong>bold</strong>`, second-highest distinct value is `<ins>underlined</ins>`.",
         "",
     ]
