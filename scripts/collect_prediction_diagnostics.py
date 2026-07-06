@@ -123,12 +123,8 @@ def parse_args() -> argparse.Namespace:
         default=ROOT / "outputs" / "my_merge_reference_proto_stats_recall_full_table_20260705",
     )
     parser.add_argument("--my-merge-proto-count-power", type=float, default=0.45)
-    parser.add_argument("--my-merge-reference-head-mode", choices=["cosine", "euclidean"], default="cosine")
     parser.add_argument("--my-merge-reference-head-scale", type=float, default=20.0)
-    parser.add_argument("--my-merge-reference-prior-threshold", type=float, default=2.5)
-    parser.add_argument("--my-merge-reference-prior-max-tau", type=float, default=6.0)
-    parser.add_argument("--my-merge-reference-prior-saturation", type=float, default=3.0)
-    parser.add_argument("--my-merge-ablation-mode", choices=["full", "m1_only", "m1_m2", "avg_m2"], default="full")
+    parser.add_argument("--my-merge-prevalence-threshold", type=float, default=0.5)
     return parser.parse_args()
 
 
@@ -255,12 +251,8 @@ def build_merge_cfg(row: dict[str, str], method: str, args: argparse.Namespace) 
             "amp": str(args.device).startswith("cuda"),
             "my_merge_prototype_root": str(args.my_merge_prototype_root),
             "my_merge_proto_count_power": float(args.my_merge_proto_count_power),
-            "my_merge_reference_head_mode": args.my_merge_reference_head_mode,
             "my_merge_reference_head_scale": float(args.my_merge_reference_head_scale),
-            "my_merge_reference_prior_threshold": float(args.my_merge_reference_prior_threshold),
-            "my_merge_reference_prior_max_tau": float(args.my_merge_reference_prior_max_tau),
-            "my_merge_reference_prior_saturation": float(args.my_merge_reference_prior_saturation),
-            "my_merge_ablation_mode": args.my_merge_ablation_mode,
+            "my_merge_prevalence_threshold": float(args.my_merge_prevalence_threshold),
         }
     )
     return cfg

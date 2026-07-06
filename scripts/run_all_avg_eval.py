@@ -127,15 +127,10 @@ def parse_args():
     p.add_argument('--fisher-max-batches', type=int, default=METHOD_DEFAULTS['fisher_max_batches'])
     p.add_argument('--regmean-max-batches', type=int, default=METHOD_DEFAULTS['regmean_max_batches'])
     p.add_argument('--regmean-max-dim', type=int, default=METHOD_DEFAULTS['regmean_max_dim'])
-    p.add_argument('--my-merge-stats-max-batches', type=int, default=-1)
     p.add_argument('--my-merge-prototype-root', type=str, default='')
     p.add_argument('--my-merge-proto-count-power', type=float, default=0.45)
-    p.add_argument('--my-merge-reference-head-mode', choices=['cosine', 'euclidean'], default='cosine')
     p.add_argument('--my-merge-reference-head-scale', type=float, default=20.0)
-    p.add_argument('--my-merge-reference-prior-threshold', type=float, default=2.5)
-    p.add_argument('--my-merge-reference-prior-max-tau', type=float, default=6.0)
-    p.add_argument('--my-merge-reference-prior-saturation', type=float, default=3.0)
-    p.add_argument('--my-merge-ablation-mode', choices=['full', 'm1_only', 'm1_m2', 'avg_m2'], default='full')
+    p.add_argument('--my-merge-prevalence-threshold', type=float, default=0.5)
     return p.parse_args()
 
 
@@ -236,17 +231,11 @@ def build_cfg(row, args):
         'regmean_max_batches': args.regmean_max_batches,
         'regmean_max_dim': args.regmean_max_dim,
     }
-    if args.my_merge_stats_max_batches >= 0:
-        cfg['my_merge_stats_max_batches'] = args.my_merge_stats_max_batches
     if args.my_merge_prototype_root:
         cfg['my_merge_prototype_root'] = args.my_merge_prototype_root
     cfg['my_merge_proto_count_power'] = args.my_merge_proto_count_power
-    cfg['my_merge_reference_head_mode'] = args.my_merge_reference_head_mode
     cfg['my_merge_reference_head_scale'] = args.my_merge_reference_head_scale
-    cfg['my_merge_reference_prior_threshold'] = args.my_merge_reference_prior_threshold
-    cfg['my_merge_reference_prior_max_tau'] = args.my_merge_reference_prior_max_tau
-    cfg['my_merge_reference_prior_saturation'] = args.my_merge_reference_prior_saturation
-    cfg['my_merge_ablation_mode'] = args.my_merge_ablation_mode
+    cfg['my_merge_prevalence_threshold'] = args.my_merge_prevalence_threshold
     if item['task_type'] == 'small':
         cfg['model'] = item['model']
         cfg['batch_size'] = args.small_batch_size
