@@ -4,7 +4,9 @@ This directory contains an AAAI 2026 formatted wrapper for the LAMP-Merge draft.
 
 Files:
 
-- `lamp_merge_aaai26.tex`: paper wrapper that uses `aaai2026` and inputs `../lamp_merge_paper_sections.tex`.
+- `lamp_merge_aaai26.tex`: paper wrapper that uses `aaai2026` and inputs the local `lamp_merge_paper_sections.tex`.
+- `lamp_merge_paper_sections.tex`: full LAMP-Merge paper body.
+- `lamp_merge_references.bib`: bibliography used by the AAAI wrapper.
 - `lamp_merge_aaai26.pdf`: compiled PDF generated with `tectonic` in the `MM` conda environment.
 - `anonymous-submission-latex-2026.tex`: AAAI 2026 template source extracted from the Overleaf template page.
 - `aaai2026.sty` and `aaai2026.bst`: AAAI 2026 style and bibliography files used for local compilation.

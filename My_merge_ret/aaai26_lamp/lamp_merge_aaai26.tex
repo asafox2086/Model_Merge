@@ -33,11 +33,11 @@
 \maketitle
 
 \begin{abstract}
-Multi-center medical models are often trained asynchronously across hospitals with different devices, patient populations, and diagnostic label coverage. This paper studies one-shot asynchronous medical model merging, where each client uploads once after local training and the server constructs a global model without accessing raw medical images or running federated optimization rounds. We identify aggregation-induced predictive collapse as a central failure mode of generic post-hoc merging methods under incomplete local diagnostic coverage. We propose LAMP-Merge, a long-tail-aware medical prototype merging framework that reconstructs a diagnostic prototype head from client-side class statistics and calibrates long-tailed prevalence with a bounded prior bias. Across five medical datasets, five model families, three client counts, and three non-IID skew levels, LAMP-Merge wins or ties the strongest non-LAMP baseline in 68 out of 75 client-average cells.
+Multi-center medical models are often trained asynchronously across hospitals with different devices, patient populations, and diagnostic label coverage. This paper studies one-shot asynchronous medical model merging, where each client uploads once after local training and the server constructs a global model without raw medical images or federated optimization rounds. We identify aggregation-induced predictive collapse as a central failure mode of generic post-hoc merging under incomplete local diagnostic coverage. We also show that raw accuracy can hide this failure because long-tailed medical priors make majority-class collapse deceptively competitive. We propose LAMP-Merge, a long-tail-aware medical prototype merging framework that reconstructs a diagnostic prototype head from client-side class statistics and calibrates long-tailed prevalence with a bounded prior bias. Across five medical datasets, five model families, three client counts, and three non-IID skew levels, LAMP-Merge wins or ties the strongest non-LAMP baseline in 68 out of 75 client-average cells, while also improving macro recall, macro F1, and prediction-collapse diagnostics.
 \end{abstract}
 
-\input{../lamp_merge_paper_sections.tex}
+\input{lamp_merge_paper_sections.tex}
 
-\bibliography{../lamp_merge_references}
+\bibliography{lamp_merge_references}
 
 \end{document}
