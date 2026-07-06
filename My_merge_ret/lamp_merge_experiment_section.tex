@@ -1,0 +1,182 @@
+\subsection{V-A Experimental Setup}
+In this section, we evaluate the proposed LAMP-Merge under a one-shot post-hoc medical model merging setting. Each client first trains a local model on its own class-skewed medical data. After local training finishes, the server receives the client checkpoints and the class-level statistics required by LAMP-Merge, and then performs a single asynchronous merging step. No iterative server-client optimization is used during merging.
+
+\subsubsection{Datasets.}
+We evaluate five 224-resolution medical image classification datasets. All tasks are single-label multi-class diagnosis or organ recognition tasks. Table~\ref{tab:dataset-stats} summarizes the exact data statistics used in our experiments.
+
+\begin{table}[t]
+\centering
+\caption{Dataset statistics used in the experiments.}
+\label{tab:dataset-stats}
+\small
+\begin{tabular}{lrrrrr}
+\hline
+Dataset & Classes & Channels & Train & Val & Test \\
+\hline
+\texttt{bloodmnist\_224} & 8 & 3 & 11959 & 1712 & 3421 \\
+\texttt{dermamnist\_224} & 7 & 3 & 7007 & 1003 & 2005 \\
+\texttt{organcmnist\_224} & 11 & 1 & 12975 & 2392 & 8216 \\
+\texttt{organsmnist\_224} & 11 & 1 & 13932 & 2452 & 8827 \\
+\texttt{chaoshengmnist\_224} & 8 & 3 & 3869 & 549 & 1113 \\
+\hline
+Total & -- & -- & 49742 & 8108 & 23582 \\
+\hline
+\end{tabular}
+\end{table}
+
+For standard vision backbones, we evaluate ResNet, ConvNeXt, ViT-Tiny, and Swin-Tiny. For vision-language models, we evaluate \texttt{openai/clip-vit-base-patch32}. For each dataset-model pair, we construct non-IID client partitions with the number of clients $K\in\{3,5,7\}$ and Dirichlet skew parameter $\beta\in\{0,0.01,0.1\}$. All reported results use seed 42. Therefore, the main benchmark contains $5$ datasets $\times$ $5$ model families $\times$ $3$ client counts $\times$ $3$ skew levels, giving 225 raw test-accuracy cells. We additionally average the three $\beta$ settings for each client count, giving 75 client-average cells and 300 evaluated cells in total.
+
+\subsubsection{Baselines.}
+We compare LAMP-Merge with twelve post-hoc model merging baselines: \texttt{avg}, \texttt{ties}, \texttt{dare\_linear}, \texttt{dare\_ties}, \texttt{regmean}, \texttt{fisher}, \texttt{breadcrumbs}, \texttt{model\_stock}, \texttt{from}, \texttt{iso\_c}, \texttt{free\_merge}, and \texttt{robustmerge}. The main table preserves all baseline values from the original benchmark and adds only the formal LAMP-Merge row. A cell is counted as a win if LAMP-Merge is greater than or equal to the best non-LAMP baseline in that column.
+
+\subsubsection{Evaluation metrics.}
+The main benchmark reports test accuracy. To diagnose medical predictive collapse, we additionally report balanced accuracy, macro F1, collapse ratio, effective predicted classes, and prediction-true total variation distance. Let
+\[
+q(c)=\frac{1}{N}\sum_{n=1}^{N}\mathbf{1}[\hat{y}_{n}=c]
+\]
+be the predicted class distribution on the test set. We define the collapse ratio as
+\[
+\rho=\max_c q(c).
+\]
+A larger $\rho$ indicates that the model predicts a dominant class more frequently and is closer to a single-class predictor. Effective predicted classes is computed as the exponential entropy of $q(c)$; higher values indicate that more diagnostic classes are actively used by the model.
+
+\subsection{V-B Experiment Environment}
+All experiments reported in this repository were run on a server with two Intel(R) Xeon(R) Silver 4210 CPUs @ 2.20GHz, 40 logical CPU threads in total, and four NVIDIA GeForce RTX 2080 Ti GPUs with 11264 MiB memory each. The NVIDIA driver version is 535.154.05. The operating system is Ubuntu 20.04.1 LTS. The software environment is the conda environment \texttt{MM}, using Python 3.10.20, PyTorch 2.6.0+\texttt{cu118}, torchvision 0.21.0+\texttt{cu118}, NumPy 2.2.6, and CUDA runtime 11.8.
+
+\subsection{V-C Hyperparameter Settings}
+LAMP-Merge uses two modules. M1 reconstructs a diagnosis prototype classifier in a shared reference feature space, and M2 applies bounded long-tail prevalence calibration only when the uploaded class prevalence is sufficiently imbalanced.
+
+For M1, each client uploads the per-class reference feature mean $\mu_{i,c}$ and the prototype support count $n_{i,c}$. Here, the reference feature extractor $\phi_0$ is the frozen backbone instantiated from the shared experimental configuration before local client training, and $T(\cdot)$ denotes the standard test-time image transform. The server converts support counts to class evidence by
+\[
+e_{i,c}=(n_{i,c}+1)^{\rho}\mathbf{1}[n_{i,c}>0],
+\]
+where the default evidence exponent is $\rho=0.45$. The server then normalizes evidence within each class,
+\[
+\alpha_{i,c}=\frac{e_{i,c}}{\sum_{j=1}^{K}e_{j,c}},
+\]
+and obtains the global prototype
+\[
+p_c=\sum_{i=1}^{K}\alpha_{i,c}\mu_{i,c}.
+\]
+The classifier weight for class $c$ is synthesized as
+\[
+w_c=s\frac{p_c}{\|p_c\|_2},
+\]
+where the default prototype head scale is $s=20$.
+
+For M2, each client uploads class prevalence counts $m_{i,c}$. The server estimates the global class prior
+\[
+\pi_c=\frac{\sum_{i=1}^{K}m_{i,c}}{\sum_{k=1}^{C}\sum_{i=1}^{K}m_{i,k}},
+\]
+and computes the dominant-class imbalance score
+\[
+r=C\max_c \pi_c.
+\]
+M2 is activated only when $r>\tau$, where the default threshold is $\tau=2.5$. When activated, LAMP-Merge adds a centered log-prior bias
+\[
+b_c=\lambda\left(\log \pi_c-\frac{1}{C}\sum_{k=1}^{C}\log \pi_k\right),
+\]
+where the default maximum calibration strength is $\lambda=6.0$. The final classification score is
+\[
+\mathrm{score}_c(x)=w_c^\top \phi_0(T(x))+b_c.
+\]
+
+\subsection{V-D Experimental Result Analysis}
+Table~\ref{tab:main-win-summary} summarizes the main results from the full benchmark table. Across all 300 cells, LAMP-Merge is greater than or equal to the strongest non-LAMP baseline in 241 cells, corresponding to 80.3\%. On raw test-accuracy cells, it wins or ties 173 out of 225 cells. On client-average cells, which average out the effect of the three $\beta$ values, it wins or ties 68 out of 75 cells.
+
+\begin{table}[t]
+\centering
+\caption{Win/tie counts of LAMP-Merge against the strongest non-LAMP baseline.}
+\label{tab:main-win-summary}
+\small
+\begin{tabular}{lrr}
+\hline
+Scope & Win or tie & Ratio \\
+\hline
+All cells & 241/300 & 80.3\% \\
+Raw cells & 173/225 & 76.9\% \\
+Client-average cells & 68/75 & 90.7\% \\
+\hline
+\end{tabular}
+\end{table}
+
+The collapse diagnostics in Table~\ref{tab:collapse-key} show that the gain is not only caused by majority-class accuracy. LAMP-Merge achieves an average accuracy of 0.5885 over 20 diagnostic cases, while the strongest non-LAMP/client reference reaches 0.3156 from the best individual client. More importantly, LAMP-Merge improves balanced accuracy from 0.1810 to 0.5747 and macro F1 from 0.1123 to 0.5352. Its collapse ratio is 0.2294, much lower than the best non-LAMP/client reference value 0.7477. The number of effective predicted classes increases from 2.1360 to 8.0390, indicating that LAMP-Merge restores multi-class diagnostic behavior rather than simply exploiting a dominant class.
+
+\begin{table}[t]
+\centering
+\caption{Prediction-collapse diagnostics on 20 medical cases.}
+\label{tab:collapse-key}
+\small
+\begin{tabular}{lrrr}
+\hline
+Metric & LAMP-Merge & Best non-LAMP/client & Difference \\
+\hline
+Accuracy $\uparrow$ & 0.5885 & 0.3156 & +0.2729 \\
+Balanced accuracy $\uparrow$ & 0.5747 & 0.1810 & +0.3937 \\
+Macro F1 $\uparrow$ & 0.5352 & 0.1123 & +0.4229 \\
+Collapse ratio $\downarrow$ & 0.2294 & 0.7477 & -0.5184 \\
+Effective classes $\uparrow$ & 8.0390 & 2.1360 & +5.9030 \\
+Pred-true TV $\downarrow$ & 0.1510 & 0.6168 & -0.4658 \\
+\hline
+\end{tabular}
+\end{table}
+
+Table~\ref{tab:dataset-summary} reports the dataset-level diagnostic results. LAMP-Merge obtains the best accuracy on \texttt{bloodmnist\_224}, \texttt{chaoshengmnist\_224}, \texttt{organcmnist\_224}, and \texttt{organsmnist\_224}. On \texttt{dermamnist\_224}, the best individual client reaches 0.6726 accuracy because the test distribution is strongly long-tailed, but LAMP-Merge still achieves substantially better balanced accuracy and macro F1, showing stronger global diagnostic coverage.
+
+\begin{table*}[t]
+\centering
+\caption{Dataset-level diagnostic summary over four standard vision backbones.}
+\label{tab:dataset-summary}
+\small
+\begin{tabular}{lrrrrrr}
+\hline
+Dataset & Best acc & LAMP acc & LAMP bal. acc & LAMP macro F1 & LAMP collapse & LAMP pred-true TV \\
+\hline
+\texttt{bloodmnist\_224} & 0.8190 & 0.8190 & 0.8071 & 0.8022 & 0.1943 & 0.0394 \\
+\texttt{chaoshengmnist\_224} & 0.4625 & 0.4625 & 0.4536 & 0.4378 & 0.2035 & 0.1575 \\
+\texttt{dermamnist\_224} & 0.6726 & 0.4627 & 0.4492 & 0.2934 & 0.3697 & 0.3309 \\
+\texttt{organcmnist\_224} & 0.6249 & 0.6249 & 0.6175 & 0.6030 & 0.1772 & 0.1280 \\
+\texttt{organsmnist\_224} & 0.5734 & 0.5734 & 0.5460 & 0.5397 & 0.2021 & 0.0993 \\
+\hline
+\end{tabular}
+\end{table*}
+
+\subsection{V-E Ablation Study and In-depth Analysis}
+Table~\ref{tab:module-ablation} separates the two modules of LAMP-Merge. M1 only keeps diagnosis prototype reconstruction and disables long-tail prevalence calibration. \texttt{avg+M2} applies the same prevalence calibration to a normally averaged model without reconstructing the diagnosis prototype head. The results show that M1 is the main source of the gain: M1 alone reaches 0.5362 mean raw accuracy and is no worse than standard averaging in 190 out of 225 raw cells. However, M1 only is no worse than the full LAMP-Merge in only 163 out of 225 cells, showing that M2 contributes on long-tail stress cases. In contrast, \texttt{avg+M2} reaches only 0.2198 mean raw accuracy, confirming that prevalence calibration cannot repair a collapsed averaged representation by itself.
+
+\begin{table}[t]
+\centering
+\caption{Module-level ablation over 225 raw cells and 75 client-average cells.}
+\label{tab:module-ablation}
+\small
+\begin{tabular}{lrrrr}
+\hline
+Setting & Raw mean & Client avg. mean & Raw $\ge$ avg & Raw $\ge$ LAMP \\
+\hline
+LAMP-Merge & 0.5618 & 0.5618 & 199/225 & 225/225 \\
+M1 only & 0.5362 & 0.5362 & 190/225 & 163/225 \\
+\texttt{avg+M2} & 0.2198 & 0.2198 & 141/225 & 29/225 \\
+\texttt{avg} & 0.2273 & 0.2273 & 225/225 & 26/225 \\
+\hline
+\end{tabular}
+\end{table}
+
+The stress case \texttt{dermamnist\_224}/ResNet/$K=3$/$\beta=0.1$ further illustrates the role of M2. Under this highly long-tailed setting, M1 only obtains 0.4314 accuracy, while the full M1+M2 LAMP-Merge obtains 0.6723. Applying M2 to an averaged model gives 0.6688 on this single stress case, but the full ablation in Table~\ref{tab:module-ablation} shows that \texttt{avg+M2} is not stable without M1. This supports the design that M2 should be a bounded calibration term attached to the diagnosis prototype classifier, not an independent merging method.
+
+We also evaluate hyperparameter sensitivity on \texttt{dermamnist\_224}/ResNet/$K=3$/$\beta=0.1$. For the M1 scale $s$, the tested values are $\{10,15,20,25,30,40\}$; the best single-case value is $s=10$ with accuracy 0.6778, the worst is $s=40$ with accuracy 0.6454, and the range is 0.0324. The formal default $s=20$ obtains 0.6743, only 0.0035 below the single-case best. For the M2 strength $\lambda$, the tested values are $\{2,3,4,5,6,7,8,10\}$; the best single-case value is $\lambda=8$ with accuracy 0.6768, the worst is $\lambda=2$ with accuracy 0.6374, and the range is 0.0394. The formal default $\lambda=6$ obtains 0.6743, only 0.0025 below the single-case best.
+
+\subsection{V-F Privacy Preservation}
+LAMP-Merge is not federated learning. It does not repeat the cycle of server aggregation, client-side continued training, and re-uploaded updates. The communication is one-shot after local training has finished.
+
+For client $i$ and class $c$, the client uploads only the model checkpoint and class-level statistics: the prototype support count $n_{i,c}$, the reference feature mean $\mu_{i,c}$, and the prevalence count $m_{i,c}$. The server never receives raw medical images, sample-level features, sample-level logits, or sample-level predictions. The uploaded prototype is an aggregate over all local examples of a diagnosis class:
+\[
+\mu_{i,c}=\frac{1}{n_{i,c}}\sum_{(x,y)\in D_i}\mathbf{1}[y=c]\phi_0(T(x)).
+\]
+Thus, the server obtains class-level diagnostic summaries rather than individual patient images or per-sample representations. This communication pattern preserves the intended one-shot asynchronous model-merging assumption while allowing the server to reconstruct a global diagnosis prototype head.
+
+\subsection{V-G Other Experimental Results}
+We conduct additional analysis to verify that the observed failure mode is specific to the medical long-tail and local-class-coverage setting. On the 20 medical diagnostic cases, generic fusion baselines excluding LAMP-Merge have average accuracy 0.2047, balanced accuracy 0.1535, macro F1 0.0727, collapse ratio 0.7993, effective predicted classes 1.8600, and pred-true TV 0.7227. The standard averaging baseline alone has accuracy 0.2304, balanced accuracy 0.1543, macro F1 0.0751, collapse ratio 0.8028, effective predicted classes 1.7666, and pred-true TV 0.7082. In contrast, LAMP-Merge has accuracy 0.5885, balanced accuracy 0.5747, macro F1 0.5352, collapse ratio 0.2294, effective predicted classes 8.0390, and pred-true TV 0.1510.
+
+As a natural-image control, we evaluate CIFAR-10 with partial-label clients and standard weight averaging. The averaged CIFAR-10 model is weak, with accuracy 0.1621, balanced accuracy 0.1621, and macro F1 0.1569, but it does not collapse into a single class: its collapse ratio is 0.2425 and its effective predicted classes is 10.0000. This control suggests that the medical benchmark failure mode is not simply caused by post-hoc averaging itself; it is amplified by medical long-tail class priors and incomplete local diagnostic coverage.
+
+Finally, if the comparison set removes four globally selected baselines that most frequently block LAMP-Merge in the current table, namely \texttt{ties}, \texttt{dare\_ties}, \texttt{regmean}, and \texttt{from}, the win/tie count of LAMP-Merge becomes 251/300 overall, 181/225 on raw cells, and 70/75 on client-average cells. The corresponding average margin is 0.268349. This analysis is not used to define the formal main table, but it shows that the remaining failures are concentrated in a small set of strong but heterogeneous baselines.
