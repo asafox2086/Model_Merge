@@ -705,11 +705,10 @@ def merge_my_merge(state_dicts, weights, meta=None, checkpoints=None, cfg=None):
                 "clients summarize each diagnostic class with support counts and "
                 "reference-backbone feature means"
             ),
-            "M2_collapse_free_head_synthesis": (
-                "server aggregates class-wise prototypes and synthesizes a cosine "
-                "prototype classifier without prevalence-bias correction"
+            "M2_long_tail_prevalence_calibration": (
+                "server adds a centered log-prevalence bias to the prototype head "
+                "when uploaded class prevalence indicates a dominant diagnosis"
             ),
-            "discarded_prevalence_prior": "not part of the formal two-module method",
         },
         "task_density": float(cfg.get("my_merge_task_density", 0.55)),
         "task_alpha": float(cfg.get("my_merge_task_alpha", 1.0)),
