@@ -1,0 +1,15 @@
+module,factor,value,dataset,model,num_clients,beta,acc,root
+M2,long-tail bias strength,2,dermamnist_224,resnet,3,0.1,0.6374064837905237,/data2/liyapeng_grp/program/MedMNISTMerge/outputs/tmp_derma_b01_tau_2
+M2,long-tail bias strength,3,dermamnist_224,resnet,3,0.1,0.6453865336658354,/data2/liyapeng_grp/program/MedMNISTMerge/outputs/tmp_derma_b01_tau_3
+M2,long-tail bias strength,4,dermamnist_224,resnet,3,0.1,0.6583541147132169,/data2/liyapeng_grp/program/MedMNISTMerge/outputs/tmp_derma_b01_tau_4
+M2,long-tail bias strength,5,dermamnist_224,resnet,3,0.1,0.6668329177057356,/data2/liyapeng_grp/program/MedMNISTMerge/outputs/tmp_derma_b01_tau_5
+M2,long-tail bias strength,6,dermamnist_224,resnet,3,0.1,0.6743142144638404,/data2/liyapeng_grp/program/MedMNISTMerge/outputs/tmp_derma_b01_tau_6
+M2,long-tail bias strength,7,dermamnist_224,resnet,3,0.1,0.6743142144638404,/data2/liyapeng_grp/program/MedMNISTMerge/outputs/tmp_derma_b01_tau_7
+M2,long-tail bias strength,8,dermamnist_224,resnet,3,0.1,0.6768079800498753,/data2/liyapeng_grp/program/MedMNISTMerge/outputs/tmp_derma_b01_tau_8
+M2,long-tail bias strength,10,dermamnist_224,resnet,3,0.1,0.6768079800498753,/data2/liyapeng_grp/program/MedMNISTMerge/outputs/tmp_derma_b01_tau_10
+M1,prototype head scale,10,dermamnist_224,resnet,3,0.1,0.6778054862842893,/data2/liyapeng_grp/program/MedMNISTMerge/outputs/tmp_derma_b01_scale_10_tau6
+M1,prototype head scale,15,dermamnist_224,resnet,3,0.1,0.6768079800498753,/data2/liyapeng_grp/program/MedMNISTMerge/outputs/tmp_derma_b01_scale_15_tau6
+M1,prototype head scale,20,dermamnist_224,resnet,3,0.1,0.6743142144638404,/data2/liyapeng_grp/program/MedMNISTMerge/outputs/tmp_derma_b01_tau_6
+M1,prototype head scale,25,dermamnist_224,resnet,3,0.1,0.6678304239401496,/data2/liyapeng_grp/program/MedMNISTMerge/outputs/tmp_derma_b01_scale_25_tau6
+M1,prototype head scale,30,dermamnist_224,resnet,3,0.1,0.6583541147132169,/data2/liyapeng_grp/program/MedMNISTMerge/outputs/tmp_derma_b01_scale_30_tau6
+M1,prototype head scale,40,dermamnist_224,resnet,3,0.1,0.6453865336658354,/data2/liyapeng_grp/program/MedMNISTMerge/outputs/tmp_derma_b01_scale_40_tau6

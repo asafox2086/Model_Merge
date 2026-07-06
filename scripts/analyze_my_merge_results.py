@@ -9,6 +9,7 @@ from generate_combined_results_table import parse_tables, try_parse_number
 
 
 TAG_RE = re.compile(r"<.*?>")
+TARGET_METHODS = {"my_merge", "lamp_merge", "LAMP-Merge"}
 
 
 def clean(value):
@@ -16,7 +17,7 @@ def clean(value):
 
 
 def parse_args():
-    parser = argparse.ArgumentParser("Analyze my_merge win/tie counts and global baseline drops.")
+    parser = argparse.ArgumentParser("Analyze LAMP-Merge win/tie counts and global baseline drops.")
     parser.add_argument("--table", default="My_merge_ret/汇总表.md")
     parser.add_argument("--drop-min", type=int, default=2)
     parser.add_argument("--drop-max", type=int, default=4)
@@ -31,7 +32,7 @@ def iter_cells(tables, dropped=()):
         baseline_rows = []
         for row in table["rows"]:
             method = clean(row["method"])
-            if method == "my_merge":
+            if method in TARGET_METHODS:
                 my_row = row
             elif method not in dropped:
                 baseline_rows.append((method, row))
@@ -87,7 +88,7 @@ def summarize(tables, dropped=()):
             for method, _value in cell["blockers"]:
                 blocker_counts[method] += 1
             for method in cell["best_methods"]:
-                if method != "my_merge":
+                if method not in TARGET_METHODS:
                     best_blocker_counts[method] += 1
         margins.append(cell["my"] - cell["best"])
 
@@ -112,7 +113,7 @@ def method_order(tables):
     for table in tables.values():
         for row in table["rows"]:
             method = clean(row["method"])
-            if method != "my_merge" and method not in seen:
+            if method not in TARGET_METHODS and method not in seen:
                 seen.append(method)
     return seen
 
@@ -137,7 +138,7 @@ def main():
     print_summary(baseline)
     print()
 
-    print("# Baselines that block my_merge")
+    print("# Baselines that block LAMP-Merge")
     print("method,best-blocking-cells,any-above-my-cells")
     for method, count in baseline["best_blocker_counts"].most_common():
         print(f"{method},{count},{baseline['blocker_counts'][method]}")

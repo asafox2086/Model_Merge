@@ -53,7 +53,7 @@ SMALL_MODELS=( ${SMALL_MODELS:-resnet convnext vit_t swin_tiny} )
 CLIP_MODELS=( ${CLIP_MODELS:-openai/clip-vit-base-patch32} )
 
 FORMAL_METHODS_DEFAULT=( avg ties dare_linear dare_ties regmean fisher breadcrumbs model_stock from iso_c free_merge robustmerge )
-ALL_SUPPORTED_METHODS=( avg ties dare_linear dare_ties regmean fisher breadcrumbs model_stock from iso_c iso_cts free_merge robustmerge adamerging my_merge my_method )
+ALL_SUPPORTED_METHODS=( avg ties dare_linear dare_ties regmean fisher breadcrumbs model_stock from iso_c iso_cts free_merge robustmerge adamerging lamp_merge my_merge my_method )
 
 export TOKENIZERS_PARALLELISM="false"
 export OMP_NUM_THREADS="${OMP_NUM_THREADS:-1}"
@@ -90,7 +90,7 @@ build_method_args() {
   case "${method}" in
     avg|ties|breadcrumbs|model_stock|from|iso_c|free_merge|robustmerge|my_method)
       ;;
-    my_merge)
+    lamp_merge|my_merge)
       out_ref+=(
         --stats-split "${STATS_SPLIT}"
         --stats-batch-size "${STATS_BATCH_SIZE}"
@@ -143,7 +143,7 @@ validate_methods() {
   local method
   for method in "$@"; do
     case "${method}" in
-      avg|ties|dare_linear|dare_ties|regmean|fisher|breadcrumbs|model_stock|from|iso_c|iso_cts|free_merge|robustmerge|adamerging|my_method|my_merge)
+      avg|ties|dare_linear|dare_ties|regmean|fisher|breadcrumbs|model_stock|from|iso_c|iso_cts|free_merge|robustmerge|adamerging|lamp_merge|my_method|my_merge)
         ;;
       *)
         echo "Unsupported method: ${method}" >&2

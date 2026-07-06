@@ -43,8 +43,12 @@ VLM_MODELS = [
 ]
 
 
+METHOD_ROW_NAMES = {"my_merge", "lamp_merge"}
+FORMAL_LABEL = "LAMP-Merge"
+
+
 def parse_args():
-    p = argparse.ArgumentParser("Generate my_merge master markdown table from eval summaries")
+    p = argparse.ArgumentParser("Generate LAMP-Merge master markdown table from eval summaries")
     p.add_argument(
         "--output-root",
         required=True,
@@ -57,7 +61,7 @@ def parse_args():
         default=[],
         metavar="LABEL=OUTPUT_ROOT",
         help=(
-            "Append an additional row from another my_merge eval root. "
+            "Append an additional row from another LAMP-Merge eval root. "
             "Example: --extra-row M1=outputs/ablation_m1_only"
         ),
     )
@@ -105,7 +109,7 @@ def key_for_row(row):
 def build_lookup(rows):
     lookup = {}
     for row in rows:
-        if row.get("method") != "my_merge":
+        if row.get("method") not in METHOD_ROW_NAMES:
             continue
         lookup[key_for_row(row)] = float(row["test_acc"])
     return lookup
@@ -189,7 +193,7 @@ def build_model_section(lines, row_lookups, *, task_type, model_name, dataset_na
 
 
 def build_markdown(output_roots, extra_rows):
-    row_lookups = [("my_merge", build_lookup(load_eval_rows(output_roots)))]
+    row_lookups = [(FORMAL_LABEL, build_lookup(load_eval_rows(output_roots)))]
     for label, roots in extra_rows:
         row_lookups.append((label, build_lookup(load_eval_rows(roots))))
     roots_label = ", ".join(str(root) for root in output_roots)
@@ -203,7 +207,7 @@ def build_markdown(output_roots, extra_rows):
         "- Layout: aligned with `result/all_results.md`.",
         f"- Source output root: `{roots_label}`.",
         "- Extra comparison rows: " + (extra_label if extra_label else "none") + ".",
-        "- Values are filled from real `eval_summary.csv` results for `my_merge`; missing combinations are shown as `-`.",
+        "- Values are filled from real `eval_summary.csv` results for `LAMP-Merge`; missing combinations are shown as `-`.",
         "",
         "## Small",
         "",

@@ -7,6 +7,7 @@ from .from_merge import merge_from
 from .free_merge import merge_free
 from .iso import merge_iso_c, merge_iso_cts
 from .model_stock import merge_model_stock
+from .lamp_merge import merge_lamp_merge
 from .my_merge import merge_my_merge
 from .regmean import merge_regmean
 from .robustmerge import merge_robustmerge
@@ -23,9 +24,12 @@ METHOD_ALIASES = {
     'fisher': 'fisher',
     'breadcrumbs': 'breadcrumbs',
     'model_stock': 'model_stock',
-    'my_merge': 'my_merge',
-    'my_method': 'my_merge',
-    'my-merge': 'my_merge',
+    'lamp_merge': 'lamp_merge',
+    'lamp-merge': 'lamp_merge',
+    'lampmerge': 'lamp_merge',
+    'my_merge': 'lamp_merge',
+    'my_method': 'lamp_merge',
+    'my-merge': 'lamp_merge',
     'adamerging': 'adamerging',
     'from': 'from',
     'free_merge': 'free_merge',
@@ -53,6 +57,7 @@ __all__ = [
     'merge_fisher',
     'merge_breadcrumbs',
     'merge_model_stock',
+    'merge_lamp_merge',
     'merge_my_merge',
     'merge_adamerging',
     'merge_from',

@@ -16,4 +16,5 @@ result/
 reference_cache/
 methods/*
 !methods/__init__.py
+!methods/lamp_merge.py
 !methods/my_merge.py

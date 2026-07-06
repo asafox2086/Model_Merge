@@ -1,9 +1,9 @@
-# my_merge 分析实验工作流
+# LAMP-Merge 分析实验工作流
 
-本文档固定 `my_merge` 的论文分析实验流程。当前重点不是继续调参，而是系统证明三个命题：
+本文档固定 `LAMP-Merge` 的论文分析实验流程。当前重点不是继续调参，而是系统证明三个命题：
 
 1. 常规模型融合在医学图像任务上存在预测坍缩。
-2. `my_merge` 能显著降低坍缩，并恢复多类别诊断能力。
+2. `LAMP-Merge` 能显著降低坍缩，并恢复多类别诊断能力。
 3. 在强类别不平衡数据集上，accuracy 可能被多数类坍缩虚高，因此必须同时报告 balanced accuracy、macro F1 和预测分布指标。
 
 ## 1. 标准诊断脚本
@@ -16,7 +16,7 @@ scripts/collect_prediction_diagnostics.py
 
 该脚本负责三件事：
 
-1. 评估 individual clients、通用模型融合 baseline 和 `my_merge`。
+1. 评估 individual clients、通用模型融合 baseline 和 `LAMP-Merge`。
 2. 统计 accuracy、balanced accuracy、macro F1、collapse ratio、effective predicted classes、pred-true TV 等指标。
 3. 为每个数据集生成指标柱状图和预测类别分布热图。
 
@@ -62,7 +62,7 @@ python scripts/collect_prediction_diagnostics.py \
   --small-models resnet convnext vit_t swin_tiny \
   --num-clients 3 \
   --betas 0.01 \
-  --methods avg ties dare_linear dare_ties regmean fisher breadcrumbs model_stock from iso_c free_merge robustmerge my_merge \
+  --methods avg ties dare_linear dare_ties regmean fisher breadcrumbs model_stock from iso_c free_merge robustmerge LAMP-Merge \
   --metrics-csv My_merge_ret/reports/prediction_diagnostics_4models_c3_b001.csv \
   --summary-dir My_merge_ret/reports/prediction_diagnostics_4models_c3_b001 \
   --figure-dir My_merge_ret/figures/prediction_diagnostics_4models_c3_b001 \
@@ -149,9 +149,9 @@ My_merge_ret/figures/prediction_diagnostics_4models_c3_b001/by_dataset/
 
 ## 6. 当前关键结论
 
-在 20 个 case 上，`my_merge` 的单 case 最优或并列最优次数为：
+在 20 个 case 上，`LAMP-Merge` 的单 case 最优或并列最优次数为：
 
-| metric | my_merge best/tied cases |
+| metric | LAMP-Merge best/tied cases |
 |---|---:|
 | accuracy | 16/20 |
 | balanced_accuracy | 20/20 |
@@ -167,14 +167,14 @@ My_merge_ret/figures/prediction_diagnostics_4models_c3_b001/by_dataset/
 | client_best | 20 | 0.3156 | 0.1810 | 0.1123 | 0.7619 | 2.0201 | 0.6168 |
 | avg | 20 | 0.2304 | 0.1543 | 0.0751 | 0.8028 | 1.7666 | 0.7082 |
 | fisher | 20 | 0.2585 | 0.1604 | 0.0886 | 0.8228 | 1.9324 | 0.6671 |
-| my_merge | 20 | 0.5885 | 0.5747 | 0.5352 | 0.2294 | 8.0390 | 0.1510 |
+| LAMP-Merge | 20 | 0.5885 | 0.5747 | 0.5352 | 0.2294 | 8.0390 | 0.1510 |
 
 结论：
 
 1. client 和常规融合方法的 collapse ratio 普遍很高，说明模型经常只使用少数类别。
-2. `my_merge` 的 collapse ratio 显著更低，effective predicted classes 显著更高。
-3. `my_merge` 在 balanced accuracy 与 macro F1 上 20/20 最优或并列最优，说明它恢复的是多类别医学诊断能力。
-4. DermaMNIST 上 `client_best` 的 accuracy 更高，但 collapse ratio 接近 1，balanced accuracy 和 macro F1 明显低于 `my_merge`。这证明单看 accuracy 会掩盖多数类坍缩。
+2. `LAMP-Merge` 的 collapse ratio 显著更低，effective predicted classes 显著更高。
+3. `LAMP-Merge` 在 balanced accuracy 与 macro F1 上 20/20 最优或并列最优，说明它恢复的是多类别医学诊断能力。
+4. DermaMNIST 上 `client_best` 的 accuracy 更高，但 collapse ratio 接近 1，balanced accuracy 和 macro F1 明显低于 `LAMP-Merge`。这证明单看 accuracy 会掩盖多数类坍缩。
 
 ## 7. 论文中应展示的图表
 
@@ -195,11 +195,11 @@ My_merge_ret/figures/prediction_diagnostics_4models_c3_b001/by_dataset/
 推荐表述：
 
 ```text
-We observe that post-hoc merging baselines often collapse their predictions to one or a few diagnostic categories on medical image tasks. This behavior is not fully reflected by accuracy, especially under strong class imbalance. We therefore report collapse ratio, balanced accuracy, macro F1, effective predicted classes, and prediction-to-label distribution distance. Across five medical datasets and four backbones, my_merge consistently reduces prediction collapse and improves class-balanced diagnostic performance.
+We observe that post-hoc merging baselines often collapse their predictions to one or a few diagnostic categories on medical image tasks. This behavior is not fully reflected by accuracy, especially under strong class imbalance. We therefore report collapse ratio, balanced accuracy, macro F1, effective predicted classes, and prediction-to-label distribution distance. Across five medical datasets and four backbones, LAMP-Merge consistently reduces prediction collapse and improves class-balanced diagnostic performance.
 ```
 
 中文对应：
 
 ```text
-我们观察到，常规事后模型融合方法在医学图像任务中经常将预测集中到一个或少数几个诊断类别。该问题不能只用 accuracy 衡量，尤其在类别不平衡任务上，多数类坍缩会产生虚高 accuracy。因此，我们同时报告 collapse ratio、balanced accuracy、macro F1、有效预测类别数和预测分布距离。结果显示，my_merge 在 5 个医学数据集和 4 个 backbone 上稳定降低预测坍缩，并提升类别均衡的诊断性能。
+我们观察到，常规事后模型融合方法在医学图像任务中经常将预测集中到一个或少数几个诊断类别。该问题不能只用 accuracy 衡量，尤其在类别不平衡任务上，多数类坍缩会产生虚高 accuracy。因此，我们同时报告 collapse ratio、balanced accuracy、macro F1、有效预测类别数和预测分布距离。结果显示，LAMP-Merge 在 5 个医学数据集和 4 个 backbone 上稳定降低预测坍缩，并提升类别均衡的诊断性能。
 ```

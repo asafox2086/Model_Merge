@@ -1,0 +1,15 @@
+module,parameter,value,root,task_type,dataset,model,num_clients,beta,rows,mean_acc,min_acc,max_acc
+M2,long-tail bias strength,2,/data2/liyapeng_grp/program/MedMNISTMerge/outputs/tmp_derma_b01_tau_2,small,dermamnist_224,resnet,3,0.1,1,0.6374064837905237,0.6374064837905237,0.6374064837905237
+M2,long-tail bias strength,3,/data2/liyapeng_grp/program/MedMNISTMerge/outputs/tmp_derma_b01_tau_3,small,dermamnist_224,resnet,3,0.1,1,0.6453865336658354,0.6453865336658354,0.6453865336658354
+M2,long-tail bias strength,4,/data2/liyapeng_grp/program/MedMNISTMerge/outputs/tmp_derma_b01_tau_4,small,dermamnist_224,resnet,3,0.1,1,0.6583541147132169,0.6583541147132169,0.6583541147132169
+M2,long-tail bias strength,5,/data2/liyapeng_grp/program/MedMNISTMerge/outputs/tmp_derma_b01_tau_5,small,dermamnist_224,resnet,3,0.1,1,0.6668329177057356,0.6668329177057356,0.6668329177057356
+M2,long-tail bias strength,6,/data2/liyapeng_grp/program/MedMNISTMerge/outputs/tmp_derma_b01_tau_6,small,dermamnist_224,resnet,3,0.1,1,0.6743142144638404,0.6743142144638404,0.6743142144638404
+M2,long-tail bias strength,7,/data2/liyapeng_grp/program/MedMNISTMerge/outputs/tmp_derma_b01_tau_7,small,dermamnist_224,resnet,3,0.1,1,0.6743142144638404,0.6743142144638404,0.6743142144638404
+M2,long-tail bias strength,8,/data2/liyapeng_grp/program/MedMNISTMerge/outputs/tmp_derma_b01_tau_8,small,dermamnist_224,resnet,3,0.1,1,0.6768079800498753,0.6768079800498753,0.6768079800498753
+M2,long-tail bias strength,10,/data2/liyapeng_grp/program/MedMNISTMerge/outputs/tmp_derma_b01_tau_10,small,dermamnist_224,resnet,3,0.1,1,0.6768079800498753,0.6768079800498753,0.6768079800498753
+M1,prototype head scale,10,/data2/liyapeng_grp/program/MedMNISTMerge/outputs/tmp_derma_b01_scale_10_tau6,small,dermamnist_224,resnet,3,0.1,1,0.6778054862842893,0.6778054862842893,0.6778054862842893
+M1,prototype head scale,15,/data2/liyapeng_grp/program/MedMNISTMerge/outputs/tmp_derma_b01_scale_15_tau6,small,dermamnist_224,resnet,3,0.1,1,0.6768079800498753,0.6768079800498753,0.6768079800498753
+M1,prototype head scale,20,/data2/liyapeng_grp/program/MedMNISTMerge/outputs/tmp_derma_b01_tau_6,small,dermamnist_224,resnet,3,0.1,1,0.6743142144638404,0.6743142144638404,0.6743142144638404
+M1,prototype head scale,25,/data2/liyapeng_grp/program/MedMNISTMerge/outputs/tmp_derma_b01_scale_25_tau6,small,dermamnist_224,resnet,3,0.1,1,0.6678304239401496,0.6678304239401496,0.6678304239401496
+M1,prototype head scale,30,/data2/liyapeng_grp/program/MedMNISTMerge/outputs/tmp_derma_b01_scale_30_tau6,small,dermamnist_224,resnet,3,0.1,1,0.6583541147132169,0.6583541147132169,0.6583541147132169
+M1,prototype head scale,40,/data2/liyapeng_grp/program/MedMNISTMerge/outputs/tmp_derma_b01_scale_40_tau6,small,dermamnist_224,resnet,3,0.1,1,0.6453865336658354,0.6453865336658354,0.6453865336658354

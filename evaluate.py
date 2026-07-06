@@ -91,7 +91,7 @@ def run_evaluate(cfg, merged_dir=None, checkpoint_path=None, meta_path=None):
     if (
         meta['task_type'] == 'small'
         and meta['dataset'] == 'bloodmnist_224'
-        and cfg.get('method') == 'my_merge'
+        and cfg.get('method') in {'my_merge', 'lamp_merge'}
     ):
         cfg['amp'] = False
 

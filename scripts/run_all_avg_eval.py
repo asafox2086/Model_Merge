@@ -16,6 +16,7 @@ if str(ROOT) not in sys.path:
 
 from evaluate import run_evaluate
 from merge import METHOD_DEFAULTS, run_merge
+from methods import normalize_method_name
 from utils import load_json, make_eval_output_dir, save_csv, save_json
 
 
@@ -127,10 +128,42 @@ def parse_args():
     p.add_argument('--fisher-max-batches', type=int, default=METHOD_DEFAULTS['fisher_max_batches'])
     p.add_argument('--regmean-max-batches', type=int, default=METHOD_DEFAULTS['regmean_max_batches'])
     p.add_argument('--regmean-max-dim', type=int, default=METHOD_DEFAULTS['regmean_max_dim'])
-    p.add_argument('--my-merge-prototype-root', type=str, default='')
-    p.add_argument('--my-merge-proto-count-power', type=float, default=0.45)
-    p.add_argument('--my-merge-reference-head-scale', type=float, default=20.0)
-    p.add_argument('--my-merge-prevalence-threshold', type=float, default=0.5)
+    p.add_argument('--my-merge-prototype-root', '--lamp-merge-prototype-root', dest='my_merge_prototype_root', type=str, default='')
+    p.add_argument('--my-merge-proto-count-power', '--lamp-merge-proto-count-power', dest='my_merge_proto_count_power', type=float, default=0.45)
+    p.add_argument('--my-merge-reference-head-scale', '--lamp-merge-reference-head-scale', dest='my_merge_reference_head_scale', type=float, default=20.0)
+    p.add_argument('--my-merge-prevalence-threshold', '--lamp-merge-prevalence-threshold', dest='my_merge_prevalence_threshold', type=float, default=0.5)
+    p.add_argument(
+        '--my-merge-reference-prior-threshold',
+        '--lamp-merge-reference-prior-threshold',
+        dest='my_merge_reference_prior_threshold',
+        type=float,
+        default=2.5,
+        help='Dominant-class imbalance ratio threshold for M2 long-tail calibration.',
+    )
+    p.add_argument(
+        '--my-merge-reference-prior-max-tau',
+        '--lamp-merge-reference-prior-max-tau',
+        dest='my_merge_reference_prior_max_tau',
+        type=float,
+        default=6.0,
+        help='Maximum centered log-prior strength used by M2.',
+    )
+    p.add_argument(
+        '--my-merge-ablation-mode',
+        '--lamp-merge-ablation-mode',
+        dest='my_merge_ablation_mode',
+        choices=['full', 'm1_only', 'avg_m2'],
+        default='full',
+        help='LAMP-Merge ablation mode: full=M1+M2, m1_only disables M2, avg_m2 disables M1.',
+    )
+    p.add_argument(
+        '--my-merge-allow-support-prior-fallback',
+        '--lamp-merge-allow-support-prior-fallback',
+        dest='my_merge_allow_support_prior_fallback',
+        action=argparse.BooleanOptionalAction,
+        default=False,
+        help='Allow M2 to use prototype support counts when explicit class prevalence counts are absent.',
+    )
     return p.parse_args()
 
 
@@ -191,7 +224,7 @@ def build_cfg(row, args):
         'num_clients': item['num_clients'],
         'beta': item['beta'],
         'seed': item['seed'],
-        'method': args.method,
+        'method': normalize_method_name(args.method),
         'merge_weight_mode': resolve_merge_weight_mode(args),
         'model_hub_root': args.model_hub_root,
         'data_root': args.data_root,
@@ -236,6 +269,10 @@ def build_cfg(row, args):
     cfg['my_merge_proto_count_power'] = args.my_merge_proto_count_power
     cfg['my_merge_reference_head_scale'] = args.my_merge_reference_head_scale
     cfg['my_merge_prevalence_threshold'] = args.my_merge_prevalence_threshold
+    cfg['my_merge_reference_prior_threshold'] = args.my_merge_reference_prior_threshold
+    cfg['my_merge_reference_prior_max_tau'] = args.my_merge_reference_prior_max_tau
+    cfg['my_merge_ablation_mode'] = args.my_merge_ablation_mode
+    cfg['my_merge_allow_support_prior_fallback'] = args.my_merge_allow_support_prior_fallback
     if item['task_type'] == 'small':
         cfg['model'] = item['model']
         cfg['batch_size'] = args.small_batch_size

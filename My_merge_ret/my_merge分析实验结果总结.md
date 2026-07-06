@@ -1,4 +1,4 @@
-# My Merge 预测坍缩分析实验结果总结
+# LAMP-Merge 预测坍缩分析实验结果总结
 
 本文件只汇总可用于论文或组会汇报的结果、表格、图和指标解释。实验流程、运行命令和实现细节见其他说明文档。
 
@@ -6,9 +6,9 @@
 
 在 5 个医学图像数据集、4 个 backbone、固定 `clients=3`、`beta=0.01`、`seed=42` 的 20 个 case 上，通用模型融合方法普遍出现预测坍缩：模型大量输出少数类别，导致 accuracy 偶尔被多数类抬高，但 balanced accuracy 和 macro F1 很低。
 
-`my_merge` 的主要结果如下：
+`LAMP-Merge` 的主要结果如下：
 
-| 指标 | my_merge | 最强非 my_merge | 差值 | 结论 |
+| 指标 | LAMP-Merge | 最强非 LAMP-Merge | 差值 | 结论 |
 |---|---:|---:|---:|---|
 | Accuracy ↑ | 0.5885 | 0.3156 (`client_best`) | +0.2729 | 总体准确率显著更高 |
 | Balanced Accuracy ↑ | 0.5747 | 0.1810 (`client_best`) | +0.3937 | 对长尾类别更稳定 |
@@ -23,7 +23,7 @@
 
 ## 二、坍缩现象链条
 
-这一组分析用于支撑论文中的方法动机：医学图像模型融合的主要失效模式不是普通的 accuracy 波动，而是后置参数融合诱发的输出分布退化。基于该现象，M1 以客户端诊断原型保留类别级判别信息，M2 在服务端按类别重建全局判别头，从而将分散的局部诊断能力组织为完整的全局诊断能力。
+这一组分析用于支撑论文中的方法动机：医学图像模型融合的主要失效模式不是普通的 accuracy 波动，而是后置参数融合诱发的输出分布退化。基于该现象，M1 以客户端诊断原型保留类别级判别信息，并在服务端按类别重建全局判别头；M2 则在长尾患病率很强时加入有界类别先验，使非坍缩诊断头仍能利用真实医学类别比例。
 
 在正式实验表格之前，我们先给出两个来自预测分布诊断的经验观测。
 
@@ -69,15 +69,15 @@ $$
 
 因此，当最高频类别占比较大时，单类预测器可以在没有多类别诊断能力的情况下获得较高 accuracy。换言之，在长尾医学数据上，accuracy 可能将多数类坍缩误判为有效融合。这一现象解释了部分基线方法虽然预测分布高度集中，却仍能获得较高 accuracy 的原因。
 
-该观察引出 M2：消除坍缩并不等价于强制预测分布均匀化，因为医学数据中的长尾先验具有真实统计含义；同时，模型也不能退化为多数类预测器。M2 因此按诊断类别独立聚合客户端原型，并仅将类别样本数作为原型估计的证据强度，而不将类别比例直接写入最终输出偏置。这样既保留了每个诊断类别的独立判别方向，又允许高频类别在原型估计中提供更稳定的统计证据。
+该观察引出 M2：消除坍缩并不等价于强制预测分布均匀化，因为医学数据中的长尾先验具有真实统计含义；同时，模型也不能退化为多数类预测器。M2 因此不改变 M1 已经重建出的诊断原型，而是在客户端上传的患病率计数显示存在强主导类别时，对分类分数加入有界的中心化 log-prior。这样既保留每个诊断类别的独立判别方向，又允许真实高频类别获得必要的 accuracy 校准。
 
 | 证据 | 数据与方法 | cases | acc | balanced acc | macro F1 | collapse ratio ↓ | effective classes ↑ | pred-true TV ↓ | 结论 |
 |---|---|---:|---:|---:|---:|---:|---:|---:|---|
-| 医学图像坍缩 | 5 个医学数据集 × 4 backbone，所有通用融合基线，不含 my_merge | 240 | 0.2047 | 0.1535 | 0.0727 | 0.7993 | 1.8600 | 0.7227 | 通用融合平均只使用约 1.86 个有效类别，明显坍缩 |
+| 医学图像坍缩 | 5 个医学数据集 × 4 backbone，所有通用融合基线，不含 LAMP-Merge | 240 | 0.2047 | 0.1535 | 0.0727 | 0.7993 | 1.8600 | 0.7227 | 通用融合平均只使用约 1.86 个有效类别，明显坍缩 |
 | 医学 AVG 坍缩 | 同一正式医学设置，仅 AVG | 20 | 0.2304 | 0.1543 | 0.0751 | 0.8028 | 1.7666 | 0.7082 | 最常用权重平均同样坍缩 |
 | 自然图像不单类坍缩 | CIFAR-10 partial-label control，类别支持均衡，AVG | 1 | 0.1621 | 0.1621 | 0.1569 | 0.2425 | 10.0000 | - | 融合模型较弱，但仍预测全部 10 类，没有医学式单类坍缩 |
 | 加 M1 后医学图像不坍缩 | 正式医学 20 case，M1 only，关闭 M2 | 20 | 0.5884 | 0.5746 | 0.5352 | 0.2294 | 8.0383 | 0.1510 | 类别原型头直接恢复多类别输出 |
-| 加 M1+M2 后依旧不坍缩 | 正式医学 20 case，当前 my_merge | 20 | 0.5885 | 0.5747 | 0.5352 | 0.2294 | 8.0390 | 0.1510 | 按类别重建全局判别头没有重新引入坍缩 |
+| 加 M1+M2 后依旧不坍缩 | 正式医学 20 case，当前 LAMP-Merge | 20 | 0.5885 | 0.5747 | 0.5352 | 0.2294 | 8.0390 | 0.1510 | 长尾患病率校准没有重新引入坍缩 |
 
 ![collapse story](figures/prediction_diagnostics_4models_c3_b001/collapse_story_four_evidence.png)
 
@@ -85,7 +85,7 @@ $$
 
 - 医学图像坍缩：通用融合基线的 `collapse ratio=0.7993`，`effective classes=1.8600`，表明预测质量集中于极少数类别。
 - 自然图像不单类坍缩：在 balanced CIFAR-10 partial-label control 中，AVG 的 `collapse ratio=0.2425`，并且 `effective classes=10.0000`。这表明相同的 post-hoc AVG 融合在自然图像控制实验中不会自然退化为医学图像中的单类输出。
-- M1/M2 有效：M1 only 将 `collapse ratio` 从医学基线的 `0.7993` 降至 `0.2294`；加入 M2 后仍保持 `0.2294`。该结果表明，M2 按类别重建全局判别头，并未重新引入多数类坍缩。
+- M1/M2 有效：M1 only 将 `collapse ratio` 从医学基线的 `0.7993` 降至 `0.2294`；加入 M2 后仍保持 `0.2294`。该结果表明，M2 的长尾患病率校准并未重新引入多数类坍缩。
 
 自然图像对照的预测分布图如下：
 
@@ -99,21 +99,21 @@ $$
 
 ![medical organs resnet client merge collapse](figures/prediction_diagnostics_4models_c3_b001/medical_client_vs_merge_collapse/organsmnist_224_resnet_c3_b001_client_vs_breadcrumbs_distribution.png)
 
-第一组证据采用 `organsmnist_224`、`resnet`、`clients=3`、`beta=0.01`、`seed=42`。三个客户端并未表现为严格单类输出：`client_0` 的 effective classes 为 1.72，`client_1` 为 5.00，`client_2` 为 3.83。这表明单客户端虽存在局部类别偏置，但仍保留多个诊断类别的预测能力。融合后，`breadcrumbs` 的 `collapse ratio=0.9738`，effective classes 仅为 1.15，预测几乎集中到单一类别；相同设置下 `my_merge` 的 `collapse ratio=0.2023`，effective classes 为 9.27，恢复了多类别诊断输出。
+第一组证据采用 `organsmnist_224`、`resnet`、`clients=3`、`beta=0.01`、`seed=42`。三个客户端并未表现为严格单类输出：`client_0` 的 effective classes 为 1.72，`client_1` 为 5.00，`client_2` 为 3.83。这表明单客户端虽存在局部类别偏置，但仍保留多个诊断类别的预测能力。融合后，`breadcrumbs` 的 `collapse ratio=0.9738`，effective classes 仅为 1.15，预测几乎集中到单一类别；相同设置下 `LAMP-Merge` 的 `collapse ratio=0.2023`，effective classes 为 9.27，恢复了多类别诊断输出。
 
 ![medical organs vit client merge collapse](figures/prediction_diagnostics_4models_c3_b001/medical_client_vs_merge_collapse/organsmnist_224_vit_t_c3_b001_client_vs_ties_distribution.png)
 
-第二组证据使用同一医学数据集并替换为 `vit_t` backbone。三个客户端仍预测多个类别，effective classes 分别为 1.43、2.17、1.94；通用融合中的 `ties` 和 `dare_ties` 将预测进一步集中，`dare_ties` 的 `collapse ratio=0.9358`、effective classes 为 1.32。`my_merge` 在同一测试集上将 `collapse ratio` 降至 0.1966，并将 effective classes 提升至 9.74。该现象表明，预测坍缩并非 ResNet 特有问题，而会跨 backbone 出现。
+第二组证据使用同一医学数据集并替换为 `vit_t` backbone。三个客户端仍预测多个类别，effective classes 分别为 1.43、2.17、1.94；通用融合中的 `ties` 和 `dare_ties` 将预测进一步集中，`dare_ties` 的 `collapse ratio=0.9358`、effective classes 为 1.32。`LAMP-Merge` 在同一测试集上将 `collapse ratio` 降至 0.1966，并将 effective classes 提升至 9.74。该现象表明，预测坍缩并非 ResNet 特有问题，而会跨 backbone 出现。
 
 ![medical organc vit client merge collapse](figures/prediction_diagnostics_4models_c3_b001/medical_client_vs_merge_collapse/organcmnist_224_vit_t_c3_b001_client_vs_avg_distribution.png)
 
-第三组证据采用 `organcmnist_224`、`vit_t`。其中 `client_0` 和 `client_1` 仍保留多类输出，effective classes 分别为 3.52 和 3.16；`client_2` 存在更强的局部类别偏置。融合后，`avg`、`free_merge` 和 `breadcrumbs` 将全局模型进一步压缩到单个主导类别，其中 `free_merge` 的 `collapse ratio=0.9090`、effective classes 为 1.45。`my_merge` 的 `collapse ratio=0.1638`，effective classes 为 10.15。
+第三组证据采用 `organcmnist_224`、`vit_t`。其中 `client_0` 和 `client_1` 仍保留多类输出，effective classes 分别为 3.52 和 3.16；`client_2` 存在更强的局部类别偏置。融合后，`avg`、`free_merge` 和 `breadcrumbs` 将全局模型进一步压缩到单个主导类别，其中 `free_merge` 的 `collapse ratio=0.9090`、effective classes 为 1.45。`LAMP-Merge` 的 `collapse ratio=0.1638`，effective classes 为 10.15。
 
 ![medical organc resnet client merge collapse](figures/prediction_diagnostics_4models_c3_b001/medical_client_vs_merge_collapse/organcmnist_224_resnet_c3_b001_client_vs_breadcrumbs_distribution.png)
 
-第四组证据采用 `organcmnist_224`、`resnet`。`client_0` 和 `client_1` 的 effective classes 分别为 3.67 和 3.23，表明本地模型仍在多个类别之间进行判别；`breadcrumbs` 融合后退化为严格单类输出，`collapse ratio=1.0000`、effective classes 为 1.00，`dare_linear` 也接近单类输出，`collapse ratio=0.9825`。`my_merge` 在同一设置下维持 `collapse ratio=0.1804`、effective classes 为 10.03。
+第四组证据采用 `organcmnist_224`、`resnet`。`client_0` 和 `client_1` 的 effective classes 分别为 3.67 和 3.23，表明本地模型仍在多个类别之间进行判别；`breadcrumbs` 融合后退化为严格单类输出，`collapse ratio=1.0000`、effective classes 为 1.00，`dare_linear` 也接近单类输出，`collapse ratio=0.9825`。`LAMP-Merge` 在同一设置下维持 `collapse ratio=0.1804`、effective classes 为 10.03。
 
-以上结果支持如下医学坍缩链条：客户端模型受到长尾分布和局部类别缺失影响，但仍保留多个医学类别的判别能力；通用 post-hoc 参数融合会将局部类别偏置放大为全局单类或少数类坍缩；`my_merge` 的类别原型机制将输出层约束回多类别诊断空间。
+以上结果支持如下医学坍缩链条：客户端模型受到长尾分布和局部类别缺失影响，但仍保留多个医学类别的判别能力；通用 post-hoc 参数融合会将局部类别偏置放大为全局单类或少数类坍缩；`LAMP-Merge` 的类别原型机制将输出层约束回多类别诊断空间。
 
 相关文件：
 
@@ -154,13 +154,13 @@ $$
 | iso_c | 20 | 0.1976 | 0.1648 | 0.0845 | 0.7538 | 2.1161 | 0.7172 |
 | free_merge | 20 | 0.2300 | 0.1558 | 0.0762 | 0.8182 | 1.7074 | 0.7158 |
 | robustmerge | 20 | 0.1486 | 0.1425 | 0.0502 | 0.8225 | 1.6559 | 0.8035 |
-| my_merge | 20 | 0.5885 | 0.5747 | 0.5352 | 0.2294 | 8.0390 | 0.1510 |
+| LAMP-Merge | 20 | 0.5885 | 0.5747 | 0.5352 | 0.2294 | 8.0390 | 0.1510 |
 
 ## 五、单 case 最优次数
 
-这里统计 20 个 case 上，`my_merge` 是否达到该指标的最优或并列最优。`collapse_ratio` 和 `pred_true_tv` 按越低越好统计，其余指标按越高越好统计。
+这里统计 20 个 case 上，`LAMP-Merge` 是否达到该指标的最优或并列最优。`collapse_ratio` 和 `pred_true_tv` 按越低越好统计，其余指标按越高越好统计。
 
-| 指标 | my_merge 最优/并列最优 | 最强非 my_merge |
+| 指标 | LAMP-Merge 最优/并列最优 | 最强非 LAMP-Merge |
 |---|---:|---|
 | Accuracy | 16/20 | client_best，4/20 |
 | Balanced Accuracy | 20/20 | 无 |
@@ -168,24 +168,24 @@ $$
 | Collapse Ratio | 20/20 | 无 |
 | Pred-True TV | 18/20 | client_best，1/20 |
 
-结论：`my_merge` 不只是提升 accuracy，更稳定地提升了与坍缩相关的分布指标和长尾类别指标。balanced accuracy、macro F1、collapse ratio 三个指标上均为 20/20 最优或并列最优。
+结论：`LAMP-Merge` 不只是提升 accuracy，更稳定地提升了与坍缩相关的分布指标和长尾类别指标。balanced accuracy、macro F1、collapse ratio 三个指标上均为 20/20 最优或并列最优。
 
 ## 六、按数据集汇总
 
-| dataset | acc winner | best acc | my_merge acc | my_merge bal. acc | my_merge macro F1 | my_merge collapse | my_merge pred-true TV |
+| dataset | acc winner | best acc | LAMP-Merge acc | LAMP-Merge bal. acc | LAMP-Merge macro F1 | LAMP-Merge collapse | LAMP-Merge pred-true TV |
 |---|---|---:|---:|---:|---:|---:|---:|
-| bloodmnist_224 | my_merge | 0.8190 | 0.8190 | 0.8071 | 0.8022 | 0.1943 | 0.0394 |
-| chaoshengmnist_224 | my_merge | 0.4625 | 0.4625 | 0.4536 | 0.4378 | 0.2035 | 0.1575 |
+| bloodmnist_224 | LAMP-Merge | 0.8190 | 0.8190 | 0.8071 | 0.8022 | 0.1943 | 0.0394 |
+| chaoshengmnist_224 | LAMP-Merge | 0.4625 | 0.4625 | 0.4536 | 0.4378 | 0.2035 | 0.1575 |
 | dermamnist_224 | client_best | 0.6726 | 0.4627 | 0.4492 | 0.2934 | 0.3697 | 0.3309 |
-| organcmnist_224 | my_merge | 0.6249 | 0.6249 | 0.6175 | 0.6030 | 0.1772 | 0.1280 |
-| organsmnist_224 | my_merge | 0.5734 | 0.5734 | 0.5460 | 0.5397 | 0.2021 | 0.0993 |
+| organcmnist_224 | LAMP-Merge | 0.6249 | 0.6249 | 0.6175 | 0.6030 | 0.1772 | 0.1280 |
+| organsmnist_224 | LAMP-Merge | 0.5734 | 0.5734 | 0.5460 | 0.5397 | 0.2021 | 0.0993 |
 
 按数据集观察：
 
-- `bloodmnist_224`：my_merge 在 accuracy、balanced accuracy、macro F1、collapse ratio、pred-true TV 上均最优，说明该方法能显著缓解血细胞任务中的单类预测坍缩。
-- `chaoshengmnist_224`：my_merge 全指标最优，说明原型头对超声类医学图像也有效。
-- `dermamnist_224`：accuracy 不如 `client_best`，但 balanced accuracy、macro F1、collapse ratio 仍然最优；这说明部分基线依赖多数类优势获得高 accuracy，而 my_merge 更接近多类别均衡诊断。
-- `organcmnist_224` 和 `organsmnist_224`：my_merge 在准确率和分布指标上均明显领先，证明方法不只适用于单一模态。
+- `bloodmnist_224`：LAMP-Merge 在 accuracy、balanced accuracy、macro F1、collapse ratio、pred-true TV 上均最优，说明该方法能显著缓解血细胞任务中的单类预测坍缩。
+- `chaoshengmnist_224`：LAMP-Merge 全指标最优，说明原型头对超声类医学图像也有效。
+- `dermamnist_224`：accuracy 不如 `client_best`，但 balanced accuracy、macro F1、collapse ratio 仍然最优；这说明部分基线依赖多数类优势获得高 accuracy，而 LAMP-Merge 更接近多类别均衡诊断。
+- `organcmnist_224` 和 `organsmnist_224`：LAMP-Merge 在准确率和分布指标上均明显领先，证明方法不只适用于单一模态。
 
 ## 七、图表索引
 
@@ -216,9 +216,9 @@ $$
 
 第一，通用模型融合方法在医学图像任务上存在明显预测坍缩。整体来看，`avg`、`ties`、`dare_linear`、`regmean`、`fisher` 等方法的 collapse ratio 大多在 0.75 到 0.82 之间，effective classes 约为 1.7 到 2.1。这说明它们虽然融合了多个客户端模型，但最终预测仍主要集中在极少数类别上。
 
-第二，`my_merge` 显著恢复了多类别诊断能力。它的 collapse ratio 降到 0.2294，effective classes 提升到 8.0390，同时 balanced accuracy 和 macro F1 分别达到 0.5747 和 0.5352。相比最强非 my_merge 方法，macro F1 提升 0.4229，说明提升不是多数类 accuracy 带来的偶然优势。
+第二，`LAMP-Merge` 显著恢复了多类别诊断能力。它的 collapse ratio 降到 0.2294，effective classes 提升到 8.0390，同时 balanced accuracy 和 macro F1 分别达到 0.5747 和 0.5352。相比最强非 LAMP-Merge 方法，macro F1 提升 0.4229，说明提升不是多数类 accuracy 带来的偶然优势。
 
-第三，`dermamnist_224` 是一个有代表性的长尾反例。`client_best` 和 `fisher` 的 accuracy 或 pred-true TV 在该数据集上较高，但它们的 balanced accuracy 和 macro F1 仍远低于 my_merge。这支持 M2 的论文动机：医学数据中类别比例高度不均衡，单纯保留多数类或主导客户端信息会得到看似不错的 accuracy，却无法形成完整的全局判别能力，因此服务端需要按诊断类别显式重建全局判别头。
+第三，`dermamnist_224` 是一个有代表性的长尾反例。`client_best` 和 `fisher` 的 accuracy 或 pred-true TV 在该数据集上较高，但它们的 balanced accuracy 和 macro F1 仍远低于 LAMP-Merge。这支持 M2 的论文动机：医学数据中类别比例高度不均衡，单纯保留多数类或主导客户端信息会得到看似不错的 accuracy，却无法形成完整的全局判别能力，因此服务端需要按诊断类别显式重建全局判别头。
 
 第四，自然图像对照用于限制论文结论的边界。CIFAR-10 的 partial-label AVG 融合并不强，但它仍预测所有 10 个类别；医学图像中的问题不是简单的“模型融合都会输出少数类”，而是在医学图像长尾、局部可分、跨客户端类别缺失的共同条件下，通用参数融合更容易退化为诊断类别坍缩。
 

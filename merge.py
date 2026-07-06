@@ -15,6 +15,7 @@ from methods import (
     merge_free,
     merge_iso_c,
     merge_iso_cts,
+    merge_lamp_merge,
     merge_model_stock,
     merge_my_merge,
     merge_regmean,
@@ -155,8 +156,8 @@ def merge_with_method(method, state_dicts, weights, meta, checkpoints, cfg):
             weights,
             k=float(cfg['model_stock_k']),
         )
-    elif method == 'my_merge':
-        merged_state_dict, method_info = merge_my_merge(
+    elif method in {'lamp_merge', 'my_merge'}:
+        merged_state_dict, method_info = merge_lamp_merge(
             state_dicts,
             weights,
             meta=meta,

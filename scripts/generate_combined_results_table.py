@@ -14,9 +14,9 @@ TBODY_END = "  </tbody>"
 
 
 def parse_args():
-    p = argparse.ArgumentParser("Merge baseline and my_merge master tables with ranking highlights")
+    p = argparse.ArgumentParser("Merge baseline and LAMP-Merge master tables with ranking highlights")
     p.add_argument("--base", required=True, help="Baseline markdown, e.g. result/all_results.md")
-    p.add_argument("--mine", required=True, help="my_merge markdown, e.g. My_merge_ret/all_results_my_merge.md")
+    p.add_argument("--mine", required=True, help="LAMP-Merge markdown, e.g. My_merge_ret/all_results_my_merge.md")
     p.add_argument("--dest", required=True, help="Destination markdown path")
     return p.parse_args()
 
@@ -179,8 +179,8 @@ def build_output(base_intro, merged_tables):
     lines = [
         "# Experiment Master Tables",
         "",
-        "- Combined from `result/all_results.md` and the generated my_merge result table.",
-        "- Original baseline values are preserved; this file adds only the formal `my_merge` row.",
+        "- Combined from `result/all_results.md` and the generated LAMP-Merge result table.",
+        "- Original baseline values are preserved; this file adds only the formal `LAMP-Merge` row.",
         "- Highlight rule: highest value in each column is `<strong>bold</strong>`, second-highest distinct value is `<ins>underlined</ins>`.",
         "",
     ]
