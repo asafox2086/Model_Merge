@@ -23,7 +23,7 @@
 
 ## 二、坍缩现象链条
 
-这一组分析用于支撑论文里的核心动机：坍缩不是一个普通的 accuracy 波动，而是医学图像模型融合中反复出现的输出分布退化；M1 上传客户端诊断原型，M2 在服务端按类别重建全局判别头，从而把局部判别能力组织成全局判别能力。
+这一组分析用于支撑论文中的方法动机：医学图像模型融合的主要失效模式不是普通的 accuracy 波动，而是后置参数融合诱发的输出分布退化。基于该现象，M1 以客户端诊断原型保留类别级判别信息，M2 在服务端按类别重建全局判别头，从而将分散的局部诊断能力组织为完整的全局诊断能力。
 
 在正式实验表格之前，我们先给出两个来自预测分布诊断的经验观测。本文用预测类别分布和坍缩强度描述模型是否发生单类预测坍缩：
 
@@ -37,23 +37,23 @@ $$
 \rho=\max_c q(c).
 $$
 
-ρ 是预测分布中最大的类别占比。它越接近 1，说明模型越接近“几乎所有图像都预测为同一个类别”。
+ρ 是预测分布中最大的类别占比。ρ 越接近 1，模型越接近单一类别预测器。
 
-**观测 1：客户端没有坍缩，融合后出现坍缩。**
+**观测 1：后置融合诱发预测坍缩（Aggregation-induced Predictive Collapse）。**
 
-**形式化结论：传统 post-hoc 融合会把未坍缩客户端的局部类别偏置放大为融合模型的全局单类坍缩。**
+**核心观察：在局部类别覆盖的医学多中心设置中，后置参数融合会将多个非退化客户端预测器聚合成预测分布高度集中的全局坍缩模型。**
 
-我们观察到，医学多中心场景中的单个客户端模型并不一定已经坍缩。由于每个客户端只在本地数据上训练，它们的预测会偏向各自见过或更熟悉的诊断类别，但仍可能在多个类别之间做区分。真正严重的单类坍缩往往发生在 post-hoc 融合之后：传统融合方法在参数空间平均、裁剪或符号聚合多个客户端模型，却没有显式保留“每个客户端在哪些诊断类别上提供可靠判别信息”。结果是，融合模型没有整合出完整的全局判别能力，反而把局部类别偏置放大成全局预测坍缩。
+具体而言，在多中心医学图像任务中，每个客户端通常只观测到全局诊断空间的一个子集，因此本地模型不可避免地带有类别偏置。但这种偏置并不意味着客户端模型已经退化为单类预测器：融合前的本地模型仍可对多个诊断类别产生有效响应。退化主要出现在后置融合阶段。现有参数级融合方法以模型整体为单位进行平均、裁剪或符号聚合，缺乏对“客户端在哪些诊断类别上具有可靠判别能力”的显式刻画。因此，原本局部且可控的类别偏置在全局参数空间中被叠加和放大，最终形成融合模型的单类或少数类预测坍缩。
 
-例如在 organsmnist\_224 / resnet / clients=3 / beta=0.01 中，三个客户端的 ρ 分别为 0.7683、0.3161 和 0.3686。它们存在局部偏置，但不是全部退化为单类输出。相同设置下，通用融合方法 breadcrumbs 的 ρ 达到 0.9738，几乎把所有测试图像预测为同一个类别。这说明坍缩不是简单来自“客户端已经完全崩溃”，而是融合过程本身把客户端的局部类别偏置放大成了全局单类预测。
+以 OrgansMNIST-224、ResNet、3 clients、beta=0.01 为例，三个客户端的 ρ 分别为 0.7683、0.3161 和 0.3686，说明本地模型虽具有不同程度的类别偏置，但并未全部退化为单类输出。在相同设置下，Breadcrumbs 融合模型的 ρ 达到 0.9738，预测几乎集中到单一诊断类别。该结果说明，预测坍缩并非简单继承自已经失效的客户端模型，而是由类别无关的融合过程进一步诱发。
 
-这一观测引出 M1：如果客户端本身还保留局部诊断判别信息，那么融合时不应只平均客户端分类头，而应让客户端上传每个诊断类别的原型，用类别原型保留本地仍然有效的判别知识。
+该观察直接引出 M1：后置融合不应只在参数空间中混合分类头，而应显式保存客户端仍然有效的类别级诊断知识。为此，M1 要求客户端上传每个诊断类别的特征原型，并以诊断原型作为本地判别能力的结构化载体。
 
-**观测 2：在长尾医学数据上，坍缩有时反而会提高 accuracy。**
+**观测 2：长尾先验下的坍缩收益（Collapse Benefit under Long-tailed Priors）。**
 
-**形式化结论：在长尾医学数据中，坍缩到最高频类别可能获得较高 accuracy，因此坍缩反而会成为部分基线看似有效的来源。**
+**核心观察：在长尾医学类别先验下，多数类预测坍缩可以在 Accuracy 上形成表观正收益，其可达到的准确率由最高频类别先验直接决定。**
 
-医学图像分类常对应真实临床流行率或采样流行率，因此常见病、常见器官或高频诊断类别可能占据很大比例。设测试集中最高频类别的占比为：
+医学图像分类通常继承真实临床流行率或采样流行率，因而常见病、常见器官或高频诊断类别可能在测试集中占据较高比例。设测试集中最高频类别的占比为：
 
 $$
 p_{\max}=\max_c P(y=c).
@@ -65,9 +65,9 @@ $$
 \mathrm{Acc}_{\mathrm{collapse}}=p_{\max}.
 $$
 
-因此，当最高频类别占比很大时，单类坍缩并不一定导致很低的 accuracy，甚至可能在某些长尾数据集上看起来有优势。这解释了为什么少数基线虽然预测分布高度集中，却仍能在 accuracy 上取得不错数值。
+因此，当最高频类别占比较大时，单类预测器可以在没有多类别诊断能力的情况下获得较高 accuracy。换言之，在长尾医学数据上，accuracy 可能将多数类坍缩误判为有效融合。这一现象解释了部分基线方法虽然预测分布高度集中，却仍能获得较高 accuracy 的原因。
 
-这一观测引出 M2：my_merge 不能简单地把预测分布强行拉平，否则会破坏医学数据中真实存在的长尾先验；但也不能让模型坍缩到多数类。M2 因此按诊断类别单独聚合客户端原型，并用类别样本数作为原型聚合时的证据强度，而不是把类别比例直接写成最终输出偏置。这样做的目标是：保留每个诊断类别的独立判别方向，同时允许高频类别在原型估计中拥有更稳定的统计贡献。
+该观察引出 M2：消除坍缩并不等价于强制预测分布均匀化，因为医学数据中的长尾先验具有真实统计含义；同时，模型也不能退化为多数类预测器。M2 因此按诊断类别独立聚合客户端原型，并仅将类别样本数作为原型估计的证据强度，而不将类别比例直接写入最终输出偏置。这样既保留了每个诊断类别的独立判别方向，又允许高频类别在原型估计中提供更稳定的统计证据。
 
 | 证据 | 数据与方法 | cases | acc | balanced acc | macro F1 | collapse ratio ↓ | effective classes ↑ | pred-true TV ↓ | 结论 |
 |---|---|---:|---:|---:|---:|---:|---:|---:|---|
@@ -79,39 +79,39 @@ $$
 
 ![collapse story](figures/prediction_diagnostics_4models_c3_b001/collapse_story_four_evidence.png)
 
-这张图对应三条要讲清楚的论证：
+该图汇总了预测坍缩的三类证据：
 
-- 医学图像坍缩：通用融合基线的 `collapse ratio=0.7993`，`effective classes=1.8600`，说明预测集中在极少数类别上。
-- 自然图像不坍缩：在 balanced CIFAR-10 partial-label control 中，AVG 的 `collapse ratio=0.2425`，并且 `effective classes=10.0000`。这说明同样的 post-hoc AVG 融合在自然图像控制实验中不会自然退化成医学图像里的单类输出。
-- M1/M2 有效：M1 only 已把 `collapse ratio` 从医学基线的 `0.7993` 降到 `0.2294`；加入 M2 后仍保持 `0.2294`，说明 M2 是按类别重建全局判别头，而不是重新制造多数类坍缩。
+- 医学图像坍缩：通用融合基线的 `collapse ratio=0.7993`，`effective classes=1.8600`，表明预测质量集中于极少数类别。
+- 自然图像不单类坍缩：在 balanced CIFAR-10 partial-label control 中，AVG 的 `collapse ratio=0.2425`，并且 `effective classes=10.0000`。这表明相同的 post-hoc AVG 融合在自然图像控制实验中不会自然退化为医学图像中的单类输出。
+- M1/M2 有效：M1 only 将 `collapse ratio` 从医学基线的 `0.7993` 降至 `0.2294`；加入 M2 后仍保持 `0.2294`。该结果表明，M2 按类别重建全局判别头，并未重新引入多数类坍缩。
 
 自然图像对照的预测分布图如下：
 
 ![natural prediction distribution](figures/prediction_diagnostics_4models_c3_b001/natural_cifar10_32_avg_prediction_distribution.png)
 
-这张图来自自然图像对照实验，而不是医学测试集。实验设置为：数据集 `cifar10_32`，测试集为 CIFAR-10 标准 test split；模型为 `resnet`；客户端数量为 5；每个客户端只训练两个类别，类别划分为 `[0,1]`、`[2,3]`、`[4,5]`、`[6,7]`、`[8,9]`；训练轮数为 8；随机种子为 42。融合算法为最普通的 post-hoc `avg` 权重平均，即直接对 5 个客户端模型参数做平均后在 CIFAR-10 test split 上评估。
+该图来自自然图像对照实验。实验设置为：数据集 `cifar10_32`，测试集为 CIFAR-10 标准 test split；模型为 `resnet`；客户端数量为 5；每个客户端只训练两个类别，类别划分为 `[0,1]`、`[2,3]`、`[4,5]`、`[6,7]`、`[8,9]`；训练轮数为 8；随机种子为 42。融合算法为 post-hoc `avg` 权重平均，即直接对 5 个客户端模型参数做平均后在 CIFAR-10 test split 上评估。
 
-图中 `true_test` 表示测试集真实类别分布，每个类别均为 0.10；`client_0` 到 `client_4` 表示单客户端模型的预测分布，它们只输出各自见过的局部类别；`avg` 表示 AVG 融合模型的预测分布。可以看到，AVG 融合后虽然准确率不高，但 10 个类别都获得了预测质量，`collapse ratio=0.2425`，`effective classes=10.0000`。因此，自然图像对照中的失败主要是弱分类性能，而不是医学图像中那种退化到单个诊断类别的输出坍缩。
+图中 `true_test` 表示测试集真实类别分布，每个类别均为 0.10；`client_0` 到 `client_4` 表示单客户端模型的预测分布，它们主要输出各自见过的局部类别；`avg` 表示 AVG 融合模型的预测分布。AVG 融合后的分类性能有限，但 10 个类别均被预测到，`collapse ratio=0.2425`，`effective classes=10.0000`。因此，自然图像对照中的主要问题是弱分类性能，而不是退化到单个诊断类别的输出坍缩。
 
 医学图像中，客户端与融合后算法的预测分布图如下。所有图均来自正式医学诊断设置：测试集为对应 MedMNIST 医学数据集 test split，客户端数量为 3，Dirichlet 非独立同分布参数 `beta=0.01`，随机种子为 42；每一行是一个模型在同一测试集上的预测类别分布，颜色越亮表示该模型越倾向输出该类别。
 
 ![medical organs resnet client merge collapse](figures/prediction_diagnostics_4models_c3_b001/medical_client_vs_merge_collapse/organsmnist_224_resnet_c3_b001_client_vs_breadcrumbs_distribution.png)
 
-第一张图是主证据，设置为 `organsmnist_224`、`resnet`、`clients=3`、`beta=0.01`、`seed=42`。三个客户端并不是严格单类输出：`client_0` 的 effective classes 为 1.72，`client_1` 为 5.00，`client_2` 为 3.83。也就是说，单个客户端虽然有局部类别偏置，但仍保留多个诊断类别的预测能力。融合后，`breadcrumbs` 的 `collapse ratio=0.9738`，effective classes 只有 1.15，几乎把全局测试集都预测到同一个类别；相同设置下 `my_merge` 的 `collapse ratio=0.2023`，effective classes 为 9.27，恢复了多类别诊断输出。
+第一组证据采用 `organsmnist_224`、`resnet`、`clients=3`、`beta=0.01`、`seed=42`。三个客户端并未表现为严格单类输出：`client_0` 的 effective classes 为 1.72，`client_1` 为 5.00，`client_2` 为 3.83。这表明单客户端虽存在局部类别偏置，但仍保留多个诊断类别的预测能力。融合后，`breadcrumbs` 的 `collapse ratio=0.9738`，effective classes 仅为 1.15，预测几乎集中到单一类别；相同设置下 `my_merge` 的 `collapse ratio=0.2023`，effective classes 为 9.27，恢复了多类别诊断输出。
 
 ![medical organs vit client merge collapse](figures/prediction_diagnostics_4models_c3_b001/medical_client_vs_merge_collapse/organsmnist_224_vit_t_c3_b001_client_vs_ties_distribution.png)
 
-第二张图使用同一医学数据集但换成 `vit_t` backbone。三个客户端仍至少预测多个类别，effective classes 分别为 1.43、2.17、1.94；通用融合中的 `ties` 和 `dare_ties` 将预测进一步集中，`dare_ties` 的 `collapse ratio=0.9358`、effective classes 为 1.32。`my_merge` 在同一测试集上把 `collapse ratio` 降到 0.1966，effective classes 提升到 9.74。这个例子说明坍缩不是 ResNet 特有现象，而会跨 backbone 出现。
+第二组证据使用同一医学数据集并替换为 `vit_t` backbone。三个客户端仍预测多个类别，effective classes 分别为 1.43、2.17、1.94；通用融合中的 `ties` 和 `dare_ties` 将预测进一步集中，`dare_ties` 的 `collapse ratio=0.9358`、effective classes 为 1.32。`my_merge` 在同一测试集上将 `collapse ratio` 降至 0.1966，并将 effective classes 提升至 9.74。该现象表明，预测坍缩并非 ResNet 特有问题，而会跨 backbone 出现。
 
 ![medical organc vit client merge collapse](figures/prediction_diagnostics_4models_c3_b001/medical_client_vs_merge_collapse/organcmnist_224_vit_t_c3_b001_client_vs_avg_distribution.png)
 
-第三张图是补充证据，设置为 `organcmnist_224`、`vit_t`。这里 `client_0` 和 `client_1` 仍保留多类输出，effective classes 分别为 3.52 和 3.16；`client_2` 已经有较强局部偏置。融合后，`avg`、`free_merge` 和 `breadcrumbs` 将全局模型进一步压到单个主导类别，其中 `free_merge` 的 `collapse ratio=0.9090`、effective classes 为 1.45。`my_merge` 的 `collapse ratio=0.1638`，effective classes 为 10.15。
+第三组证据采用 `organcmnist_224`、`vit_t`。其中 `client_0` 和 `client_1` 仍保留多类输出，effective classes 分别为 3.52 和 3.16；`client_2` 存在更强的局部类别偏置。融合后，`avg`、`free_merge` 和 `breadcrumbs` 将全局模型进一步压缩到单个主导类别，其中 `free_merge` 的 `collapse ratio=0.9090`、effective classes 为 1.45。`my_merge` 的 `collapse ratio=0.1638`，effective classes 为 10.15。
 
 ![medical organc resnet client merge collapse](figures/prediction_diagnostics_4models_c3_b001/medical_client_vs_merge_collapse/organcmnist_224_resnet_c3_b001_client_vs_breadcrumbs_distribution.png)
 
-第四张图同样是补充证据，设置为 `organcmnist_224`、`resnet`。`client_0` 和 `client_1` 的 effective classes 分别为 3.67 和 3.23，说明本地模型仍在多个类别之间做判断；`breadcrumbs` 融合后变成严格单类输出，`collapse ratio=1.0000`、effective classes 为 1.00，`dare_linear` 也接近单类输出，`collapse ratio=0.9825`。`my_merge` 在同一设置下维持 `collapse ratio=0.1804`、effective classes 为 10.03。
+第四组证据采用 `organcmnist_224`、`resnet`。`client_0` 和 `client_1` 的 effective classes 分别为 3.67 和 3.23，表明本地模型仍在多个类别之间进行判别；`breadcrumbs` 融合后退化为严格单类输出，`collapse ratio=1.0000`、effective classes 为 1.00，`dare_linear` 也接近单类输出，`collapse ratio=0.9825`。`my_merge` 在同一设置下维持 `collapse ratio=0.1804`、effective classes 为 10.03。
 
-这些图支持一个更细的医学坍缩链条：客户端模型受到长尾和局部类别缺失影响，但仍常保留多个医学类别的判别能力；通用 post-hoc 参数融合会把这种局部偏置放大成全局单类或少数类坍缩；`my_merge` 的类别原型机制直接约束输出层回到多类别诊断空间。
+以上结果支持如下医学坍缩链条：客户端模型受到长尾分布和局部类别缺失影响，但仍保留多个医学类别的判别能力；通用 post-hoc 参数融合会将局部类别偏置放大为全局单类或少数类坍缩；`my_merge` 的类别原型机制将输出层约束回多类别诊断空间。
 
 相关文件：
 
