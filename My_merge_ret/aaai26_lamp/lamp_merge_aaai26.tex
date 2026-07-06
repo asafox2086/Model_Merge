@@ -1,0 +1,43 @@
+%File: lamp_merge_aaai26.tex
+\documentclass[letterpaper]{article}
+\usepackage[submission]{aaai2026}
+\usepackage{times}
+\usepackage{helvet}
+\usepackage{courier}
+\usepackage[hyphens]{url}
+\usepackage{graphicx}
+\urlstyle{rm}
+\def\UrlFont{\rm}
+\usepackage{natbib}
+\usepackage{caption}
+\usepackage{booktabs}
+\usepackage{amsmath}
+\usepackage{amssymb}
+\frenchspacing
+\setlength{\pdfpagewidth}{8.5in}
+\setlength{\pdfpageheight}{11in}
+\pdfinfo{
+/TemplateVersion (2026.1)
+}
+\setcounter{secnumdepth}{0}
+
+\title{LAMP-Merge: Long-tail-Aware Medical Prototype Merging for One-shot Asynchronous Clinical Models}
+\author{
+    Anonymous Submission
+}
+\affiliations{
+    Paper ID hidden for double-blind review
+}
+
+\begin{document}
+\maketitle
+
+\begin{abstract}
+Multi-center medical models are often trained asynchronously across hospitals with different devices, patient populations, and diagnostic label coverage. This paper studies one-shot asynchronous medical model merging, where each client uploads once after local training and the server constructs a global model without accessing raw medical images or running federated optimization rounds. We identify aggregation-induced predictive collapse as a central failure mode of generic post-hoc merging methods under incomplete local diagnostic coverage. We propose LAMP-Merge, a long-tail-aware medical prototype merging framework that reconstructs a diagnostic prototype head from client-side class statistics and calibrates long-tailed prevalence with a bounded prior bias. Across five medical datasets, five model families, three client counts, and three non-IID skew levels, LAMP-Merge wins or ties the strongest non-LAMP baseline in 68 out of 75 client-average cells.
+\end{abstract}
+
+\input{../lamp_merge_paper_sections.tex}
+
+\bibliography{../lamp_merge_references}
+
+\end{document}
