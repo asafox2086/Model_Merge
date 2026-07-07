@@ -12,6 +12,71 @@
 
 主表统计来自 `汇总表.md`。若某个单元格中 LAMP-Merge 的结果不低于所有非 LAMP 基线的最大值，则记为一次胜出或并列胜出。
 
+## 新指标诊断实验
+
+为排除 LAMP-Merge 仅利用多数类 accuracy 的可能性，我们额外构造预测分布诊断实验。该实验覆盖 5 个正式医学数据集，每个数据集使用 4 个 backbone（resnet、convnext、vit_t、swin_tiny），固定 `clients=3`、`beta=0.01`、`seed=42`，共 20 个医学诊断 case。统计对象包括 individual clients 的聚合行、通用模型融合 baseline，以及 LAMP-Merge。
+
+除 Accuracy 外，该实验报告以下新指标：
+
+$$
+\mathrm{BA}=\frac{1}{C}\sum_{c=1}^{C}\frac{\mathrm{TP}_c}{\mathrm{TP}_c+\mathrm{FN}_c}.
+$$
+
+其中 $\mathrm{BA}$ 是 balanced accuracy，即 macro recall，用于衡量各诊断类别是否同时被召回。设 $q(c)$ 表示模型在测试集上预测为类别 $c$ 的比例，$p(c)$ 表示测试集真实类别比例，则预测坍缩强度与预测分布偏差定义为：
+
+$$
+\rho=\max_c q(c),\qquad
+\mathrm{TV}(q,p)=\frac{1}{2}\sum_{c=1}^{C}|q(c)-p(c)|.
+$$
+
+$\rho$ 越接近 1，模型越接近单类预测器；$\mathrm{TV}(q,p)$ 越小，预测类别分布越接近真实诊断分布。有效预测类别数定义为：
+
+$$
+C_{\mathrm{eff}}=\exp\left(-\sum_{c=1}^{C}q(c)\log q(c)\right).
+$$
+
+该指标越大，表示模型实际使用的诊断类别越多。若一个方法仅在多数类上坍缩，则通常会表现为 Accuracy 较高但 $\mathrm{BA}$、Macro F1 和 $C_{\mathrm{eff}}$ 较低，同时 $\rho$ 和 $\mathrm{TV}$ 较高。
+
+### 总体结果
+
+| Method | Cases | Acc | BA | Macro F1 | $\rho$ | $C_{\mathrm{eff}}$ | TV |
+| --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
+| client mean | 20 | 0.1804 | 0.1515 | 0.0638 | 0.8207 | 1.7370 | 0.7644 |
+| client best | 20 | 0.3156 | 0.1810 | 0.1123 | 0.7619 | 2.0201 | 0.6168 |
+| avg | 20 | 0.2304 | 0.1543 | 0.0751 | 0.8028 | 1.7666 | 0.7082 |
+| ties | 20 | 0.2089 | 0.1682 | 0.0858 | 0.7477 | 2.1360 | 0.6907 |
+| dare_linear | 20 | 0.2145 | 0.1481 | 0.0745 | 0.7577 | 2.0556 | 0.6849 |
+| dare_ties | 20 | 0.1763 | 0.1537 | 0.0689 | 0.7826 | 1.9966 | 0.7367 |
+| regmean | 20 | 0.2083 | 0.1625 | 0.0841 | 0.7655 | 2.0285 | 0.7095 |
+| fisher | 20 | 0.2585 | 0.1604 | 0.0886 | 0.8228 | 1.9324 | 0.6671 |
+| breadcrumbs | 20 | 0.1138 | 0.1181 | 0.0280 | 0.9320 | 1.2901 | 0.8473 |
+| model_stock | 20 | 0.2207 | 0.1488 | 0.0711 | 0.8155 | 1.7457 | 0.6970 |
+| from | 20 | 0.2494 | 0.1652 | 0.0848 | 0.7705 | 1.8889 | 0.6949 |
+| iso_c | 20 | 0.1976 | 0.1648 | 0.0845 | 0.7538 | 2.1161 | 0.7172 |
+| free_merge | 20 | 0.2300 | 0.1558 | 0.0762 | 0.8182 | 1.7074 | 0.7158 |
+| robustmerge | 20 | 0.1486 | 0.1425 | 0.0502 | 0.8225 | 1.6559 | 0.8035 |
+| LAMP-Merge | 20 | 0.5885 | 0.5747 | 0.5352 | 0.2294 | 8.0390 | 0.1510 |
+
+总体结果表明，LAMP-Merge 的提升不是由多数类坍缩造成的。相对于最强 non-LAMP/client 参照，Accuracy 从 0.3156 提高到 0.5885；更关键的是，BA 从 0.1810 提高到 0.5747，Macro F1 从 0.1123 提高到 0.5352。与此同时，坍缩强度 $\rho$ 从 0.7477 降到 0.2294，有效预测类别数从 2.1360 提高到 8.0390，预测分布 TV 从 0.6168 降到 0.1510。
+
+按单 case 统计，LAMP-Merge 在 Accuracy 上达到 16/20 个最优或并列最优；在 BA、Macro F1 和 $\rho$ 上均为 20/20；在 TV 上为 18/20。Derma 是主要例外：client best 和 Fisher 在 raw Accuracy 或 TV 上具有长尾多数类优势，但 LAMP-Merge 仍在 BA、Macro F1 和坍缩强度上最优，说明其保留了更完整的多类别诊断能力。
+
+### 按数据集结果
+
+下表将每个数据集上的 LAMP-Merge 与对应指标下的最强 non-LAMP/client 参照进行比较。每个数据集包含 4 个 backbone case。
+
+| Dataset | LAMP Acc | Best ref Acc | LAMP BA | Best ref BA | LAMP Macro F1 | Best ref Macro F1 | LAMP $\rho$ | Best ref $\rho$ | LAMP TV | Best ref TV |
+| --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
+| Blood | 0.8190 | 0.2286 | 0.8071 | 0.2129 | 0.8022 | 0.1133 | 0.1943 | 0.7768 | 0.0394 | 0.6759 |
+| Ultrasound | 0.4625 | 0.2682 | 0.4536 | 0.2335 | 0.4378 | 0.1514 | 0.2035 | 0.6047 | 0.1575 | 0.6094 |
+| Derma | 0.4627 | 0.6726 | 0.4492 | 0.1890 | 0.2934 | 0.1562 | 0.3697 | 0.7978 | 0.3309 | 0.3185 |
+| Organ-C | 0.6249 | 0.2297 | 0.6175 | 0.1708 | 0.6030 | 0.1067 | 0.1772 | 0.5474 | 0.1280 | 0.6055 |
+| Organ-S | 0.5734 | 0.2586 | 0.5460 | 0.1603 | 0.5397 | 0.0881 | 0.2021 | 0.6274 | 0.0993 | 0.6226 |
+
+该分数据集结果支持两个结论。第一，Blood、Ultrasound、Organ-C 和 Organ-S 上 LAMP-Merge 在所有新指标中同时优于最强参照，说明方法并非只在某一医学模态有效。第二，Derma 上存在典型的长尾 accuracy 假象：client best 在 Accuracy 上更高，Fisher 在 TV 上略低，但二者的 BA 和 Macro F1 明显低于 LAMP-Merge，且坍缩强度更高。因此 Derma 更适合作为 Observation 2 的证据，即单类或少类坍缩可能在强长尾数据集上抬高 raw Accuracy，但不代表模型具备完整全局诊断能力。
+
+完整逐方法、逐数据集结果保存在 `My_merge_ret/reports/prediction_diagnostics_4models_c3_b001/prediction_diagnostics_all_datasets_summary.md`，对应图像保存在 `My_merge_ret/figures/prediction_diagnostics_4models_c3_b001/`。
+
 ## 模块间消融
 
 模块间消融用于分离两个机制的作用。`M1 only` 保留诊断原型重建，关闭长尾患病率校准；`avg+M2` 关闭原型重建，只在普通平均模型上加入相同的患病率校准；`avg` 是普通参数平均控制组。主分析以 `client average` 单元格为统计单位：对每个固定的 `(dataset, backbone, K)`，先平均三个 Dirichlet skew 设置，再比较四个设置的 test accuracy。
