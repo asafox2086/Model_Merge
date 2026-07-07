@@ -93,7 +93,7 @@ python scripts/collect_prediction_diagnostics.py \
 
 ## 4. 指标定义
 
-设测试集有 \(C\) 个类别，模型 hard prediction 的类别计数为：
+设测试集有 $C$ 个类别，模型 hard prediction 的类别计数为：
 
 ```text
 n_pred = [n_1, n_2, ..., n_C]
@@ -142,7 +142,7 @@ H(p_pred) = - sum_c p_pred,c log p_pred,c
 
 ### 4.5 pred-true TV
 
-令测试集真实标签分布为 \(p_true\)，则：
+令测试集真实标签分布为 $p_true$，则：
 
 ```text
 pred_true_tv = 0.5 * sum_c |p_pred,c - p_true,c|

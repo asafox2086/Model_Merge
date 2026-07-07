@@ -41,7 +41,7 @@ $$
 
 下表是 `bloodmnist_224`、`chaoshengmnist_224`、`dermamnist_224`、`organcmnist_224` 和 `organsmnist_224` 上 20 个诊断 case 的总体均值。
 
-| Method | Cases | Acc | BA | Macro F1 | $\rho$ | $C_{\mathrm{eff}}$ | TV |
+| Method | Cases | Acc | BA | Macro F1 | Collapse ratio | Effective classes | TV |
 | --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
 | client mean | 20 | 0.1804 | 0.1515 | 0.0638 | 0.8207 | 1.7370 | 0.7644 |
 | client best | 20 | 0.3156 | 0.1810 | 0.1123 | 0.7619 | 2.0201 | 0.6168 |
@@ -67,7 +67,7 @@ $$
 
 下表将每个数据集上的 LAMP-Merge 与对应指标下的最强 non-LAMP/client 参照进行比较。每个数据集包含 4 个 backbone case。
 
-| Dataset | LAMP Acc | Best ref Acc | LAMP BA | Best ref BA | LAMP Macro F1 | Best ref Macro F1 | LAMP $\rho$ | Best ref $\rho$ | LAMP TV | Best ref TV |
+| Dataset | LAMP Acc | Best ref Acc | LAMP BA | Best ref BA | LAMP Macro F1 | Best ref Macro F1 | LAMP collapse ratio | Best ref collapse ratio | LAMP TV | Best ref TV |
 | --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
 | Blood | 0.8190 | 0.2286 | 0.8071 | 0.2129 | 0.8022 | 0.1133 | 0.1943 | 0.7768 | 0.0394 | 0.6759 |
 | Ultrasound | 0.4625 | 0.2682 | 0.4536 | 0.2335 | 0.4378 | 0.1514 | 0.2035 | 0.6047 | 0.1575 | 0.6094 |
@@ -121,29 +121,29 @@ raw cell 统计与 client-average 统计一致：M1 已经显著优于普通平�
 
 | 模块 | 内部因素 | 取值 | 数据集 | 模型 | Acc |
 | --- | --- | --- | --- | --- | --- |
-| M2 | $\lambda$ | 2 | dermamnist_224 | resnet | 0.6718 |
-| M2 | $\lambda$ | 3 | dermamnist_224 | resnet | 0.6768 |
-| M2 | $\lambda$ | 4 | dermamnist_224 | resnet | 0.6758 |
-| M2 | $\lambda$ | 5 | dermamnist_224 | resnet | 0.6763 |
-| M2 | $\lambda$ | 6 | dermamnist_224 | resnet | 0.6723 |
-| M2 | $\lambda$ | 7 | dermamnist_224 | resnet | 0.6683 |
-| M2 | $\lambda$ | 8 | dermamnist_224 | resnet | 0.6683 |
-| M2 | $\lambda$ | 10 | dermamnist_224 | resnet | 0.6688 |
-| M1 | $s$ | 5 | dermamnist_224 | resnet | 0.6688 |
-| M1 | $s$ | 7 | dermamnist_224 | resnet | 0.6688 |
-| M1 | $s$ | 10 | dermamnist_224 | resnet | 0.6688 |
-| M1 | $s$ | 12 | dermamnist_224 | resnet | 0.6688 |
-| M1 | $s$ | 15 | dermamnist_224 | resnet | 0.6683 |
-| M1 | $s$ | 17 | dermamnist_224 | resnet | 0.6683 |
-| M1 | $s$ | 20 | dermamnist_224 | resnet | 0.6723 |
-| M1 | $s$ | 22 | dermamnist_224 | resnet | 0.6733 |
-| M1 | $s$ | 25 | dermamnist_224 | resnet | 0.6758 |
-| M1 | $s$ | 27 | dermamnist_224 | resnet | 0.6763 |
-| M1 | $s$ | 30 | dermamnist_224 | resnet | 0.6758 |
-| M1 | $s$ | 32 | dermamnist_224 | resnet | 0.6748 |
-| M1 | $s$ | 35 | dermamnist_224 | resnet | 0.6738 |
-| M1 | $s$ | 37 | dermamnist_224 | resnet | 0.6778 |
-| M1 | $s$ | 40 | dermamnist_224 | resnet | 0.6768 |
+| M2 | lambda | 2 | dermamnist_224 | resnet | 0.6718 |
+| M2 | lambda | 3 | dermamnist_224 | resnet | 0.6768 |
+| M2 | lambda | 4 | dermamnist_224 | resnet | 0.6758 |
+| M2 | lambda | 5 | dermamnist_224 | resnet | 0.6763 |
+| M2 | lambda | 6 | dermamnist_224 | resnet | 0.6723 |
+| M2 | lambda | 7 | dermamnist_224 | resnet | 0.6683 |
+| M2 | lambda | 8 | dermamnist_224 | resnet | 0.6683 |
+| M2 | lambda | 10 | dermamnist_224 | resnet | 0.6688 |
+| M1 | s | 5 | dermamnist_224 | resnet | 0.6688 |
+| M1 | s | 7 | dermamnist_224 | resnet | 0.6688 |
+| M1 | s | 10 | dermamnist_224 | resnet | 0.6688 |
+| M1 | s | 12 | dermamnist_224 | resnet | 0.6688 |
+| M1 | s | 15 | dermamnist_224 | resnet | 0.6683 |
+| M1 | s | 17 | dermamnist_224 | resnet | 0.6683 |
+| M1 | s | 20 | dermamnist_224 | resnet | 0.6723 |
+| M1 | s | 22 | dermamnist_224 | resnet | 0.6733 |
+| M1 | s | 25 | dermamnist_224 | resnet | 0.6758 |
+| M1 | s | 27 | dermamnist_224 | resnet | 0.6763 |
+| M1 | s | 30 | dermamnist_224 | resnet | 0.6758 |
+| M1 | s | 32 | dermamnist_224 | resnet | 0.6748 |
+| M1 | s | 35 | dermamnist_224 | resnet | 0.6738 |
+| M1 | s | 37 | dermamnist_224 | resnet | 0.6778 |
+| M1 | s | 40 | dermamnist_224 | resnet | 0.6768 |
 
 M1 的 $s$ 在 `[5,40]` 的密集网格内保持稳定，说明性能主要来自类别原型方向本身，而不是单一尺度特判。M2 的 $\lambda$ 在中等强度区间达到最优，继续放大会出现轻微退化，说明长尾校准需要有界使用，不能无限放大多数类先验。
 
@@ -165,8 +165,8 @@ M1 的 $s$ 在 `[5,40]` 的密集网格内保持稳定，说明性能主要来�
 
 | 模块 | 参数 | 测试取值 | 最佳取值 | 最佳 Acc | 最差取值 | 最差 Acc | 波动范围 |
 | --- | --- | --- | --- | --- | --- | --- | --- |
-| M1 | $s$ | 5, 7, 10, 12, 15, 17, 20, 22, 25, 27, 30, 32, 35, 37, 40 | 37 | 0.6778 | 15 | 0.6683 | 0.0095 |
-| M2 | $\lambda$ | 2, 3, 4, 5, 6, 7, 8, 10 | 3 | 0.6768 | 7 | 0.6683 | 0.0085 |
+| M1 | s | 5, 7, 10, 12, 15, 17, 20, 22, 25, 27, 30, 32, 35, 37, 40 | 37 | 0.6778 | 15 | 0.6683 | 0.0095 |
+| M2 | lambda | 2, 3, 4, 5, 6, 7, 8, 10 | 3 | 0.6768 | 7 | 0.6683 | 0.0085 |
 
 ![LAMP-Merge hyperparameter sensitivity](figures/lamp_merge_hparam_sensitivity.png)
 
@@ -176,29 +176,29 @@ M1 的 $s$ 在 `[5,40]` 的密集网格内保持稳定，说明性能主要来�
 
 | 模块 | 参数 | 取值 | Acc | 范围 |
 | --- | --- | --- | --- | --- |
-| M2 | $\lambda$ | 2 | 0.6718 | 0.6718-0.6718 |
-| M2 | $\lambda$ | 3 | 0.6768 | 0.6768-0.6768 |
-| M2 | $\lambda$ | 4 | 0.6758 | 0.6758-0.6758 |
-| M2 | $\lambda$ | 5 | 0.6763 | 0.6763-0.6763 |
-| M2 | $\lambda$ | 6 | 0.6723 | 0.6723-0.6723 |
-| M2 | $\lambda$ | 7 | 0.6683 | 0.6683-0.6683 |
-| M2 | $\lambda$ | 8 | 0.6683 | 0.6683-0.6683 |
-| M2 | $\lambda$ | 10 | 0.6688 | 0.6688-0.6688 |
-| M1 | $s$ | 5 | 0.6688 | 0.6688-0.6688 |
-| M1 | $s$ | 7 | 0.6688 | 0.6688-0.6688 |
-| M1 | $s$ | 10 | 0.6688 | 0.6688-0.6688 |
-| M1 | $s$ | 12 | 0.6688 | 0.6688-0.6688 |
-| M1 | $s$ | 15 | 0.6683 | 0.6683-0.6683 |
-| M1 | $s$ | 17 | 0.6683 | 0.6683-0.6683 |
-| M1 | $s$ | 20 | 0.6723 | 0.6723-0.6723 |
-| M1 | $s$ | 22 | 0.6733 | 0.6733-0.6733 |
-| M1 | $s$ | 25 | 0.6758 | 0.6758-0.6758 |
-| M1 | $s$ | 27 | 0.6763 | 0.6763-0.6763 |
-| M1 | $s$ | 30 | 0.6758 | 0.6758-0.6758 |
-| M1 | $s$ | 32 | 0.6748 | 0.6748-0.6748 |
-| M1 | $s$ | 35 | 0.6738 | 0.6738-0.6738 |
-| M1 | $s$ | 37 | 0.6778 | 0.6778-0.6778 |
-| M1 | $s$ | 40 | 0.6768 | 0.6768-0.6768 |
+| M2 | lambda | 2 | 0.6718 | 0.6718-0.6718 |
+| M2 | lambda | 3 | 0.6768 | 0.6768-0.6768 |
+| M2 | lambda | 4 | 0.6758 | 0.6758-0.6758 |
+| M2 | lambda | 5 | 0.6763 | 0.6763-0.6763 |
+| M2 | lambda | 6 | 0.6723 | 0.6723-0.6723 |
+| M2 | lambda | 7 | 0.6683 | 0.6683-0.6683 |
+| M2 | lambda | 8 | 0.6683 | 0.6683-0.6683 |
+| M2 | lambda | 10 | 0.6688 | 0.6688-0.6688 |
+| M1 | s | 5 | 0.6688 | 0.6688-0.6688 |
+| M1 | s | 7 | 0.6688 | 0.6688-0.6688 |
+| M1 | s | 10 | 0.6688 | 0.6688-0.6688 |
+| M1 | s | 12 | 0.6688 | 0.6688-0.6688 |
+| M1 | s | 15 | 0.6683 | 0.6683-0.6683 |
+| M1 | s | 17 | 0.6683 | 0.6683-0.6683 |
+| M1 | s | 20 | 0.6723 | 0.6723-0.6723 |
+| M1 | s | 22 | 0.6733 | 0.6733-0.6733 |
+| M1 | s | 25 | 0.6758 | 0.6758-0.6758 |
+| M1 | s | 27 | 0.6763 | 0.6763-0.6763 |
+| M1 | s | 30 | 0.6758 | 0.6758-0.6758 |
+| M1 | s | 32 | 0.6748 | 0.6748-0.6748 |
+| M1 | s | 35 | 0.6738 | 0.6738-0.6738 |
+| M1 | s | 37 | 0.6778 | 0.6778-0.6778 |
+| M1 | s | 40 | 0.6768 | 0.6768-0.6768 |
 
 敏感性结果表明，M2 应作为有界校准使用。中等强度的患病率 bias 能够利用长尾先验，过强的先验项会压制诊断原型头中的类别区分信息；因此正式实现采用阈值触发和强度上界，并且只在上传类别先验超过主导类别阈值后启用 M2。
 
