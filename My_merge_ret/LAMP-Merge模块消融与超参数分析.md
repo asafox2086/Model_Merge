@@ -18,22 +18,22 @@
 
 除 Accuracy 外，该实验报告以下新指标：
 
-$$
+```math
 \mathrm{BA}=\frac{1}{C}\sum_{c=1}^{C}\frac{\mathrm{TP}_c}{\mathrm{TP}_c+\mathrm{FN}_c}.
-$$
+```
 
 其中 $\mathrm{BA}$ 是 balanced accuracy，即 macro recall，用于衡量各诊断类别是否同时被召回。设 $q(c)$ 表示模型在测试集上预测为类别 $c$ 的比例，$p(c)$ 表示测试集真实类别比例，则预测坍缩强度与预测分布偏差定义为：
 
-$$
+```math
 \rho=\max_c q(c),\qquad
 \mathrm{TV}(q,p)=\frac{1}{2}\sum_{c=1}^{C}|q(c)-p(c)|.
-$$
+```
 
 $\rho$ 越接近 1，模型越接近单类预测器；$\mathrm{TV}(q,p)$ 越小，预测类别分布越接近真实诊断分布。有效预测类别数定义为：
 
-$$
+```math
 C_{\mathrm{eff}}=\exp\left(-\sum_{c=1}^{C}q(c)\log q(c)\right).
-$$
+```
 
 该指标越大，表示模型实际使用的诊断类别越多。若一个方法仅在多数类上坍缩，则通常会表现为 Accuracy 较高但 $\mathrm{BA}$、Macro F1 和 $C_{\mathrm{eff}}$ 较低，同时 $\rho$ 和 $\mathrm{TV}$ 较高。
 

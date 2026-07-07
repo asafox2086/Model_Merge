@@ -43,13 +43,13 @@
 
 其中类别支持数、证据权重和原型分类头分别定义为：
 
-$$
+```math
 n_{i,c}=|D_{i,c}|,
 \qquad
 e_{i,c}=(n_{i,c}+1)^\gamma\mathbf{1}[n_{i,c}>0],
 \qquad
 w_c=s\frac{p_c}{\|p_c\|_2}.
-$$
+```
 
 理论分析中若需要表示“真实参考特征均值”，统一使用补充符号 $\mu_c^\star$，并明确它只用于分析原型估计误差。全局融合原型仍必须写作 $p_c$。所有新增图表的 caption 和 markdown 表格也必须遵守该符号表。
 
@@ -89,7 +89,7 @@ $$
 
 每个消融项必须写明它替换了正式方法中的哪个量，以及替换后最终分类分数如何计算。正式方法固定为
 
-$$
+```math
 \mu_{i,c}
 =
 \frac{1}{n_{i,c}}
@@ -98,9 +98,9 @@ $$
 e_{i,c}
 =
 (n_{i,c}+1)^\gamma\mathbf{1}[n_{i,c}>0],
-$$
+```
 
-$$
+```math
 \alpha_{i,c}
 =
 \frac{e_{i,c}}{\sum_{j=1}^{K}e_{j,c}},
@@ -112,11 +112,11 @@ p_c
 w_c
 =
 s\frac{p_c}{\|p_c\|_2}.
-$$
+```
 
 患病率先验与最终分数固定为
 
-$$
+```math
 \pi_c
 =
 \frac{\sum_{i=1}^{K}m_{i,c}}
@@ -126,15 +126,15 @@ b_c
 =
 \mathbf{1}[r>\tau]\lambda
 \left(\log\pi_c-\frac{1}{C}\sum_{k=1}^{C}\log\pi_k\right),
-$$
+```
 
-$$
+```math
 \mathrm{score}_c(x)=w_c^\top\phi_0(T(x))+b_c.
-$$
+```
 
 例如，`Uniform client weight` 不是一句“客户端等权”即可结束，而必须写成
 
-$$
+```math
 e_{i,c}^{\mathrm{uni}}
 =
 \mathbf{1}[n_{i,c}>0],
@@ -147,11 +147,11 @@ e_{i,c}^{\mathrm{uni}}
 p_c^{\mathrm{uni}}
 =
 \sum_{i=1}^{K}\alpha_{i,c}^{\mathrm{uni}}\mu_{i,c}.
-$$
+```
 
 然后继续写出
 
-$$
+```math
 w_c^{\mathrm{uni}}
 =
 s\frac{p_c^{\mathrm{uni}}}{\|p_c^{\mathrm{uni}}\|_2},
@@ -159,7 +159,7 @@ s\frac{p_c^{\mathrm{uni}}}{\|p_c^{\mathrm{uni}}\|_2},
 \mathrm{score}_c^{\mathrm{uni}}(x)
 =
 (w_c^{\mathrm{uni}})^\top\phi_0(T(x))+b_c.
-$$
+```
 
 其他消融项也必须按同样格式写清楚，不能只写自然语言描述。若替换的是患病率先验，则必须写出替换后的 $\pi_c$、$b_c$ 和最终 $\mathrm{score}_c(x)$；若替换的是原型聚合权重，则必须写出替换后的 $\alpha_{i,c}$、$p_c$、$w_c$ 和最终 $\mathrm{score}_c(x)$。
 
@@ -251,51 +251,51 @@ No prevalence calibration
 
 设 $z=\phi_0(T(x))$ 为共享参考骨干特征。正文中客户端 $i$ 上传的类别原型为 $\mu_{i,c}$，服务端聚合得到的全局诊断原型为 $p_c$。为了分析估计误差，额外引入真实参考特征均值 $\mu_c^\star$。该符号只用于理论分析，不替代正文中的 $\mu_{i,c}$ 或 $p_c$。服务端聚合原型为
 
-$$
+```math
 p_c=\sum_i \alpha_{i,c}\mu_{i,c}.
-$$
+```
 
 在每个客户端类别样本独立且特征二阶矩有界的条件下，可得到原型估计误差的形式：
 
-$$
+```math
 \mathbb{E}\|p_c-\mu_c^\star\|_2^2
 \le
 \sum_i \alpha_{i,c}^2\frac{\sigma_c^2}{n_{i,c}}+\mathrm{Bias}_c^2.
-$$
+```
 
 该式说明类别支持数加权并非任意设计。若 $n_{i,c}$ 较大，则该客户端原型估计方差较小，应赋予更高权重；若某客户端未观察到类别 $c$，即 $n_{i,c}=0$，则其不应对该类方向产生贡献。相比之下，普通参数平均没有这种按类别屏蔽机制，会把无证据客户端的分类头或参数方向混入类别 $c$，从而增加该类方向误差。
 
 进一步设类别 $c$ 与类别 $d$ 的真实 margin 为
 
-$$
+```math
 \Delta_{c,d}(x)
 =
 (\mu_c^\star)^\top z-(\mu_d^\star)^\top z.
-$$
+```
 
 当原型估计误差满足
 
-$$
+```math
 \|p_c-\mu_c^\star\|_2+\|p_d-\mu_d^\star\|_2
 <
 \frac{\Delta_{c,d}(x)}{\|z\|_2},
-$$
+```
 
 则替换为估计原型后不会改变样本 $x$ 在类别 $c$ 与 $d$ 之间的判别顺序。因此，降低每个类别的原型估计误差可以直接降低跨类误判和多数类吸收少数类的风险。
 
 对于 M2，正文中上传患病率计数 $m_{i,c}$ 得到的类别先验为 $\pi_c$，最终分类分数为
 
-$$
+```math
 \mathrm{score}_c(x)=w_c^\top z+\lambda\left(\log \pi_c-\frac{1}{C}\sum_k\log \pi_k\right).
-$$
+```
 
 若 $\lambda$ 有界，则先验项对任意两个类别的 margin 改变量满足
 
-$$
+```math
 |b_c-b_d|
 \le
 \lambda\left|\log \pi_c-\log \pi_d\right|.
-$$
+```
 
 该式说明 M2 只能对 M1 已经形成的类别方向进行有限校准，而不能无限制地把所有样本推向多数类。理论叙述应强调：M1 提供多类别判别方向，M2 只在这些方向之上加入有界长尾先验；因此 LAMP-Merge 能同时避免普通融合的类别坍缩，并保留医学长尾分布中真实存在的多数类统计信息。
 
