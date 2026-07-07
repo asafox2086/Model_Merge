@@ -510,9 +510,11 @@ M2 & bias strength & 3 & 0.6768 & 7 & 0.0085 \\
 \begin{figure}[t]
 \centering
 \includegraphics[width=\linewidth]{../figures/lamp_merge_hparam_sensitivity.png}
-\caption{Hyperparameter sensitivity of M1 and M2 on \texttt{dermamnist\_224}/ResNet/$K=3$/$\beta=0.1$.}
+\caption{Hyperparameter sensitivity of M1 and M2 on \texttt{dermamnist\_224}/ResNet/$K=3$/$\beta=0.1$. Red stars denote grid-best values and green dashed lines denote the default values used by the formal method.}
 \label{fig:hparam-sensitivity}
 \end{figure}
+
+Figure~\ref{fig:hparam-sensitivity} visualizes the same grid as Table~\ref{tab:hparam-summary}. The default M1 scale and M2 bias strength lie in the high-accuracy plateau, while excessively strong M2 calibration slightly degrades accuracy. This supports treating prevalence calibration as a bounded correction rather than an unrestricted majority-class prior.
 
 \section{V CONCLUSION}
 

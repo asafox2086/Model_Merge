@@ -101,6 +101,10 @@ M1 的 scale 在 `[5,40]` 的密集网格内保持稳定，说明性能主要来
 | M1 | prototype head scale | 5, 7, 10, 12, 15, 17, 20, 22, 25, 27, 30, 32, 35, 37, 40 | 37 | 0.6778 | 15 | 0.6683 | 0.0095 |
 | M2 | long-tail bias strength | 2, 3, 4, 5, 6, 7, 8, 10 | 3 | 0.6768 | 7 | 0.6683 | 0.0085 |
 
+![LAMP-Merge hyperparameter sensitivity](figures/lamp_merge_hparam_sensitivity.png)
+
+图中红色星号表示该网格中的最优取值，绿色虚线表示正式算法默认取值。M1 的默认 prototype head scale 为 20，M2 的默认 long-tail bias strength 上界为 6。二者均落在高精度平台区间内，说明正式配置并非依赖单个偶然最优点；同时，过强的 M2 先验会带来轻微退化，支持将患病率校准设计为有界项。
+
 完整网格如下：
 
 | 模块 | 参数 | 取值 | Acc | 范围 |
