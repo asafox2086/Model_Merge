@@ -90,6 +90,82 @@ M1 的 scale 在较宽范围内保持稳定，说明性能主要来自类别原�
 
 敏感性结果表明，M2 应作为有界校准使用。增大患病率 bias 的强度会先提升长尾皮肤病设置，但收益随后饱和；因此正式实现采用最大强度截断，并且只在上传类别先验超过主导类别阈值后启用 M2。
 
+## 写入论文 `.tex` 的补充表格与图像
+
+本次已将消融实验设置、消融结果、新指标表格和超参数敏感性图写入论文正文末尾，位置如下：
+
+- 主正文：`My_merge_ret/lamp_merge_paper_sections.tex`
+- AAAI 副本：`My_merge_ret/aaai26_lamp/lamp_merge_paper_sections.tex`
+- 起始小节：`\subsection{Additional Ablation and Sensitivity Results}`
+- 编译后 PDF：`My_merge_ret/aaai26_lamp/lamp_merge_aaai26.pdf`
+
+写入的第一张表是消融实验设置表，用于说明每个 ablation variant 的含义：
+
+| Setting | M1: diagnostic prototype reconstruction | M2: long-tail prevalence calibration | Purpose |
+| --- | --- | --- | --- |
+| LAMP-Merge | yes | yes | full method |
+| M1 only | yes | no | verify prototype reconstruction |
+| avg+M2 | no, use weight averaging | yes | test whether M2 works without M1 |
+| avg | no | no | vanilla weight averaging baseline |
+
+写入的第二张表是模块间消融结果表：
+
+| Setting | Raw cells | Raw mean Acc | Client Average cells | Client Average mean Acc |
+| --- | ---: | ---: | ---: | ---: |
+| LAMP-Merge | 225 | 0.5618 | 75 | 0.5618 |
+| M1 only | 225 | 0.5362 | 75 | 0.5362 |
+| avg+M2 | 225 | 0.2198 | 75 | 0.2198 |
+| avg | 225 | 0.2273 | 75 | 0.2273 |
+
+写入的第三张表是模块内消融表，实验点为 `dermamnist_224 / resnet / clients=3 / beta=0.1`：
+
+| Module | Factor | Value | Acc |
+| --- | --- | ---: | ---: |
+| M2 | long-tail bias strength | 2 | 0.6374 |
+| M2 | long-tail bias strength | 3 | 0.6454 |
+| M2 | long-tail bias strength | 4 | 0.6584 |
+| M2 | long-tail bias strength | 5 | 0.6668 |
+| M2 | long-tail bias strength | 6 | 0.6743 |
+| M2 | long-tail bias strength | 7 | 0.6743 |
+| M2 | long-tail bias strength | 8 | 0.6768 |
+| M2 | long-tail bias strength | 10 | 0.6768 |
+| M1 | prototype head scale | 10 | 0.6778 |
+| M1 | prototype head scale | 15 | 0.6768 |
+| M1 | prototype head scale | 20 | 0.6743 |
+| M1 | prototype head scale | 25 | 0.6678 |
+| M1 | prototype head scale | 30 | 0.6584 |
+| M1 | prototype head scale | 40 | 0.6454 |
+
+写入的第四张表是新指标诊断表。该表用于回应“既然 accuracy 可能不准确，为什么不用 recall/F1 等指标”的质疑。这里的 `BA` 即 balanced accuracy，也就是 multi-class macro recall：
+
+| Method | Acc | BA / Macro Recall | Macro F1 | Collapse Ratio |
+| --- | ---: | ---: | ---: | ---: |
+| client mean | 0.1804 | 0.1515 | 0.0638 | 0.8207 |
+| client best | 0.3156 | 0.1810 | 0.1123 | 0.7619 |
+| avg | 0.2304 | 0.1543 | 0.0751 | 0.8028 |
+| ties | 0.2089 | 0.1682 | 0.0858 | 0.7477 |
+| dare_linear | 0.2145 | 0.1481 | 0.0745 | 0.7577 |
+| fisher | 0.2585 | 0.1604 | 0.0886 | 0.8228 |
+| from | 0.2494 | 0.1652 | 0.0848 | 0.7705 |
+| iso_c | 0.1976 | 0.1648 | 0.0845 | 0.7538 |
+| robustmerge | 0.1486 | 0.1425 | 0.0502 | 0.8225 |
+| LAMP-Merge | 0.5885 | 0.5747 | 0.5352 | 0.2294 |
+
+写入的第五张表是超参数敏感性摘要：
+
+| Module | Parameter | Best value | Best Acc | Worst value | Range |
+| --- | --- | ---: | ---: | ---: | ---: |
+| M1 | prototype head scale | 10 | 0.6778 | 40 | 0.0324 |
+| M2 | long-tail bias strength | 8 | 0.6768 | 2 | 0.0394 |
+
+同时新增并写入了超参数敏感性图：
+
+![LAMP-Merge hyperparameter sensitivity](figures/lamp_merge_hparam_sensitivity.png)
+
+该图由 `My_merge_ret/reports/lamp_merge_hparam_sensitivity.csv` 生成，展示 M1 的 prototype head scale 与 M2 的 long-tail bias strength 在同一长尾压力点上的 accuracy 变化。图像文件为：
+
+- `My_merge_ret/figures/lamp_merge_hparam_sensitivity.png`
+
 ## 实验来源
 
 - 正式 LAMP-Merge 全量结果：`outputs/my_merge_reference_proto_recall_full_table_20260705`、`outputs/m1_m2_dominant_derma_36_20260705`。

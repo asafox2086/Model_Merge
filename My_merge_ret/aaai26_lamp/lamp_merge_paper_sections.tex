@@ -367,6 +367,123 @@ The ablation shows that M1 is the main source of the gain, while M2 improves lon
 
 LAMP-Merge is not federated learning and does not require multi-round communication. The server receives one upload after local training. The uploaded information consists of the checkpoint, class support counts, reference-backbone class prototypes, and class prevalence counts. The server never receives raw medical images, sample-level features, sample-level logits, or sample-level predictions. Since prototypes and prevalence are aggregated per diagnosis class on the client side, the server operates on class-level summaries rather than patient-level records.
 
+\subsection{Additional Ablation and Sensitivity Results}
+
+We provide the detailed ablation protocol and sensitivity analysis used to support the two-module design. The inter-module ablation is evaluated on the full benchmark, containing five medical datasets, five model families, three client counts, and three non-IID skew levels, i.e., 225 raw accuracy cells and 75 client-average cells. \textit{M1 only} keeps diagnostic prototype reconstruction and removes long-tail prevalence calibration. \textit{avg+M2} removes prototype reconstruction and applies the same prevalence calibration on top of ordinary weight averaging. This setting tests whether M2 is an independent merging rule or a calibration component that must be attached to M1.
+
+\begin{table}[t]
+\centering
+\caption{Inter-module ablation settings.}
+\label{tab:ablation-setting}
+\scriptsize
+\setlength{\tabcolsep}{3.0pt}
+\begin{tabular}{lccc}
+\toprule
+Setting & M1 & M2 & Purpose \\
+\midrule
+LAMP-Merge & yes & yes & full method \\
+M1 only & yes & no & prototype effect \\
+\texttt{avg+M2} & no & yes & calibration alone \\
+\texttt{avg} & no & no & vanilla average \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\begin{table}[t]
+\centering
+\caption{Detailed inter-module ablation over the full benchmark.}
+\label{tab:ablation-detailed}
+\scriptsize
+\setlength{\tabcolsep}{2.6pt}
+\begin{tabular}{lrrrr}
+\toprule
+Setting & Raw cells & Raw Acc & Avg cells & Avg Acc \\
+\midrule
+LAMP-Merge & 225 & 0.5618 & 75 & 0.5618 \\
+M1 only & 225 & 0.5362 & 75 & 0.5362 \\
+\texttt{avg+M2} & 225 & 0.2198 & 75 & 0.2198 \\
+\texttt{avg} & 225 & 0.2273 & 75 & 0.2273 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+For the internal ablation, we use the representative long-tail stress case \texttt{dermamnist\_224}/ResNet/$K=3$/$\beta=0.1$. M1 varies the prototype head scale, and M2 varies the long-tail bias strength. The results in Table~\ref{tab:internal-ablation} show that M1 is stable over a moderate scale range, while M2 improves as the bias strength increases and then saturates.
+
+\begin{table}[t]
+\centering
+\caption{Internal ablation on the long-tail stress case.}
+\label{tab:internal-ablation}
+\scriptsize
+\setlength{\tabcolsep}{3.0pt}
+\begin{tabular}{llrr}
+\toprule
+Module & Factor & Value & Acc \\
+\midrule
+M2 & bias strength & 2 & 0.6374 \\
+M2 & bias strength & 3 & 0.6454 \\
+M2 & bias strength & 4 & 0.6584 \\
+M2 & bias strength & 5 & 0.6668 \\
+M2 & bias strength & 6 & 0.6743 \\
+M2 & bias strength & 7 & 0.6743 \\
+M2 & bias strength & 8 & 0.6768 \\
+M2 & bias strength & 10 & 0.6768 \\
+M1 & head scale & 10 & 0.6778 \\
+M1 & head scale & 15 & 0.6768 \\
+M1 & head scale & 20 & 0.6743 \\
+M1 & head scale & 25 & 0.6678 \\
+M1 & head scale & 30 & 0.6584 \\
+M1 & head scale & 40 & 0.6454 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\begin{table}[t]
+\centering
+\caption{Metric diagnostics averaged over 20 medical cases.}
+\label{tab:metric-diagnostics-full}
+\scriptsize
+\setlength{\tabcolsep}{2.4pt}
+\begin{tabular}{lrrrr}
+\toprule
+Method & Acc & BA & Macro F1 & $\rho$ \\
+\midrule
+client mean & 0.1804 & 0.1515 & 0.0638 & 0.8207 \\
+client best & 0.3156 & 0.1810 & 0.1123 & 0.7619 \\
+\texttt{avg} & 0.2304 & 0.1543 & 0.0751 & 0.8028 \\
+\texttt{ties} & 0.2089 & 0.1682 & 0.0858 & 0.7477 \\
+\texttt{dare\_linear} & 0.2145 & 0.1481 & 0.0745 & 0.7577 \\
+\texttt{fisher} & 0.2585 & 0.1604 & 0.0886 & 0.8228 \\
+\texttt{from} & 0.2494 & 0.1652 & 0.0848 & 0.7705 \\
+\texttt{iso\_c} & 0.1976 & 0.1648 & 0.0845 & 0.7538 \\
+\texttt{robustmerge} & 0.1486 & 0.1425 & 0.0502 & 0.8225 \\
+LAMP-Merge & 0.5885 & 0.5747 & 0.5352 & 0.2294 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\begin{table}[t]
+\centering
+\caption{Hyperparameter sensitivity summary on \texttt{dermamnist\_224}/ResNet/$K=3$/$\beta=0.1$.}
+\label{tab:hparam-summary}
+\scriptsize
+\setlength{\tabcolsep}{2.4pt}
+\begin{tabular}{llrrrr}
+\toprule
+Module & Parameter & Best & Best Acc & Worst & Range \\
+\midrule
+M1 & head scale & 10 & 0.6778 & 40 & 0.0324 \\
+M2 & bias strength & 8 & 0.6768 & 2 & 0.0394 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\begin{figure}[t]
+\centering
+\includegraphics[width=\linewidth]{../figures/lamp_merge_hparam_sensitivity.png}
+\caption{Hyperparameter sensitivity of M1 and M2 on \texttt{dermamnist\_224}/ResNet/$K=3$/$\beta=0.1$.}
+\label{fig:hparam-sensitivity}
+\end{figure}
+
 \section{V CONCLUSION}
 
 We studied one-shot asynchronous medical model merging, where independently trained hospital models must be fused without federated optimization rounds and without exposing raw medical images to the server. Our empirical analysis shows that generic post-hoc merging methods suffer from aggregation-induced predictive collapse under incomplete local diagnostic coverage. We further show that this collapse can be masked by raw accuracy on long-tailed medical datasets, motivating evaluation with macro recall, macro F1, and prediction-distribution diagnostics.
