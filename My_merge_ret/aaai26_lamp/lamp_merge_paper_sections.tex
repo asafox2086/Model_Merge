@@ -428,7 +428,7 @@ M1 only & 75 & 0.5362 & 46/75 & 66/75 \\
 \end{tabular}
 \end{table}
 
-For the internal ablation, we use the representative long-tail stress case \texttt{dermamnist\_224}/ResNet/$K=3$/$\beta=0.1$. For M1, we vary the prototype head scale to examine whether the reconstructed classifier depends on a narrow logit magnitude. For M2, we vary the long-tail bias strength to examine whether prevalence calibration behaves as a bounded prior correction rather than an unbounded majority-class amplifier. Table~\ref{tab:internal-ablation} shows that both components are stable over a dense local grid, with accuracy varying by less than one percentage point in the evaluated ranges.
+For the internal ablation, we use the representative long-tail stress case \texttt{dermamnist\_224}/ResNet/$K=3$/$\beta=0.1$. For M1, we vary $s$, the scale of the reconstructed prototype head, to examine whether the classifier depends on a narrow logit magnitude. For M2, we vary $\lambda$, the bounded log-prior calibration strength. The activation threshold $\tau$ is fixed and only determines whether M2 is enabled. Table~\ref{tab:internal-ablation} shows that both components are stable over a dense local grid, with accuracy varying by less than one percentage point in the evaluated ranges.
 
 \begin{table*}[t]
 \centering
@@ -440,29 +440,29 @@ For the internal ablation, we use the representative long-tail stress case \text
 \toprule
 Module & Factor & Value & Acc \\
 \midrule
-M2 & bias strength & 2 & 0.6718 \\
-M2 & bias strength & 3 & 0.6768 \\
-M2 & bias strength & 4 & 0.6758 \\
-M2 & bias strength & 5 & 0.6763 \\
-M2 & bias strength & 6 & 0.6723 \\
-M2 & bias strength & 7 & 0.6683 \\
-M2 & bias strength & 8 & 0.6683 \\
-M2 & bias strength & 10 & 0.6688 \\
-M1 & head scale & 5 & 0.6688 \\
-M1 & head scale & 7 & 0.6688 \\
-M1 & head scale & 10 & 0.6688 \\
-M1 & head scale & 12 & 0.6688 \\
-M1 & head scale & 15 & 0.6683 \\
-M1 & head scale & 17 & 0.6683 \\
-M1 & head scale & 20 & 0.6723 \\
-M1 & head scale & 22 & 0.6733 \\
-M1 & head scale & 25 & 0.6758 \\
-M1 & head scale & 27 & 0.6763 \\
-M1 & head scale & 30 & 0.6758 \\
-M1 & head scale & 32 & 0.6748 \\
-M1 & head scale & 35 & 0.6738 \\
-M1 & head scale & 37 & 0.6778 \\
-M1 & head scale & 40 & 0.6768 \\
+M2 & $\lambda$ & 2 & 0.6718 \\
+M2 & $\lambda$ & 3 & 0.6768 \\
+M2 & $\lambda$ & 4 & 0.6758 \\
+M2 & $\lambda$ & 5 & 0.6763 \\
+M2 & $\lambda$ & 6 & 0.6723 \\
+M2 & $\lambda$ & 7 & 0.6683 \\
+M2 & $\lambda$ & 8 & 0.6683 \\
+M2 & $\lambda$ & 10 & 0.6688 \\
+M1 & $s$ & 5 & 0.6688 \\
+M1 & $s$ & 7 & 0.6688 \\
+M1 & $s$ & 10 & 0.6688 \\
+M1 & $s$ & 12 & 0.6688 \\
+M1 & $s$ & 15 & 0.6683 \\
+M1 & $s$ & 17 & 0.6683 \\
+M1 & $s$ & 20 & 0.6723 \\
+M1 & $s$ & 22 & 0.6733 \\
+M1 & $s$ & 25 & 0.6758 \\
+M1 & $s$ & 27 & 0.6763 \\
+M1 & $s$ & 30 & 0.6758 \\
+M1 & $s$ & 32 & 0.6748 \\
+M1 & $s$ & 35 & 0.6738 \\
+M1 & $s$ & 37 & 0.6778 \\
+M1 & $s$ & 40 & 0.6768 \\
 \bottomrule
 \end{tabular}
 \end{table*}
@@ -501,8 +501,8 @@ LAMP-Merge & 0.5885 & 0.5747 & 0.5352 & 0.2294 \\
 \toprule
 Module & Parameter & Best & Best Acc & Worst & Range \\
 \midrule
-M1 & head scale & 37 & 0.6778 & 15 & 0.0095 \\
-M2 & bias strength & 3 & 0.6768 & 7 & 0.0085 \\
+M1 & $s$ & 37 & 0.6778 & 15 & 0.0095 \\
+M2 & $\lambda$ & 3 & 0.6768 & 7 & 0.0085 \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -510,11 +510,11 @@ M2 & bias strength & 3 & 0.6768 & 7 & 0.0085 \\
 \begin{figure}[t]
 \centering
 \includegraphics[width=\linewidth]{../figures/lamp_merge_hparam_sensitivity.png}
-\caption{Hyperparameter sensitivity of M1 and M2 on \texttt{dermamnist\_224}/ResNet/$K=3$/$\beta=0.1$. Red stars denote grid-best values and green dashed lines denote the default values used by the formal method.}
+\caption{Hyperparameter sensitivity of M1 and M2 on \texttt{dermamnist\_224}/ResNet/$K=3$/$\beta=0.1$. Red stars denote grid-best values and green dashed lines denote the default values used by the formal method ($s=20$, $\lambda=6$).}
 \label{fig:hparam-sensitivity}
 \end{figure}
 
-Figure~\ref{fig:hparam-sensitivity} visualizes the same grid as Table~\ref{tab:hparam-summary}. The default M1 scale and M2 bias strength lie in the high-accuracy plateau, while excessively strong M2 calibration slightly degrades accuracy. This supports treating prevalence calibration as a bounded correction rather than an unrestricted majority-class prior.
+Figure~\ref{fig:hparam-sensitivity} visualizes the same grid as Table~\ref{tab:hparam-summary}. The default $s$ and $\lambda$ lie in the high-accuracy plateau, while excessively strong M2 calibration slightly degrades accuracy. This supports treating prevalence calibration as a bounded correction rather than an unrestricted majority-class prior.
 
 \section{V CONCLUSION}
 

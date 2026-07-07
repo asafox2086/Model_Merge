@@ -14,6 +14,14 @@ DEFAULT_VALUES = {
     ("M1", "prototype head scale"): 20.0,
     ("M2", "long-tail bias strength"): 6.0,
 }
+DISPLAY_LABELS = {
+    ("M1", "prototype head scale"): r"M1: $s$",
+    ("M2", "long-tail bias strength"): r"M2: $\lambda$",
+}
+X_LABELS = {
+    ("M1", "prototype head scale"): r"value of $s$",
+    ("M2", "long-tail bias strength"): r"value of $\lambda$",
+}
 
 
 def read_rows():
@@ -35,7 +43,6 @@ def main():
         rows = sorted(grouped[key], key=lambda item: float(item["value"]))
         xs = [float(row["value"]) for row in rows]
         ys = [float(row["mean_acc"]) for row in rows]
-        module, parameter = key
         best_idx = max(range(len(ys)), key=lambda idx: ys[idx])
         default_value = DEFAULT_VALUES.get(key)
         ax.plot(xs, ys, marker="o", color="#1f77b4", linewidth=1.8, markersize=4.0)
@@ -70,8 +77,8 @@ def main():
                 linewidth=0.5,
                 zorder=5,
             )
-        ax.set_title(f"{module}: {parameter}", fontsize=9)
-        ax.set_xlabel("hyperparameter value", fontsize=8)
+        ax.set_title(DISPLAY_LABELS[key], fontsize=9)
+        ax.set_xlabel(X_LABELS[key], fontsize=8)
         ax.set_ylabel("test accuracy", fontsize=8)
         ax.grid(True, linewidth=0.4, alpha=0.35)
         ax.tick_params(axis="both", labelsize=8)
