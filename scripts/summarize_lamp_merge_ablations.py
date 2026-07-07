@@ -31,6 +31,14 @@ REPORT_PATH = ROOT / "My_merge_ret/LAMP-Merge模块消融与超参数分析.md"
 CURRENT_FULL_ROOT = ROOT / "outputs/lamp_merge_current_prevalence_smoke_20260706"
 CURRENT_M1_ROOT = ROOT / "outputs/lamp_merge_current_prevalence_m1_smoke_20260706"
 CURRENT_AVG_M2_ROOT = ROOT / "outputs/lamp_merge_current_prevalence_avg_m2_smoke_20260706"
+ABLATION_VARIANTS = [FORMAL_LABEL, "M1 only", "avg+M2", "avg"]
+DATASET_LABELS = {
+    "bloodmnist_224": "Blood",
+    "dermamnist_224": "Derma",
+    "organcmnist_224": "Organ-C",
+    "organsmnist_224": "Organ-S",
+    "chaoshengmnist_224": "Ultrasound",
+}
 
 
 def read_eval_rows(roots):
@@ -202,6 +210,122 @@ def summarize_lookup(label, lookup, all_keys, avg_lookup=None, formal_lookup=Non
     return row
 
 
+def client_average_key(raw_key):
+    task_type, dataset, model, num_clients, _beta = raw_key
+    return task_type, dataset, model, num_clients
+
+
+def build_client_average_lookup(raw_lookup):
+    grouped = defaultdict(list)
+    for key, value in raw_lookup.items():
+        grouped[client_average_key(key)].append(float(value))
+    return {
+        key: mean(values)
+        for key, values in grouped.items()
+        if len(values) == 3
+    }
+
+
+def build_client_average_ablation(formal_lookup, m1_lookup, avg_m2_lookup, avg_lookup):
+    variant_lookups = {
+        FORMAL_LABEL: build_client_average_lookup(formal_lookup),
+        "M1 only": build_client_average_lookup(m1_lookup),
+        "avg+M2": build_client_average_lookup(avg_m2_lookup),
+        "avg": build_client_average_lookup(avg_lookup),
+    }
+    all_keys = sorted(set().union(*(set(item) for item in variant_lookups.values())))
+
+    cell_rows = []
+    for key in all_keys:
+        values = {
+            label: lookup[key]
+            for label, lookup in variant_lookups.items()
+            if key in lookup
+        }
+        if not values:
+            continue
+        best_value = max(values.values())
+        best_variants = [label for label, value in values.items() if value >= best_value - 1e-12]
+        task_type, dataset, model, num_clients = key
+        cell_rows.append({
+            "task_type": task_type,
+            "dataset": dataset,
+            "model": model,
+            "num_clients": num_clients,
+            FORMAL_LABEL: values.get(FORMAL_LABEL),
+            "M1 only": values.get("M1 only"),
+            "avg+M2": values.get("avg+M2"),
+            "avg": values.get("avg"),
+            "best_value": best_value,
+            "best_variants": ";".join(best_variants),
+            "lamp_minus_avg": (
+                values[FORMAL_LABEL] - values["avg"]
+                if FORMAL_LABEL in values and "avg" in values
+                else None
+            ),
+            "m1_minus_avg": (
+                values["M1 only"] - values["avg"]
+                if "M1 only" in values and "avg" in values
+                else None
+            ),
+            "avg_m2_minus_avg": (
+                values["avg+M2"] - values["avg"]
+                if "avg+M2" in values and "avg" in values
+                else None
+            ),
+        })
+
+    summary_rows = []
+    for label, lookup in variant_lookups.items():
+        values = [row[label] for row in cell_rows if row.get(label) is not None]
+        ge_avg_rows = [row for row in cell_rows if row.get(label) is not None and row.get("avg") is not None]
+        summary_rows.append({
+            "setting": label,
+            "client_average_cells": len(values),
+            "client_average_mean_acc": mean(values),
+            "best_or_tied_cells": sum(1 for row in cell_rows if label in str(row.get("best_variants", "")).split(";")),
+            "best_or_tied_total": len(cell_rows),
+            "ge_avg_client_average": sum(1 for row in ge_avg_rows if row[label] >= row["avg"]),
+            "ge_avg_client_average_total": len(ge_avg_rows),
+            "mean_margin_vs_avg": mean([
+                row[label] - row["avg"]
+                for row in ge_avg_rows
+            ]),
+        })
+    return cell_rows, summary_rows
+
+
+def build_client_average_dataset_ablation(cell_rows):
+    grouped = defaultdict(list)
+    for row in cell_rows:
+        grouped[row["dataset"]].append(row)
+
+    out = []
+    for dataset, rows in sorted(grouped.items()):
+        item = {
+            "dataset": dataset,
+            "dataset_label": DATASET_LABELS.get(dataset, dataset),
+            "client_average_cells": len(rows),
+        }
+        for label in ABLATION_VARIANTS:
+            values = [row[label] for row in rows if row.get(label) is not None]
+            item[f"{label}_mean_acc"] = mean(values)
+            item[f"{label}_best_or_tied"] = sum(
+                1
+                for row in rows
+                if label in str(row.get("best_variants", "")).split(";")
+            )
+            item[f"{label}_ge_avg"] = sum(
+                1
+                for row in rows
+                if row.get(label) is not None
+                and row.get("avg") is not None
+                and row[label] >= row["avg"]
+            )
+        out.append(item)
+    return out
+
+
 def write_csv(path, rows, fieldnames):
     path.parent.mkdir(parents=True, exist_ok=True)
     with path.open("w", encoding="utf-8", newline="") as f:
@@ -259,14 +383,14 @@ def build_stress_case_rows():
 def build_sensitivity_rows():
     rows = []
     tau_roots = [
-        (2, ROOT / "outputs/tmp_derma_b01_tau_2"),
-        (3, ROOT / "outputs/tmp_derma_b01_tau_3"),
-        (4, ROOT / "outputs/tmp_derma_b01_tau_4"),
-        (5, ROOT / "outputs/tmp_derma_b01_tau_5"),
-        (6, ROOT / "outputs/tmp_derma_b01_tau_6"),
-        (7, ROOT / "outputs/tmp_derma_b01_tau_7"),
-        (8, ROOT / "outputs/tmp_derma_b01_tau_8"),
-        (10, ROOT / "outputs/tmp_derma_b01_tau_10"),
+        (2, ROOT / "outputs/lamp_merge_hparam_tau_2_prevalence_20260707"),
+        (3, ROOT / "outputs/lamp_merge_hparam_tau_3_prevalence_20260707"),
+        (4, ROOT / "outputs/lamp_merge_hparam_tau_4_prevalence_20260707"),
+        (5, ROOT / "outputs/lamp_merge_hparam_tau_5_prevalence_20260707"),
+        (6, ROOT / "outputs/lamp_merge_hparam_tau_6_prevalence_20260707"),
+        (7, ROOT / "outputs/lamp_merge_hparam_tau_7_prevalence_20260707"),
+        (8, ROOT / "outputs/lamp_merge_hparam_tau_8_prevalence_20260707"),
+        (10, ROOT / "outputs/lamp_merge_hparam_tau_10_prevalence_20260707"),
     ]
     for tau, root in tau_roots:
         item = read_single_eval(root)
@@ -278,12 +402,21 @@ def build_sensitivity_rows():
         rows.append(item)
 
     scale_roots = [
-        (10, ROOT / "outputs/tmp_derma_b01_scale_10_tau6"),
-        (15, ROOT / "outputs/tmp_derma_b01_scale_15_tau6"),
-        (20, ROOT / "outputs/tmp_derma_b01_tau_6"),
-        (25, ROOT / "outputs/tmp_derma_b01_scale_25_tau6"),
-        (30, ROOT / "outputs/tmp_derma_b01_scale_30_tau6"),
-        (40, ROOT / "outputs/tmp_derma_b01_scale_40_tau6"),
+        (5, ROOT / "outputs/lamp_merge_hparam_scale_5_prevalence_20260707"),
+        (7, ROOT / "outputs/lamp_merge_hparam_scale_7_prevalence_20260707"),
+        (10, ROOT / "outputs/lamp_merge_hparam_scale_10_prevalence_20260707"),
+        (12, ROOT / "outputs/lamp_merge_hparam_scale_12_prevalence_20260707"),
+        (15, ROOT / "outputs/lamp_merge_hparam_scale_15_prevalence_20260707"),
+        (17, ROOT / "outputs/lamp_merge_hparam_scale_17_prevalence_20260707"),
+        (20, ROOT / "outputs/lamp_merge_hparam_scale_20_prevalence_20260707"),
+        (22, ROOT / "outputs/lamp_merge_hparam_scale_22_prevalence_20260707"),
+        (25, ROOT / "outputs/lamp_merge_hparam_scale_25_prevalence_20260707"),
+        (27, ROOT / "outputs/lamp_merge_hparam_scale_27_prevalence_20260707"),
+        (30, ROOT / "outputs/lamp_merge_hparam_scale_30_prevalence_20260707"),
+        (32, ROOT / "outputs/lamp_merge_hparam_scale_32_prevalence_20260707"),
+        (35, ROOT / "outputs/lamp_merge_hparam_scale_35_prevalence_20260707"),
+        (37, ROOT / "outputs/lamp_merge_hparam_scale_37_prevalence_20260707"),
+        (40, ROOT / "outputs/lamp_merge_hparam_scale_40_prevalence_20260707"),
     ]
     for scale, root in scale_roots:
         item = read_single_eval(root)
@@ -347,7 +480,16 @@ def markdown_table(headers, rows):
     return "\n".join(lines)
 
 
-def render_report(module_rows, stress_rows, internal_rows, hparam_rows, hparam_summary_rows, main_summary):
+def render_report(
+    module_rows,
+    client_average_summary_rows,
+    client_average_dataset_rows,
+    stress_rows,
+    internal_rows,
+    hparam_rows,
+    hparam_summary_rows,
+    main_summary,
+):
     lines = [
         "# LAMP-Merge 模块消融与超参数分析",
         "",
@@ -371,7 +513,51 @@ def render_report(module_rows, stress_rows, internal_rows, hparam_rows, hparam_s
         "",
         "## 模块间消融",
         "",
-        "模块间消融用于分离两个机制的作用。`M1 only` 保留诊断原型重建，关闭长尾患病率校准；`avg+M2` 关闭原型重建，只在普通平均模型上加入相同的患病率校准。该设计用于验证主要收益是否来自医学类别原型，同时检验 M2 是否必须附着在 M1 的诊断原型头之上。",
+        "模块间消融用于分离两个机制的作用。`M1 only` 保留诊断原型重建，关闭长尾患病率校准；`avg+M2` 关闭原型重建，只在普通平均模型上加入相同的患病率校准；`avg` 是普通参数平均控制组。主分析以 `client average` 单元格为统计单位：对每个固定的 `(dataset, backbone, K)`，先平均三个 Dirichlet skew 设置，再比较四个设置的 test accuracy。",
+        "",
+    ])
+    client_md_rows = []
+    for row in client_average_summary_rows:
+        client_md_rows.append({
+            "设置": row["setting"],
+            "Client Average 单元格": row["client_average_cells"],
+            "Client Average 平均 Acc": fmt(row["client_average_mean_acc"]),
+            "最优或并列最优": f"{row['best_or_tied_cells']}/{row['best_or_tied_total']}",
+            "不低于 avg": f"{row['ge_avg_client_average']}/{row['ge_avg_client_average_total']}",
+            "相对 avg 平均增益": fmt(row["mean_margin_vs_avg"]),
+        })
+    lines.append(markdown_table(
+        ["设置", "Client Average 单元格", "Client Average 平均 Acc", "最优或并列最优", "不低于 avg", "相对 avg 平均增益"],
+        client_md_rows,
+    ))
+    lines.extend([
+        "",
+        "该表直接对应主表中的 `client average` 比较口径。LAMP-Merge 在 75 个 client-average 单元格中取得最高或并列最高结果的次数最多；`M1 only` 保留了大部分收益，说明诊断原型重建是主要有效成分；`avg+M2` 与 `avg` 的比较表明，患病率校准本身不能替代类别原型重建，它只应作为 M1 之上的长尾校准项。",
+        "",
+        "为避免总体统计掩盖数据集差异，下面进一步按数据集报告 ACC 对比。每个数据集包含 15 个 client-average 单元格，即五类 backbone 与三个客户端数量的组合。",
+        "",
+    ])
+    dataset_md_rows = []
+    for row in client_average_dataset_rows:
+        dataset_md_rows.append({
+            "数据集": row["dataset_label"],
+            "单元格": row["client_average_cells"],
+            "LAMP-Merge Acc": fmt(row[f"{FORMAL_LABEL}_mean_acc"]),
+            "M1 only Acc": fmt(row["M1 only_mean_acc"]),
+            "avg+M2 Acc": fmt(row["avg+M2_mean_acc"]),
+            "avg Acc": fmt(row["avg_mean_acc"]),
+            "LAMP 最优或并列": f"{row[f'{FORMAL_LABEL}_best_or_tied']}/{row['client_average_cells']}",
+            "M1 最优或并列": f"{row['M1 only_best_or_tied']}/{row['client_average_cells']}",
+        })
+    lines.append(markdown_table(
+        ["数据集", "单元格", "LAMP-Merge Acc", "M1 only Acc", "avg+M2 Acc", "avg Acc", "LAMP 最优或并列", "M1 最优或并列"],
+        dataset_md_rows,
+    ))
+    lines.extend([
+        "",
+        "数据集级结果显示，Blood、Ultrasound、Organ-C 和 Organ-S 上的收益主要由 M1 提供，说明类别原型重建能够在多种医学图像形态下稳定恢复全局诊断判别；Derma 上 LAMP-Merge 明显高于 M1 only，说明 M2 对强长尾皮肤病分布的患病率校准具有独立贡献。",
+        "",
+        "作为补充，下面给出 raw cell 级别的聚合统计，用于检查相同结论是否受单个 beta 设置驱动。",
         "",
     ])
     module_md_rows = []
@@ -397,7 +583,7 @@ def render_report(module_rows, stress_rows, internal_rows, hparam_rows, hparam_s
     ))
     lines.extend([
         "",
-        "结果支持两个结论。第一，`M1 only` 已经具备强反坍缩能力，说明显式为每个诊断类别重建原型能够避免融合模型继承参数空间平均产生的单类预测坍缩。第二，`avg+M2` 明显较弱，说明 M2 不能独立替代原型重建；它的作用是在 M1 已经形成诊断类别判别头之后，对极端长尾场景进行有界校准。",
+        "raw cell 统计与 client-average 统计一致：M1 已经显著优于普通平均，表明显式为每个诊断类别重建原型能够抑制融合后的单类预测坍缩；M2 的独立版本不稳定，说明它不是一个独立融合器，而是对 M1 诊断原型头的有界患病率修正。",
         "",
         "## 模块内消融",
         "",
@@ -417,7 +603,7 @@ def render_report(module_rows, stress_rows, internal_rows, hparam_rows, hparam_s
     lines.append(markdown_table(["模块", "内部因素", "取值", "数据集", "模型", "Acc"], internal_md_rows))
     lines.extend([
         "",
-        "M1 的 scale 在较宽范围内保持稳定，说明性能主要来自类别原型方向本身，而不是单一尺度特判。M2 的 bias strength 从 2 增大到 6 时持续提升，之后进入饱和区间，说明长尾校准需要有界使用，不能无限放大多数类先验。",
+        "M1 的 scale 在 `[5,40]` 的密集网格内保持稳定，说明性能主要来自类别原型方向本身，而不是单一尺度特判。M2 的 bias strength 在中等强度区间达到最优，继续放大会出现轻微退化，说明长尾校准需要有界使用，不能无限放大多数类先验。",
         "",
         "## 长尾压力点校验",
         "",
@@ -475,7 +661,7 @@ def render_report(module_rows, stress_rows, internal_rows, hparam_rows, hparam_s
     lines.append(markdown_table(["模块", "参数", "取值", "Acc", "范围"], hparam_md_rows))
     lines.extend([
         "",
-        "敏感性结果表明，M2 应作为有界校准使用。增大患病率 bias 的强度会先提升长尾皮肤病设置，但收益随后饱和；因此正式实现采用最大强度截断，并且只在上传类别先验超过主导类别阈值后启用 M2。",
+        "敏感性结果表明，M2 应作为有界校准使用。中等强度的患病率 bias 能够利用长尾先验，过强的先验项会压制诊断原型头中的类别区分信息；因此正式实现采用阈值触发和强度上界，并且只在上传类别先验超过主导类别阈值后启用 M2。",
         "",
         "## 实验来源",
         "",
@@ -502,6 +688,13 @@ def main():
         summarize_lookup("avg+M2", avg_m2_lookup, all_keys, avg_lookup=avg_lookup, formal_lookup=formal_lookup),
         summarize_lookup("avg", avg_lookup, all_keys, avg_lookup=avg_lookup, formal_lookup=formal_lookup),
     ]
+    client_average_cells, client_average_summary_rows = build_client_average_ablation(
+        formal_lookup,
+        m1_lookup,
+        avg_m2_lookup,
+        avg_lookup,
+    )
+    client_average_dataset_rows = build_client_average_dataset_ablation(client_average_cells)
     stress_rows = build_stress_case_rows()
     hparam_rows = build_sensitivity_rows()
     internal_rows = build_internal_ablation_rows(hparam_rows)
@@ -525,6 +718,60 @@ def main():
         ],
     )
     write_csv(
+        REPORT_DIR / "lamp_merge_client_avg_ablation_cells.csv",
+        client_average_cells,
+        [
+            "task_type",
+            "dataset",
+            "model",
+            "num_clients",
+            FORMAL_LABEL,
+            "M1 only",
+            "avg+M2",
+            "avg",
+            "best_value",
+            "best_variants",
+            "lamp_minus_avg",
+            "m1_minus_avg",
+            "avg_m2_minus_avg",
+        ],
+    )
+    write_csv(
+        REPORT_DIR / "lamp_merge_client_avg_ablation_summary.csv",
+        client_average_summary_rows,
+        [
+            "setting",
+            "client_average_cells",
+            "client_average_mean_acc",
+            "best_or_tied_cells",
+            "best_or_tied_total",
+            "ge_avg_client_average",
+            "ge_avg_client_average_total",
+            "mean_margin_vs_avg",
+        ],
+    )
+    write_csv(
+        REPORT_DIR / "lamp_merge_client_avg_ablation_by_dataset.csv",
+        client_average_dataset_rows,
+        [
+            "dataset",
+            "dataset_label",
+            "client_average_cells",
+            f"{FORMAL_LABEL}_mean_acc",
+            "M1 only_mean_acc",
+            "avg+M2_mean_acc",
+            "avg_mean_acc",
+            f"{FORMAL_LABEL}_best_or_tied",
+            "M1 only_best_or_tied",
+            "avg+M2_best_or_tied",
+            "avg_best_or_tied",
+            f"{FORMAL_LABEL}_ge_avg",
+            "M1 only_ge_avg",
+            "avg+M2_ge_avg",
+            "avg_ge_avg",
+        ],
+    )
+    write_csv(
         REPORT_DIR / "lamp_merge_module_internal_ablation.csv",
         internal_rows,
         ["module", "factor", "value", "dataset", "model", "num_clients", "beta", "acc", "root"],
@@ -545,7 +792,16 @@ def main():
         ["module", "parameter", "values", "best_value", "best_acc", "worst_value", "worst_acc", "range"],
     )
     REPORT_PATH.write_text(
-        render_report(module_rows, stress_rows, internal_rows, hparam_rows, hparam_summary_rows, main_summary),
+        render_report(
+            module_rows,
+            client_average_summary_rows,
+            client_average_dataset_rows,
+            stress_rows,
+            internal_rows,
+            hparam_rows,
+            hparam_summary_rows,
+            main_summary,
+        ),
         encoding="utf-8",
     )
     print(f"wrote {REPORT_PATH}")

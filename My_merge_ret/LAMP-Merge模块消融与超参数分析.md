@@ -14,7 +14,30 @@
 
 ## 模块间消融
 
-模块间消融用于分离两个机制的作用。`M1 only` 保留诊断原型重建，关闭长尾患病率校准；`avg+M2` 关闭原型重建，只在普通平均模型上加入相同的患病率校准。该设计用于验证主要收益是否来自医学类别原型，同时检验 M2 是否必须附着在 M1 的诊断原型头之上。
+模块间消融用于分离两个机制的作用。`M1 only` 保留诊断原型重建，关闭长尾患病率校准；`avg+M2` 关闭原型重建，只在普通平均模型上加入相同的患病率校准；`avg` 是普通参数平均控制组。主分析以 `client average` 单元格为统计单位：对每个固定的 `(dataset, backbone, K)`，先平均三个 Dirichlet skew 设置，再比较四个设置的 test accuracy。
+
+| 设置 | Client Average 单元格 | Client Average 平均 Acc | 最优或并列最优 | 不低于 avg | 相对 avg 平均增益 |
+| --- | --- | --- | --- | --- | --- |
+| LAMP-Merge | 75 | 0.5618 | 51/75 | 71/75 | 0.3345 |
+| M1 only | 75 | 0.5362 | 46/75 | 66/75 | 0.3089 |
+| avg+M2 | 75 | 0.2198 | 4/75 | 43/75 | -0.0075 |
+| avg | 75 | 0.2273 | 2/75 | 75/75 | 0.0000 |
+
+该表直接对应主表中的 `client average` 比较口径。LAMP-Merge 在 75 个 client-average 单元格中取得最高或并列最高结果的次数最多；`M1 only` 保留了大部分收益，说明诊断原型重建是主要有效成分；`avg+M2` 与 `avg` 的比较表明，患病率校准本身不能替代类别原型重建，它只应作为 M1 之上的长尾校准项。
+
+为避免总体统计掩盖数据集差异，下面进一步按数据集报告 ACC 对比。每个数据集包含 15 个 client-average 单元格，即五类 backbone 与三个客户端数量的组合。
+
+| 数据集 | 单元格 | LAMP-Merge Acc | M1 only Acc | avg+M2 Acc | avg Acc | LAMP 最优或并列 | M1 最优或并列 |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| Blood | 15 | 0.7156 | 0.7155 | 0.1726 | 0.1699 | 12/15 | 9/15 |
+| Ultrasound | 15 | 0.4040 | 0.4040 | 0.1551 | 0.1516 | 15/15 | 15/15 |
+| Derma | 15 | 0.6257 | 0.4975 | 0.4913 | 0.5304 | 12/15 | 2/15 |
+| Organ-C | 15 | 0.5543 | 0.5543 | 0.1331 | 0.1358 | 6/15 | 10/15 |
+| Organ-S | 15 | 0.5096 | 0.5096 | 0.1469 | 0.1488 | 6/15 | 10/15 |
+
+数据集级结果显示，Blood、Ultrasound、Organ-C 和 Organ-S 上的收益主要由 M1 提供，说明类别原型重建能够在多种医学图像形态下稳定恢复全局诊断判别；Derma 上 LAMP-Merge 明显高于 M1 only，说明 M2 对强长尾皮肤病分布的患病率校准具有独立贡献。
+
+作为补充，下面给出 raw cell 级别的聚合统计，用于检查相同结论是否受单个 beta 设置驱动。
 
 | 设置 | Raw 单元格 | Raw 平均 Acc | Client Average 单元格 | Client Average 平均 Acc | Raw 不低于 avg | Raw 不低于 LAMP |
 | --- | --- | --- | --- | --- | --- | --- |
@@ -23,7 +46,7 @@
 | avg+M2 | 225 | 0.2198 | 75 | 0.2198 | 141/225 | 29/225 |
 | avg | 225 | 0.2273 | 75 | 0.2273 | 225/225 | 26/225 |
 
-结果支持两个结论。第一，`M1 only` 已经具备强反坍缩能力，说明显式为每个诊断类别重建原型能够避免融合模型继承参数空间平均产生的单类预测坍缩。第二，`avg+M2` 明显较弱，说明 M2 不能独立替代原型重建；它的作用是在 M1 已经形成诊断类别判别头之后，对极端长尾场景进行有界校准。
+raw cell 统计与 client-average 统计一致：M1 已经显著优于普通平均，表明显式为每个诊断类别重建原型能够抑制融合后的单类预测坍缩；M2 的独立版本不稳定，说明它不是一个独立融合器，而是对 M1 诊断原型头的有界患病率修正。
 
 ## 模块内消融
 
@@ -31,22 +54,31 @@
 
 | 模块 | 内部因素 | 取值 | 数据集 | 模型 | Acc |
 | --- | --- | --- | --- | --- | --- |
-| M2 | long-tail bias strength | 2 | dermamnist_224 | resnet | 0.6374 |
-| M2 | long-tail bias strength | 3 | dermamnist_224 | resnet | 0.6454 |
-| M2 | long-tail bias strength | 4 | dermamnist_224 | resnet | 0.6584 |
-| M2 | long-tail bias strength | 5 | dermamnist_224 | resnet | 0.6668 |
-| M2 | long-tail bias strength | 6 | dermamnist_224 | resnet | 0.6743 |
-| M2 | long-tail bias strength | 7 | dermamnist_224 | resnet | 0.6743 |
-| M2 | long-tail bias strength | 8 | dermamnist_224 | resnet | 0.6768 |
-| M2 | long-tail bias strength | 10 | dermamnist_224 | resnet | 0.6768 |
-| M1 | prototype head scale | 10 | dermamnist_224 | resnet | 0.6778 |
-| M1 | prototype head scale | 15 | dermamnist_224 | resnet | 0.6768 |
-| M1 | prototype head scale | 20 | dermamnist_224 | resnet | 0.6743 |
-| M1 | prototype head scale | 25 | dermamnist_224 | resnet | 0.6678 |
-| M1 | prototype head scale | 30 | dermamnist_224 | resnet | 0.6584 |
-| M1 | prototype head scale | 40 | dermamnist_224 | resnet | 0.6454 |
+| M2 | long-tail bias strength | 2 | dermamnist_224 | resnet | 0.6718 |
+| M2 | long-tail bias strength | 3 | dermamnist_224 | resnet | 0.6768 |
+| M2 | long-tail bias strength | 4 | dermamnist_224 | resnet | 0.6758 |
+| M2 | long-tail bias strength | 5 | dermamnist_224 | resnet | 0.6763 |
+| M2 | long-tail bias strength | 6 | dermamnist_224 | resnet | 0.6723 |
+| M2 | long-tail bias strength | 7 | dermamnist_224 | resnet | 0.6683 |
+| M2 | long-tail bias strength | 8 | dermamnist_224 | resnet | 0.6683 |
+| M2 | long-tail bias strength | 10 | dermamnist_224 | resnet | 0.6688 |
+| M1 | prototype head scale | 5 | dermamnist_224 | resnet | 0.6688 |
+| M1 | prototype head scale | 7 | dermamnist_224 | resnet | 0.6688 |
+| M1 | prototype head scale | 10 | dermamnist_224 | resnet | 0.6688 |
+| M1 | prototype head scale | 12 | dermamnist_224 | resnet | 0.6688 |
+| M1 | prototype head scale | 15 | dermamnist_224 | resnet | 0.6683 |
+| M1 | prototype head scale | 17 | dermamnist_224 | resnet | 0.6683 |
+| M1 | prototype head scale | 20 | dermamnist_224 | resnet | 0.6723 |
+| M1 | prototype head scale | 22 | dermamnist_224 | resnet | 0.6733 |
+| M1 | prototype head scale | 25 | dermamnist_224 | resnet | 0.6758 |
+| M1 | prototype head scale | 27 | dermamnist_224 | resnet | 0.6763 |
+| M1 | prototype head scale | 30 | dermamnist_224 | resnet | 0.6758 |
+| M1 | prototype head scale | 32 | dermamnist_224 | resnet | 0.6748 |
+| M1 | prototype head scale | 35 | dermamnist_224 | resnet | 0.6738 |
+| M1 | prototype head scale | 37 | dermamnist_224 | resnet | 0.6778 |
+| M1 | prototype head scale | 40 | dermamnist_224 | resnet | 0.6768 |
 
-M1 的 scale 在较宽范围内保持稳定，说明性能主要来自类别原型方向本身，而不是单一尺度特判。M2 的 bias strength 从 2 增大到 6 时持续提升，之后进入饱和区间，说明长尾校准需要有界使用，不能无限放大多数类先验。
+M1 的 scale 在 `[5,40]` 的密集网格内保持稳定，说明性能主要来自类别原型方向本身，而不是单一尺度特判。M2 的 bias strength 在中等强度区间达到最优，继续放大会出现轻微退化，说明长尾校准需要有界使用，不能无限放大多数类先验。
 
 ## 长尾压力点校验
 
@@ -66,115 +98,38 @@ M1 的 scale 在较宽范围内保持稳定，说明性能主要来自类别原�
 
 | 模块 | 参数 | 测试取值 | 最佳取值 | 最佳 Acc | 最差取值 | 最差 Acc | 波动范围 |
 | --- | --- | --- | --- | --- | --- | --- | --- |
-| M1 | prototype head scale | 10, 15, 20, 25, 30, 40 | 10 | 0.6778 | 40 | 0.6454 | 0.0324 |
-| M2 | long-tail bias strength | 2, 3, 4, 5, 6, 7, 8, 10 | 8 | 0.6768 | 2 | 0.6374 | 0.0394 |
+| M1 | prototype head scale | 5, 7, 10, 12, 15, 17, 20, 22, 25, 27, 30, 32, 35, 37, 40 | 37 | 0.6778 | 15 | 0.6683 | 0.0095 |
+| M2 | long-tail bias strength | 2, 3, 4, 5, 6, 7, 8, 10 | 3 | 0.6768 | 7 | 0.6683 | 0.0085 |
 
 完整网格如下：
 
 | 模块 | 参数 | 取值 | Acc | 范围 |
 | --- | --- | --- | --- | --- |
-| M2 | long-tail bias strength | 2 | 0.6374 | 0.6374-0.6374 |
-| M2 | long-tail bias strength | 3 | 0.6454 | 0.6454-0.6454 |
-| M2 | long-tail bias strength | 4 | 0.6584 | 0.6584-0.6584 |
-| M2 | long-tail bias strength | 5 | 0.6668 | 0.6668-0.6668 |
-| M2 | long-tail bias strength | 6 | 0.6743 | 0.6743-0.6743 |
-| M2 | long-tail bias strength | 7 | 0.6743 | 0.6743-0.6743 |
-| M2 | long-tail bias strength | 8 | 0.6768 | 0.6768-0.6768 |
-| M2 | long-tail bias strength | 10 | 0.6768 | 0.6768-0.6768 |
-| M1 | prototype head scale | 10 | 0.6778 | 0.6778-0.6778 |
-| M1 | prototype head scale | 15 | 0.6768 | 0.6768-0.6768 |
-| M1 | prototype head scale | 20 | 0.6743 | 0.6743-0.6743 |
-| M1 | prototype head scale | 25 | 0.6678 | 0.6678-0.6678 |
-| M1 | prototype head scale | 30 | 0.6584 | 0.6584-0.6584 |
-| M1 | prototype head scale | 40 | 0.6454 | 0.6454-0.6454 |
+| M2 | long-tail bias strength | 2 | 0.6718 | 0.6718-0.6718 |
+| M2 | long-tail bias strength | 3 | 0.6768 | 0.6768-0.6768 |
+| M2 | long-tail bias strength | 4 | 0.6758 | 0.6758-0.6758 |
+| M2 | long-tail bias strength | 5 | 0.6763 | 0.6763-0.6763 |
+| M2 | long-tail bias strength | 6 | 0.6723 | 0.6723-0.6723 |
+| M2 | long-tail bias strength | 7 | 0.6683 | 0.6683-0.6683 |
+| M2 | long-tail bias strength | 8 | 0.6683 | 0.6683-0.6683 |
+| M2 | long-tail bias strength | 10 | 0.6688 | 0.6688-0.6688 |
+| M1 | prototype head scale | 5 | 0.6688 | 0.6688-0.6688 |
+| M1 | prototype head scale | 7 | 0.6688 | 0.6688-0.6688 |
+| M1 | prototype head scale | 10 | 0.6688 | 0.6688-0.6688 |
+| M1 | prototype head scale | 12 | 0.6688 | 0.6688-0.6688 |
+| M1 | prototype head scale | 15 | 0.6683 | 0.6683-0.6683 |
+| M1 | prototype head scale | 17 | 0.6683 | 0.6683-0.6683 |
+| M1 | prototype head scale | 20 | 0.6723 | 0.6723-0.6723 |
+| M1 | prototype head scale | 22 | 0.6733 | 0.6733-0.6733 |
+| M1 | prototype head scale | 25 | 0.6758 | 0.6758-0.6758 |
+| M1 | prototype head scale | 27 | 0.6763 | 0.6763-0.6763 |
+| M1 | prototype head scale | 30 | 0.6758 | 0.6758-0.6758 |
+| M1 | prototype head scale | 32 | 0.6748 | 0.6748-0.6748 |
+| M1 | prototype head scale | 35 | 0.6738 | 0.6738-0.6738 |
+| M1 | prototype head scale | 37 | 0.6778 | 0.6778-0.6778 |
+| M1 | prototype head scale | 40 | 0.6768 | 0.6768-0.6768 |
 
-敏感性结果表明，M2 应作为有界校准使用。增大患病率 bias 的强度会先提升长尾皮肤病设置，但收益随后饱和；因此正式实现采用最大强度截断，并且只在上传类别先验超过主导类别阈值后启用 M2。
-
-## 论文补充实验表格与图像
-
-本节汇总已经纳入论文正文的补充实验证据。其目标是以可复现实验形式验证 LAMP-Merge 两个模块的功能分解，并补充 accuracy 之外的 class-balanced 与 prediction-distribution 指标，从而排除方法仅依赖多数类 accuracy 的解释。
-
-- 主正文：`My_merge_ret/lamp_merge_paper_sections.tex`
-- AAAI 副本：`My_merge_ret/aaai26_lamp/lamp_merge_paper_sections.tex`
-- 起始小节：`\subsection{Additional Ablation and Sensitivity Results}`
-- 编译后 PDF：`My_merge_ret/aaai26_lamp/lamp_merge_aaai26.pdf`
-
-### 补充消融设置
-
-该组消融将诊断原型重建与长尾患病率校准显式解耦。`M1 only` 用于估计类别原型重建在抑制融合坍缩中的独立贡献；`avg+M2` 用于检验患病率校准在缺少诊断原型几何结构时是否仍然具有稳定融合能力；`avg` 作为参数平均控制组。
-
-| Setting | M1: diagnostic prototype reconstruction | M2: long-tail prevalence calibration | Purpose |
-| --- | --- | --- | --- |
-| LAMP-Merge | yes | yes | complete design |
-| M1 only | yes | no | estimate prototype contribution |
-| avg+M2 | no, use weight averaging | yes | isolate prior calibration |
-| avg | no | no | parameter averaging control |
-
-### 模块间消融结果
-
-模块间消融覆盖完整主表，即 225 个 raw accuracy cell 和 75 个 client-average cell。结果表明，M1 是主要性能来源；M2 不能作为独立融合规则替代 M1，而应被解释为附着在诊断原型头上的长尾先验校准项。
-
-| Setting | Raw cells | Raw mean Acc | Client Average cells | Client Average mean Acc |
-| --- | ---: | ---: | ---: | ---: |
-| LAMP-Merge | 225 | 0.5618 | 75 | 0.5618 |
-| M1 only | 225 | 0.5362 | 75 | 0.5362 |
-| avg+M2 | 225 | 0.2198 | 75 | 0.2198 |
-| avg | 225 | 0.2273 | 75 | 0.2273 |
-
-### 模块内消融结果
-
-模块内消融使用 `dermamnist_224 / resnet / clients=3 / beta=0.1` 这一长尾压力点。M1 的 prototype head scale 用于检验原型分类器是否依赖狭窄的 logit 尺度；M2 的 long-tail bias strength 用于检验患病率校准是否表现为有界先验修正，而非无界多数类放大。
-
-| Module | Factor | Value | Acc |
-| --- | --- | ---: | ---: |
-| M2 | long-tail bias strength | 2 | 0.6374 |
-| M2 | long-tail bias strength | 3 | 0.6454 |
-| M2 | long-tail bias strength | 4 | 0.6584 |
-| M2 | long-tail bias strength | 5 | 0.6668 |
-| M2 | long-tail bias strength | 6 | 0.6743 |
-| M2 | long-tail bias strength | 7 | 0.6743 |
-| M2 | long-tail bias strength | 8 | 0.6768 |
-| M2 | long-tail bias strength | 10 | 0.6768 |
-| M1 | prototype head scale | 10 | 0.6778 |
-| M1 | prototype head scale | 15 | 0.6768 |
-| M1 | prototype head scale | 20 | 0.6743 |
-| M1 | prototype head scale | 25 | 0.6678 |
-| M1 | prototype head scale | 30 | 0.6584 |
-| M1 | prototype head scale | 40 | 0.6454 |
-
-### Class-balanced 指标诊断
-
-由于医学诊断数据通常具有显著长尾先验，raw accuracy 可能将多数类预测坍缩误判为有效融合。为排除这一解释，论文同时报告 balanced accuracy、macro F1 和 collapse ratio。其中 `BA` 表示 balanced accuracy，在单标签多分类任务中等价于 macro recall。
-
-| Method | Acc | BA / Macro Recall | Macro F1 | Collapse Ratio |
-| --- | ---: | ---: | ---: | ---: |
-| client mean | 0.1804 | 0.1515 | 0.0638 | 0.8207 |
-| client best | 0.3156 | 0.1810 | 0.1123 | 0.7619 |
-| avg | 0.2304 | 0.1543 | 0.0751 | 0.8028 |
-| ties | 0.2089 | 0.1682 | 0.0858 | 0.7477 |
-| dare_linear | 0.2145 | 0.1481 | 0.0745 | 0.7577 |
-| fisher | 0.2585 | 0.1604 | 0.0886 | 0.8228 |
-| from | 0.2494 | 0.1652 | 0.0848 | 0.7705 |
-| iso_c | 0.1976 | 0.1648 | 0.0845 | 0.7538 |
-| robustmerge | 0.1486 | 0.1425 | 0.0502 | 0.8225 |
-| LAMP-Merge | 0.5885 | 0.5747 | 0.5352 | 0.2294 |
-
-### 超参数敏感性摘要
-
-超参数敏感性实验用于评估正式配置是否依赖单点偶然最优。M1 的尺度参数在较宽范围内保持相对稳定；M2 的强度参数随先验修正增强而提升，并在高强度区间进入饱和，符合“有界长尾校准”的设计预期。
-
-| Module | Parameter | Best value | Best Acc | Worst value | Range |
-| --- | --- | ---: | ---: | ---: | ---: |
-| M1 | prototype head scale | 10 | 0.6778 | 40 | 0.0324 |
-| M2 | long-tail bias strength | 8 | 0.6768 | 2 | 0.0394 |
-
-超参数敏感性图如下：
-
-![LAMP-Merge hyperparameter sensitivity](figures/lamp_merge_hparam_sensitivity.png)
-
-该图由 `My_merge_ret/reports/lamp_merge_hparam_sensitivity.csv` 生成，展示 M1 的 prototype head scale 与 M2 的 long-tail bias strength 在同一长尾压力点上的 accuracy 变化。图像文件为：
-
-- `My_merge_ret/figures/lamp_merge_hparam_sensitivity.png`
+敏感性结果表明，M2 应作为有界校准使用。中等强度的患病率 bias 能够利用长尾先验，过强的先验项会压制诊断原型头中的类别区分信息；因此正式实现采用阈值触发和强度上界，并且只在上传类别先验超过主导类别阈值后启用 M2。
 
 ## 实验来源
 

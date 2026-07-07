@@ -1,0 +1,5 @@
+setting,client_average_cells,client_average_mean_acc,best_or_tied_cells,best_or_tied_total,ge_avg_client_average,ge_avg_client_average_total,mean_margin_vs_avg
+LAMP-Merge,75,0.5618230319509534,51,75,71,75,0.33453458750650883
+M1 only,75,0.5361940819668369,46,75,66,75,0.3089056375223922
+avg+M2,75,0.21979278373772626,4,75,43,75,-0.0074956607067181895
+avg,75,0.22728844444444438,2,75,75,75,0.0

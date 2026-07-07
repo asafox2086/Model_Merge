@@ -345,23 +345,44 @@ Pred-true TV $\downarrow$ & 0.1510 & 0.6168 & -0.4658 \\
 
 \begin{table}[t]
 \centering
-\caption{Module-level ablation over 225 raw cells and 75 client-average cells.}
+\caption{Client-average module ablation over 75 cells.}
 \label{tab:module-ablation}
 \scriptsize
 \setlength{\tabcolsep}{3.2pt}
 \begin{tabular}{lrrrr}
 \toprule
-Setting & Raw mean & Client mean & $\ge$ avg & $\ge$ LAMP \\
+Setting & Mean Acc & Best/tied & $\ge$ avg & Margin \\
 \midrule
-LAMP-Merge & 0.5618 & 0.5618 & 199/225 & 225/225 \\
-M1 only & 0.5362 & 0.5362 & 190/225 & 163/225 \\
-\texttt{avg+M2} & 0.2198 & 0.2198 & 141/225 & 29/225 \\
-\texttt{avg} & 0.2273 & 0.2273 & 225/225 & 26/225 \\
+LAMP-Merge & 0.5618 & 51/75 & 71/75 & +0.3345 \\
+M1 only & 0.5362 & 46/75 & 66/75 & +0.3089 \\
+\texttt{avg+M2} & 0.2198 & 4/75 & 43/75 & -0.0075 \\
+\texttt{avg} & 0.2273 & 2/75 & 75/75 & 0.0000 \\
 \bottomrule
 \end{tabular}
 \end{table}
 
-The ablation shows that M1 is the main source of the gain, while M2 improves long-tail stress cases without serving as an independent merging method. On \texttt{dermamnist\_224}/ResNet/$K=3$/$\beta=0.1$, M1 only obtains 0.4314 accuracy, whereas full LAMP-Merge obtains 0.6723.
+The ablation is computed at the same granularity as the main client-average table: for each fixed dataset, backbone, and client count, we first average over the three Dirichlet skew levels and then compare the four controlled variants. M1 is the main source of the gain, while M2 improves long-tail stress cases without serving as an independent merging method. On \texttt{dermamnist\_224}/ResNet/$K=3$/$\beta=0.1$, M1 only obtains 0.4314 accuracy, whereas full LAMP-Merge obtains 0.6723.
+
+\begin{table*}[t]
+\centering
+\caption{Dataset-level client-average accuracy in the module ablation. Each dataset contains 15 cells from five model families and three client counts; each cell is averaged over three Dirichlet skew levels.}
+\label{tab:dataset-ablation-acc}
+\scriptsize
+\setlength{\tabcolsep}{3.0pt}
+\begin{tabular}{lrrrrrr}
+\toprule
+Dataset & Cells & LAMP-Merge & M1 only & \texttt{avg+M2} & \texttt{avg} & LAMP best/tied \\
+\midrule
+Blood & 15 & 0.7156 & 0.7155 & 0.1726 & 0.1699 & 12/15 \\
+Ultrasound & 15 & 0.4040 & 0.4040 & 0.1551 & 0.1516 & 15/15 \\
+Derma & 15 & 0.6257 & 0.4975 & 0.4913 & 0.5304 & 12/15 \\
+Organ-C & 15 & 0.5543 & 0.5543 & 0.1331 & 0.1358 & 6/15 \\
+Organ-S & 15 & 0.5096 & 0.5096 & 0.1469 & 0.1488 & 6/15 \\
+\bottomrule
+\end{tabular}
+\end{table*}
+
+Table~\ref{tab:dataset-ablation-acc} further decomposes the ablation by dataset. Blood, Ultrasound, Organ-C, and Organ-S mainly benefit from M1, indicating that class-wise diagnostic prototype reconstruction is the dominant mechanism across heterogeneous medical image modalities. Derma shows the largest gap between LAMP-Merge and M1 only, which supports the role of M2 as a bounded prevalence calibration under a strong long-tailed diagnostic prior.
 
 \subsection{Privacy Preservation}
 
@@ -391,51 +412,60 @@ M1 only & yes & no & prototype contribution \\
 
 \begin{table}[t]
 \centering
-\caption{Detailed inter-module ablation over the full benchmark.}
+\caption{Client-average inter-module ablation over the full benchmark.}
 \label{tab:ablation-detailed}
 \scriptsize
 \setlength{\tabcolsep}{2.6pt}
 \begin{tabular}{lrrrr}
 \toprule
-Setting & Raw cells & Raw Acc & Avg cells & Avg Acc \\
+Setting & Cells & Mean Acc & Best/tied & $\ge$ \texttt{avg} \\
 \midrule
-LAMP-Merge & 225 & 0.5618 & 75 & 0.5618 \\
-M1 only & 225 & 0.5362 & 75 & 0.5362 \\
-\texttt{avg+M2} & 225 & 0.2198 & 75 & 0.2198 \\
-\texttt{avg} & 225 & 0.2273 & 75 & 0.2273 \\
+LAMP-Merge & 75 & 0.5618 & 51/75 & 71/75 \\
+M1 only & 75 & 0.5362 & 46/75 & 66/75 \\
+\texttt{avg+M2} & 75 & 0.2198 & 4/75 & 43/75 \\
+\texttt{avg} & 75 & 0.2273 & 2/75 & 75/75 \\
 \bottomrule
 \end{tabular}
 \end{table}
 
-For the internal ablation, we use the representative long-tail stress case \texttt{dermamnist\_224}/ResNet/$K=3$/$\beta=0.1$. For M1, we vary the prototype head scale to examine whether the reconstructed classifier depends on a narrow logit magnitude. For M2, we vary the long-tail bias strength to examine whether prevalence calibration behaves as a bounded prior correction rather than an unbounded majority-class amplifier. Table~\ref{tab:internal-ablation} shows that M1 remains stable over a moderate scale range, while M2 exhibits a monotonic improvement followed by saturation.
+For the internal ablation, we use the representative long-tail stress case \texttt{dermamnist\_224}/ResNet/$K=3$/$\beta=0.1$. For M1, we vary the prototype head scale to examine whether the reconstructed classifier depends on a narrow logit magnitude. For M2, we vary the long-tail bias strength to examine whether prevalence calibration behaves as a bounded prior correction rather than an unbounded majority-class amplifier. Table~\ref{tab:internal-ablation} shows that both components are stable over a dense local grid, with accuracy varying by less than one percentage point in the evaluated ranges.
 
-\begin{table}[t]
+\begin{table*}[t]
 \centering
 \caption{Internal ablation on the long-tail stress case.}
 \label{tab:internal-ablation}
 \scriptsize
-\setlength{\tabcolsep}{3.0pt}
+\setlength{\tabcolsep}{3.2pt}
 \begin{tabular}{llrr}
 \toprule
 Module & Factor & Value & Acc \\
 \midrule
-M2 & bias strength & 2 & 0.6374 \\
-M2 & bias strength & 3 & 0.6454 \\
-M2 & bias strength & 4 & 0.6584 \\
-M2 & bias strength & 5 & 0.6668 \\
-M2 & bias strength & 6 & 0.6743 \\
-M2 & bias strength & 7 & 0.6743 \\
-M2 & bias strength & 8 & 0.6768 \\
-M2 & bias strength & 10 & 0.6768 \\
-M1 & head scale & 10 & 0.6778 \\
-M1 & head scale & 15 & 0.6768 \\
-M1 & head scale & 20 & 0.6743 \\
-M1 & head scale & 25 & 0.6678 \\
-M1 & head scale & 30 & 0.6584 \\
-M1 & head scale & 40 & 0.6454 \\
+M2 & bias strength & 2 & 0.6718 \\
+M2 & bias strength & 3 & 0.6768 \\
+M2 & bias strength & 4 & 0.6758 \\
+M2 & bias strength & 5 & 0.6763 \\
+M2 & bias strength & 6 & 0.6723 \\
+M2 & bias strength & 7 & 0.6683 \\
+M2 & bias strength & 8 & 0.6683 \\
+M2 & bias strength & 10 & 0.6688 \\
+M1 & head scale & 5 & 0.6688 \\
+M1 & head scale & 7 & 0.6688 \\
+M1 & head scale & 10 & 0.6688 \\
+M1 & head scale & 12 & 0.6688 \\
+M1 & head scale & 15 & 0.6683 \\
+M1 & head scale & 17 & 0.6683 \\
+M1 & head scale & 20 & 0.6723 \\
+M1 & head scale & 22 & 0.6733 \\
+M1 & head scale & 25 & 0.6758 \\
+M1 & head scale & 27 & 0.6763 \\
+M1 & head scale & 30 & 0.6758 \\
+M1 & head scale & 32 & 0.6748 \\
+M1 & head scale & 35 & 0.6738 \\
+M1 & head scale & 37 & 0.6778 \\
+M1 & head scale & 40 & 0.6768 \\
 \bottomrule
 \end{tabular}
-\end{table}
+\end{table*}
 
 \begin{table}[t]
 \centering
@@ -471,8 +501,8 @@ LAMP-Merge & 0.5885 & 0.5747 & 0.5352 & 0.2294 \\
 \toprule
 Module & Parameter & Best & Best Acc & Worst & Range \\
 \midrule
-M1 & head scale & 10 & 0.6778 & 40 & 0.0324 \\
-M2 & bias strength & 8 & 0.6768 & 2 & 0.0394 \\
+M1 & head scale & 37 & 0.6778 & 15 & 0.0095 \\
+M2 & bias strength & 3 & 0.6768 & 7 & 0.0085 \\
 \bottomrule
 \end{tabular}
 \end{table}

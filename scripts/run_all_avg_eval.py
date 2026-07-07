@@ -149,6 +149,14 @@ def parse_args():
         help='Maximum centered log-prior strength used by M2.',
     )
     p.add_argument(
+        '--my-merge-reference-prior-tau',
+        '--lamp-merge-reference-prior-tau',
+        dest='my_merge_reference_prior_tau',
+        type=float,
+        default=None,
+        help='Explicit centered log-prior strength for controlled M2 sensitivity experiments.',
+    )
+    p.add_argument(
         '--my-merge-ablation-mode',
         '--lamp-merge-ablation-mode',
         dest='my_merge_ablation_mode',
@@ -271,6 +279,8 @@ def build_cfg(row, args):
     cfg['my_merge_prevalence_threshold'] = args.my_merge_prevalence_threshold
     cfg['my_merge_reference_prior_threshold'] = args.my_merge_reference_prior_threshold
     cfg['my_merge_reference_prior_max_tau'] = args.my_merge_reference_prior_max_tau
+    if args.my_merge_reference_prior_tau is not None:
+        cfg['my_merge_reference_prior_tau'] = args.my_merge_reference_prior_tau
     cfg['my_merge_ablation_mode'] = args.my_merge_ablation_mode
     cfg['my_merge_allow_support_prior_fallback'] = args.my_merge_allow_support_prior_fallback
     if item['task_type'] == 'small':
