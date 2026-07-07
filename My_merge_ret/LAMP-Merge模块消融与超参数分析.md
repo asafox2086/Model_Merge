@@ -90,25 +90,29 @@ M1 的 scale 在较宽范围内保持稳定，说明性能主要来自类别原�
 
 敏感性结果表明，M2 应作为有界校准使用。增大患病率 bias 的强度会先提升长尾皮肤病设置，但收益随后饱和；因此正式实现采用最大强度截断，并且只在上传类别先验超过主导类别阈值后启用 M2。
 
-## 写入论文 `.tex` 的补充表格与图像
+## 论文补充实验表格与图像
 
-本次已将消融实验设置、消融结果、新指标表格和超参数敏感性图写入论文正文末尾，位置如下：
+本节汇总已经纳入论文正文的补充实验证据。其目标是以可复现实验形式验证 LAMP-Merge 两个模块的功能分解，并补充 accuracy 之外的 class-balanced 与 prediction-distribution 指标，从而排除方法仅依赖多数类 accuracy 的解释。
 
 - 主正文：`My_merge_ret/lamp_merge_paper_sections.tex`
 - AAAI 副本：`My_merge_ret/aaai26_lamp/lamp_merge_paper_sections.tex`
 - 起始小节：`\subsection{Additional Ablation and Sensitivity Results}`
 - 编译后 PDF：`My_merge_ret/aaai26_lamp/lamp_merge_aaai26.pdf`
 
-写入的第一张表是消融实验设置表，用于说明每个 ablation variant 的含义：
+### 补充消融设置
+
+该组消融将诊断原型重建与长尾患病率校准显式解耦。`M1 only` 用于估计类别原型重建在抑制融合坍缩中的独立贡献；`avg+M2` 用于检验患病率校准在缺少诊断原型几何结构时是否仍然具有稳定融合能力；`avg` 作为参数平均控制组。
 
 | Setting | M1: diagnostic prototype reconstruction | M2: long-tail prevalence calibration | Purpose |
 | --- | --- | --- | --- |
-| LAMP-Merge | yes | yes | full method |
-| M1 only | yes | no | verify prototype reconstruction |
-| avg+M2 | no, use weight averaging | yes | test whether M2 works without M1 |
-| avg | no | no | vanilla weight averaging baseline |
+| LAMP-Merge | yes | yes | complete design |
+| M1 only | yes | no | estimate prototype contribution |
+| avg+M2 | no, use weight averaging | yes | isolate prior calibration |
+| avg | no | no | parameter averaging control |
 
-写入的第二张表是模块间消融结果表：
+### 模块间消融结果
+
+模块间消融覆盖完整主表，即 225 个 raw accuracy cell 和 75 个 client-average cell。结果表明，M1 是主要性能来源；M2 不能作为独立融合规则替代 M1，而应被解释为附着在诊断原型头上的长尾先验校准项。
 
 | Setting | Raw cells | Raw mean Acc | Client Average cells | Client Average mean Acc |
 | --- | ---: | ---: | ---: | ---: |
@@ -117,7 +121,9 @@ M1 的 scale 在较宽范围内保持稳定，说明性能主要来自类别原�
 | avg+M2 | 225 | 0.2198 | 75 | 0.2198 |
 | avg | 225 | 0.2273 | 75 | 0.2273 |
 
-写入的第三张表是模块内消融表，实验点为 `dermamnist_224 / resnet / clients=3 / beta=0.1`：
+### 模块内消融结果
+
+模块内消融使用 `dermamnist_224 / resnet / clients=3 / beta=0.1` 这一长尾压力点。M1 的 prototype head scale 用于检验原型分类器是否依赖狭窄的 logit 尺度；M2 的 long-tail bias strength 用于检验患病率校准是否表现为有界先验修正，而非无界多数类放大。
 
 | Module | Factor | Value | Acc |
 | --- | --- | ---: | ---: |
@@ -136,7 +142,9 @@ M1 的 scale 在较宽范围内保持稳定，说明性能主要来自类别原�
 | M1 | prototype head scale | 30 | 0.6584 |
 | M1 | prototype head scale | 40 | 0.6454 |
 
-写入的第四张表是新指标诊断表。该表用于回应“既然 accuracy 可能不准确，为什么不用 recall/F1 等指标”的质疑。这里的 `BA` 即 balanced accuracy，也就是 multi-class macro recall：
+### Class-balanced 指标诊断
+
+由于医学诊断数据通常具有显著长尾先验，raw accuracy 可能将多数类预测坍缩误判为有效融合。为排除这一解释，论文同时报告 balanced accuracy、macro F1 和 collapse ratio。其中 `BA` 表示 balanced accuracy，在单标签多分类任务中等价于 macro recall。
 
 | Method | Acc | BA / Macro Recall | Macro F1 | Collapse Ratio |
 | --- | ---: | ---: | ---: | ---: |
@@ -151,14 +159,16 @@ M1 的 scale 在较宽范围内保持稳定，说明性能主要来自类别原�
 | robustmerge | 0.1486 | 0.1425 | 0.0502 | 0.8225 |
 | LAMP-Merge | 0.5885 | 0.5747 | 0.5352 | 0.2294 |
 
-写入的第五张表是超参数敏感性摘要：
+### 超参数敏感性摘要
+
+超参数敏感性实验用于评估正式配置是否依赖单点偶然最优。M1 的尺度参数在较宽范围内保持相对稳定；M2 的强度参数随先验修正增强而提升，并在高强度区间进入饱和，符合“有界长尾校准”的设计预期。
 
 | Module | Parameter | Best value | Best Acc | Worst value | Range |
 | --- | --- | ---: | ---: | ---: | ---: |
 | M1 | prototype head scale | 10 | 0.6778 | 40 | 0.0324 |
 | M2 | long-tail bias strength | 8 | 0.6768 | 2 | 0.0394 |
 
-同时新增并写入了超参数敏感性图：
+超参数敏感性图如下：
 
 ![LAMP-Merge hyperparameter sensitivity](figures/lamp_merge_hparam_sensitivity.png)
 
