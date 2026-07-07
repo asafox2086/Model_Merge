@@ -1,10 +1,10 @@
 # LAMP-Merge 模块内补充消融工作流
 
-本文档定义后续需要补充的模块内消融、可视化和理论分析流程。当前已有消融主要比较 `LAMP-Merge`、`M1 only`、`avg+M2` 和 `avg`，并扫描原型头尺度与长尾校准强度；这只能说明模块间贡献和超参数稳定性，不能充分回答“客户端上传的原型信息和类别统计信息各自为何必要”。因此，后续补充实验必须围绕两类上传信息展开：诊断原型信息与类别统计信息。
+本文档定义 full-scope 模块内消融、可视化和理论分析流程。模块内消融的目标不是比较 LAMP-Merge 与通用基线，而是检验最终 LAMP-Merge 中每一类内部信息是否必要。因此，所有替代项均以最终 LAMP-Merge 为参照，并围绕两类上传信息展开：诊断原型信息与类别统计信息。
 
 ## 一、实验目标
 
-补充实验需要证明三个命题。
+补充实验需要证明三个命题。由于本实验是模块内消融，所有数值比较均以最终 `LAMP-Merge` 为参照；`avg`、`TIES`、`Fisher` 等通用方法只属于主实验基线，不作为判断某个内部变量是否有效的消融参照。
 
 第一，诊断原型不是任意附加特征，而是抑制融合坍缩的核心信息。若去掉原型，只保留 checkpoint、分类头或类别无关特征统计，融合模型应更容易退化为少数类预测器，表现为 collapse ratio 上升、effective classes 下降、balanced accuracy 和 macro F1 下降。
 
@@ -75,6 +75,72 @@
 
 预期主要比较 `Full statistics`、`Uniform client weight`、`Global client-size weight`、`No prevalence calibration` 和 `Uniform prevalence prior`。若 Full statistics 在 balanced accuracy、macro F1 和 collapse ratio 上优于 uniform/global 权重，说明支持数刻画了类别级可靠性；若在 Derma 等长尾压力点上 Full statistics 高于 no-prevalence 和 uniform-prior，说明 M2 使用的是医学长尾先验而不是任意 bias。
 
+### 3.3 消融公式书写规范
+
+每个消融项必须写明它替换了正式方法中的哪个量，以及替换后最终分类分数如何计算。正式方法固定为
+
+$$
+\mu_{i,c}
+=
+\frac{1}{n_{i,c}}
+\sum_{(x,y)\in D_{i,c}}\phi_0(T(x)),
+\qquad
+e_{i,c}
+=
+(n_{i,c}+1)^\gamma\mathbf{1}[n_{i,c}>0],
+$$
+
+$$
+\alpha_{i,c}
+=
+\frac{e_{i,c}}{\sum_{j=1}^{K}e_{j,c}},
+\qquad
+p_c
+=
+\sum_{i=1}^{K}\alpha_{i,c}\mu_{i,c},
+\qquad
+w_c
+=
+s\frac{p_c}{\|p_c\|_2}.
+$$
+
+患病率先验与最终分数固定为
+
+$$
+\pi_c
+=
+\frac{\sum_{i=1}^{K}m_{i,c}}
+{\sum_{k=1}^{C}\sum_{i=1}^{K}m_{i,k}},
+\qquad
+b_c
+=
+\mathbf{1}[r>\tau]\lambda
+\left(\log\pi_c-\frac{1}{C}\sum_{k=1}^{C}\log\pi_k\right),
+$$
+
+$$
+\mathrm{score}_c(x)=w_c^\top\phi_0(T(x))+b_c.
+$$
+
+例如，`Uniform client weight` 不是一句“客户端等权”即可结束，而必须写成
+
+$$
+e_{i,c}^{\mathrm{uni}}
+=
+\mathbf{1}[n_{i,c}>0],
+\qquad
+\alpha_{i,c}^{\mathrm{uni}}
+=
+\frac{e_{i,c}^{\mathrm{uni}}}
+{\sum_{j=1}^{K}e_{j,c}^{\mathrm{uni}}},
+\qquad
+p_c^{\mathrm{uni}}
+=
+\sum_{i=1}^{K}\alpha_{i,c}^{\mathrm{uni}}\mu_{i,c}.
+$$
+
+然后说明 \(w_c^{\mathrm{uni}}=s p_c^{\mathrm{uni}}/\|p_c^{\mathrm{uni}}\|_2\)，最终分数为 \(\mathrm{score}_c^{\mathrm{uni}}(x)=(w_c^{\mathrm{uni}})^\top\phi_0(T(x))+b_c\)。其他消融项也必须按同样格式写清楚，不能只写自然语言描述。
+
 ## 四、评估指标
 
 每个消融设置至少报告以下指标。
@@ -100,7 +166,7 @@ beta = 0, 0.01, 0.1
 seed = 42
 ```
 
-因此，每个消融设置应产生 180 个 raw cells；在论文主表口径下，先对相同 `(dataset, backbone, K)` 的三个 beta 取均值，得到 60 个 client-average cells。所有“模块是否有效”的结论必须同时报告 raw cell 与 client-average cell，不允许只报告某一个 beta。20 个 `clients=3 / beta=0.01` case 只作为预测分布、collapse ratio、t-SNE 等诊断可视化的代表子集，不能作为主消融结论。为了分析 M2，还可以额外强调 `dermamnist_224 / resnet / clients=3 / beta=0.1 / seed=42` 作为长尾压力点，但它同样只用于机制解释。
+因此，每个消融设置应产生 180 个 raw cells；在论文主表口径下，先对相同 `(dataset, backbone, K)` 的三个 beta 取均值，得到 60 个 client-average cells。所有“模块是否有效”的结论必须同时报告 raw cell 与 client-average cell，并以最终 LAMP-Merge 为参照报告 mean margin、胜出或持平 cell 数；不允许只报告某一个 beta，也不允许用是否超过 `avg` 来判断内部模块是否有效。20 个 `clients=3 / beta=0.01` case 只作为预测分布、collapse ratio、t-SNE 等诊断可视化的代表子集，不能作为主消融结论。为了分析 M2，还可以额外强调 `dermamnist_224 / resnet / clients=3 / beta=0.1 / seed=42` 作为长尾压力点，但它同样只用于机制解释。
 
 后续执行中已将全量要求固化为独立脚本：
 
@@ -216,7 +282,7 @@ $$
 1. 实现原型信息替代项：classifier-head aggregation、global-feature mean、support-only synthetic head、shuffled-label prototype。
 2. 实现统计信息替代项：uniform client weight、binary support only、global client-size weight、no prevalence calibration、uniform prior、smoothed prior。
 3. 对所有替代项运行 small 全量设置，输出 180 个 raw cells 和 60 个 client-average cells。
-4. 使用同一套结果生成总体均值、按数据集均值、raw cell 统计、client-average cell 统计。
+4. 使用同一套结果生成总体均值、按数据集均值、raw cell 统计、client-average cell 统计；所有模块内消融表同时报告相对最终 LAMP-Merge 的 mean margin 和胜出或持平 cell 数。
 5. 在同一 full-scope 网格上重新计算 Accuracy、Balanced Accuracy、Macro F1、Collapse Ratio、Effective Classes、Pred-True TV 和预测分布热图。
 6. 在同一 full-scope 网格上扫描 \(s\in[5,40]\) 与 \(\lambda\) 的候选值，并用 60 个 client-average cells 报告敏感性。
 7. 使用全量聚合结果生成预测分布热图、指标柱状图和原型相似度热图；若展示 t-SNE，caption 中必须说明其为机制图，不替代全量数值结论。
