@@ -321,11 +321,11 @@ Because medical diagnosis datasets are often long-tailed, raw accuracy alone is 
 \]
 Thus, a method that only predicts the majority class may have acceptable accuracy but poor macro recall. We further report macro F1, collapse ratio, effective predicted classes, and prediction-true total variation distance to diagnose whether a method preserves multi-class discrimination.
 
-On 20 medical diagnostic cases, LAMP-Merge improves accuracy from 0.3156 for the strongest non-LAMP/client reference to 0.5885. More importantly, the improvement is larger under class-balanced metrics: balanced accuracy, i.e., macro recall, increases from 0.1810 to 0.5747, and macro F1 increases from 0.1123 to 0.5352. Its collapse ratio is 0.2294, much lower than 0.7477 for the strongest reference under this metric, and its effective predicted classes increase from 2.1360 to 8.0390. These results show that LAMP-Merge does not merely exploit majority-class accuracy; it also improves recall-oriented and distribution-oriented diagnostics.
+This diagnostic experiment is evaluated on five medical datasets: BloodMNIST, Ultrasound, DermaMNIST, Organ-C, and Organ-S. For each dataset, we use four backbones, ResNet, ConvNeXt, ViT-Tiny, and Swin-Tiny, under $K=3$, $\beta=0.01$, and seed 42, resulting in 20 dataset-backbone diagnostic cases. On these 20 cases, LAMP-Merge improves accuracy from 0.3156 for the strongest non-LAMP/client reference to 0.5885. More importantly, the improvement is larger under class-balanced metrics: balanced accuracy, i.e., macro recall, increases from 0.1810 to 0.5747, and macro F1 increases from 0.1123 to 0.5352. Its collapse ratio is 0.2294, much lower than 0.7477 for the strongest reference under this metric, and its effective predicted classes increase from 2.1360 to 8.0390. These results show that LAMP-Merge does not merely exploit majority-class accuracy; it also improves recall-oriented and distribution-oriented diagnostics.
 
 \begin{table}[t]
 \centering
-\caption{Prediction-collapse diagnostics on 20 medical cases.}
+\caption{Prediction-collapse diagnostics averaged over five medical datasets and four backbones per dataset.}
 \label{tab:collapse-key}
 \scriptsize
 \setlength{\tabcolsep}{3.2pt}
@@ -469,7 +469,7 @@ M1 & $s$ & 40 & 0.6768 \\
 
 \begin{table}[t]
 \centering
-\caption{Metric diagnostics averaged over 20 medical cases. Lower is better for $\rho$ and TV; higher is better for the other metrics.}
+\caption{Metric diagnostics averaged over BloodMNIST, Ultrasound, DermaMNIST, Organ-C, and Organ-S, with four backbones per dataset. Lower is better for $\rho$ and TV; higher is better for the other metrics.}
 \label{tab:metric-diagnostics-full}
 \scriptsize
 \setlength{\tabcolsep}{1.8pt}

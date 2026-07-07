@@ -14,7 +14,7 @@
 
 ## 新指标诊断实验
 
-为排除 LAMP-Merge 仅利用多数类 accuracy 的可能性，我们额外构造预测分布诊断实验。该实验覆盖 5 个正式医学数据集，每个数据集使用 4 个 backbone（resnet、convnext、vit_t、swin_tiny），固定 `clients=3`、`beta=0.01`、`seed=42`，共 20 个医学诊断 case。统计对象包括 individual clients 的聚合行、通用模型融合 baseline，以及 LAMP-Merge。
+为排除 LAMP-Merge 仅利用多数类 accuracy 的可能性，我们额外构造预测分布诊断实验。该实验覆盖 5 个正式医学数据集：`bloodmnist_224`、`chaoshengmnist_224`、`dermamnist_224`、`organcmnist_224` 和 `organsmnist_224`。每个数据集使用 4 个 backbone（resnet、convnext、vit_t、swin_tiny），固定 `clients=3`、`beta=0.01`、`seed=42`，因此总体统计包含 5 个数据集 × 4 个 backbone = 20 个医学诊断 case。统计对象包括 individual clients 的聚合行、通用模型融合 baseline，以及 LAMP-Merge。
 
 除 Accuracy 外，该实验报告以下新指标：
 
@@ -37,7 +37,9 @@ $$
 
 该指标越大，表示模型实际使用的诊断类别越多。若一个方法仅在多数类上坍缩，则通常会表现为 Accuracy 较高但 $\mathrm{BA}$、Macro F1 和 $C_{\mathrm{eff}}$ 较低，同时 $\rho$ 和 $\mathrm{TV}$ 较高。
 
-### 总体结果
+### 五个医学数据集的总体结果
+
+下表是 `bloodmnist_224`、`chaoshengmnist_224`、`dermamnist_224`、`organcmnist_224` 和 `organsmnist_224` 上 20 个诊断 case 的总体均值。
 
 | Method | Cases | Acc | BA | Macro F1 | $\rho$ | $C_{\mathrm{eff}}$ | TV |
 | --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
@@ -57,7 +59,7 @@ $$
 | robustmerge | 20 | 0.1486 | 0.1425 | 0.0502 | 0.8225 | 1.6559 | 0.8035 |
 | LAMP-Merge | 20 | 0.5885 | 0.5747 | 0.5352 | 0.2294 | 8.0390 | 0.1510 |
 
-总体结果表明，LAMP-Merge 的提升不是由多数类坍缩造成的。相对于最强 non-LAMP/client 参照，Accuracy 从 0.3156 提高到 0.5885；更关键的是，BA 从 0.1810 提高到 0.5747，Macro F1 从 0.1123 提高到 0.5352。与此同时，坍缩强度 $\rho$ 从 0.7477 降到 0.2294，有效预测类别数从 2.1360 提高到 8.0390，预测分布 TV 从 0.6168 降到 0.1510。
+五数据集总体结果表明，LAMP-Merge 的提升不是由多数类坍缩造成的。相对于最强 non-LAMP/client 参照，Accuracy 从 0.3156 提高到 0.5885；更关键的是，BA 从 0.1810 提高到 0.5747，Macro F1 从 0.1123 提高到 0.5352。与此同时，坍缩强度 $\rho$ 从 0.7477 降到 0.2294，有效预测类别数从 2.1360 提高到 8.0390，预测分布 TV 从 0.6168 降到 0.1510。
 
 按单 case 统计，LAMP-Merge 在 Accuracy 上达到 16/20 个最优或并列最优；在 BA、Macro F1 和 $\rho$ 上均为 20/20；在 TV 上为 18/20。Derma 是主要例外：client best 和 Fisher 在 raw Accuracy 或 TV 上具有长尾多数类优势，但 LAMP-Merge 仍在 BA、Macro F1 和坍缩强度上最优，说明其保留了更完整的多类别诊断能力。
 
