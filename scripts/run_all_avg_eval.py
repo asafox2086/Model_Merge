@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 import argparse
 import csv
+import gc
 import json
 import os
 import time
@@ -16,6 +17,7 @@ if str(ROOT) not in sys.path:
 
 from evaluate import run_evaluate
 from merge import METHOD_DEFAULTS, run_merge
+from methods.lamp_merge_analysis import LAMP_MERGE_ABLATION_MODES
 from methods import normalize_method_name
 from utils import load_json, make_eval_output_dir, save_csv, save_json
 
@@ -30,6 +32,7 @@ CASE_KEY_FIELDS = (
     'seed',
     'method',
     'merge_weight_mode',
+    'my_merge_ablation_mode',
 )
 
 STATUS_FIELDS = [
@@ -43,6 +46,7 @@ STATUS_FIELDS = [
     'seed',
     'method',
     'merge_weight_mode',
+    'my_merge_ablation_mode',
     'eval_json',
     'merged_deleted',
     'seconds',
@@ -160,9 +164,25 @@ def parse_args():
         '--my-merge-ablation-mode',
         '--lamp-merge-ablation-mode',
         dest='my_merge_ablation_mode',
-        choices=['full', 'm1_only', 'avg_m2'],
+        choices=sorted(LAMP_MERGE_ABLATION_MODES),
         default='full',
-        help='LAMP-Merge ablation mode: full=M1+M2, m1_only disables M2, avg_m2 disables M1.',
+        help='LAMP-Merge ablation mode for module-level and module-internal studies.',
+    )
+    p.add_argument(
+        '--my-merge-ablation-seed',
+        '--lamp-merge-ablation-seed',
+        dest='my_merge_ablation_seed',
+        type=int,
+        default=1701,
+        help='Deterministic seed for LAMP-Merge synthetic and shuffled-label ablations.',
+    )
+    p.add_argument(
+        '--my-merge-prevalence-smoothing',
+        '--lamp-merge-prevalence-smoothing',
+        dest='my_merge_prevalence_smoothing',
+        type=float,
+        default=1.0,
+        help='Additive smoothing used by the smoothed-prevalence internal ablation.',
     )
     p.add_argument(
         '--my-merge-allow-support-prior-fallback',
@@ -273,15 +293,28 @@ def build_cfg(row, args):
         'regmean_max_dim': args.regmean_max_dim,
     }
     if args.my_merge_prototype_root:
+        cfg['lamp_merge_prototype_root'] = args.my_merge_prototype_root
         cfg['my_merge_prototype_root'] = args.my_merge_prototype_root
+    cfg['lamp_merge_proto_count_power'] = args.my_merge_proto_count_power
     cfg['my_merge_proto_count_power'] = args.my_merge_proto_count_power
+    cfg['lamp_merge_reference_head_scale'] = args.my_merge_reference_head_scale
     cfg['my_merge_reference_head_scale'] = args.my_merge_reference_head_scale
+    cfg['lamp_merge_prevalence_threshold'] = args.my_merge_prevalence_threshold
     cfg['my_merge_prevalence_threshold'] = args.my_merge_prevalence_threshold
+    cfg['lamp_merge_reference_prior_threshold'] = args.my_merge_reference_prior_threshold
     cfg['my_merge_reference_prior_threshold'] = args.my_merge_reference_prior_threshold
+    cfg['lamp_merge_reference_prior_max_tau'] = args.my_merge_reference_prior_max_tau
     cfg['my_merge_reference_prior_max_tau'] = args.my_merge_reference_prior_max_tau
     if args.my_merge_reference_prior_tau is not None:
+        cfg['lamp_merge_reference_prior_tau'] = args.my_merge_reference_prior_tau
         cfg['my_merge_reference_prior_tau'] = args.my_merge_reference_prior_tau
+    cfg['lamp_merge_ablation_mode'] = args.my_merge_ablation_mode
     cfg['my_merge_ablation_mode'] = args.my_merge_ablation_mode
+    cfg['lamp_merge_ablation_seed'] = args.my_merge_ablation_seed
+    cfg['my_merge_ablation_seed'] = args.my_merge_ablation_seed
+    cfg['lamp_merge_prevalence_smoothing'] = args.my_merge_prevalence_smoothing
+    cfg['my_merge_prevalence_smoothing'] = args.my_merge_prevalence_smoothing
+    cfg['lamp_merge_allow_support_prior_fallback'] = args.my_merge_allow_support_prior_fallback
     cfg['my_merge_allow_support_prior_fallback'] = args.my_merge_allow_support_prior_fallback
     if item['task_type'] == 'small':
         cfg['model'] = item['model']
@@ -355,6 +388,7 @@ def build_status_row(cfg, *, status, eval_json='', merged_deleted='', seconds=''
         'seed': cfg['seed'],
         'method': cfg['method'],
         'merge_weight_mode': cfg['merge_weight_mode'],
+        'my_merge_ablation_mode': cfg.get('my_merge_ablation_mode', ''),
         'eval_json': eval_json,
         'merged_deleted': merged_deleted,
         'seconds': seconds,
@@ -405,6 +439,17 @@ def load_valid_eval_payload(cfg):
     return payload, eval_json
 
 
+def release_case_resources():
+    gc.collect()
+    try:
+        import torch
+
+        if torch.cuda.is_available():
+            torch.cuda.empty_cache()
+    except Exception:
+        pass
+
+
 def main():
     args = parse_args()
     os.environ.setdefault('TOKENIZERS_PARALLELISM', 'false')
@@ -444,6 +489,7 @@ def main():
         try:
             print(f'[{ts()}] start ({idx}/{len(manifest)}) {label}')
             merge_info = run_merge(cfg)
+            print(f'[{ts()}] merged ({idx}/{len(manifest)}) {label}')
             payload, eval_path = run_evaluate(cfg, merged_dir=merge_info['merged_dir'])
             merged_ckpt = Path(merge_info['merged_checkpoint'])
             removed = False
@@ -477,6 +523,8 @@ def main():
                 ),
             )
             print(f'[{ts()}] fail ({idx}/{len(manifest)}) {label} | {exc}')
+        finally:
+            release_case_resources()
     print(f'[{ts()}] batch done | output_root={args.output_root}')
 
 

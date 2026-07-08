@@ -6,10 +6,11 @@ import torch.nn.functional as F
 
 from utils.hub import beta_to_dirname
 from utils.runtime import build_reference_bundle
-from utils.state_dict import average_state_dicts
 
 
 EPS = 1e-8
+
+LAMP_MERGE_ABLATION_MODES = {"full"}
 
 MEDICAL_IMAGE_DATASETS = {
     "bloodmnist_224",
@@ -24,8 +25,9 @@ MEDICAL_IMAGE_DATASETS = {
 
 def _cfg_value(cfg, *names, default=None):
     for name in names:
-        if name in cfg and cfg.get(name) is not None:
-            return cfg.get(name)
+        value = cfg.get(name)
+        if value is not None:
+            return value
     return default
 
 
@@ -89,6 +91,7 @@ def _prototype_stats_path(meta, cfg):
     )
     if not root:
         return None
+
     model_name = meta.get("model") or meta.get("clip_model", "").replace("/", "__")
     path = (
         Path(root)
@@ -109,7 +112,7 @@ def _load_prototype_stats(meta, cfg):
         return None, ""
     payload = torch.load(path, map_location="cpu")
     if not isinstance(payload, dict):
-        raise ValueError(f"Invalid LAMP-Merge prototype stats payload: {path}")
+        raise ValueError(f"Invalid LAMP-Merge prototype statistics payload: {path}")
     return payload, str(path)
 
 
@@ -168,6 +171,26 @@ def _client_feature_means(proto_stats, num_clients, num_classes):
     return torch.stack(means, dim=0)
 
 
+def _evidence_matrix(feature_counts, cfg):
+    gamma = float(_cfg_value(cfg, "lamp_merge_proto_count_power", "my_merge_proto_count_power", default=0.45))
+    evidence = (feature_counts + 1.0).pow(gamma)
+    return evidence * (feature_counts > 0).to(evidence.dtype), gamma
+
+
+def _prevalence_counts(proto_stats, feature_counts, meta):
+    num_classes = int(meta["num_classes"])
+    num_clients = _num_clients(meta, proto_stats)
+    counts = _client_stat_matrix(
+        proto_stats,
+        ("class_prevalence_counts", "class_prior_counts", "label_counts"),
+        num_clients,
+        num_classes,
+    )
+    if float(counts.sum().item()) <= 0:
+        return torch.zeros_like(feature_counts), "missing"
+    return counts, "uploaded_prevalence_counts"
+
+
 def _global_prototypes(proto_stats, meta, cfg):
     num_classes = int(meta["num_classes"])
     num_clients = _num_clients(meta, proto_stats)
@@ -184,9 +207,7 @@ def _global_prototypes(proto_stats, meta, cfg):
     if float(feature_counts.sum().item()) <= 0:
         raise ValueError("Uploaded prototype statistics contain no class support counts.")
 
-    rho = float(_cfg_value(cfg, "lamp_merge_proto_count_power", "my_merge_proto_count_power", default=0.45))
-    evidence = (feature_counts + 1.0).pow(rho)
-    evidence = evidence * (feature_counts > 0).to(evidence.dtype)
+    evidence, gamma = _evidence_matrix(feature_counts, cfg)
     evidence_per_class = evidence.sum(dim=0)
     missing_classes = torch.nonzero(evidence_per_class <= 0, as_tuple=False).view(-1).tolist()
     if missing_classes:
@@ -194,26 +215,7 @@ def _global_prototypes(proto_stats, meta, cfg):
 
     weights = evidence / evidence_per_class.view(1, -1).clamp_min(EPS)
     prototypes = (means * weights.unsqueeze(-1)).sum(dim=0)
-
-    prevalence_counts = _client_stat_matrix(
-        proto_stats,
-        ("class_prevalence_counts", "class_prior_counts", "label_counts"),
-        num_clients,
-        num_classes,
-    )
-    prevalence_source = "uploaded_prevalence_counts"
-    if float(prevalence_counts.sum().item()) <= 0:
-        if bool(_cfg_value(
-            cfg,
-            "lamp_merge_allow_support_prior_fallback",
-            "my_merge_allow_support_prior_fallback",
-            default=False,
-        )):
-            prevalence_counts = feature_counts
-            prevalence_source = "prototype_support_counts_fallback"
-        else:
-            prevalence_counts = torch.zeros_like(feature_counts)
-            prevalence_source = "missing"
+    prevalence_counts, prevalence_source = _prevalence_counts(proto_stats, feature_counts, meta)
 
     return {
         "prototypes": prototypes,
@@ -221,6 +223,7 @@ def _global_prototypes(proto_stats, meta, cfg):
         "class_prevalence_source": prevalence_source,
         "prototype_class_counts": feature_counts.sum(dim=0).clamp_min(0.0),
         "prototype_weights": weights,
+        "evidence_gamma": gamma,
         "num_clients": num_clients,
     }
 
@@ -254,18 +257,16 @@ def _prevalence_calibration_strength(class_prior, num_classes, cfg):
     dominant_prior = float(class_prior.max().item())
     if dominant_prior <= threshold:
         return 0.0
-    max_tau = float(_cfg_value(
+
+    explicit_tau = _cfg_value(cfg, "lamp_merge_reference_prior_tau", "my_merge_reference_prior_tau")
+    if explicit_tau is not None and float(explicit_tau) >= 0.0:
+        return float(explicit_tau)
+    return float(_cfg_value(
         cfg,
         "lamp_merge_reference_prior_max_tau",
         "my_merge_reference_prior_max_tau",
         default=6.0,
     ))
-    explicit = _cfg_value(cfg, "lamp_merge_reference_prior_tau", "my_merge_reference_prior_tau")
-    if explicit is not None:
-        explicit_tau = float(explicit)
-        if explicit_tau >= 0.0:
-            return explicit_tau
-    return max_tau
 
 
 def _centered_log_prior_bias(class_prior, strength):
@@ -318,6 +319,10 @@ def _synthesize_reference_prototype_model(base_state, proto_stats, meta, cfg):
         "weight_key": weight_key,
         "bias_key": bias_key,
         "head_mode": "cosine_prototype",
+        "prototype_mode": "reference_prototype",
+        "evidence_mode": "support_power",
+        "prevalence_mode": "uploaded",
+        "evidence_gamma": proto["evidence_gamma"],
         "head_scale": scale,
         "prevalence_bias_scale": prevalence_strength,
         "prevalence_threshold": _dominant_prior_threshold(cfg, num_classes),
@@ -343,49 +348,6 @@ def _synthesize_reference_prototype_model(base_state, proto_stats, meta, cfg):
     }
 
 
-def _avg_plus_prevalence_model(state_dicts, weights, proto_stats, meta, cfg):
-    num_classes = int(meta["num_classes"])
-    averaged, normalized_weights = average_state_dicts(state_dicts, weights)
-    state = OrderedDict((key, value.detach().cpu().clone()) for key, value in averaged.items())
-    proto = _global_prototypes(proto_stats, meta, cfg)
-    class_counts = proto["class_counts"]
-    class_prior = class_counts / class_counts.sum().clamp_min(EPS)
-    prevalence_strength = _prevalence_calibration_strength(class_prior, num_classes, cfg)
-    imbalance_ratio = float((class_prior.max() * float(num_classes)).item())
-
-    _weight_key, bias_key = _classifier_pair(state, num_classes)
-    if bias_key is None:
-        raise ValueError("avg+M2 ablation requires a classifier bias tensor.")
-    if prevalence_strength != 0.0:
-        bias = state[bias_key].detach().cpu().float()
-        bias = bias + _centered_log_prior_bias(class_prior, prevalence_strength)
-        state[bias_key] = bias.to(dtype=state[bias_key].dtype)
-
-    return state, {
-        "used": prevalence_strength != 0.0,
-        "bias_key": bias_key,
-        "prevalence_bias_scale": prevalence_strength,
-        "prevalence_threshold": _dominant_prior_threshold(cfg, num_classes),
-        "reference_prior_threshold": float(_cfg_value(
-            cfg,
-            "lamp_merge_reference_prior_threshold",
-            "my_merge_reference_prior_threshold",
-            default=2.5,
-        )),
-        "reference_prior_max_tau": float(_cfg_value(
-            cfg,
-            "lamp_merge_reference_prior_max_tau",
-            "my_merge_reference_prior_max_tau",
-            default=6.0,
-        )),
-        "imbalance_ratio": imbalance_ratio,
-        "class_counts": [float(x) for x in class_counts.tolist()],
-        "class_prevalence_source": proto["class_prevalence_source"],
-        "class_prior": [float(x) for x in class_prior.tolist()],
-        "avg_weights": [float(x) for x in normalized_weights],
-    }
-
-
 def merge_lamp_merge(state_dicts, weights, meta=None, checkpoints=None, cfg=None):
     if meta is None or cfg is None:
         raise ValueError("LAMP-Merge requires task metadata and runtime config.")
@@ -393,6 +355,13 @@ def merge_lamp_merge(state_dicts, weights, meta=None, checkpoints=None, cfg=None
         raise ValueError(f"LAMP-Merge is defined only for medical image tasks, got dataset={meta.get('dataset')}.")
 
     cfg = cfg or {}
+    requested_mode = str(cfg.get("lamp_merge_ablation_mode") or "full").strip().lower()
+    if requested_mode != "full":
+        raise ValueError(
+            "The release LAMP-Merge implementation is fixed to the formal method. "
+            "Use method=lamp_merge_analysis for ablation experiments."
+        )
+
     client_stats, client_stats_path = _load_prototype_stats(meta, cfg)
     if not _is_reference_prototype_stats(client_stats):
         raise ValueError(
@@ -400,30 +369,16 @@ def merge_lamp_merge(state_dicts, weights, meta=None, checkpoints=None, cfg=None
             "Please export prototype_stats.pt before running this method."
         )
 
-    ablation_mode = str(_cfg_value(cfg, "lamp_merge_ablation_mode", "my_merge_ablation_mode", default="full"))
-    if ablation_mode not in {"full", "m1_only", "avg_m2"}:
-        raise ValueError(f"Unsupported LAMP-Merge ablation mode: {ablation_mode}")
-
-    if ablation_mode == "avg_m2":
-        merged, prevalence_trace = _avg_plus_prevalence_model(state_dicts, weights, client_stats, meta, cfg)
-        trace = {
-            "used": False,
-            "reason": "M1 diagnostic prototype head is disabled by avg_m2 ablation.",
-        }
-    else:
-        base_state, _ = build_reference_bundle(meta, device="cpu")
-        local_cfg = dict(cfg)
-        if ablation_mode == "m1_only":
-            local_cfg["lamp_merge_disable_prevalence_calibration"] = True
-            local_cfg["my_merge_disable_prevalence_calibration"] = True
-        merged, trace = _synthesize_reference_prototype_model(base_state, client_stats, meta, local_cfg)
-        prevalence_trace = {
-            "used": bool(float(trace.get("prevalence_bias_scale", 0.0)) != 0.0),
-            "prevalence_bias_scale": float(trace.get("prevalence_bias_scale", 0.0)),
-            "imbalance_ratio": float(trace.get("imbalance_ratio", 0.0)),
-            "class_prior": trace.get("class_prior", []),
-        }
+    base_state, _ = build_reference_bundle(meta, device="cpu")
+    merged, trace = _synthesize_reference_prototype_model(base_state, client_stats, meta, cfg)
     trace["client_stats_path"] = client_stats_path
+
+    prevalence_trace = {
+        "used": bool(float(trace.get("prevalence_bias_scale", 0.0)) != 0.0),
+        "prevalence_bias_scale": float(trace.get("prevalence_bias_scale", 0.0)),
+        "imbalance_ratio": float(trace.get("imbalance_ratio", 0.0)),
+        "class_prior": trace.get("class_prior", []),
+    }
 
     base_input_weights = []
     if weights is not None:
@@ -431,8 +386,7 @@ def merge_lamp_merge(state_dicts, weights, meta=None, checkpoints=None, cfg=None
 
     return merged, {
         "method_name": "LAMP-Merge",
-        "implementation": "lamp_merge_v1",
-        "ablation_mode": ablation_mode,
+        "implementation": "lamp_merge_release_v1",
         "medical_only": True,
         "fusion_rule": "long_tail_aware_medical_prototype_merging",
         "privacy": {
@@ -461,7 +415,3 @@ def merge_lamp_merge(state_dicts, weights, meta=None, checkpoints=None, cfg=None
         "reference_prototype_head": trace,
         "long_tail_prevalence_calibration": prevalence_trace,
     }
-
-
-def merge_my_merge(state_dicts, weights, meta=None, checkpoints=None, cfg=None):
-    return merge_lamp_merge(state_dicts, weights, meta=meta, checkpoints=checkpoints, cfg=cfg)

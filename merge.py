@@ -16,6 +16,7 @@ from methods import (
     merge_iso_c,
     merge_iso_cts,
     merge_lamp_merge,
+    merge_lamp_merge_analysis,
     merge_model_stock,
     merge_my_merge,
     merge_regmean,
@@ -157,7 +158,21 @@ def merge_with_method(method, state_dicts, weights, meta, checkpoints, cfg):
             k=float(cfg['model_stock_k']),
         )
     elif method in {'lamp_merge', 'my_merge'}:
-        merged_state_dict, method_info = merge_lamp_merge(
+        lamp_mode = str(
+            cfg.get('lamp_merge_ablation_mode')
+            or cfg.get('my_merge_ablation_mode')
+            or 'full'
+        ).strip().lower()
+        merger = merge_lamp_merge if lamp_mode == 'full' else merge_lamp_merge_analysis
+        merged_state_dict, method_info = merger(
+            state_dicts,
+            weights,
+            meta=meta,
+            checkpoints=checkpoints,
+            cfg=cfg,
+        )
+    elif method == 'lamp_merge_analysis':
+        merged_state_dict, method_info = merge_lamp_merge_analysis(
             state_dicts,
             weights,
             meta=meta,
