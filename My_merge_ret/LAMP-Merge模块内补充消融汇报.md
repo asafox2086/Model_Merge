@@ -411,25 +411,53 @@ w_c^\top\phi_0(T(x))+b_c^{\mathrm{smooth}}.
 
 该对照检验 M2 对极端计数的敏感性。
 
-## 二、后续诊断指标
+## 二、预测诊断指标
 
-模块内 Accuracy 消融已经完成。后续诊断分析需要在同一 full-scope 网格上补充 Balanced Accuracy、Macro F1、Collapse Ratio、Effective Classes 和 Pred-True TV。Accuracy 只能说明总体正确率，不能单独证明融合质量；Balanced Accuracy 和 Macro F1 反映少数类诊断能力；Collapse Ratio 和 Effective Classes 直接刻画预测是否坍缩到少数类别；Pred-True TV 衡量预测类别分布是否接近真实医学类别分布。
+模块内 Accuracy 消融已经完成。预测诊断分析在同一 full-scope 网格上统计 Balanced Accuracy、Macro F1、Collapse Ratio、Effective Classes 和 Pred-True TV。Accuracy 只能说明总体正确率，不能单独证明融合质量；Balanced Accuracy 和 Macro F1 反映少数类诊断能力；Collapse Ratio 和 Effective Classes 直接刻画预测是否坍缩到少数类别；Pred-True TV 衡量预测类别分布是否接近真实医学类别分布。
 
-除预测指标外，还应补充两个原型几何指标。第一个是 Prototype Separation，即全局类别原型之间的平均余弦距离或最近邻类间距离，用于衡量类别方向是否清晰分离。第二个是 Prototype Consistency，即同一类别在不同客户端原型之间的平均相似度，用于衡量跨中心类别证据是否一致。若正式原型方法优于 classifier-head aggregation，则应表现为更高的类别分离度、更低的坍缩强度和更高的 balanced accuracy；若 shuffled-label prototype 显著退化，则说明原型必须与诊断类别语义对齐。
+除预测指标外，原型几何分析补充两个结构性指标。第一个是 Prototype Separation，即全局类别原型之间的平均余弦距离或最近邻类间距离，用于衡量类别方向是否清晰分离。第二个是 Prototype Consistency，即同一类别在不同客户端原型之间的平均相似度，用于衡量跨中心类别证据是否一致。若正式原型方法优于 classifier-head aggregation，则应同时表现为更稳定的类别语义一致性、更低的坍缩强度和更高的 balanced accuracy；若 shuffled-label prototype 显著退化，则说明原型必须与诊断类别语义对齐。
 
 主消融结论必须采用正式汇总表中的 small 全量口径，而不能只采用 `clients=3 / beta=0.01` 的代表性诊断子集。全量口径包含 5 个医学图像数据集、4 个 backbone、3 个客户端数量和 3 个 Dirichlet beta 设置，因此每个消融设置对应 180 个 raw cells。论文主表中的 client-average 口径先对相同 `(dataset, backbone, K)` 的三个 beta 取均值，因此每个消融设置对应 60 个 client-average cells。当前 Accuracy 消融已满足这一口径；预测分布图、collapse ratio、balanced accuracy、macro F1 和 Pred-True TV 也必须在同一 full-scope 网格上计算。若论文中展示单个数据集的图，它应来自该数据集内所有 backbone、K 和 beta 的聚合，而不是单一 beta。
 
-当前 full-scope 任务已固化为独立队列。`scripts/run_lamp_merge_full_evidence_queue.sh` 会等待模块内全量消融完成，随后运行 `scripts/run_lamp_merge_prediction_diagnostics_full_parallel.sh` 与 `scripts/run_lamp_merge_hparam_full_parallel.sh`。因此，最终报告中的模块内消融表、诊断指标表、预测分布图和超参数曲线将来自同一 full-scope 实验口径。
+当前 Accuracy 消融和原型几何分析已经采用 full-scope 口径；预测诊断和超参数扫描继续沿用同一口径。最终报告中的模块内消融表、诊断指标表、预测分布图和超参数曲线均应对应 5 个医学图像数据集、4 个 backbone、3 个客户端数量和 3 个 Dirichlet beta 设置。
 
-## 三、后续可视化
+## 三、原型几何与可视化证据
 
-第一类可视化是预测类别分布热图。该图以方法为行、诊断类别为列，展示各方法在测试集上的预测比例。它应同时包含通用融合基线、正式 LAMP-Merge、原型替代项和统计替代项。该图的目标是证明：普通融合基线和错误替代项倾向于集中输出少数类别，而正式原型方法能够恢复多类别预测分布。
+原型几何分析已经覆盖正式 full-scope 网格。该分析不使用服务器端原始医学图像；它只利用客户端上传的类别原型、类别支持数和由这些统计量构造的全局原型。几何指标用于回答一个机制问题：正式方法恢复多类别诊断能力，是因为原型携带了稳定的类别语义方向，还是仅仅因为增加了额外参数或统计量。
 
-第二类可视化是指标柱状图。每个数据集至少绘制 Balanced Accuracy、Macro F1、Collapse Ratio 和 Effective Classes。柱状图应分成“原型信息消融”和“统计信息消融”两组，避免把不同问题混在同一张图里。主文可展示总体均值和两个代表数据集；附录展示全部数据集。
+总体几何结果如下。Pairwise distance 表示不同诊断类别全局原型之间的平均余弦距离；Nearest-class distance 表示每个类别与最近错误类别之间的平均距离；Prototype consistency 表示同一诊断类别在不同客户端原型之间的一致性；Prototype-client alignment 表示全局原型与参与该类别聚合的客户端原型之间的对齐程度。
 
-第三类可视化是原型几何图。应绘制全局类别原型之间的余弦相似度矩阵，或者展示每个类别与最近错误类别的距离。若原型信息起作用，正式方法应形成更清晰的类间结构；若使用本地分类头聚合或打乱标签，类间相似度应更混乱，且更容易对应预测坍缩。
+| 设置 | Pairwise distance | Nearest-class distance | Prototype consistency | Prototype-client alignment | Evidence entropy |
+|---|---:|---:|---:|---:|---:|
+| Full prototype | 0.1111 | 0.0352 | 0.9998 | 0.9999 | 0.4121 |
+| Classifier-head aggregation | 0.9733 | 0.8046 | -0.0021 | 0.6231 | 0.4121 |
+| Global-feature mean | 0.0000 | -0.0000 | 1.0000 | 1.0000 | 0.4121 |
+| Support-only synthetic head | 0.9870 | 0.9141 | 1.0000 | 1.0000 | 0.4121 |
+| Shuffled-label prototype | 0.1111 | 0.0352 | 0.9998 | 0.9110 | 0.4121 |
+| Uniform client weight | 0.1111 | 0.0352 | 0.9998 | 0.9999 | 0.4126 |
+| Global client-size weight | 0.1111 | 0.0352 | 0.9998 | 0.9999 | 0.3399 |
 
-第四类可视化是 t-SNE 降维图。t-SNE 应使用共享参考骨干提取的测试样本特征，并把全局类别原型作为额外点一起投影到二维空间。样本点按真实类别着色，原型点使用更大的 marker。若诊断原型有效，则每个原型点应靠近其对应类别的样本簇；classifier-head aggregation 或 shuffled prototype 若失败，应表现为类别方向偏离样本簇或与错误类别混合。建议至少在 Blood、Derma、Organ-C 上绘制 t-SNE，因为它们分别代表血细胞形态、强长尾皮肤病和器官切片结构。
+这组结果给出三点机制证据。第一，Global-feature mean 的类间距离接近零，说明类别无关医学域均值不能形成诊断类别边界，这与其 Accuracy 大幅退化一致。第二，Classifier-head aggregation 虽然产生较大的类间距离，但 prototype consistency 接近零甚至为负，说明不同客户端训练后的分类头不处于稳定共享语义坐标系中；直接聚合本地分类头会引入跨客户端方向错配。第三，Shuffled-label prototype 保留了正式原型的几何距离和一致性，但破坏了原型与诊断标签的对应关系，导致 Accuracy 显著下降。因此，正式方法的收益不能由“类间距离变大”或“增加一个原型头”解释，而必须依赖与诊断类别一致的 reference-space prototype。
+
+数据集级几何图已经生成，文件位于 `My_merge_ret/figures/lamp_merge_prototype_geometry/`。这些图分别展示 `bloodmnist_224`、`chaoshengmnist_224`、`dermamnist_224`、`organcmnist_224` 和 `organsmnist_224` 上的原型分离度、一致性和证据熵。机制图可按如下方式引用：
+
+| 数据集 | 原型几何图 |
+|---|---|
+| bloodmnist_224 | [bloodmnist_224_prototype_geometry.png](figures/lamp_merge_prototype_geometry/bloodmnist_224_prototype_geometry.png) |
+| chaoshengmnist_224 | [chaoshengmnist_224_prototype_geometry.png](figures/lamp_merge_prototype_geometry/chaoshengmnist_224_prototype_geometry.png) |
+| dermamnist_224 | [dermamnist_224_prototype_geometry.png](figures/lamp_merge_prototype_geometry/dermamnist_224_prototype_geometry.png) |
+| organcmnist_224 | [organcmnist_224_prototype_geometry.png](figures/lamp_merge_prototype_geometry/organcmnist_224_prototype_geometry.png) |
+| organsmnist_224 | [organsmnist_224_prototype_geometry.png](figures/lamp_merge_prototype_geometry/organsmnist_224_prototype_geometry.png) |
+
+t-SNE 可视化用于展示 reference-space sample clusters 与上传原型之间的空间关系。图中样本特征由共享参考骨干提取，原型点由客户端上传统计聚合得到；t-SNE 只作为解释性可视化，不参与模型选择、训练或融合。当前已生成 Blood、Derma 和 Organ-C 三个代表数据集的可视化：
+
+| 数据集与设置 | Full prototype | Classifier-head aggregation | Shuffled-label prototype | Uniform client weight |
+|---|---|---|---|---|
+| bloodmnist_224 / resnet / K=3 / beta=0.01 | [full](figures/lamp_merge_prototype_geometry/tsne/bloodmnist_224_resnet_c3_b0p01_full_tsne.png) | [head](figures/lamp_merge_prototype_geometry/tsne/bloodmnist_224_resnet_c3_b0p01_prototype_head_agg_tsne.png) | [shuffle](figures/lamp_merge_prototype_geometry/tsne/bloodmnist_224_resnet_c3_b0p01_prototype_shuffle_tsne.png) | [uniform](figures/lamp_merge_prototype_geometry/tsne/bloodmnist_224_resnet_c3_b0p01_uniform_client_weight_tsne.png) |
+| dermamnist_224 / resnet / K=3 / beta=0.01 | [full](figures/lamp_merge_prototype_geometry/tsne/dermamnist_224_resnet_c3_b0p01_full_tsne.png) | [head](figures/lamp_merge_prototype_geometry/tsne/dermamnist_224_resnet_c3_b0p01_prototype_head_agg_tsne.png) | [shuffle](figures/lamp_merge_prototype_geometry/tsne/dermamnist_224_resnet_c3_b0p01_prototype_shuffle_tsne.png) | [uniform](figures/lamp_merge_prototype_geometry/tsne/dermamnist_224_resnet_c3_b0p01_uniform_client_weight_tsne.png) |
+| organcmnist_224 / resnet / K=3 / beta=0.01 | [full](figures/lamp_merge_prototype_geometry/tsne/organcmnist_224_resnet_c3_b0p01_full_tsne.png) | [head](figures/lamp_merge_prototype_geometry/tsne/organcmnist_224_resnet_c3_b0p01_prototype_head_agg_tsne.png) | [shuffle](figures/lamp_merge_prototype_geometry/tsne/organcmnist_224_resnet_c3_b0p01_prototype_shuffle_tsne.png) | [uniform](figures/lamp_merge_prototype_geometry/tsne/organcmnist_224_resnet_c3_b0p01_uniform_client_weight_tsne.png) |
+
+预测类别分布热图和指标柱状图将在 full-scope prediction diagnostics 完成后接入本文件。该图以方法为行、诊断类别为列，展示各方法在测试集上的预测比例。其目标是证明：通用融合基线和错误替代项倾向于集中输出少数类别，而正式原型方法能够恢复多类别预测分布。
 
 ## 四、理论分析补充
 
