@@ -57,7 +57,6 @@ FORMAL_SMALL_MODELS = ["resnet", "convnext", "vit_t", "swin_tiny"]
 PROTOTYPE_MODES = [
     "full",
     "m1_only",
-    "avg_m2",
     "prototype_head_agg",
     "global_feature_mean",
     "support_only",
@@ -72,7 +71,6 @@ PROTOTYPE_MODES = [
 MODE_LABELS = {
     "full": "LAMP-Merge",
     "m1_only": "M1 only",
-    "avg_m2": "avg+M2",
     "no_prevalence": "No prevalence calibration",
     "prototype_head_agg": "Classifier-head aggregation",
     "head_agg": "Classifier-head aggregation",
@@ -97,6 +95,11 @@ def parse_args() -> argparse.Namespace:
         default=default_prototype_root(ROOT),
     )
     parser.add_argument("--output-csv", type=Path, default=ROOT / "My_merge_ret" / "reports" / "lamp_merge_prototype_geometry_full.csv")
+    parser.add_argument(
+        "--overall-csv",
+        type=Path,
+        default=ROOT / "My_merge_ret" / "reports" / "lamp_merge_prototype_geometry_overall.csv",
+    )
     parser.add_argument(
         "--dataset-csv",
         type=Path,
@@ -180,8 +183,6 @@ def load_state_dicts(args: argparse.Namespace, row: dict[str, str], meta: dict[s
 def ablation_components(mode: str) -> tuple[str, str]:
     if mode in {"full", "m1_only", "no_prevalence", "uniform_prevalence", "smoothed_prevalence"}:
         return "reference_prototype", "support_power"
-    if mode == "avg_m2":
-        return "average_checkpoint", "support_power"
     if mode == "prototype_head_agg":
         return "classifier_head_aggregation", "support_power"
     if mode == "head_agg":
@@ -214,8 +215,6 @@ def build_mode_geometry(
     feature_counts = _client_stat_matrix(proto_stats, ("class_feature_counts", "class_counts"), num_clients, num_classes)
     prototype_mode, evidence_mode = ablation_components(mode)
 
-    if prototype_mode == "average_checkpoint":
-        raise ValueError("not applicable: avg+M2 has no prototype head")
     if prototype_mode == "reference_prototype" or prototype_mode == "reference_prototype_shuffle":
         inputs = means
     elif prototype_mode == "classifier_head_aggregation":
@@ -362,6 +361,34 @@ def group_rows(rows: list[dict[str, object]]) -> list[dict[str, object]]:
     return out
 
 
+def group_overall_rows(rows: list[dict[str, object]]) -> list[dict[str, object]]:
+    grouped: dict[str, list[dict[str, object]]] = defaultdict(list)
+    for row in rows:
+        grouped[str(row["mode"])].append(row)
+    metric_names = [
+        "covered_classes",
+        "mean_class_support",
+        "min_class_support",
+        "max_class_support",
+        "mean_pairwise_cosine",
+        "mean_pairwise_distance",
+        "min_pairwise_distance",
+        "mean_nearest_class_cosine",
+        "mean_nearest_class_distance",
+        "prototype_consistency",
+        "prototype_to_client_alignment",
+        "mean_evidence_entropy_norm",
+    ]
+    out = []
+    for mode, items in sorted(grouped.items(), key=lambda item: mode_sort_key(item[0])):
+        row = {"mode": mode, "label": MODE_LABELS.get(mode, mode), "cases": len(items)}
+        for metric in metric_names:
+            vals = [float(item[metric]) for item in items if item.get(metric) not in {"", None}]
+            row[f"mean_{metric}"] = mean(vals) if vals else ""
+        out.append(row)
+    return out
+
+
 def fmt(value: object, digits: int = 4) -> str:
     if value in {"", None}:
         return "-"
@@ -376,7 +403,29 @@ def mode_sort_key(mode: str) -> tuple[int, str]:
     return order.get(mode, len(order)), mode
 
 
-def write_summary(path: Path, rows: list[dict[str, object]], dataset_rows: list[dict[str, object]], args: argparse.Namespace) -> None:
+def write_geometry_table(handle, rows: list[dict[str, object]]) -> None:
+    handle.write(
+        "| mode | cases | pairwise dist | nearest-class dist | consistency | proto-client align | evidence entropy |\n"
+    )
+    handle.write("|---|---:|---:|---:|---:|---:|---:|\n")
+    for row in sorted(rows, key=lambda item: mode_sort_key(str(item["mode"]))):
+        handle.write(
+            f"| {row['label']} | {row['cases']} | "
+            f"{fmt(row['mean_mean_pairwise_distance'])} | "
+            f"{fmt(row['mean_mean_nearest_class_distance'])} | "
+            f"{fmt(row['mean_prototype_consistency'])} | "
+            f"{fmt(row['mean_prototype_to_client_alignment'])} | "
+            f"{fmt(row['mean_mean_evidence_entropy_norm'])} |\n"
+        )
+
+
+def write_summary(
+    path: Path,
+    rows: list[dict[str, object]],
+    dataset_rows: list[dict[str, object]],
+    overall_rows: list[dict[str, object]],
+    args: argparse.Namespace,
+) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
     by_dataset: dict[str, list[dict[str, object]]] = defaultdict(list)
     for row in dataset_rows:
@@ -391,22 +440,13 @@ def write_summary(path: Path, rows: list[dict[str, object]], dataset_rows: list[
             "and three Dirichlet skew levels unless explicitly filtered.\n\n"
         )
         handle.write(f"Expected cases per mode: `{total_expected}`.\n\n")
+        handle.write("## Overall Geometry\n\n")
+        write_geometry_table(handle, overall_rows)
+        handle.write("\n")
         handle.write("## Dataset-Level Geometry\n\n")
         for dataset in sorted(by_dataset):
             handle.write(f"### {dataset}\n\n")
-            handle.write(
-                "| mode | cases | pairwise dist | nearest-class dist | consistency | proto-client align | evidence entropy |\n"
-            )
-            handle.write("|---|---:|---:|---:|---:|---:|---:|\n")
-            for row in sorted(by_dataset[dataset], key=lambda item: mode_sort_key(str(item["mode"]))):
-                handle.write(
-                    f"| {row['label']} | {row['cases']} | "
-                    f"{fmt(row['mean_mean_pairwise_distance'])} | "
-                    f"{fmt(row['mean_mean_nearest_class_distance'])} | "
-                    f"{fmt(row['mean_prototype_consistency'])} | "
-                    f"{fmt(row['mean_prototype_to_client_alignment'])} | "
-                    f"{fmt(row['mean_mean_evidence_entropy_norm'])} |\n"
-                )
+            write_geometry_table(handle, by_dataset[dataset])
             handle.write("\n")
         handle.write("## Interpretation\n\n")
         handle.write(
@@ -418,8 +458,7 @@ def write_summary(path: Path, rows: list[dict[str, object]], dataset_rows: list[
             "not require the server to read raw client images.\n\n"
         )
         handle.write(
-            "Rows without a prototype head, such as avg+M2, are retained for scope consistency but have no "
-            "prototype geometry values. Prevalence-only variants share the same prototype geometry as "
+            "Prevalence-only variants share the same prototype geometry as "
             "LAMP-Merge because they modify the score bias rather than the class prototype construction.\n"
         )
         handle.write(
@@ -429,7 +468,7 @@ def write_summary(path: Path, rows: list[dict[str, object]], dataset_rows: list[
         )
 
 
-def plot_geometry_bars(dataset_rows: list[dict[str, object]], figure_dir: Path) -> None:
+def plot_geometry_bars(dataset_rows: list[dict[str, object]], overall_rows: list[dict[str, object]], figure_dir: Path) -> None:
     import matplotlib
 
     matplotlib.use("Agg")
@@ -447,27 +486,39 @@ def plot_geometry_bars(dataset_rows: list[dict[str, object]], figure_dir: Path) 
     for row in dataset_rows:
         by_dataset[str(row["dataset"])].append(row)
 
-    for dataset, rows in sorted(by_dataset.items()):
+    def plot_one(rows: list[dict[str, object]], title: str, path: Path) -> None:
         rows = sorted(rows, key=lambda item: mode_sort_key(str(item["mode"])))
         labels = [str(row["label"]) for row in rows]
         fig, axes = plt.subplots(2, 3, figsize=(18, 11), constrained_layout=True)
         flat_axes = axes.reshape(-1)
-        for ax, (metric, title) in zip(flat_axes, metrics):
+        for ax, (metric, metric_title) in zip(flat_axes, metrics):
             values = []
             for row in rows:
                 value = row.get(metric, "")
                 values.append(float(value) if value not in {"", None} else np.nan)
             colors = ["#B23A48" if row["mode"] == "full" else "#5B6C8F" for row in rows]
             ax.barh(labels, values, color=colors)
-            ax.set_title(title)
+            ax.set_title(metric_title)
             ax.tick_params(axis="y", labelsize=8)
             ax.invert_yaxis()
             ax.grid(axis="x", alpha=0.25)
         for ax in flat_axes[len(metrics) :]:
             ax.axis("off")
-        fig.suptitle(f"{dataset}: full-grid prototype-geometry diagnostics", fontsize=14)
-        fig.savefig(figure_dir / f"{dataset}_prototype_geometry.png", dpi=180)
+        fig.suptitle(title, fontsize=14)
+        fig.savefig(path, dpi=180)
         plt.close(fig)
+
+    plot_one(
+        overall_rows,
+        "All datasets: full-grid prototype-geometry diagnostics",
+        figure_dir / "overall_prototype_geometry.png",
+    )
+    for dataset, rows in sorted(by_dataset.items()):
+        plot_one(
+            rows,
+            f"{dataset}: full-grid prototype-geometry diagnostics",
+            figure_dir / f"{dataset}_prototype_geometry.png",
+        )
 
 
 def image_hw(images: np.ndarray) -> tuple[int, int]:
@@ -715,10 +766,12 @@ def main() -> None:
                 )
 
     dataset_rows = group_rows(rows)
+    overall_rows = group_overall_rows(rows)
     write_csv(args.output_csv, rows)
     write_csv(args.dataset_csv, dataset_rows)
-    write_summary(args.summary_md, rows, dataset_rows, args)
-    plot_geometry_bars(dataset_rows, args.figure_dir)
+    write_csv(args.overall_csv, overall_rows)
+    write_summary(args.summary_md, rows, dataset_rows, overall_rows, args)
+    plot_geometry_bars(dataset_rows, overall_rows, args.figure_dir)
     if args.plot_tsne:
         plot_tsne(args, rows_by_key)
     print(f"Wrote prototype geometry CSV: {args.output_csv}")

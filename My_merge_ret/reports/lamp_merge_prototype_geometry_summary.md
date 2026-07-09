@@ -4,6 +4,22 @@ This report analyzes uploaded class-level prototype statistics on the formal ful
 
 Expected cases per mode: `180`.
 
+## Overall Geometry
+
+| mode | cases | pairwise dist | nearest-class dist | consistency | proto-client align | evidence entropy |
+|---|---:|---:|---:|---:|---:|---:|
+| LAMP-Merge | 180 | 0.1122 | 0.0361 | 0.8751 | 0.9446 | 0.2505 |
+| M1 only | 180 | 0.1122 | 0.0361 | 0.8751 | 0.9446 | 0.2505 |
+| Classifier-head aggregation | 180 | 0.9734 | 0.8041 | -0.0021 | 0.5079 | 0.2505 |
+| Global-feature mean | 180 | 0.0000 | -0.0000 | 1.0000 | 1.0000 | 0.2505 |
+| Support-only synthetic head | 180 | 0.9870 | 0.9141 | 1.0000 | 1.0000 | 0.2505 |
+| Shuffled-label prototype | 180 | 0.1122 | 0.0361 | 0.8751 | 0.8554 | 0.2505 |
+| Uniform client weight | 180 | 0.1365 | 0.0557 | 0.8751 | 0.9571 | 0.4126 |
+| Binary support only | 180 | 0.1365 | 0.0557 | 0.8751 | 0.9571 | 0.4126 |
+| Global client-size weight | 180 | 0.1369 | 0.0551 | 0.8751 | 0.9502 | 0.3399 |
+| Uniform prevalence prior | 180 | 0.1122 | 0.0361 | 0.8751 | 0.9446 | 0.2505 |
+| Smoothed prevalence prior | 180 | 0.1122 | 0.0361 | 0.8751 | 0.9446 | 0.2505 |
+
 ## Dataset-Level Geometry
 
 ### bloodmnist_224
@@ -12,7 +28,6 @@ Expected cases per mode: `180`.
 |---|---:|---:|---:|---:|---:|---:|
 | LAMP-Merge | 36 | 0.0705 | 0.0324 | 0.9409 | 0.9746 | 0.2406 |
 | M1 only | 36 | 0.0705 | 0.0324 | 0.9409 | 0.9746 | 0.2406 |
-| avg+M2 | 36 | - | - | - | - | - |
 | Classifier-head aggregation | 36 | 0.9617 | 0.8105 | 0.0008 | 0.5048 | 0.2406 |
 | Global-feature mean | 36 | 0.0000 | -0.0000 | 1.0000 | 1.0000 | 0.2406 |
 | Support-only synthetic head | 36 | 0.9874 | 0.9191 | 1.0000 | 1.0000 | 0.2406 |
@@ -29,7 +44,6 @@ Expected cases per mode: `180`.
 |---|---:|---:|---:|---:|---:|---:|
 | LAMP-Merge | 36 | 0.0447 | 0.0227 | 0.8847 | 0.9487 | 0.2549 |
 | M1 only | 36 | 0.0447 | 0.0227 | 0.8847 | 0.9487 | 0.2549 |
-| avg+M2 | 36 | - | - | - | - | - |
 | Classifier-head aggregation | 36 | 0.9689 | 0.8470 | 0.0034 | 0.5274 | 0.2549 |
 | Global-feature mean | 36 | -0.0000 | -0.0000 | 1.0000 | 1.0000 | 0.2549 |
 | Support-only synthetic head | 36 | 0.9874 | 0.9191 | 1.0000 | 1.0000 | 0.2549 |
@@ -46,7 +60,6 @@ Expected cases per mode: `180`.
 |---|---:|---:|---:|---:|---:|---:|
 | LAMP-Merge | 36 | 0.0550 | 0.0298 | 0.8575 | 0.9393 | 0.2822 |
 | M1 only | 36 | 0.0550 | 0.0298 | 0.8575 | 0.9393 | 0.2822 |
-| avg+M2 | 36 | - | - | - | - | - |
 | Classifier-head aggregation | 36 | 0.9822 | 0.8101 | 0.0066 | 0.5379 | 0.2822 |
 | Global-feature mean | 36 | -0.0000 | -0.0000 | 1.0000 | 1.0000 | 0.2822 |
 | Support-only synthetic head | 36 | 0.9847 | 0.9175 | 1.0000 | 1.0000 | 0.2822 |
@@ -63,7 +76,6 @@ Expected cases per mode: `180`.
 |---|---:|---:|---:|---:|---:|---:|
 | LAMP-Merge | 36 | 0.1964 | 0.0567 | 0.8467 | 0.9325 | 0.2505 |
 | M1 only | 36 | 0.1964 | 0.0567 | 0.8467 | 0.9325 | 0.2505 |
-| avg+M2 | 36 | - | - | - | - | - |
 | Classifier-head aggregation | 36 | 0.9703 | 0.7823 | -0.0095 | 0.4904 | 0.2505 |
 | Global-feature mean | 36 | 0.0000 | -0.0000 | 1.0000 | 1.0000 | 0.2505 |
 | Support-only synthetic head | 36 | 0.9879 | 0.9074 | 1.0000 | 1.0000 | 0.2505 |
@@ -80,7 +92,6 @@ Expected cases per mode: `180`.
 |---|---:|---:|---:|---:|---:|---:|
 | LAMP-Merge | 36 | 0.1944 | 0.0387 | 0.8459 | 0.9280 | 0.2244 |
 | M1 only | 36 | 0.1944 | 0.0387 | 0.8459 | 0.9280 | 0.2244 |
-| avg+M2 | 36 | - | - | - | - | - |
 | Classifier-head aggregation | 36 | 0.9840 | 0.7707 | -0.0117 | 0.4789 | 0.2244 |
 | Global-feature mean | 36 | 0.0000 | -0.0000 | 1.0000 | 1.0000 | 0.2244 |
 | Support-only synthetic head | 36 | 0.9879 | 0.9074 | 1.0000 | 1.0000 | 0.2244 |
@@ -95,5 +106,5 @@ Expected cases per mode: `180`.
 
 Prototype separation measures whether class directions occupy distinct positions in the shared reference feature space. Prototype consistency measures whether clients that contain the same diagnosis class agree on its reference-space direction. Evidence entropy measures whether the server assigns class-specific evidence to several clients or concentrates it on one reliable client. These quantities are diagnostic analyses of the uploaded aggregate statistics; they do not require the server to read raw client images.
 
-Rows without a prototype head, such as avg+M2, are retained for scope consistency but have no prototype geometry values. Prevalence-only variants share the same prototype geometry as LAMP-Merge because they modify the score bias rather than the class prototype construction.
+Prevalence-only variants share the same prototype geometry as LAMP-Merge because they modify the score bias rather than the class prototype construction.
 These geometry rows are not accuracy ablation results. They are computed directly from the uploaded prototype and support statistics under each ablation definition; full-scope accuracy completion must be checked in the main ablation table.
