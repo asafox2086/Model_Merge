@@ -238,27 +238,7 @@ e_{i,c}^{\mathrm{uni}}
 {\sum_{j=1}^{K}e_{j,c}^{\mathrm{uni}}}.
 ```
 
-全局原型改为
-
-```math
-p_c^{\mathrm{uni}}
-=
-\sum_{i=1}^{K}\alpha_{i,c}^{\mathrm{uni}}\mu_{i,c},
-\qquad
-w_c^{\mathrm{uni}}
-=
-s\frac{p_c^{\mathrm{uni}}}{\|p_c^{\mathrm{uni}}\|_2}.
-```
-
-最终仍使用上传的 $m_{i,c}$ 构造 $b_c$。因此最终分类分数为
-
-```math
-\mathrm{score}_c^{\mathrm{uni}}(x)
-=
-(w_c^{\mathrm{uni}})^\top\phi_0(T(x))+b_c.
-```
-
-该对照正对应“不使用类别支持数；每个出现该类别的客户端等权参与原型聚合”。它检验类别支持数大小是否提供了超越类别存在性的可靠性信息。
+其余原型头和长尾偏置公式与正式方法一致。该对照正对应“不使用类别支持数；每个出现该类别的客户端等权参与原型聚合”，用于检验类别支持数大小是否提供了超越类别存在性的可靠性信息。
 
 **Binary support only.** 该设置同时将原型聚合和先验估计都限制为类别是否出现：
 
@@ -271,35 +251,6 @@ e_{i,c}^{\mathrm{bin}}
 =
 \frac{\sum_{i=1}^{K}\mathbf{1}[n_{i,c}>0]}
 {\sum_{k=1}^{C}\sum_{i=1}^{K}\mathbf{1}[n_{i,k}>0]}.
-```
-
-对应的原型聚合权重为
-
-```math
-\alpha_{i,c}^{\mathrm{bin}}
-=
-\frac{e_{i,c}^{\mathrm{bin}}}
-{\sum_{j=1}^{K}e_{j,c}^{\mathrm{bin}}}.
-```
-
-全局原型与分类头为
-
-```math
-p_c^{\mathrm{bin}}
-=
-\sum_{i=1}^{K}\alpha_{i,c}^{\mathrm{bin}}\mu_{i,c},
-\qquad
-w_c^{\mathrm{bin}}
-=
-s\frac{p_c^{\mathrm{bin}}}{\|p_c^{\mathrm{bin}}\|_2}.
-```
-
-然后用 $\pi_c^{\mathrm{bin}}$ 替换 $\pi_c$ 计算 $b_c^{\mathrm{bin}}$。最终分数为
-
-```math
-\mathrm{score}_c^{\mathrm{bin}}(x)
-=
-(w_c^{\mathrm{bin}})^\top\phi_0(T(x))+b_c^{\mathrm{bin}}.
 ```
 
 该对照检验“只知道某类是否在客户端出现”是否足以替代样本数统计。
@@ -317,27 +268,7 @@ N_i\mathbf{1}[n_{i,c}>0],
 {\sum_{j=1}^{K}e_{j,c}^{\mathrm{size}}}.
 ```
 
-全局原型改为
-
-```math
-p_c^{\mathrm{size}}
-=
-\sum_{i=1}^{K}\alpha_{i,c}^{\mathrm{size}}\mu_{i,c}.
-```
-
-该对照检验类别级支持数 $n_{i,c}$ 是否优于客户端级总规模 $N_i$。
-
-对应分类头与最终分数为
-
-```math
-w_c^{\mathrm{size}}
-=
-s\frac{p_c^{\mathrm{size}}}{\|p_c^{\mathrm{size}}\|_2},
-\qquad
-\mathrm{score}_c^{\mathrm{size}}(x)
-=
-(w_c^{\mathrm{size}})^\top\phi_0(T(x))+b_c.
-```
+其余原型头和长尾偏置公式与正式方法一致。该对照检验类别级支持数 $n_{i,c}$ 是否优于客户端级总规模 $N_i$。
 
 **No prevalence calibration.** 该设置保留正式的 $p_c$ 和 $w_c$，但移除长尾偏置：
 
@@ -365,16 +296,6 @@ b_c^{\mathrm{unif}}=0.
 
 该对照检验 M2 的作用是否来自真实长尾统计，而不是来自偏置项形式本身。
 
-最终分数为
-
-```math
-\mathrm{score}_c^{\mathrm{unif}}(x)
-=
-w_c^\top\phi_0(T(x))+b_c^{\mathrm{unif}}
-=
-w_c^\top\phi_0(T(x)).
-```
-
 **Smoothed prevalence prior.** 该设置对客户端上传的患病率计数做加性平滑：
 
 ```math
@@ -401,15 +322,7 @@ b_c^{\mathrm{smooth}}
 \right).
 ```
 
-最终分数为
-
-```math
-\mathrm{score}_c^{\mathrm{smooth}}(x)
-=
-w_c^\top\phi_0(T(x))+b_c^{\mathrm{smooth}}.
-```
-
-该对照检验 M2 对极端计数的敏感性。
+其余原型头公式与正式方法一致。该对照检验 M2 对极端计数的敏感性。
 
 ## 二、预测诊断指标
 

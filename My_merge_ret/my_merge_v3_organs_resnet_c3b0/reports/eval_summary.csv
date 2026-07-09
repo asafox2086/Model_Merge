@@ -1,2 +1,0 @@
-task_type,dataset,model,clip_model,num_clients,beta,seed,method,split,checkpoint_path,merged_dir,test_acc,test_loss,num_samples
-small,organsmnist_224,resnet,,3,0.0,42,my_merge,test,outputs/my_merge_v3_organs_resnet_c3b0/merged/small/organsmnist_224/resnet/clients_3/beta_0/seed_42/my_merge/merged.pt,outputs/my_merge_v3_organs_resnet_c3b0/merged/small/organsmnist_224/resnet/clients_3/beta_0/seed_42/my_merge,0.4964314036478985,1.5630960242589171,8827

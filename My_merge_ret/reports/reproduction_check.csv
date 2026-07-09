@@ -1,5 +1,0 @@
-status,method,task_type,dataset,model,num_clients,beta,actual,expected,delta,csv_path
-ok,avg,small,bloodmnist_224,convnext,3,0,0.194679918153,0.1947,-2.00818474131e-05,outputs/my_merge_two_module_full_20260521_192126/reproduction/small__avg/reports/eval_summary.csv
-ok,avg,small,bloodmnist_224,convnext,3,0.01,0.137386729027,0.1374,-1.32709733996e-05,outputs/my_merge_two_module_full_20260521_192126/reproduction/small__avg/reports/eval_summary.csv
-ok,ties,small,bloodmnist_224,convnext,3,0,0.194679918153,0.1947,-2.00818474131e-05,outputs/my_merge_two_module_full_20260521_192126/reproduction/small__ties/reports/eval_summary.csv
-ok,ties,small,bloodmnist_224,convnext,3,0.01,0.182402806197,0.1824,2.8061970184e-06,outputs/my_merge_two_module_full_20260521_192126/reproduction/small__ties/reports/eval_summary.csv

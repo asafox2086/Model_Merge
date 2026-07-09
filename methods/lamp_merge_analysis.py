@@ -199,9 +199,6 @@ def _prototype_stats_path(meta, cfg):
         cfg.get("lamp_merge_prototype_stats_path")
         or cfg.get("lamp_merge_client_prototype_path")
         or cfg.get("lamp_merge_proto_stats_path")
-        or cfg.get("my_merge_prototype_stats_path")
-        or cfg.get("my_merge_client_prototype_path")
-        or cfg.get("my_merge_proto_stats_path")
     )
     if direct:
         path = Path(direct)
@@ -210,8 +207,6 @@ def _prototype_stats_path(meta, cfg):
     root = (
         cfg.get("lamp_merge_prototype_root")
         or cfg.get("lamp_merge_client_prototype_root")
-        or cfg.get("my_merge_prototype_root")
-        or cfg.get("my_merge_client_prototype_root")
     )
     if not root:
         return None
@@ -278,6 +273,29 @@ def _client_stat_matrix(proto_stats, fields, num_clients, num_classes):
     return torch.stack(rows, dim=0)
 
 
+def _is_valid_prevalence_source(source):
+    source = str(source or "")
+    return source.startswith("client_local_dataset") or source.startswith("client_uploaded_label_counts")
+
+
+def _validate_prevalence_provenance(proto_stats):
+    payload_source = proto_stats.get("prevalence_source")
+    client_sources = [
+        item.get("prevalence_source")
+        for item in proto_stats.get("clients", [])
+        if isinstance(item, dict) and item.get("prevalence_source") is not None
+    ]
+    if _is_valid_prevalence_source(payload_source):
+        return
+    if client_sources and all(_is_valid_prevalence_source(source) for source in client_sources):
+        return
+    raise ValueError(
+        "LAMP-Merge analysis modes that use prevalence counts require class_prevalence_counts "
+        "uploaded by clients from their local D_i. The prototype statistics payload does not "
+        "declare compatible prevalence provenance."
+    )
+
+
 def _client_feature_means(proto_stats, num_clients, num_classes):
     clients = proto_stats.get("clients", [])
     means = []
@@ -320,7 +338,7 @@ def _global_feature_mean_proxy(means, feature_counts):
 
 
 def _support_only_proxy(num_clients, num_classes, feature_dim, cfg):
-    seed = int(_cfg_value(cfg, "lamp_merge_ablation_seed", "my_merge_ablation_seed", default=1701))
+    seed = int(_cfg_value(cfg, "lamp_merge_ablation_seed", default=1701))
     generator = torch.Generator(device="cpu")
     generator.manual_seed(seed)
     directions = torch.randn(num_classes, feature_dim, generator=generator, dtype=torch.float32)
@@ -330,7 +348,7 @@ def _support_only_proxy(num_clients, num_classes, feature_dim, cfg):
 
 def _evidence_matrix(feature_counts, proto_stats, meta, cfg, evidence_mode):
     if evidence_mode == "support_power":
-        gamma = float(_cfg_value(cfg, "lamp_merge_proto_count_power", "my_merge_proto_count_power", default=0.45))
+        gamma = float(_cfg_value(cfg, "lamp_merge_proto_count_power", default=0.45))
         evidence = (feature_counts + 1.0).pow(gamma)
         return evidence * (feature_counts > 0).to(evidence.dtype), gamma
     if evidence_mode in {"uniform_present_client", "binary_support"}:
@@ -370,17 +388,22 @@ def _prevalence_counts(proto_stats, feature_counts, meta, cfg, prevalence_mode):
     if prevalence_mode == "binary_support":
         return (feature_counts > 0).to(torch.float32), "binary_support_control"
 
+    if prevalence_mode in {"uploaded", "smoothed"}:
+        _validate_prevalence_provenance(proto_stats)
+
     counts = _client_stat_matrix(
         proto_stats,
-        ("class_prevalence_counts", "class_prior_counts", "label_counts"),
+        ("class_prevalence_counts",),
         num_clients,
         num_classes,
     )
+    missing_clients = torch.nonzero(counts.sum(dim=1) <= 0, as_tuple=False).view(-1).tolist()
+    if missing_clients:
+        raise ValueError(f"Missing uploaded class_prevalence_counts for clients: {missing_clients}")
     if prevalence_mode == "smoothed":
         smoothing = float(_cfg_value(
             cfg,
             "lamp_merge_prevalence_smoothing",
-            "my_merge_prevalence_smoothing",
             default=1.0,
         ))
         counts = counts + smoothing
@@ -389,17 +412,8 @@ def _prevalence_counts(proto_stats, feature_counts, meta, cfg, prevalence_mode):
         raise ValueError(f"Unsupported LAMP-Merge prevalence mode: {prevalence_mode}")
 
     if float(counts.sum().item()) <= 0:
-        if bool(_cfg_value(
-            cfg,
-            "lamp_merge_allow_support_prior_fallback",
-            "my_merge_allow_support_prior_fallback",
-            default=False,
-        )):
-            counts = feature_counts
-            prevalence_source = "prototype_support_counts_fallback"
-        else:
-            counts = torch.zeros_like(feature_counts)
-            prevalence_source = "missing"
+        counts = torch.zeros_like(feature_counts)
+        prevalence_source = "missing"
     return counts, prevalence_source
 
 
@@ -409,23 +423,20 @@ def _global_prototypes(proto_stats, meta, cfg, state_dicts=None):
     if num_clients <= 0:
         raise ValueError("LAMP-Merge requires at least one uploaded client prototype payload.")
 
-    components = _ablation_components(_cfg_value(cfg, "lamp_merge_ablation_mode", "my_merge_ablation_mode", default="full"))
+    components = _ablation_components(_cfg_value(cfg, "lamp_merge_ablation_mode", default="full"))
     prototype_mode = str(_cfg_value(
         cfg,
         "lamp_merge_prototype_mode",
-        "my_merge_prototype_mode",
         default=components["prototype_mode"],
     ))
     evidence_mode = str(_cfg_value(
         cfg,
         "lamp_merge_evidence_mode",
-        "my_merge_evidence_mode",
         default=components["evidence_mode"],
     ))
     prevalence_mode = str(_cfg_value(
         cfg,
         "lamp_merge_prevalence_mode",
-        "my_merge_prevalence_mode",
         default=components["prevalence_mode"],
     ))
     shuffle_prototypes = bool(components.get("shuffle_prototypes", False))
@@ -462,7 +473,7 @@ def _global_prototypes(proto_stats, meta, cfg, state_dicts=None):
     weights = evidence / evidence_per_class.view(1, -1).clamp_min(EPS)
     prototypes = (prototype_inputs * weights.unsqueeze(-1)).sum(dim=0)
     if shuffle_prototypes:
-        seed = int(_cfg_value(cfg, "lamp_merge_ablation_seed", "my_merge_ablation_seed", default=1701))
+        seed = int(_cfg_value(cfg, "lamp_merge_ablation_seed", default=1701))
         generator = torch.Generator(device="cpu")
         generator.manual_seed(seed + int(meta.get("seed", 0)) + int(num_classes))
         permutation = torch.randperm(num_classes, generator=generator)
@@ -491,12 +502,11 @@ def _dominant_prior_threshold(cfg, num_classes):
     imbalance_threshold = float(_cfg_value(
         cfg,
         "lamp_merge_reference_prior_threshold",
-        "my_merge_reference_prior_threshold",
         default=2.5,
     ))
     if imbalance_threshold > 0:
         return imbalance_threshold / float(num_classes)
-    prevalence_threshold = _cfg_value(cfg, "lamp_merge_prevalence_threshold", "my_merge_prevalence_threshold")
+    prevalence_threshold = _cfg_value(cfg, "lamp_merge_prevalence_threshold")
     if prevalence_threshold is not None:
         return float(prevalence_threshold)
     return 0.5
@@ -506,7 +516,6 @@ def _prevalence_calibration_strength(class_prior, num_classes, cfg):
     if bool(_cfg_value(
         cfg,
         "lamp_merge_disable_prevalence_calibration",
-        "my_merge_disable_prevalence_calibration",
         default=False,
     )):
         return 0.0
@@ -519,10 +528,9 @@ def _prevalence_calibration_strength(class_prior, num_classes, cfg):
     max_tau = float(_cfg_value(
         cfg,
         "lamp_merge_reference_prior_max_tau",
-        "my_merge_reference_prior_max_tau",
-        default=6.0,
+        default=5.0,
     ))
-    explicit = _cfg_value(cfg, "lamp_merge_reference_prior_tau", "my_merge_reference_prior_tau")
+    explicit = _cfg_value(cfg, "lamp_merge_reference_prior_tau")
     if explicit is not None:
         explicit_tau = float(explicit)
         if explicit_tau >= 0.0:
@@ -555,7 +563,6 @@ def _synthesize_reference_prototype_model(base_state, proto_stats, meta, cfg, st
     scale = float(_cfg_value(
         cfg,
         "lamp_merge_reference_head_scale",
-        "my_merge_reference_head_scale",
         default=20.0,
     ))
     class_counts = proto["class_counts"]
@@ -591,14 +598,12 @@ def _synthesize_reference_prototype_model(base_state, proto_stats, meta, cfg, st
         "reference_prior_threshold": float(_cfg_value(
             cfg,
             "lamp_merge_reference_prior_threshold",
-            "my_merge_reference_prior_threshold",
             default=2.5,
         )),
         "reference_prior_max_tau": float(_cfg_value(
             cfg,
             "lamp_merge_reference_prior_max_tau",
-            "my_merge_reference_prior_max_tau",
-            default=6.0,
+            default=5.0,
         )),
         "imbalance_ratio": imbalance_ratio,
         "num_clients": int(proto["num_clients"]),
@@ -616,7 +621,6 @@ def _avg_plus_prevalence_model(state_dicts, weights, proto_stats, meta, cfg):
     state = OrderedDict((key, value.detach().cpu().clone()) for key, value in averaged.items())
     local_cfg = dict(cfg)
     local_cfg["lamp_merge_ablation_mode"] = "full"
-    local_cfg["my_merge_ablation_mode"] = "full"
     proto = _global_prototypes(proto_stats, meta, local_cfg)
     class_counts = proto["class_counts"]
     class_prior = class_counts / class_counts.sum().clamp_min(EPS)
@@ -639,14 +643,12 @@ def _avg_plus_prevalence_model(state_dicts, weights, proto_stats, meta, cfg):
         "reference_prior_threshold": float(_cfg_value(
             cfg,
             "lamp_merge_reference_prior_threshold",
-            "my_merge_reference_prior_threshold",
             default=2.5,
         )),
         "reference_prior_max_tau": float(_cfg_value(
             cfg,
             "lamp_merge_reference_prior_max_tau",
-            "my_merge_reference_prior_max_tau",
-            default=6.0,
+            default=5.0,
         )),
         "imbalance_ratio": imbalance_ratio,
         "class_counts": [float(x) for x in class_counts.tolist()],
@@ -670,7 +672,7 @@ def merge_lamp_merge(state_dicts, weights, meta=None, checkpoints=None, cfg=None
             "Please export prototype_stats.pt before running this method."
         )
 
-    ablation_mode = _normalize_ablation_mode(_cfg_value(cfg, "lamp_merge_ablation_mode", "my_merge_ablation_mode", default="full"))
+    ablation_mode = _normalize_ablation_mode(_cfg_value(cfg, "lamp_merge_ablation_mode", default="full"))
     if ablation_mode not in LAMP_MERGE_ABLATION_MODES:
         raise ValueError(f"Unsupported LAMP-Merge ablation mode: {ablation_mode}")
 
@@ -684,10 +686,8 @@ def merge_lamp_merge(state_dicts, weights, meta=None, checkpoints=None, cfg=None
         base_state, _ = build_reference_bundle(meta, device="cpu")
         local_cfg = dict(cfg)
         local_cfg["lamp_merge_ablation_mode"] = ablation_mode
-        local_cfg["my_merge_ablation_mode"] = ablation_mode
         if ablation_mode in {"m1_only", "no_prevalence"}:
             local_cfg["lamp_merge_disable_prevalence_calibration"] = True
-            local_cfg["my_merge_disable_prevalence_calibration"] = True
         merged, trace = _synthesize_reference_prototype_model(
             base_state,
             client_stats,
@@ -739,7 +739,3 @@ def merge_lamp_merge(state_dicts, weights, meta=None, checkpoints=None, cfg=None
         "reference_prototype_head": trace,
         "long_tail_prevalence_calibration": prevalence_trace,
     }
-
-
-def merge_my_merge(state_dicts, weights, meta=None, checkpoints=None, cfg=None):
-    return merge_lamp_merge(state_dicts, weights, meta=meta, checkpoints=checkpoints, cfg=cfg)

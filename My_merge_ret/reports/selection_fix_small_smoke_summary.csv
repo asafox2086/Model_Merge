@@ -1,6 +1,0 @@
-dataset,model,setting,test_acc,selected_candidate,client_weights,best_existing_method,best_existing_acc,delta_vs_best_existing,output_root
-bloodmnist_224,resnet,c3_b0,0.46799181525869626,consensus,0.509/0.391/0.100,regmean,0.3826,0.08539181525869627,outputs/selection_fix_blood_smoke
-dermamnist_224,resnet,c3_b0,0.6793017456359102,evidence_routed,0.133/0.133/0.734,fisher,0.6718,0.0075017456359102175,outputs/selection_fix_derma_smoke
-organcmnist_224,resnet,c3_b0,0.48770691333982474,consensus,0.336/0.464/0.201,robustmerge,0.3824,0.10530691333982473,outputs/selection_fix_organc_smoke
-organsmnist_224,resnet,c3_b0,0.4945054945054945,avg,0.672/0.125/0.203,regmean,0.2189,0.27560549450549454,outputs/selection_fix_organs_smoke
-chaoshengmnist_224,resnet,c3_b0,0.3890386343216532,consensus,0.235/0.444/0.321,robustmerge,0.2659,0.12313863432165317,outputs/selection_fix_chaosheng_smoke

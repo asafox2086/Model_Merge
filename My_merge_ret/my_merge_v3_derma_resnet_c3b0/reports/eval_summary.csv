@@ -1,2 +1,0 @@
-task_type,dataset,model,clip_model,num_clients,beta,seed,method,split,checkpoint_path,merged_dir,test_acc,test_loss,num_samples
-small,dermamnist_224,resnet,,3,0.0,42,my_merge,test,outputs/my_merge_v3_derma_resnet_c3b0/merged/small/dermamnist_224/resnet/clients_3/beta_0/seed_42/my_merge/merged.pt,outputs/my_merge_v3_derma_resnet_c3b0/merged/small/dermamnist_224/resnet/clients_3/beta_0/seed_42/my_merge,0.6763092269326684,1.098904900479495,2005

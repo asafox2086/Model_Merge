@@ -1,7 +1,0 @@
-output_root=/data/liyapeng_grp/program/MedMNISTMerge/outputs/my_merge_hparam_sensitivity_20260515_170100
-device=cuda:1
-datasets=bloodmnist_224 dermamnist_224 organcmnist_224 chaoshengmnist_224
-small_models=resnet
-task_type=small
-settings=stats1_eval1_bn0 stats2_eval1_bn0 stats4_eval2_bn1 stats4_eval4_bn2
-limit=0

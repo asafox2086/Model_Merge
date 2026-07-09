@@ -1,6 +1,6 @@
 # 全数据集预测坍缩诊断
 
-本报告覆盖 5 个正式医学数据集，每个数据集使用 4 个 backbone（resnet、convnext、vit_t、swin_tiny），固定 `clients=3`、`beta=0.01`、`seed=42`。统计对象包括 individual clients 的聚合行、通用模型融合 baseline，以及 `my_merge`。
+本报告覆盖 5 个正式医学数据集，每个数据集使用 4 个 backbone（resnet、convnext、vit_t、swin_tiny），固定 `clients=3`、`beta=0.01`、`seed=42`。统计对象包括 individual clients 的聚合行、通用模型融合 baseline，以及 `LAMP-Merge`。
 
 原始 OK 评估数为 320；方法级分析表为 300 行，包括 260 个融合方法结果和 40 个 client 聚合结果。补跑前的 10 条 OOM 失败行已单独归档，不参与统计。
 
@@ -30,13 +30,13 @@
 | iso_c | 20 | 0.1976 | 0.1648 | 0.0845 | 0.7538 | 2.1161 | 0.7172 |
 | free_merge | 20 | 0.2300 | 0.1558 | 0.0762 | 0.8182 | 1.7074 | 0.7158 |
 | robustmerge | 20 | 0.1486 | 0.1425 | 0.0502 | 0.8225 | 1.6559 | 0.8035 |
-| my_merge | 20 | 0.5885 | 0.5747 | 0.5352 | 0.2294 | 8.0390 | 0.1510 |
+| LAMP-Merge | 20 | 0.5885 | 0.5747 | 0.5352 | 0.2294 | 8.0390 | 0.1510 |
 
 ## 单 case 最优次数
 
 20 个 case = 5 个数据集 × 4 个 backbone。`collapse_ratio` 和 `pred_true_tv` 按越低越好统计，其余指标按越高越好统计。
 
-| metric | my_merge best/tied cases | strongest non-my_merge |
+| metric | LAMP-Merge best/tied cases | strongest non-LAMP reference |
 |---|---:|---|
 | accuracy | 16/20 | client_best (4/20) |
 | balanced_accuracy | 20/20 | - |
@@ -64,7 +64,7 @@
 | iso_c | 4 | 0.2051 | 0.2129 | 0.1115 | 0.8009 | 2.0307 | 0.7329 |
 | free_merge | 4 | 0.1900 | 0.2001 | 0.1055 | 0.8691 | 1.6915 | 0.7743 |
 | robustmerge | 4 | 0.1733 | 0.1557 | 0.0552 | 0.9263 | 1.2224 | 0.8241 |
-| my_merge | 4 | 0.8190 | 0.8071 | 0.8022 | 0.1943 | 7.4876 | 0.0394 |
+| LAMP-Merge | 4 | 0.8190 | 0.8071 | 0.8022 | 0.1943 | 7.4876 | 0.0394 |
 
 ![bloodmnist_224 metrics](../../figures/prediction_diagnostics_4models_c3_b001/by_dataset/bloodmnist_224/bloodmnist_224_prediction_diagnostics.png)
 
@@ -88,7 +88,7 @@
 | iso_c | 4 | 0.1972 | 0.1626 | 0.0790 | 0.7653 | 1.7663 | 0.7318 |
 | free_merge | 4 | 0.2053 | 0.1622 | 0.0688 | 0.8493 | 1.5077 | 0.7668 |
 | robustmerge | 4 | 0.1224 | 0.1316 | 0.0364 | 0.9863 | 1.0681 | 0.8688 |
-| my_merge | 4 | 0.4625 | 0.4536 | 0.4378 | 0.2035 | 7.4446 | 0.1575 |
+| LAMP-Merge | 4 | 0.4625 | 0.4536 | 0.4378 | 0.2035 | 7.4446 | 0.1575 |
 
 ![chaoshengmnist_224 metrics](../../figures/prediction_diagnostics_4models_c3_b001/by_dataset/chaoshengmnist_224/chaoshengmnist_224_prediction_diagnostics.png)
 
@@ -112,7 +112,7 @@
 | iso_c | 4 | 0.2885 | 0.1604 | 0.0723 | 0.8178 | 1.6154 | 0.6665 |
 | free_merge | 4 | 0.4988 | 0.1614 | 0.1016 | 0.9259 | 1.3118 | 0.4403 |
 | robustmerge | 4 | 0.0461 | 0.1555 | 0.0178 | 0.7978 | 1.5972 | 0.9247 |
-| my_merge | 4 | 0.4627 | 0.4492 | 0.2934 | 0.3697 | 5.6501 | 0.3309 |
+| LAMP-Merge | 4 | 0.4627 | 0.4492 | 0.2934 | 0.3697 | 5.6501 | 0.3309 |
 
 ![dermamnist_224 metrics](../../figures/prediction_diagnostics_4models_c3_b001/by_dataset/dermamnist_224/dermamnist_224_prediction_diagnostics.png)
 
@@ -136,7 +136,7 @@
 | iso_c | 4 | 0.1403 | 0.1398 | 0.0757 | 0.7107 | 2.5383 | 0.7409 |
 | free_merge | 4 | 0.1186 | 0.1142 | 0.0396 | 0.7945 | 1.6177 | 0.8286 |
 | robustmerge | 4 | 0.1425 | 0.1258 | 0.0534 | 0.7085 | 2.0226 | 0.7771 |
-| my_merge | 4 | 0.6249 | 0.6175 | 0.6030 | 0.1772 | 10.1092 | 0.1280 |
+| LAMP-Merge | 4 | 0.6249 | 0.6175 | 0.6030 | 0.1772 | 10.1092 | 0.1280 |
 
 ![organcmnist_224 metrics](../../figures/prediction_diagnostics_4models_c3_b001/by_dataset/organcmnist_224/organcmnist_224_prediction_diagnostics.png)
 
@@ -160,7 +160,7 @@
 | iso_c | 4 | 0.1568 | 0.1482 | 0.0836 | 0.6742 | 2.6297 | 0.7139 |
 | free_merge | 4 | 0.1372 | 0.1410 | 0.0656 | 0.6519 | 2.4085 | 0.7691 |
 | robustmerge | 4 | 0.2586 | 0.1438 | 0.0881 | 0.6939 | 2.3693 | 0.6226 |
-| my_merge | 4 | 0.5734 | 0.5460 | 0.5397 | 0.2021 | 9.5033 | 0.0993 |
+| LAMP-Merge | 4 | 0.5734 | 0.5460 | 0.5397 | 0.2021 | 9.5033 | 0.0993 |
 
 ![organsmnist_224 metrics](../../figures/prediction_diagnostics_4models_c3_b001/by_dataset/organsmnist_224/organsmnist_224_prediction_diagnostics.png)
 

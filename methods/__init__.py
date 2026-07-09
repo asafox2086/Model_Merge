@@ -9,7 +9,6 @@ from .iso import merge_iso_c, merge_iso_cts
 from .model_stock import merge_model_stock
 from .lamp_merge import merge_lamp_merge
 from .lamp_merge_analysis import merge_lamp_merge as merge_lamp_merge_analysis
-from .my_merge import merge_my_merge
 from .regmean import merge_regmean
 from .robustmerge import merge_robustmerge
 from .ties import merge_ties
@@ -31,9 +30,6 @@ METHOD_ALIASES = {
     'lamp_merge_analysis': 'lamp_merge_analysis',
     'lamp-merge-analysis': 'lamp_merge_analysis',
     'lamp_analysis': 'lamp_merge_analysis',
-    'my_merge': 'lamp_merge',
-    'my_method': 'lamp_merge',
-    'my-merge': 'lamp_merge',
     'adamerging': 'adamerging',
     'from': 'from',
     'free_merge': 'free_merge',
@@ -63,7 +59,6 @@ __all__ = [
     'merge_model_stock',
     'merge_lamp_merge',
     'merge_lamp_merge_analysis',
-    'merge_my_merge',
     'merge_adamerging',
     'merge_from',
     'merge_free',

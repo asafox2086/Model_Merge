@@ -1,4 +1,0 @@
-status,method,task_type,dataset,model,num_clients,beta,actual,expected,delta,csv_path
-missing_baseline,my_merge,small,bloodmnist_224,resnet,3,0,0.58783981292,,,outputs/my_merge_small_raw_full_safe_20260530_161700/small_resnet__my_merge/reports/eval_summary.csv
-missing_baseline,my_merge,small,bloodmnist_224,resnet,3,0.01,0.545162233265,,,outputs/my_merge_small_raw_full_safe_20260530_161700/small_resnet__my_merge/reports/eval_summary.csv
-missing_baseline,my_merge,small,bloodmnist_224,resnet,3,0.1,0.931598947676,,,outputs/my_merge_small_raw_full_safe_20260530_161700/small_resnet__my_merge/reports/eval_summary.csv

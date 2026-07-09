@@ -9,7 +9,7 @@
 
 对应代码：
 
-- 客户端统计导出：[scripts/export_my_merge_prototypes.py](/data2/liyapeng_grp/program/MedMNISTMerge/scripts/export_my_merge_prototypes.py)
+- 客户端统计导出：[scripts/export_lamp_merge_prototypes.py](/data2/liyapeng_grp/program/MedMNISTMerge/scripts/export_lamp_merge_prototypes.py)
 - 服务端融合实现：[methods/lamp_merge.py](/data2/liyapeng_grp/program/MedMNISTMerge/methods/lamp_merge.py)
 - 正式汇总表：[汇总表.md](/data2/liyapeng_grp/program/MedMNISTMerge/My_merge_ret/汇总表.md)
 - 消融与超参数分析：[LAMP-Merge模块消融与超参数分析.md](/data2/liyapeng_grp/program/MedMNISTMerge/My_merge_ret/LAMP-Merge模块消融与超参数分析.md)
@@ -108,7 +108,7 @@ r=C\max_c \pi_c.
 b_c=\lambda\left(\log \pi_c-\frac{1}{C}\sum_{k=1}^{C}\log \pi_k\right).
 ```
 
-当前默认 $\tau=2.5$，$\lambda=6.0$。中心化项只改变类别之间的相对偏置，不整体平移所有 logit。
+当前默认 $\tau=2.5$，$\lambda=5.0$。中心化项只改变类别之间的相对偏置，不整体平移所有 logit。
 
 最终测试时，对输入图像 $x$ 的分类分数为：
 
@@ -150,21 +150,21 @@ LAMP-Merge 的通信过程是一次性的：
 
 ## 当前结果摘要
 
-在当前 `汇总表.md` 中，LAMP-Merge 不低于最强非 LAMP 基线的统计为：
+当前 `汇总表.md` 已由正式 LAMP-Merge 重新生成。实验覆盖 5 个医学图像数据集、4 个 backbone、3 个客户端数量和 3 个 Dirichlet beta 设置，共 180 个 raw cell；client-average 口径对相同数据集、backbone 和客户端数量下的 3 个 beta 取平均，共 60 个 cell。
+
+LAMP-Merge 不低于最强非 LAMP 基线的统计为：
 
 | 统计范围 | 胜出或并列胜出 | 比例 |
 | --- | ---: | ---: |
-| 全表 | 241/300 | 80.3% |
-| Raw | 173/225 | 76.9% |
-| Client Average | 68/75 | 90.7% |
+| 全表 | 211/240 | 87.9% |
+| Raw | 154/180 | 85.6% |
+| Client Average | 57/60 | 95.0% |
 
-模块消融显示：
+正式 LAMP-Merge 的平均 Accuracy 为：
 
-| 设置 | Raw 平均 Acc | Client Average 平均 Acc | 解释 |
-| --- | ---: | ---: | --- |
-| LAMP-Merge | 0.5618 | 0.5618 | M1 与 M2 共同构成正式方法 |
-| M1 only | 0.5362 | 0.5362 | 原型重建是主要收益来源 |
-| avg+M2 | 0.2198 | 0.2198 | 只加类别先验不能修复平均模型坍缩 |
-| avg | 0.2273 | 0.2273 | 通用平均模型容易发生医学类别坍缩 |
+| 统计范围 | Cell 数 | 平均 Acc |
+| --- | ---: | ---: |
+| Raw | 180 | 0.6210 |
+| Client Average | 60 | 0.6210 |
 
-这些结果支持本文的核心论点：医学图像模型融合的主要失败模式不是均匀退化，而是融合后的全局判别坍缩；LAMP-Merge 用诊断类别原型重建解决坍缩，再用长尾患病率校准处理多数类确实占优的医学场景。
+这些结果来自 `outputs/lamp_merge_full_client_local_20260708_193654/{resnet,convnext,vit_t,swin_tiny}`，其中正式实现只包含 M1 诊断原型重建和 M2 长尾患病率校准。模块内消融、预测分布诊断和非 Accuracy 指标在独立分析表中报告，不写入正式主结果表。

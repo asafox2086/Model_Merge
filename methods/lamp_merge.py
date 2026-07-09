@@ -75,9 +75,6 @@ def _prototype_stats_path(meta, cfg):
         cfg.get("lamp_merge_prototype_stats_path")
         or cfg.get("lamp_merge_client_prototype_path")
         or cfg.get("lamp_merge_proto_stats_path")
-        or cfg.get("my_merge_prototype_stats_path")
-        or cfg.get("my_merge_client_prototype_path")
-        or cfg.get("my_merge_proto_stats_path")
     )
     if direct:
         path = Path(direct)
@@ -86,8 +83,6 @@ def _prototype_stats_path(meta, cfg):
     root = (
         cfg.get("lamp_merge_prototype_root")
         or cfg.get("lamp_merge_client_prototype_root")
-        or cfg.get("my_merge_prototype_root")
-        or cfg.get("my_merge_client_prototype_root")
     )
     if not root:
         return None
@@ -155,6 +150,29 @@ def _client_stat_matrix(proto_stats, fields, num_clients, num_classes):
     return torch.stack(rows, dim=0)
 
 
+def _is_valid_prevalence_source(source):
+    source = str(source or "")
+    return source.startswith("client_local_dataset") or source.startswith("client_uploaded_label_counts")
+
+
+def _validate_prevalence_provenance(proto_stats):
+    payload_source = proto_stats.get("prevalence_source")
+    client_sources = [
+        item.get("prevalence_source")
+        for item in proto_stats.get("clients", [])
+        if isinstance(item, dict) and item.get("prevalence_source") is not None
+    ]
+    if _is_valid_prevalence_source(payload_source):
+        return
+    if client_sources and all(_is_valid_prevalence_source(source) for source in client_sources):
+        return
+    raise ValueError(
+        "LAMP-Merge requires class_prevalence_counts uploaded by clients from their local D_i. "
+        "The prototype statistics payload does not declare client-local or client-uploaded "
+        "prevalence provenance, so it is not valid for the formal method."
+    )
+
+
 def _client_feature_means(proto_stats, num_clients, num_classes):
     clients = proto_stats.get("clients", [])
     means = []
@@ -172,20 +190,24 @@ def _client_feature_means(proto_stats, num_clients, num_classes):
 
 
 def _evidence_matrix(feature_counts, cfg):
-    gamma = float(_cfg_value(cfg, "lamp_merge_proto_count_power", "my_merge_proto_count_power", default=0.45))
+    gamma = float(_cfg_value(cfg, "lamp_merge_proto_count_power", default=0.45))
     evidence = (feature_counts + 1.0).pow(gamma)
     return evidence * (feature_counts > 0).to(evidence.dtype), gamma
 
 
 def _prevalence_counts(proto_stats, feature_counts, meta):
+    _validate_prevalence_provenance(proto_stats)
     num_classes = int(meta["num_classes"])
     num_clients = _num_clients(meta, proto_stats)
     counts = _client_stat_matrix(
         proto_stats,
-        ("class_prevalence_counts", "class_prior_counts", "label_counts"),
+        ("class_prevalence_counts",),
         num_clients,
         num_classes,
     )
+    missing_clients = torch.nonzero(counts.sum(dim=1) <= 0, as_tuple=False).view(-1).tolist()
+    if missing_clients:
+        raise ValueError(f"Missing uploaded class_prevalence_counts for clients: {missing_clients}")
     if float(counts.sum().item()) <= 0:
         return torch.zeros_like(feature_counts), "missing"
     return counts, "uploaded_prevalence_counts"
@@ -232,12 +254,11 @@ def _dominant_prior_threshold(cfg, num_classes):
     imbalance_threshold = float(_cfg_value(
         cfg,
         "lamp_merge_reference_prior_threshold",
-        "my_merge_reference_prior_threshold",
         default=2.5,
     ))
     if imbalance_threshold > 0:
         return imbalance_threshold / float(num_classes)
-    prevalence_threshold = _cfg_value(cfg, "lamp_merge_prevalence_threshold", "my_merge_prevalence_threshold")
+    prevalence_threshold = _cfg_value(cfg, "lamp_merge_prevalence_threshold")
     if prevalence_threshold is not None:
         return float(prevalence_threshold)
     return 0.5
@@ -247,7 +268,6 @@ def _prevalence_calibration_strength(class_prior, num_classes, cfg):
     if bool(_cfg_value(
         cfg,
         "lamp_merge_disable_prevalence_calibration",
-        "my_merge_disable_prevalence_calibration",
         default=False,
     )):
         return 0.0
@@ -258,14 +278,13 @@ def _prevalence_calibration_strength(class_prior, num_classes, cfg):
     if dominant_prior <= threshold:
         return 0.0
 
-    explicit_tau = _cfg_value(cfg, "lamp_merge_reference_prior_tau", "my_merge_reference_prior_tau")
+    explicit_tau = _cfg_value(cfg, "lamp_merge_reference_prior_tau")
     if explicit_tau is not None and float(explicit_tau) >= 0.0:
         return float(explicit_tau)
     return float(_cfg_value(
         cfg,
         "lamp_merge_reference_prior_max_tau",
-        "my_merge_reference_prior_max_tau",
-        default=6.0,
+        default=5.0,
     ))
 
 
@@ -294,7 +313,6 @@ def _synthesize_reference_prototype_model(base_state, proto_stats, meta, cfg):
     scale = float(_cfg_value(
         cfg,
         "lamp_merge_reference_head_scale",
-        "my_merge_reference_head_scale",
         default=20.0,
     ))
     class_counts = proto["class_counts"]
@@ -329,14 +347,12 @@ def _synthesize_reference_prototype_model(base_state, proto_stats, meta, cfg):
         "reference_prior_threshold": float(_cfg_value(
             cfg,
             "lamp_merge_reference_prior_threshold",
-            "my_merge_reference_prior_threshold",
             default=2.5,
         )),
         "reference_prior_max_tau": float(_cfg_value(
             cfg,
             "lamp_merge_reference_prior_max_tau",
-            "my_merge_reference_prior_max_tau",
-            default=6.0,
+            default=5.0,
         )),
         "imbalance_ratio": imbalance_ratio,
         "num_clients": int(proto["num_clients"]),
