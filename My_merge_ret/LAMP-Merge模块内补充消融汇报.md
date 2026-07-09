@@ -4,23 +4,23 @@
 
 ## 当前全量结果
 
-当前正式 LAMP-Merge 结果来自 `outputs/lamp_merge_full_client_local_20260708_193654`，其客户端统计来自 `outputs/lamp_merge_client_local_proto_stats`，并采用正式超参数 $s=20$ 与 $\lambda=5.0$。其中 $s$ 是 M1 中原型分类头的尺度，$\lambda$ 是 M2 中中心化 log-prior bias 的强度；M2 是否触发由长尾不平衡阈值 $\eta$ 控制。模块内消融中，只有与该统计来源和超参数口径一致、且完成 180 个 raw cells 的分支被填入数值；旧口径或未完成 full-scope 的分支统一置为 `-`。
+当前正式 LAMP-Merge 结果来自 `outputs/lamp_merge_full_client_local_20260708_193654`，模块内消融结果来自同一统计口径下的 `outputs/lamp_merge_internal_ablation_full_20260708_force_all_analysis_after_client_stats_internal_ablation`。所有已填入分支均使用客户端统计 `outputs/lamp_merge_client_local_proto_stats`，并采用正式超参数 $s=20$ 与 $\lambda=5.0$。其中 $s$ 是 M1 中原型分类头的尺度，$\lambda$ 是 M2 中中心化 log-prior bias 的强度；M2 是否触发由长尾不平衡阈值 $\eta$ 控制。模块内消融中，只有与该统计来源和超参数口径一致、且完成 180 个 raw cells 的分支被填入数值；旧口径或未完成 full-scope 的分支统一置为 `-`。
 
-全量结果表明，诊断原型信息仍是主要有效变量。正式的 `LAMP-Merge` 在 60 个 client-average cells 上的平均 Accuracy 为 0.6210。去除 M2 后，`M1 only` 的平均 Accuracy 为 0.5880，低于正式方法 0.0330，说明长尾患病率校准在当前正式口径下提供了可观增益。若将类别原型替换为客户端分类头、类别无关全局特征均值、随机支持头或打乱标签的原型，平均 Accuracy 分别下降到 0.2579、0.2645、0.1137 和 0.2002。这说明收益并非来自额外分类头参数、类别支持数本身或随机方向正则化，而是来自与诊断类别一致的共享参考特征空间类别原型。
+全量结果表明，诊断原型信息仍是主要有效变量。正式的 `LAMP-Merge` 在 60 个 client-average cells 上的平均 Accuracy 为 0.6209。去除 M2 后，`M1 only` 的平均 Accuracy 为 0.5880，低于正式方法 0.0329，说明长尾患病率校准在当前正式口径下提供了可观增益。若将类别原型替换为客户端分类头、类别无关全局特征均值、随机支持头或打乱标签的原型，平均 Accuracy 分别下降到 0.2579、0.2645、0.1137 和 0.2002。这说明收益并非来自额外分类头参数、类别支持数本身或随机方向正则化，而是来自与诊断类别一致的共享参考特征空间类别原型。
 
 | 设置 | 消融对象 | Raw cells | Client-average mean Acc | Mean margin vs LAMP | Client-average >= LAMP |
 |---|---|---:|---:|---:|---:|
-| LAMP-Merge | 正式方法 | 180 | 0.6210 | 0.0000 | 60/60 |
-| M1 only | 移除 M2 长尾校准 | 180 | 0.5880 | -0.0330 | 26/60 |
-| Global-feature mean | 类别原型替换为类别无关特征均值 | 180 | 0.2645 | -0.3565 | 9/60 |
-| Classifier-head aggregation | 类别原型替换为客户端分类头方向 | 180 | 0.2579 | -0.3631 | 2/60 |
-| Shuffled-label prototype | 打乱原型与诊断类别的对应关系 | 180 | 0.2002 | -0.4208 | 0/60 |
+| LAMP-Merge | 正式方法 | 180 | 0.6209 | 0.0000 | 60/60 |
+| M1 only | 移除 M2 长尾校准 | 180 | 0.5880 | -0.0329 | 30/60 |
+| Global-feature mean | 类别原型替换为类别无关特征均值 | 180 | 0.2645 | -0.3564 | 9/60 |
+| Classifier-head aggregation | 类别原型替换为客户端分类头方向 | 180 | 0.2579 | -0.3630 | 2/60 |
+| Shuffled-label prototype | 打乱原型与诊断类别的对应关系 | 180 | 0.2002 | -0.4207 | 0/60 |
 | Support-only synthetic head | 仅使用随机单位方向和类别支持统计 | 180 | 0.1137 | -0.5073 | 0/60 |
-| Binary support only | 只保留类别是否出现 | 180 | 0.5517 | -0.0693 | 2/60 |
+| Binary support only | 只保留类别是否出现 | 180 | 0.5517 | -0.0692 | 2/60 |
 | Global client-size weight | 类别级支持数替换为客户端总样本数 | - | - | - | - |
 | No prevalence calibration | 移除 M2 长尾校准 | - | - | - | - |
 | Smoothed prevalence prior | 使用平滑后的患病率先验 | - | - | - | - |
-| Uniform client weight | 出现类别的客户端等权聚合 | 180 | 0.5839 | -0.0371 | 3/60 |
+| Uniform client weight | 出现类别的客户端等权聚合 | 180 | 0.5839 | -0.0370 | 3/60 |
 | Uniform prevalence prior | 将患病率先验替换为均匀先验 | - | - | - | - |
 
 表中 `-` 表示该分支没有满足当前正式口径的完整新结果，因此不沿用旧数值。`No prevalence calibration` 与 `M1 only` 在公式上等价；为避免旧分支混入，当前表只在 `M1 only` 行报告该设置的 full-scope 结果。
@@ -30,12 +30,12 @@
 | Dataset | Client-average cells | LAMP-Merge | M1-only margin | Classifier-head margin | Shuffled-prototype margin | Global-mean margin | Support-only margin | Binary-support margin | Uniform-client margin |
 |---|---:|---:|---:|---:|---:|---:|---:|---:|---:|
 | bloodmnist_224 | 12 | 0.8174 | 0.0000 | -0.6277 | -0.5728 | -0.7310 | -0.7012 | -0.0371 | -0.0371 |
-| chaoshengmnist_224 | 12 | 0.4575 | -0.0001 | -0.2933 | -0.3160 | -0.3488 | -0.3506 | -0.0402 | -0.0402 |
-| dermamnist_224 | 12 | 0.6288 | -0.1622 | -0.0623 | -0.3273 | 0.0401 | -0.4335 | -0.1789 | -0.0263 |
-| organcmnist_224 | 12 | 0.6271 | -0.0030 | -0.4480 | -0.4823 | -0.4037 | -0.5555 | -0.0485 | -0.0446 |
-| organsmnist_224 | 12 | 0.5742 | 0.0003 | -0.3839 | -0.4056 | -0.3388 | -0.4958 | -0.0416 | -0.0371 |
+| chaoshengmnist_224 | 12 | 0.4574 | 0.0000 | -0.2932 | -0.3159 | -0.3487 | -0.3505 | -0.0401 | -0.0401 |
+| dermamnist_224 | 12 | 0.6286 | -0.1621 | -0.0622 | -0.3271 | 0.0402 | -0.4334 | -0.1787 | -0.0262 |
+| organcmnist_224 | 12 | 0.6270 | -0.0030 | -0.4480 | -0.4823 | -0.4037 | -0.5555 | -0.0485 | -0.0446 |
+| organsmnist_224 | 12 | 0.5741 | 0.0004 | -0.3839 | -0.4056 | -0.3387 | -0.4958 | -0.0416 | -0.0371 |
 
-现阶段可以形成三条受数据支持的结论。第一，M1 中的类别原型 $p_c$ 是抑制融合后预测坍缩的核心结构；任何去除类别条件方向或破坏类别语义对应关系的替代项都会导致显著退化。第二，M2 在当前正式口径下不再是可忽略项：正式 LAMP-Merge 相比 M1-only 的 client-average mean Accuracy 提升 0.0330，且主要增益集中在长尾压力更强的 `dermamnist_224`。第三，类别统计信息的作用不能仅用总体 Accuracy 解释；Binary support 和 Uniform client weight 均低于正式方法，说明类别支持数和患病率计数应结合非 Accuracy 诊断指标进一步说明其对坍缩缓解与长尾校准的贡献。
+现阶段可以形成三条受数据支持的结论。第一，M1 中的类别原型 $p_c$ 是抑制融合后预测坍缩的核心结构；任何去除类别条件方向或破坏类别语义对应关系的替代项都会导致显著退化。第二，M2 在当前正式口径下不再是可忽略项：正式 LAMP-Merge 相比 M1-only 的 client-average mean Accuracy 提升 0.0329，且主要增益集中在长尾压力更强的 `dermamnist_224`。第三，类别统计信息的作用不能仅用总体 Accuracy 解释；Binary support 和 Uniform client weight 均低于正式方法，说明类别支持数和患病率计数应结合非 Accuracy 诊断指标进一步说明其对坍缩缓解与长尾校准的贡献。
 
 ## 一、全量超参数敏感性
 
