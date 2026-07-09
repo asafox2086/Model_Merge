@@ -1,40 +1,42 @@
 # LAMP-Merge 模块内补充消融汇报
 
-本文档汇报当前已完成的 full-scope 模块内消融证据，并给出后续诊断指标、可视化与理论分析的统一写作口径。早期“模块内消融”和超参数曲线包含若干单点设置，例如单一数据集、单一 backbone 或单一 beta。此类结果只能作为机制观察，不能作为论文主结论。当前模块内消融已经采用 full-scope 网格：5 个医学图像数据集、4 个 backbone、3 个客户端数量和 3 个 Dirichlet beta 设置。每个方法或消融项对应 180 个 raw cells，并进一步汇总为 60 个 client-average cells。
+本文档汇报当前已完成的 full-scope 模块内消融证据，并给出后续诊断指标、可视化与理论分析的统一写作口径。早期“模块内消融”和超参数曲线包含若干单点设置，例如单一数据集、单一 backbone 或单一 beta；这些结果不再进入本文档的正式证据表。当前只保留与正式 LAMP-Merge 相同口径的 full-scope 结果：5 个医学图像数据集、4 个 backbone、3 个客户端数量和 3 个 Dirichlet beta 设置。每个完整消融设置应包含 180 个 raw cells，并进一步汇总为 60 个 client-average cells。凡是不满足该口径的旧数据均记为 `-`。
 
 ## 当前全量结果
 
-当前已经完成的模块内消融覆盖 `bloodmnist_224`、`dermamnist_224`、`organcmnist_224`、`organsmnist_224` 和 `chaoshengmnist_224` 五个医学图像数据集，覆盖 `resnet`、`convnext`、`vit_t` 和 `swin_tiny` 四种 backbone，覆盖 $K\in\{3,5,7\}$ 与 $\beta\in\{0,0.01,0.1\}$。因此，每个完整消融设置包含 180 个 raw cells；client-average 结果先在固定数据集、backbone 与 $K$ 的条件下对三个 $\beta$ 取均值，因此包含 60 个 client-average cells。当前表中所有消融设置均已完成 full-scope 评估。
+当前正式 LAMP-Merge 结果来自 `outputs/lamp_merge_full_client_local_20260708_193654`，其客户端统计来自 `outputs/lamp_merge_client_local_proto_stats`，并采用正式超参数 $s=20$ 与 $\tau=5.0$。模块内消融中，只有与该统计来源和超参数口径一致、且完成 180 个 raw cells 的分支被填入数值；旧口径或未完成 full-scope 的分支统一置为 `-`。
 
-全量结果表明，诊断原型信息是当前方法的主要有效变量。正式的 `LAMP-Merge` 在 60 个 client-average cells 上的平均 Accuracy 为 0.5884；若将类别原型替换为类别无关全局特征均值、支持数构造头或打乱标签的原型，平均 Accuracy 分别下降到 0.0833、0.0860 和 0.1440，且没有任何 client-average cell 能达到正式方法。若使用客户端本地分类头方向替代共享参考骨干上的类别原型，平均 Accuracy 为 0.2378，仅有 7/60 个 client-average cells 不低于正式方法。这说明收益并非来自额外分类头参数、类别支持数本身或随机方向正则化，而是来自与诊断类别一致的 reference class prototype。
+全量结果表明，诊断原型信息仍是主要有效变量。正式的 `LAMP-Merge` 在 60 个 client-average cells 上的平均 Accuracy 为 0.6210。去除 M2 后，`M1 only` 的平均 Accuracy 为 0.5880，低于正式方法 0.0330，说明长尾患病率校准在当前正式口径下提供了可观增益。若将类别原型替换为客户端分类头、类别无关全局特征均值、随机支持头或打乱标签的原型，平均 Accuracy 分别下降到 0.2579、0.2645、0.1137 和 0.2002。这说明收益并非来自额外分类头参数、类别支持数本身或随机方向正则化，而是来自与诊断类别一致的 reference-space class prototype。
 
 | 设置 | 消融对象 | Raw cells | Client-average mean Acc | Mean margin vs LAMP | Client-average >= LAMP |
 |---|---|---:|---:|---:|---:|
-| LAMP-Merge | 正式方法 | 180 | 0.5884 | 0.0000 | 60/60 |
-| avg+M2 | 移除 M1，仅在参数平均模型上加入 M2 | 180 | 0.2204 | -0.3680 | 7/60 |
-| M1 only | 移除 M2 长尾校准 | 180 | 0.5884 | 0.0000 | 60/60 |
-| Global-feature mean | 类别原型替换为类别无关特征均值 | 180 | 0.0833 | -0.5051 | 0/60 |
-| Classifier-head aggregation | 类别原型替换为客户端分类头方向 | 180 | 0.2378 | -0.3506 | 7/60 |
-| Shuffled-label prototype | 打乱原型与诊断类别的对应关系 | 180 | 0.1440 | -0.4443 | 0/60 |
-| Support-only synthetic head | 仅使用随机单位方向和类别支持统计 | 180 | 0.0860 | -0.5024 | 0/60 |
-| Binary support only | 只保留类别是否出现 | 180 | 0.5884 | 0.0000 | 47/60 |
-| Global client-size weight | 类别级支持数替换为客户端总样本数 | 180 | 0.5885 | 0.0001 | 43/60 |
-| No prevalence calibration | 移除 M2 长尾校准 | 180 | 0.5884 | 0.0000 | 60/60 |
-| Smoothed prevalence prior | 使用平滑后的患病率先验 | 180 | 0.5884 | 0.0000 | 60/60 |
-| Uniform client weight | 出现类别的客户端等权聚合 | 180 | 0.5884 | 0.0000 | 47/60 |
-| Uniform prevalence prior | 将患病率先验替换为均匀先验 | 180 | 0.5884 | 0.0000 | 60/60 |
+| LAMP-Merge | 正式方法 | 180 | 0.6210 | 0.0000 | 60/60 |
+| avg+M2 | 移除 M1，仅在参数平均模型上加入 M2 | - | - | - | - |
+| M1 only | 移除 M2 长尾校准 | 180 | 0.5880 | -0.0330 | 26/60 |
+| Global-feature mean | 类别原型替换为类别无关特征均值 | 180 | 0.2645 | -0.3565 | 9/60 |
+| Classifier-head aggregation | 类别原型替换为客户端分类头方向 | 180 | 0.2579 | -0.3631 | 2/60 |
+| Shuffled-label prototype | 打乱原型与诊断类别的对应关系 | 180 | 0.2002 | -0.4208 | 0/60 |
+| Support-only synthetic head | 仅使用随机单位方向和类别支持统计 | 180 | 0.1137 | -0.5073 | 0/60 |
+| Binary support only | 只保留类别是否出现 | 180 | 0.5517 | -0.0693 | 2/60 |
+| Global client-size weight | 类别级支持数替换为客户端总样本数 | - | - | - | - |
+| No prevalence calibration | 移除 M2 长尾校准 | - | - | - | - |
+| Smoothed prevalence prior | 使用平滑后的患病率先验 | - | - | - | - |
+| Uniform client weight | 出现类别的客户端等权聚合 | 180 | 0.5839 | -0.0371 | 3/60 |
+| Uniform prevalence prior | 将患病率先验替换为均匀先验 | - | - | - | - |
 
-按数据集聚合的 client-average 结果进一步表明，原型替代项在血液细胞、超声、器官冠状切片和器官矢状切片上均出现显著负 margin；`dermamnist_224` 是当前 full-scope 网格中的主要长尾压力点，客户端分类头聚合在该数据集上高于正式方法，但 shuffled-label prototype 和类别无关原型仍显著退化。该现象说明 Accuracy 不能单独刻画完整诊断判别能力，后续需要用 Balanced Accuracy、Macro F1、Collapse Ratio、Effective Classes 和 Pred-True TV 解释不同方法是否只是利用主导类别分布获得表面优势。
+表中 `-` 表示该分支没有满足当前正式口径的完整新结果，因此不沿用旧数值。`No prevalence calibration` 与 `M1 only` 在公式上等价；为避免旧分支混入，当前表只在 `M1 only` 行报告该设置的 full-scope 结果。
 
-| Dataset | Client-average cells | LAMP-Merge | Classifier-head margin | Shuffled-prototype margin | Global-mean margin | Support-only margin |
-|---|---:|---:|---:|---:|---:|---:|
-| bloodmnist_224 | 12 | 0.8188 | -0.6340 | -0.5738 | -0.7367 | -0.7026 |
-| chaoshengmnist_224 | 12 | 0.4618 | -0.3020 | -0.3176 | -0.3531 | -0.3549 |
-| dermamnist_224 | 12 | 0.4619 | 0.0548 | -0.3643 | -0.4290 | -0.3882 |
-| organcmnist_224 | 12 | 0.6249 | -0.4574 | -0.5133 | -0.5241 | -0.5610 |
-| organsmnist_224 | 12 | 0.5744 | -0.4144 | -0.4527 | -0.4825 | -0.5051 |
+按数据集聚合的 client-average 结果进一步表明，原型语义对齐对血液细胞、超声、器官冠状切片和器官矢状切片均具有稳定贡献；在 `dermamnist_224` 上，类别无关全局特征均值可以获得较高 Accuracy，但 shuffled-label prototype 和 support-only synthetic head 仍显著退化，说明单纯利用主导类别分布或随机方向不能替代诊断类别原型。该现象也提示 Accuracy 不能单独刻画完整诊断判别能力，后续需要用 Balanced Accuracy、Macro F1、Collapse Ratio、Effective Classes 和 Pred-True TV 解释不同方法是否只是利用主导类别分布获得表面优势。
 
-现阶段可以形成两条受数据支持的结论。第一，M1 中的类别原型 $p_c$ 是抑制融合后预测坍缩的必要结构；任何去除类别条件方向或破坏类别语义对应关系的替代项都会导致显著退化。第二，当前 full-scope 网格中，类别支持统计的不同实现形式与正式方法数值接近，说明主要判别收益来自 $p_c$ 所提供的医学类别方向；统计信息的作用需要结合长尾压力点和非 Accuracy 指标进一步分析，而不能仅用总体 Accuracy 解释。
+| Dataset | Client-average cells | LAMP-Merge | M1-only margin | Classifier-head margin | Shuffled-prototype margin | Global-mean margin | Support-only margin | Binary-support margin | Uniform-client margin |
+|---|---:|---:|---:|---:|---:|---:|---:|---:|---:|
+| bloodmnist_224 | 12 | 0.8174 | 0.0000 | -0.6277 | -0.5728 | -0.7310 | -0.7012 | -0.0371 | -0.0371 |
+| chaoshengmnist_224 | 12 | 0.4575 | -0.0001 | -0.2933 | -0.3160 | -0.3488 | -0.3506 | -0.0402 | -0.0402 |
+| dermamnist_224 | 12 | 0.6288 | -0.1622 | -0.0623 | -0.3273 | 0.0401 | -0.4335 | -0.1789 | -0.0263 |
+| organcmnist_224 | 12 | 0.6271 | -0.0030 | -0.4480 | -0.4823 | -0.4037 | -0.5555 | -0.0485 | -0.0446 |
+| organsmnist_224 | 12 | 0.5742 | 0.0003 | -0.3839 | -0.4056 | -0.3388 | -0.4958 | -0.0416 | -0.0371 |
+
+现阶段可以形成三条受数据支持的结论。第一，M1 中的类别原型 $p_c$ 是抑制融合后预测坍缩的核心结构；任何去除类别条件方向或破坏类别语义对应关系的替代项都会导致显著退化。第二，M2 在当前正式口径下不再是可忽略项：正式 LAMP-Merge 相比 M1-only 的 client-average mean Accuracy 提升 0.0330，且主要增益集中在长尾压力更强的 `dermamnist_224`。第三，类别统计信息的作用不能仅用总体 Accuracy 解释；Binary support 和 Uniform client weight 均低于正式方法，说明类别支持数和患病率计数应结合非 Accuracy 诊断指标进一步说明其对坍缩缓解与长尾校准的贡献。
 
 ## 一、模块内消融的公式化定义
 
@@ -326,11 +328,11 @@ b_c^{\mathrm{smooth}}
 
 ## 二、预测诊断指标
 
-模块内 Accuracy 消融已经完成。预测诊断分析在同一 full-scope 网格上统计 Balanced Accuracy、Macro F1、Collapse Ratio、Effective Classes 和 Pred-True TV。Accuracy 只能说明总体正确率，不能单独证明融合质量；Balanced Accuracy 和 Macro F1 反映少数类诊断能力；Collapse Ratio 和 Effective Classes 直接刻画预测是否坍缩到少数类别；Pred-True TV 衡量预测类别分布是否接近真实医学类别分布。
+当前已完成的 Accuracy 消融均采用 full-scope 口径。预测诊断分析在同一 full-scope 网格上统计 Balanced Accuracy、Macro F1、Collapse Ratio、Effective Classes 和 Pred-True TV。Accuracy 只能说明总体正确率，不能单独证明融合质量；Balanced Accuracy 和 Macro F1 反映少数类诊断能力；Collapse Ratio 和 Effective Classes 直接刻画预测是否坍缩到少数类别；Pred-True TV 衡量预测类别分布是否接近真实医学类别分布。
 
 除预测指标外，原型几何分析补充两个结构性指标。第一个是 Prototype Separation，即全局类别原型之间的平均余弦距离或最近邻类间距离，用于衡量类别方向是否清晰分离。第二个是 Prototype Consistency，即同一类别在不同客户端原型之间的平均相似度，用于衡量跨中心类别证据是否一致。若正式原型方法优于 classifier-head aggregation，则应同时表现为更稳定的类别语义一致性、更低的坍缩强度和更高的 balanced accuracy；若 shuffled-label prototype 显著退化，则说明原型必须与诊断类别语义对齐。
 
-主消融结论必须采用正式汇总表中的 small 全量口径，而不能只采用 `clients=3 / beta=0.01` 的代表性诊断子集。全量口径包含 5 个医学图像数据集、4 个 backbone、3 个客户端数量和 3 个 Dirichlet beta 设置，因此每个消融设置对应 180 个 raw cells。论文主表中的 client-average 口径先对相同 `(dataset, backbone, K)` 的三个 beta 取均值，因此每个消融设置对应 60 个 client-average cells。当前 Accuracy 消融已满足这一口径；预测分布图、collapse ratio、balanced accuracy、macro F1 和 Pred-True TV 也必须在同一 full-scope 网格上计算。若论文中展示单个数据集的图，它应来自该数据集内所有 backbone、K 和 beta 的聚合，而不是单一 beta。
+主消融结论必须采用正式汇总表中的 small 全量口径，而不能采用任何单点或非全量诊断子集。全量口径包含 5 个医学图像数据集、4 个 backbone、3 个客户端数量和 3 个 Dirichlet beta 设置，因此每个消融设置对应 180 个 raw cells。论文主表中的 client-average 口径先对相同 `(dataset, backbone, K)` 的三个 beta 取均值，因此每个消融设置对应 60 个 client-average cells。当前已填入的 Accuracy 消融均满足这一口径；预测分布图、collapse ratio、balanced accuracy、macro F1 和 Pred-True TV 也必须在同一 full-scope 网格上计算。若论文中展示单个数据集的图，它应来自该数据集内所有 backbone、K 和 beta 的聚合，而不是单一 beta。
 
 当前 Accuracy 消融和原型几何分析已经采用 full-scope 口径；预测诊断和超参数扫描继续沿用同一口径。最终报告中的模块内消融表、诊断指标表、预测分布图和超参数曲线均应对应 5 个医学图像数据集、4 个 backbone、3 个客户端数量和 3 个 Dirichlet beta 设置。
 
@@ -362,15 +364,9 @@ b_c^{\mathrm{smooth}}
 | organcmnist_224 | [organcmnist_224_prototype_geometry.png](figures/lamp_merge_prototype_geometry/organcmnist_224_prototype_geometry.png) |
 | organsmnist_224 | [organsmnist_224_prototype_geometry.png](figures/lamp_merge_prototype_geometry/organsmnist_224_prototype_geometry.png) |
 
-t-SNE 可视化用于展示 reference-space sample clusters 与上传原型之间的空间关系。图中样本特征由共享参考骨干提取，原型点由客户端上传统计聚合得到；t-SNE 只作为解释性可视化，不参与模型选择、训练或融合。当前已生成 Blood、Derma 和 Organ-C 三个代表数据集的可视化：
+t-SNE 可视化用于展示 reference-space sample clusters 与上传原型之间的空间关系。图中样本特征由共享参考骨干提取，原型点由客户端上传统计聚合得到；t-SNE 只作为解释性可视化，不参与模型选择、训练或融合。旧版 t-SNE 图来自单一数据集、单一 backbone、单一客户端数量与单一 beta，不满足当前 full-scope 证据口径，因此不再列入本汇报。后续若重新纳入 t-SNE，只保留按数据集聚合后的 full-scope 可视化，或在图注中明确其不作为正式实验结论。
 
-| 数据集与设置 | Full prototype | Classifier-head aggregation | Shuffled-label prototype | Uniform client weight |
-|---|---|---|---|---|
-| bloodmnist_224 / resnet / K=3 / beta=0.01 | [full](figures/lamp_merge_prototype_geometry/tsne/bloodmnist_224_resnet_c3_b0p01_full_tsne.png) | [head](figures/lamp_merge_prototype_geometry/tsne/bloodmnist_224_resnet_c3_b0p01_prototype_head_agg_tsne.png) | [shuffle](figures/lamp_merge_prototype_geometry/tsne/bloodmnist_224_resnet_c3_b0p01_prototype_shuffle_tsne.png) | [uniform](figures/lamp_merge_prototype_geometry/tsne/bloodmnist_224_resnet_c3_b0p01_uniform_client_weight_tsne.png) |
-| dermamnist_224 / resnet / K=3 / beta=0.01 | [full](figures/lamp_merge_prototype_geometry/tsne/dermamnist_224_resnet_c3_b0p01_full_tsne.png) | [head](figures/lamp_merge_prototype_geometry/tsne/dermamnist_224_resnet_c3_b0p01_prototype_head_agg_tsne.png) | [shuffle](figures/lamp_merge_prototype_geometry/tsne/dermamnist_224_resnet_c3_b0p01_prototype_shuffle_tsne.png) | [uniform](figures/lamp_merge_prototype_geometry/tsne/dermamnist_224_resnet_c3_b0p01_uniform_client_weight_tsne.png) |
-| organcmnist_224 / resnet / K=3 / beta=0.01 | [full](figures/lamp_merge_prototype_geometry/tsne/organcmnist_224_resnet_c3_b0p01_full_tsne.png) | [head](figures/lamp_merge_prototype_geometry/tsne/organcmnist_224_resnet_c3_b0p01_prototype_head_agg_tsne.png) | [shuffle](figures/lamp_merge_prototype_geometry/tsne/organcmnist_224_resnet_c3_b0p01_prototype_shuffle_tsne.png) | [uniform](figures/lamp_merge_prototype_geometry/tsne/organcmnist_224_resnet_c3_b0p01_uniform_client_weight_tsne.png) |
-
-预测类别分布热图和指标柱状图将在 full-scope prediction diagnostics 完成后接入本文件。该图以方法为行、诊断类别为列，展示各方法在测试集上的预测比例。其目标是证明：通用融合基线和错误替代项倾向于集中输出少数类别，而正式原型方法能够恢复多类别预测分布。
+预测类别分布热图和指标柱状图将在 full-scope prediction diagnostics 完成后接入本文件。该图以方法为行、诊断类别为列，展示各方法在测试集上的预测比例。其目标是证明：通用融合基线和错误替代项倾向于集中输出少数类别，而正式原型方法能够恢复多类别预测分布。未完成 full-scope 的旧预测诊断表和旧热图不再作为本文档证据。
 
 ## 四、理论分析补充
 
@@ -425,6 +421,6 @@ b_c=\lambda\left(\log\pi_c-\frac{1}{C}\sum_k\log\pi_k\right).
 
 ## 五、论文结论形式
 
-论文中应形成如下结论链条。首先，原型替代消融证明 reference class prototype 是缓解预测坍缩的主要机制；本地分类头聚合、类别无关均值或打乱标签的原型不能稳定恢复多类别诊断输出。其次，统计信息消融证明类别支持数和患病率计数分别承担不同作用：支持数决定每个客户端对每个诊断类别的可靠性，患病率计数在强长尾医学数据中提供有界先验校准。最后，t-SNE 和原型几何可视化应直观显示，正式原型位于对应类别样本簇附近，并形成更清晰的类间结构；这解释了为什么 LAMP-Merge 能在 balanced accuracy、macro F1、collapse ratio 和 effective classes 上同时优于通用融合基线。
+论文中应形成如下结论链条。首先，原型替代消融证明 reference class prototype 是缓解预测坍缩的主要机制；本地分类头聚合、类别无关均值或打乱标签的原型不能稳定恢复多类别诊断输出。其次，当前统计信息消融表明，仅使用类别存在性或等权客户端聚合会低于正式方法，说明类别支持数与患病率计数并非可任意替换的附加元数据。最后，已完成的原型几何可视化说明正式原型在共享参考空间中具有稳定的类别语义结构；Balanced Accuracy、Macro F1、Collapse Ratio、Effective Classes、Pred-True TV 与 t-SNE 只在完成 full-scope 后纳入正式结论。
 
 当前文档中的 Accuracy 消融数值已经来自 full-scope 结果；后续诊断指标和可视化应继续按照 `LAMP-Merge模块内补充消融工作流.md` 的同一符号与同一 full-scope 口径补齐。
