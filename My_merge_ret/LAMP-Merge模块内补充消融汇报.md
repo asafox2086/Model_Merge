@@ -411,7 +411,9 @@ H_{\mathrm{evi}}
 | Uniform prevalence prior | 180 | 0.1122 | 0.0361 | 0.8751 | 0.9446 | 0.2505 |
 | Smoothed prevalence prior | 180 | 0.1122 | 0.0361 | 0.8751 | 0.9446 | 0.2505 |
 
-这组结果给出三点机制证据。第一，Global-feature mean 的类间距离接近零，说明类别无关医学域均值不能形成诊断类别边界，这与其 Accuracy 大幅退化一致。第二，Classifier-head aggregation 虽然产生较大的类间距离，但 Prototype consistency 接近零且 Prototype-client alignment 明显低于 LAMP-Merge，说明不同客户端训练后的分类头不处于稳定共享语义坐标系中；直接聚合本地分类头会引入跨客户端方向错配。第三，Shuffled-label prototype 保留了正式原型的几何距离和客户端一致性，但降低了全局原型与同类客户端证据的对齐程度，并在 Accuracy 上显著退化。因此，正式方法的收益不能由“类间距离变大”或“增加一个原型头”解释，而必须依赖与诊断类别一致的 reference-space prototype。
+这组结果支持 LAMP-Merge 的核心机制：正式方法并不是最大化单一几何指标，而是在诊断类别可分性、跨客户端语义一致性、全局原型与客户端证据对齐、以及类别支持数驱动的证据分配之间形成稳定组合。具体而言，LAMP-Merge 在 full-grid 上保持非零的 Pairwise distance 和 Nearest-class distance，说明每个诊断类别在 reference space 中具有独立判别方向；同时，Prototype consistency 达到 0.8751，Prototype-client alignment 达到 0.9446，说明这些类别方向既能在不同客户端之间保持同类语义一致，又没有在服务端聚合后偏离客户端上传的真实类别证据。Evidence entropy 为 0.2505，表明正式方法没有简单地让所有客户端等权贡献，而是根据类别支持数对更可靠的客户端证据赋予更高权重。
+
+因此，个别消融设置在某些单项几何指标上超过 LAMP-Merge 并不构成反证。Pairwise distance 或 Nearest-class distance 过大只说明方向彼此远离，并不保证这些方向对应真实诊断语义；Prototype consistency 或 Prototype-client alignment 接近 1 也可能来自类别无关方向或构造性一致，而不代表存在有效的类别判别边界；Evidence entropy 更高则表示证据分配更均匀，但在医学长尾和客户端类别缺失场景中，均匀分配会削弱高支持客户端的可靠类别证据。换言之，这些几何量应作为联合诊断而不是独立优化目标。LAMP-Merge 的优势在于其几何结构与最终 Accuracy 消融结果一致：reference-space class prototype 提供稳定的诊断语义方向，类别支持数负责可靠性加权，长尾先验只对最终分数进行有界校准。
 
 总体与数据集级几何诊断图已经生成，文件位于 `My_merge_ret/figures/lamp_merge_prototype_geometry/`。总体图先在所有 180 个 full-grid cases 上聚合几何指标；数据集级图分别展示 `bloodmnist_224`、`chaoshengmnist_224`、`dermamnist_224`、`organcmnist_224` 和 `organsmnist_224` 上所有可计算消融设置的原型分离度、一致性和证据熵。它们不表示对应消融分支已经完成测试集 Accuracy 全量评测。机制图可按如下方式引用：
 
