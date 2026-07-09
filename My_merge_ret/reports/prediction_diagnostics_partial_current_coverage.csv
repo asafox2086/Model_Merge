@@ -1,0 +1,6 @@
+dataset,available_cells_all_settings,available_lamp_cells,expected_lamp_cells,available_client_cells,expected_client_cells,settings_observed
+bloodmnist_224,808,33,36,34,36,25
+chaoshengmnist_224,666,27,36,27,36,25
+dermamnist_224,891,36,36,36,36,25
+organcmnist_224,729,29,36,30,36,25
+organsmnist_224,717,29,36,30,36,25
