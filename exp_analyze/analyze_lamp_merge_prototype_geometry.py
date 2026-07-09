@@ -2,9 +2,8 @@
 """Analyze LAMP-Merge prototype geometry on the formal full grid.
 
 The main ablation table measures final accuracy. This script inspects the
-uploaded class-level prototype information itself: class separation, client
-consistency, support coverage, and representative t-SNE plots. The numerical
-tables are full-scope; t-SNE is explicitly a mechanism visualization.
+    uploaded class-level prototype information itself: class separation, client
+    consistency, and support coverage. The numerical tables are full-scope.
 """
 
 from __future__ import annotations
@@ -55,22 +54,34 @@ FORMAL_SMALL_MODELS = ["resnet", "convnext", "vit_t", "swin_tiny"]
 
 PROTOTYPE_MODES = [
     "full",
+    "m1_only",
+    "avg_m2",
     "prototype_head_agg",
     "global_feature_mean",
     "support_only",
     "prototype_shuffle",
     "uniform_client_weight",
+    "binary_support",
     "global_client_size_weight",
+    "uniform_prevalence",
+    "smoothed_prevalence",
 ]
 
 MODE_LABELS = {
-    "full": "Full prototype",
+    "full": "LAMP-Merge",
+    "m1_only": "M1 only",
+    "avg_m2": "avg+M2",
+    "no_prevalence": "No prevalence calibration",
     "prototype_head_agg": "Classifier-head aggregation",
+    "head_agg": "Classifier-head aggregation",
     "global_feature_mean": "Global-feature mean",
     "support_only": "Support-only synthetic head",
     "prototype_shuffle": "Shuffled-label prototype",
     "uniform_client_weight": "Uniform client weight",
+    "binary_support": "Binary support only",
     "global_client_size_weight": "Global client-size weight",
+    "uniform_prevalence": "Uniform prevalence prior",
+    "smoothed_prevalence": "Smoothed prevalence prior",
 }
 
 
@@ -106,7 +117,8 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--device", type=str, default="cuda:0")
     parser.add_argument("--batch-size", type=int, default=128)
     parser.add_argument("--num-workers", type=int, default=0)
-    parser.add_argument("--tsne-datasets", nargs="*", default=["bloodmnist_224", "dermamnist_224", "organcmnist_224"])
+    parser.add_argument("--plot-tsne", action="store_true")
+    parser.add_argument("--tsne-datasets", nargs="*", default=[])
     parser.add_argument("--tsne-model", type=str, default="resnet")
     parser.add_argument("--tsne-num-clients", type=int, default=3)
     parser.add_argument("--tsne-max-samples-per-class", type=int, default=120)
@@ -164,7 +176,13 @@ def load_state_dicts(args: argparse.Namespace, row: dict[str, str], meta: dict[s
 
 
 def ablation_components(mode: str) -> tuple[str, str]:
+    if mode in {"full", "m1_only", "no_prevalence", "uniform_prevalence", "smoothed_prevalence"}:
+        return "reference_prototype", "support_power"
+    if mode == "avg_m2":
+        return "average_checkpoint", "support_power"
     if mode == "prototype_head_agg":
+        return "classifier_head_aggregation", "support_power"
+    if mode == "head_agg":
         return "classifier_head_aggregation", "support_power"
     if mode == "global_feature_mean":
         return "global_feature_mean", "support_power"
@@ -174,9 +192,11 @@ def ablation_components(mode: str) -> tuple[str, str]:
         return "reference_prototype_shuffle", "support_power"
     if mode == "uniform_client_weight":
         return "reference_prototype", "uniform_present_client"
+    if mode == "binary_support":
+        return "reference_prototype", "uniform_present_client"
     if mode == "global_client_size_weight":
         return "reference_prototype", "global_client_size"
-    return "reference_prototype", "support_power"
+    raise ValueError(f"unsupported prototype geometry mode: {mode}")
 
 
 def build_mode_geometry(
@@ -192,6 +212,8 @@ def build_mode_geometry(
     feature_counts = _client_stat_matrix(proto_stats, ("class_feature_counts", "class_counts"), num_clients, num_classes)
     prototype_mode, evidence_mode = ablation_components(mode)
 
+    if prototype_mode == "average_checkpoint":
+        raise ValueError("not applicable: avg+M2 has no prototype head")
     if prototype_mode == "reference_prototype" or prototype_mode == "reference_prototype_shuffle":
         inputs = means
     elif prototype_mode == "classifier_head_aggregation":
@@ -394,9 +416,9 @@ def write_summary(path: Path, rows: list[dict[str, object]], dataset_rows: list[
             "not require the server to read raw client images.\n\n"
         )
         handle.write(
-            "The t-SNE figures in the same figure directory are mechanism visualizations. They use the public "
-            "test split only to display how reference-space sample clusters relate to uploaded class "
-            "prototypes; they are not used for model selection, training, or merging.\n"
+            "Rows without a prototype head, such as avg+M2, are retained for scope consistency but have no "
+            "prototype geometry values. Prevalence-only variants share the same prototype geometry as "
+            "LAMP-Merge because they modify the score bias rather than the class prototype construction.\n"
         )
 
 
@@ -412,6 +434,7 @@ def plot_geometry_bars(dataset_rows: list[dict[str, object]], figure_dir: Path) 
         ("mean_mean_nearest_class_distance", "Nearest-class distance"),
         ("mean_prototype_consistency", "Prototype consistency"),
         ("mean_prototype_to_client_alignment", "Prototype-client alignment"),
+        ("mean_mean_evidence_entropy_norm", "Evidence entropy"),
     ]
     by_dataset: dict[str, list[dict[str, object]]] = defaultdict(list)
     for row in dataset_rows:
@@ -420,17 +443,21 @@ def plot_geometry_bars(dataset_rows: list[dict[str, object]], figure_dir: Path) 
     for dataset, rows in sorted(by_dataset.items()):
         rows = sorted(rows, key=lambda item: mode_sort_key(str(item["mode"])))
         labels = [str(row["label"]) for row in rows]
-        fig, axes = plt.subplots(2, 2, figsize=(16, 9), constrained_layout=True)
-        for ax, (metric, title) in zip(axes.reshape(-1), metrics):
+        fig, axes = plt.subplots(2, 3, figsize=(18, 11), constrained_layout=True)
+        flat_axes = axes.reshape(-1)
+        for ax, (metric, title) in zip(flat_axes, metrics):
             values = []
             for row in rows:
                 value = row.get(metric, "")
                 values.append(float(value) if value not in {"", None} else np.nan)
             colors = ["#B23A48" if row["mode"] == "full" else "#5B6C8F" for row in rows]
-            ax.bar(labels, values, color=colors)
+            ax.barh(labels, values, color=colors)
             ax.set_title(title)
-            ax.tick_params(axis="x", labelrotation=45, labelsize=8)
-            ax.grid(axis="y", alpha=0.25)
+            ax.tick_params(axis="y", labelsize=8)
+            ax.invert_yaxis()
+            ax.grid(axis="x", alpha=0.25)
+        for ax in flat_axes[len(metrics) :]:
+            ax.axis("off")
         fig.suptitle(f"{dataset}: full-scope prototype geometry", fontsize=14)
         fig.savefig(figure_dir / f"{dataset}_prototype_geometry.png", dpi=180)
         plt.close(fig)
@@ -680,13 +707,13 @@ def main() -> None:
                     }
                 )
 
-    ok_rows = [row for row in rows if not row.get("error")]
-    dataset_rows = group_rows(ok_rows)
+    dataset_rows = group_rows(rows)
     write_csv(args.output_csv, rows)
     write_csv(args.dataset_csv, dataset_rows)
     write_summary(args.summary_md, rows, dataset_rows, args)
     plot_geometry_bars(dataset_rows, args.figure_dir)
-    plot_tsne(args, rows_by_key)
+    if args.plot_tsne:
+        plot_tsne(args, rows_by_key)
     print(f"Wrote prototype geometry CSV: {args.output_csv}")
     print(f"Wrote prototype geometry summary: {args.summary_md}")
     print(f"Wrote prototype geometry figures: {args.figure_dir}")
