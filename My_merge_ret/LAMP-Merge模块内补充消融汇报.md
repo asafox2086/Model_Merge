@@ -6,7 +6,7 @@
 
 当前正式 LAMP-Merge 结果来自 `outputs/lamp_merge_full_client_local_20260708_193654`，其客户端统计来自 `outputs/lamp_merge_client_local_proto_stats`，并采用正式超参数 $s=20$ 与 $\tau=5.0$。模块内消融中，只有与该统计来源和超参数口径一致、且完成 180 个 raw cells 的分支被填入数值；旧口径或未完成 full-scope 的分支统一置为 `-`。
 
-全量结果表明，诊断原型信息仍是主要有效变量。正式的 `LAMP-Merge` 在 60 个 client-average cells 上的平均 Accuracy 为 0.6210。去除 M2 后，`M1 only` 的平均 Accuracy 为 0.5880，低于正式方法 0.0330，说明长尾患病率校准在当前正式口径下提供了可观增益。若将类别原型替换为客户端分类头、类别无关全局特征均值、随机支持头或打乱标签的原型，平均 Accuracy 分别下降到 0.2579、0.2645、0.1137 和 0.2002。这说明收益并非来自额外分类头参数、类别支持数本身或随机方向正则化，而是来自与诊断类别一致的 reference-space class prototype。
+全量结果表明，诊断原型信息仍是主要有效变量。正式的 `LAMP-Merge` 在 60 个 client-average cells 上的平均 Accuracy 为 0.6210。去除 M2 后，`M1 only` 的平均 Accuracy 为 0.5880，低于正式方法 0.0330，说明长尾患病率校准在当前正式口径下提供了可观增益。若将类别原型替换为客户端分类头、类别无关全局特征均值、随机支持头或打乱标签的原型，平均 Accuracy 分别下降到 0.2579、0.2645、0.1137 和 0.2002。这说明收益并非来自额外分类头参数、类别支持数本身或随机方向正则化，而是来自与诊断类别一致的共享参考特征空间类别原型。
 
 | 设置 | 消融对象 | Raw cells | Client-average mean Acc | Mean margin vs LAMP | Client-average >= LAMP |
 |---|---|---:|---:|---:|---:|
@@ -329,7 +329,15 @@ b_c^{\mathrm{smooth}}
 
 原型几何分析已经覆盖正式 full-scope 网格。该分析不使用服务器端原始医学图像；它只利用客户端上传的类别原型、类别支持数和由这些统计量构造的全局原型。几何指标用于回答一个机制问题：正式方法恢复多类别诊断能力，是因为原型携带了稳定的类别语义方向，还是仅仅因为增加了额外参数或统计量。
 
-总体几何结果如下。令 $p_c$ 表示服务端聚合得到的类别 $c$ 的全局诊断原型，$\bar{p}_c=p_c/\|p_c\|_2$ 表示其单位方向；令 $\mu_{i,c}$ 表示客户端 $i$ 上传的类别 $c$ 的参考空间原型，$\mathcal{I}_c=\{i:n_{i,c}>0\}$ 表示参与类别 $c$ 聚合的客户端集合。几何分析只使用客户端上传的原型与类别统计，不读取服务器端原始医学图像。
+这里的“共享参考特征空间”不是一个额外指标，而是所有原型几何量所在的坐标系。令 $\phi_0$ 表示由公开实验配置构造的共享参考骨干网络，$T$ 表示与正式模型一致的图像预处理，则任意图像 $x$ 的参考特征为
+
+```math
+z=\phi_0(T(x)).
+```
+
+所有客户端都在同一个 $\phi_0$ 下计算类别特征均值 $\mu_{i,c}$，服务端也在同一空间内聚合得到 $p_c$。因此，Pairwise distance、Nearest-class distance、Prototype consistency 和 Prototype-client alignment 衡量的都是这些类别原型在同一参考特征空间中的几何关系。这个设计避免直接比较不同客户端本地训练后可能已经漂移的分类头坐标系，使类别原型具有可比较的跨客户端语义方向。
+
+总体几何结果如下。令 $p_c$ 表示服务端聚合得到的类别 $c$ 的全局诊断原型，$\bar{p}_c=p_c/\|p_c\|_2$ 表示其单位方向；令 $\mu_{i,c}$ 表示客户端 $i$ 上传的类别 $c$ 的共享参考特征空间原型，$\mathcal{I}_c=\{i:n_{i,c}>0\}$ 表示参与类别 $c$ 聚合的客户端集合。几何分析只使用客户端上传的原型与类别统计，不读取服务器端原始医学图像。
 
 **Pairwise distance** 定义为不同诊断类别全局原型之间的平均余弦距离：
 
@@ -411,9 +419,9 @@ H_{\mathrm{evi}}
 | Uniform prevalence prior | 180 | 0.1122 | 0.0361 | 0.8751 | 0.9446 | 0.2505 |
 | Smoothed prevalence prior | 180 | 0.1122 | 0.0361 | 0.8751 | 0.9446 | 0.2505 |
 
-这组结果支持 LAMP-Merge 的核心机制：正式方法并不是最大化单一几何指标，而是在诊断类别可分性、跨客户端语义一致性、全局原型与客户端证据对齐、以及类别支持数驱动的证据分配之间形成稳定组合。具体而言，LAMP-Merge 在 full-grid 上保持非零的 Pairwise distance 和 Nearest-class distance，说明每个诊断类别在 reference space 中具有独立判别方向；同时，Prototype consistency 达到 0.8751，Prototype-client alignment 达到 0.9446，说明这些类别方向既能在不同客户端之间保持同类语义一致，又没有在服务端聚合后偏离客户端上传的真实类别证据。Evidence entropy 为 0.2505，表明正式方法没有简单地让所有客户端等权贡献，而是根据类别支持数对更可靠的客户端证据赋予更高权重。
+这组结果支持 LAMP-Merge 的核心机制：正式方法并不是最大化单一几何指标，而是在诊断类别可分性、跨客户端语义一致性、全局原型与客户端证据对齐、以及类别支持数驱动的证据分配之间形成稳定组合。具体而言，LAMP-Merge 在 full-grid 上保持非零的 Pairwise distance 和 Nearest-class distance，说明每个诊断类别在共享参考特征空间中具有独立判别方向；同时，Prototype consistency 达到 0.8751，Prototype-client alignment 达到 0.9446，说明这些类别方向既能在不同客户端之间保持同类语义一致，又没有在服务端聚合后偏离客户端上传的真实类别证据。Evidence entropy 为 0.2505，表明正式方法没有简单地让所有客户端等权贡献，而是根据类别支持数对更可靠的客户端证据赋予更高权重。
 
-因此，个别消融设置在某些单项几何指标上超过 LAMP-Merge 并不构成反证。Pairwise distance 或 Nearest-class distance 过大只说明方向彼此远离，并不保证这些方向对应真实诊断语义；Prototype consistency 或 Prototype-client alignment 接近 1 也可能来自类别无关方向或构造性一致，而不代表存在有效的类别判别边界；Evidence entropy 更高则表示证据分配更均匀，但在医学长尾和客户端类别缺失场景中，均匀分配会削弱高支持客户端的可靠类别证据。换言之，这些几何量应作为联合诊断而不是独立优化目标。LAMP-Merge 的优势在于其几何结构与最终 Accuracy 消融结果一致：reference-space class prototype 提供稳定的诊断语义方向，类别支持数负责可靠性加权，长尾先验只对最终分数进行有界校准。
+因此，个别消融设置在某些单项几何指标上超过 LAMP-Merge 并不构成反证。Pairwise distance 或 Nearest-class distance 过大只说明方向彼此远离，并不保证这些方向对应真实诊断语义；Prototype consistency 或 Prototype-client alignment 接近 1 也可能来自类别无关方向或构造性一致，而不代表存在有效的类别判别边界；Evidence entropy 更高则表示证据分配更均匀，但在医学长尾和客户端类别缺失场景中，均匀分配会削弱高支持客户端的可靠类别证据。换言之，这些几何量应作为联合诊断而不是独立优化目标。LAMP-Merge 的优势在于其几何结构与最终 Accuracy 消融结果一致：共享参考特征空间类别原型提供稳定的诊断语义方向，类别支持数负责可靠性加权，长尾先验只对最终分数进行有界校准。
 
 总体与数据集级几何诊断图已经生成，文件位于 `My_merge_ret/figures/lamp_merge_prototype_geometry/`。总体图先在所有 180 个 full-grid cases 上聚合几何指标；数据集级图分别展示 `bloodmnist_224`、`chaoshengmnist_224`、`dermamnist_224`、`organcmnist_224` 和 `organsmnist_224` 上所有可计算消融设置的原型分离度、一致性和证据熵。它们不表示对应消融分支已经完成测试集 Accuracy 全量评测。机制图可按如下方式引用：
 
@@ -483,6 +491,6 @@ b_c=\lambda\left(\log\pi_c-\frac{1}{C}\sum_k\log\pi_k\right).
 
 ## 五、论文结论形式
 
-论文中应形成如下结论链条。首先，原型替代消融证明 reference class prototype 是缓解预测坍缩的主要机制；本地分类头聚合、类别无关均值或打乱标签的原型不能稳定恢复多类别诊断输出。其次，当前统计信息消融表明，仅使用类别存在性或等权客户端聚合会低于正式方法，说明类别支持数与患病率计数并非可任意替换的附加元数据。最后，已完成的原型几何可视化说明正式原型在共享参考空间中具有稳定的类别语义结构；Balanced Accuracy、Macro F1、Collapse Ratio、Effective Classes、Pred-True TV 与 t-SNE 只在完成 full-scope 后纳入正式结论。
+论文中应形成如下结论链条。首先，原型替代消融证明共享参考特征空间类别原型是缓解预测坍缩的主要机制；本地分类头聚合、类别无关均值或打乱标签的原型不能稳定恢复多类别诊断输出。其次，当前统计信息消融表明，仅使用类别存在性或等权客户端聚合会低于正式方法，说明类别支持数与患病率计数并非可任意替换的附加元数据。最后，已完成的原型几何可视化说明正式原型在共享参考特征空间中具有稳定的类别语义结构；Balanced Accuracy、Macro F1、Collapse Ratio、Effective Classes、Pred-True TV 与 t-SNE 只在完成 full-scope 后纳入正式结论。
 
 当前文档中的 Accuracy 消融数值已经来自 full-scope 结果；后续诊断指标和可视化应继续按照 `LAMP-Merge模块内补充消融工作流.md` 的同一符号与同一 full-scope 口径补齐。
