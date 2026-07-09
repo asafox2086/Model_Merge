@@ -3,7 +3,9 @@
 
 The main ablation table measures final accuracy. This script inspects the
     uploaded class-level prototype information itself: class separation, client
-    consistency, and support coverage. The numerical tables are full-scope.
+    consistency, and support coverage. These are geometry diagnostics computed
+    from uploaded statistics under each ablation definition; they are not a
+    substitute for full accuracy evaluation of the corresponding ablation.
 """
 
 from __future__ import annotations
@@ -420,6 +422,11 @@ def write_summary(path: Path, rows: list[dict[str, object]], dataset_rows: list[
             "prototype geometry values. Prevalence-only variants share the same prototype geometry as "
             "LAMP-Merge because they modify the score bias rather than the class prototype construction.\n"
         )
+        handle.write(
+            "These geometry rows are not accuracy ablation results. They are computed directly from the "
+            "uploaded prototype and support statistics under each ablation definition; full-scope accuracy "
+            "completion must be checked in the main ablation table.\n"
+        )
 
 
 def plot_geometry_bars(dataset_rows: list[dict[str, object]], figure_dir: Path) -> None:
@@ -458,7 +465,7 @@ def plot_geometry_bars(dataset_rows: list[dict[str, object]], figure_dir: Path) 
             ax.grid(axis="x", alpha=0.25)
         for ax in flat_axes[len(metrics) :]:
             ax.axis("off")
-        fig.suptitle(f"{dataset}: full-scope prototype geometry", fontsize=14)
+        fig.suptitle(f"{dataset}: full-grid prototype-geometry diagnostics", fontsize=14)
         fig.savefig(figure_dir / f"{dataset}_prototype_geometry.png", dpi=180)
         plt.close(fig)
 

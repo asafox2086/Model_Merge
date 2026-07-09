@@ -406,7 +406,7 @@ H_{\mathrm{evi}}
 
 该指标衡量类别证据由多个客户端共同贡献，还是集中在少数高支持客户端上。较高的 $H_{\mathrm{evi}}$ 表示聚合权重更均匀；较低的 $H_{\mathrm{evi}}$ 表示服务端更依赖少数类别证据更充分的客户端。因此，该指标反映类别支持数是否实际改变了证据分配，而不是只改变最终偏置项。
 
-下表覆盖当前所有模块级与模块内消融设置。对于 `avg+M2`，该设置不构造原型头，因此原型几何指标不适用并记为 `-`；对于 `M1 only`、`Uniform prevalence prior` 与 `Smoothed prevalence prior`，这些设置只改变 M2 的偏置项，不改变 M1 的原型构造，因此其原型几何与 LAMP-Merge 相同。
+下表是结构诊断表，而不是测试集 Accuracy 消融表。它将所有模块级与模块内消融的公式定义应用到同一批客户端上传统计量上，直接计算对应的原型几何性质；因此，即使某个分支尚未完成 full-scope Accuracy 评测，只要该分支的原型构造可由上传统计量确定，就可以计算其几何诊断值。性能消融是否完成仍以上文 Accuracy 表中的 Raw cells 为准。对于 `avg+M2`，该设置不构造原型头，因此原型几何指标不适用并记为 `-`；对于 `M1 only`、`Uniform prevalence prior` 与 `Smoothed prevalence prior`，这些设置只改变 M2 的偏置项，不改变 M1 的原型构造，因此其原型几何与 LAMP-Merge 相同。
 
 | 设置 | Raw cases | Pairwise distance | Nearest-class distance | Prototype consistency | Prototype-client alignment | Evidence entropy |
 |---|---:|---:|---:|---:|---:|---:|
@@ -425,7 +425,7 @@ H_{\mathrm{evi}}
 
 这组结果给出三点机制证据。第一，Global-feature mean 的类间距离接近零，说明类别无关医学域均值不能形成诊断类别边界，这与其 Accuracy 大幅退化一致。第二，Classifier-head aggregation 虽然产生较大的类间距离，但 Prototype consistency 接近零且 Prototype-client alignment 明显低于 LAMP-Merge，说明不同客户端训练后的分类头不处于稳定共享语义坐标系中；直接聚合本地分类头会引入跨客户端方向错配。第三，Shuffled-label prototype 保留了正式原型的几何距离和客户端一致性，但降低了全局原型与同类客户端证据的对齐程度，并在 Accuracy 上显著退化。因此，正式方法的收益不能由“类间距离变大”或“增加一个原型头”解释，而必须依赖与诊断类别一致的 reference-space prototype。
 
-数据集级几何图已经生成，文件位于 `My_merge_ret/figures/lamp_merge_prototype_geometry/`。这些图分别展示 `bloodmnist_224`、`chaoshengmnist_224`、`dermamnist_224`、`organcmnist_224` 和 `organsmnist_224` 上所有可计算消融设置的原型分离度、一致性和证据熵；`avg+M2` 因无原型头而没有对应几何柱。机制图可按如下方式引用：
+数据集级几何诊断图已经生成，文件位于 `My_merge_ret/figures/lamp_merge_prototype_geometry/`。这些图分别展示 `bloodmnist_224`、`chaoshengmnist_224`、`dermamnist_224`、`organcmnist_224` 和 `organsmnist_224` 上所有可计算消融设置的原型分离度、一致性和证据熵；它们不表示对应消融分支已经完成测试集 Accuracy 全量评测。`avg+M2` 因无原型头而没有对应几何柱。机制图可按如下方式引用：
 
 | 数据集 | 原型几何图 |
 |---|---|
