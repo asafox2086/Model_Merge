@@ -4,7 +4,7 @@
 
 ## 当前全量结果
 
-当前正式 LAMP-Merge 结果来自 `outputs/lamp_merge_full_client_local_20260708_193654`，其客户端统计来自 `outputs/lamp_merge_client_local_proto_stats`，并采用正式超参数 $s=20$ 与 $\tau=5.0$。模块内消融中，只有与该统计来源和超参数口径一致、且完成 180 个 raw cells 的分支被填入数值；旧口径或未完成 full-scope 的分支统一置为 `-`。
+当前正式 LAMP-Merge 结果来自 `outputs/lamp_merge_full_client_local_20260708_193654`，其客户端统计来自 `outputs/lamp_merge_client_local_proto_stats`，并采用正式超参数 $s=20$ 与 $\lambda=5.0$。其中 $s$ 是 M1 中原型分类头的尺度，$\lambda$ 是 M2 中中心化 log-prior bias 的强度；M2 是否触发由长尾不平衡阈值 $\eta$ 控制。模块内消融中，只有与该统计来源和超参数口径一致、且完成 180 个 raw cells 的分支被填入数值；旧口径或未完成 full-scope 的分支统一置为 `-`。
 
 全量结果表明，诊断原型信息仍是主要有效变量。正式的 `LAMP-Merge` 在 60 个 client-average cells 上的平均 Accuracy 为 0.6210。去除 M2 后，`M1 only` 的平均 Accuracy 为 0.5880，低于正式方法 0.0330，说明长尾患病率校准在当前正式口径下提供了可观增益。若将类别原型替换为客户端分类头、类别无关全局特征均值、随机支持头或打乱标签的原型，平均 Accuracy 分别下降到 0.2579、0.2645、0.1137 和 0.2002。这说明收益并非来自额外分类头参数、类别支持数本身或随机方向正则化，而是来自与诊断类别一致的共享参考特征空间类别原型。
 
@@ -37,7 +37,59 @@
 
 现阶段可以形成三条受数据支持的结论。第一，M1 中的类别原型 $p_c$ 是抑制融合后预测坍缩的核心结构；任何去除类别条件方向或破坏类别语义对应关系的替代项都会导致显著退化。第二，M2 在当前正式口径下不再是可忽略项：正式 LAMP-Merge 相比 M1-only 的 client-average mean Accuracy 提升 0.0330，且主要增益集中在长尾压力更强的 `dermamnist_224`。第三，类别统计信息的作用不能仅用总体 Accuracy 解释；Binary support 和 Uniform client weight 均低于正式方法，说明类别支持数和患病率计数应结合非 Accuracy 诊断指标进一步说明其对坍缩缓解与长尾校准的贡献。
 
-## 一、模块内消融的公式化定义
+## 一、全量超参数敏感性
+
+超参数分析采用与正式汇总表完全一致的 full-scope 口径：5 个医学图像数据集、4 个 backbone、3 个客户端数量和 3 个 Dirichlet beta 设置。因此，每个超参数值均包含 180 个 raw cells，并进一步汇总为 60 个 client-average cells。该实验不改变客户端上传信息，也不引入新的候选模型；它只检验正式方法中两个连续控制量的稳定性。
+
+M1 的超参数为 prototype head scale $s$。给定全局诊断原型 $p_c$，分类头方向为
+
+```math
+w_c=s\frac{p_c}{\|p_c\|_2}.
+```
+
+因此，$s$ 控制共享参考特征空间中诊断原型被转换为分类 logit 的尺度。过小的 $s$ 会削弱类别原型 margin，使模型更依赖偏置项或背景分布；过大的 $s$ 会放大原型估计误差，并可能使部分类别边界过硬。M2 的超参数为长尾校准强度 $\lambda$。当上传患病率先验显示存在主导诊断类别时，M2 加入中心化 log-prior bias：
+
+```math
+b_c=
+\mathbf{1}[r>\eta]\lambda
+\left(
+\log \pi_c-\frac{1}{C}\sum_{k=1}^{C}\log \pi_k
+\right).
+```
+
+其中 $r=C\max_c\pi_c$ 表示长尾强度，$\eta$ 表示 M2 触发阈值，$\pi_c$ 由客户端上传的类别患病率计数估计得到。$\lambda$ 只控制已触发场景下 bias 的幅度，不改变 M1 的原型方向。
+
+| Module | Hyperparameter | Value | Raw cells | Client-average cells | Client-average mean Acc |
+|---|---|---:|---:|---:|---:|
+| M1 | $s$ | 5 | 180 | 60 | 0.6042 |
+| M1 | $s$ | 7 | 180 | 60 | 0.6131 |
+| M1 | $s$ | 10 | 180 | 60 | 0.6190 |
+| M1 | $s$ | 12 | 180 | 60 | 0.6204 |
+| M1 | $s$ | 15 | 180 | 60 | 0.6206 |
+| M1 | $s$ | 17 | 180 | 60 | 0.6209 |
+| M1 | $s$ | 20 | 180 | 60 | 0.6209 |
+| M1 | $s$ | 22 | 180 | 60 | 0.6205 |
+| M1 | $s$ | 25 | 180 | 60 | 0.6197 |
+| M1 | $s$ | 27 | 180 | 60 | 0.6192 |
+| M1 | $s$ | 30 | 180 | 60 | 0.6181 |
+| M1 | $s$ | 32 | 180 | 60 | 0.6175 |
+| M1 | $s$ | 35 | 180 | 60 | 0.6168 |
+| M1 | $s$ | 37 | 180 | 60 | 0.6161 |
+| M1 | $s$ | 40 | 180 | 60 | 0.6154 |
+| M2 | $\lambda$ | 2 | 180 | 60 | 0.6131 |
+| M2 | $\lambda$ | 3 | 180 | 60 | 0.6173 |
+| M2 | $\lambda$ | 4 | 180 | 60 | 0.6198 |
+| M2 | $\lambda$ | 5 | 180 | 60 | 0.6209 |
+| M2 | $\lambda$ | 6 | 180 | 60 | 0.6207 |
+| M2 | $\lambda$ | 7 | 180 | 60 | 0.6206 |
+| M2 | $\lambda$ | 8 | 180 | 60 | 0.6203 |
+| M2 | $\lambda$ | 10 | 180 | 60 | 0.6190 |
+
+全量结果表明，LAMP-Merge 对两个超参数均具有稳定平台，而不是依赖单点调参。对于 M1，$s=20$ 取得最高 client-average mean Accuracy 0.6209；在 $s\in[12,22]$ 内，平均 Accuracy 始终保持在 0.6204 至 0.6209 之间，说明诊断原型头只需要适度 logit 尺度即可稳定工作。对于 M2，$\lambda=5$ 取得最高 client-average mean Accuracy 0.6209；在 $\lambda\in[4,8]$ 内，平均 Accuracy 始终保持在 0.6198 至 0.6209 之间，说明长尾校准的收益来自有界医学患病率先验，而不是无界追随多数类。
+
+数据集级结果进一步解释了正式取值的必要性。较小的 $s$ 或较大的 $\lambda$ 可以提高个别长尾数据集上的 Accuracy，例如 `dermamnist_224` 对更强先验更敏感；但同一设置会降低 `organcmnist_224` 和 `organsmnist_224` 的整体表现。因此，正式设置 $s=20,\lambda=5$ 是在所有医学数据集、backbone、客户端数量和 beta 上的全局折中，而不是针对单一数据集的特判。完整表格位于 `My_merge_ret/reports/lamp_merge_hparam_full.csv`，数据集级分解位于 `My_merge_ret/reports/lamp_merge_hparam_full_by_dataset.csv`，曲线图位于 [lamp_merge_hparam_full_sensitivity.png](figures/lamp_merge_hparam_full_sensitivity.png)。
+
+## 二、模块内消融的公式化定义
 
 LAMP-Merge 的客户端上传信息可以分为两类。第一类是类别原型信息，即每个客户端在共享参考骨干上计算得到的类别特征均值；它决定每个诊断类别的判别方向。第二类是类别统计信息，包括类别支持数和类别患病率计数；前者决定不同客户端在每个类别上的证据权重，后者决定是否需要进行有界长尾校准。严格的模块内消融应分别替换这两类信息，而不是只改变 $s$ 或 $\lambda$。
 
@@ -86,7 +138,7 @@ M2 的中心化 log-prior bias 写作
 ```math
 b_c
 =
-\mathbf{1}[r>\tau]\lambda
+\mathbf{1}[r>\eta]\lambda
 \left(
 \log \pi_c-\frac{1}{C}\sum_{k=1}^{C}\log \pi_k
 \right).
@@ -100,7 +152,7 @@ b_c
 
 所有模块内消融均以最终 LAMP-Merge 为唯一参照。也就是说，消融实验不回答“是否优于 `avg`”，而是回答“将正式方法中的某一项替换后，相对最终方法损失多少”。
 
-### 1.1 模块级消融
+### 2.1 模块级消融
 
 **M1 only.** 该设置保留 M1 的 $p_c$ 和 $w_c$，移除 M2 的长尾偏置：
 
@@ -114,7 +166,7 @@ w_c^\top\phi_0(T(x)).
 
 该对照检验仅使用诊断原型重构是否足以形成有效分类器。
 
-### 1.2 原型信息消融
+### 2.2 原型信息消融
 
 原型信息消融固定 $e_{i,c}$、$\alpha_{i,c}$、$\pi_c$ 与 $b_c$ 的定义，只替换用于构造 $p_c$ 的类别方向。
 
@@ -212,7 +264,7 @@ s\frac{p_{\sigma(c)}}{\|p_{\sigma(c)}\|_2}.
 
 该对照检验正式方法的收益是否来自真实诊断类别语义，而不是来自原型范数、参数量或归一化形式。
 
-### 1.3 类别统计信息消融
+### 2.3 类别统计信息消融
 
 类别统计信息消融固定参考原型 $\mu_{i,c}$，只替换 $e_{i,c}$、$\alpha_{i,c}$、$\pi_c$ 或 $b_c$。
 
@@ -305,7 +357,7 @@ C\max_c\pi_c^{\mathrm{smooth}},
 \qquad
 b_c^{\mathrm{smooth}}
 =
-\mathbf{1}[r^{\mathrm{smooth}}>\tau]\lambda
+\mathbf{1}[r^{\mathrm{smooth}}>\eta]\lambda
 \left(
 \log \pi_c^{\mathrm{smooth}}
 -
@@ -315,7 +367,7 @@ b_c^{\mathrm{smooth}}
 
 其余原型头公式与正式方法一致。该对照检验 M2 对极端计数的敏感性。
 
-## 二、预测诊断指标
+## 三、预测诊断指标
 
 当前已完成的 Accuracy 消融均采用 full-scope 口径。预测诊断分析在同一 full-scope 网格上统计 Balanced Accuracy、Macro F1、Collapse Ratio、Effective Classes 和 Pred-True TV。Accuracy 只能说明总体正确率，不能单独证明融合质量；Balanced Accuracy 和 Macro F1 反映少数类诊断能力；Collapse Ratio 和 Effective Classes 直接刻画预测是否坍缩到少数类别；Pred-True TV 衡量预测类别分布是否接近真实医学类别分布。
 
@@ -323,9 +375,9 @@ b_c^{\mathrm{smooth}}
 
 主消融结论必须采用正式汇总表中的 small 全量口径，而不能采用任何单点或非全量诊断子集。全量口径包含 5 个医学图像数据集、4 个 backbone、3 个客户端数量和 3 个 Dirichlet beta 设置，因此每个消融设置对应 180 个 raw cells。论文主表中的 client-average 口径先对相同 `(dataset, backbone, K)` 的三个 beta 取均值，因此每个消融设置对应 60 个 client-average cells。当前已填入的 Accuracy 消融均满足这一口径；预测分布图、collapse ratio、balanced accuracy、macro F1 和 Pred-True TV 也必须在同一 full-scope 网格上计算。若论文中展示单个数据集的图，它应来自该数据集内所有 backbone、K 和 beta 的聚合，而不是单一 beta。
 
-当前 Accuracy 消融和原型几何分析已经采用 full-scope 口径；预测诊断和超参数扫描继续沿用同一口径。最终报告中的模块内消融表、诊断指标表、预测分布图和超参数曲线均应对应 5 个医学图像数据集、4 个 backbone、3 个客户端数量和 3 个 Dirichlet beta 设置。
+当前 Accuracy 消融、原型几何分析和超参数扫描已经采用 full-scope 口径；预测诊断继续沿用同一口径。最终报告中的模块内消融表、诊断指标表、预测分布图和超参数曲线均应对应 5 个医学图像数据集、4 个 backbone、3 个客户端数量和 3 个 Dirichlet beta 设置。
 
-## 三、原型几何与可视化证据
+## 四、原型几何与可视化证据
 
 原型几何分析已经覆盖正式 full-scope 网格。该分析不使用服务器端原始医学图像；它只利用客户端上传的类别原型、类别支持数和由这些统计量构造的全局原型。几何指标用于回答一个机制问题：正式方法恢复多类别诊断能力，是因为原型携带了稳定的类别语义方向，还是仅仅因为增加了额外参数或统计量。
 
@@ -438,7 +490,7 @@ H_{\mathrm{evi}}
 
 预测类别分布热图和指标柱状图将在 full-scope prediction diagnostics 完成后接入本文件。该图以方法为行、诊断类别为列，展示各方法在测试集上的预测比例。其目标是证明：通用融合基线和错误替代项倾向于集中输出少数类别，而正式原型方法能够恢复多类别预测分布。未完成 full-scope 的旧预测诊断表和旧热图不再作为本文档证据。
 
-## 四、理论分析补充
+## 五、理论分析补充
 
 理论分析应围绕“为什么原型信息和统计信息能够缓解坍缩”展开，而不是只解释实现细节。符号必须与正文保持一致：共享参考特征写作 $z=\phi_0(T(x))$，客户端 $i$ 上传的类别原型写作 $\mu_{i,c}$，服务端聚合得到的全局诊断原型写作 $p_c$，类别支持数写作 $n_{i,c}$，患病率先验写作 $\pi_c$，预测坍缩强度写作 $\rho$。若需要表示类别 $c$ 的真实参考特征均值，仅在理论分析中额外引入 $\mu_c^\star$，且不替代正文中的 $\mu_{i,c}$ 或 $p_c$。服务端聚合原型为：
 
@@ -489,7 +541,7 @@ b_c=\lambda\left(\log\pi_c-\frac{1}{C}\sum_k\log\pi_k\right).
 
 因此，只要 $\lambda$ 有界，M2 就不会替代 M1 的多类别判别方向，而只是对真实长尾患病率进行有限校准。该理论解释与实验设计相对应：若关闭 M1，只保留 M2，模型无法恢复多类别判别；若保留 M1 并使用真实患病率统计，模型可以在避免坍缩的同时利用主导类别的真实医学先验。
 
-## 五、论文结论形式
+## 六、论文结论形式
 
 论文中应形成如下结论链条。首先，原型替代消融证明共享参考特征空间类别原型是缓解预测坍缩的主要机制；本地分类头聚合、类别无关均值或打乱标签的原型不能稳定恢复多类别诊断输出。其次，当前统计信息消融表明，仅使用类别存在性或等权客户端聚合会低于正式方法，说明类别支持数与患病率计数并非可任意替换的附加元数据。最后，已完成的原型几何可视化说明正式原型在共享参考特征空间中具有稳定的类别语义结构；Balanced Accuracy、Macro F1、Collapse Ratio、Effective Classes、Pred-True TV 与 t-SNE 只在完成 full-scope 后纳入正式结论。
 
