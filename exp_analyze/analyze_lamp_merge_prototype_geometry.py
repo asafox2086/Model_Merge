@@ -127,6 +127,26 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--tsne-model", type=str, default="resnet")
     parser.add_argument("--tsne-num-clients", type=int, default=3)
     parser.add_argument("--tsne-max-samples-per-class", type=int, default=120)
+    parser.add_argument(
+        "--plot-full-tsne",
+        action="store_true",
+        help=(
+            "Plot full-scope t-SNE diagnostics for every selected dataset/backbone. "
+            "For each dataset/backbone/mode, prototypes from all selected client counts "
+            "and beta values are projected together with reference-backbone test features."
+        ),
+    )
+    parser.add_argument(
+        "--full-tsne-modes",
+        nargs="*",
+        default=[
+            "full",
+            "prototype_head_agg",
+            "global_feature_mean",
+            "prototype_shuffle",
+            "uniform_client_weight",
+        ],
+    )
     return parser.parse_args()
 
 
@@ -691,6 +711,102 @@ def plot_tsne(args: argparse.Namespace, rows_by_key: dict[tuple[str, str, int, s
             plt.close(fig)
 
 
+def plot_full_scope_tsne(
+    args: argparse.Namespace,
+    tsne_records: list[dict[str, object]],
+    meta_by_dataset_model: dict[tuple[str, str], dict[str, object]],
+) -> None:
+    import matplotlib
+
+    matplotlib.use("Agg")
+    import matplotlib.pyplot as plt
+    from sklearn.manifold import TSNE
+
+    tsne_dir = args.figure_dir / "full_scope_tsne"
+    tsne_dir.mkdir(parents=True, exist_ok=True)
+    grouped: dict[tuple[str, str, str], list[dict[str, object]]] = defaultdict(list)
+    for record in tsne_records:
+        grouped[(str(record["dataset"]), str(record["model"]), str(record["mode"]))].append(record)
+
+    for (dataset, model_name, mode), items in sorted(grouped.items()):
+        meta = meta_by_dataset_model.get((dataset, model_name))
+        if meta is None:
+            continue
+        sample_features, sample_labels = reference_sample_features(args, meta, dataset)
+        proto_arrays = [np.asarray(item["prototypes"], dtype=np.float32) for item in items]
+        if not proto_arrays:
+            continue
+        proto_np = np.concatenate(proto_arrays, axis=0)
+        proto_labels = np.concatenate(
+            [np.arange(int(item["num_classes"]), dtype=np.int64) for item in items],
+            axis=0,
+        )
+        case_labels = []
+        for item in items:
+            num_classes = int(item["num_classes"])
+            case_label = f"K={int(item['num_clients'])}, beta={item['beta']}"
+            case_labels.extend([case_label] * num_classes)
+        all_points = np.vstack([sample_features, proto_np])
+        perplexity = max(5, min(40, (all_points.shape[0] - 1) // 4))
+        embed = TSNE(
+            n_components=2,
+            init="pca",
+            learning_rate="auto",
+            perplexity=perplexity,
+            random_state=1701,
+        ).fit_transform(all_points)
+        sample_embed = embed[: sample_features.shape[0]]
+        proto_embed = embed[sample_features.shape[0] :]
+
+        fig, ax = plt.subplots(figsize=(9, 8), constrained_layout=True)
+        scatter = ax.scatter(
+            sample_embed[:, 0],
+            sample_embed[:, 1],
+            c=sample_labels,
+            s=7,
+            alpha=0.45,
+            cmap="tab20",
+            linewidths=0,
+        )
+        ax.scatter(
+            proto_embed[:, 0],
+            proto_embed[:, 1],
+            c=proto_labels,
+            s=70,
+            marker="X",
+            alpha=0.88,
+            cmap="tab20",
+            edgecolors="black",
+            linewidths=0.45,
+        )
+        for class_id in sorted(set(proto_labels.tolist())):
+            idx = np.flatnonzero(proto_labels == int(class_id))
+            if idx.size == 0:
+                continue
+            center = proto_embed[idx].mean(axis=0)
+            ax.text(
+                float(center[0]),
+                float(center[1]),
+                str(int(class_id)),
+                fontsize=8,
+                weight="bold",
+                ha="center",
+                va="center",
+                bbox={"boxstyle": "round,pad=0.18", "facecolor": "white", "edgecolor": "none", "alpha": 0.65},
+            )
+        ax.set_title(
+            f"{dataset} / {model_name} / {MODE_LABELS.get(mode, mode)}: full-scope prototype t-SNE"
+        )
+        ax.set_xlabel("t-SNE dimension 1")
+        ax.set_ylabel("t-SNE dimension 2")
+        ax.set_xticks([])
+        ax.set_yticks([])
+        fig.colorbar(scatter, ax=ax, fraction=0.03, pad=0.02, label="true class")
+        safe_mode = mode.replace("/", "_")
+        fig.savefig(tsne_dir / f"{dataset}_{model_name}_{safe_mode}_full_scope_tsne.png", dpi=180)
+        plt.close(fig)
+
+
 def main() -> None:
     args = parse_args()
     args.output_csv.parent.mkdir(parents=True, exist_ok=True)
@@ -705,9 +821,13 @@ def main() -> None:
 
     rows = []
     rows_by_key: dict[tuple[str, str, int, str], dict[str, object]] = {}
+    tsne_records: list[dict[str, object]] = []
+    meta_by_dataset_model: dict[tuple[str, str], dict[str, object]] = {}
     tsne_dataset_set = set(args.tsne_datasets)
+    full_tsne_modes = set(args.full_tsne_modes)
     for row in manifest:
         meta = load_json(args.model_hub_root / row["meta_path"])
+        meta_by_dataset_model.setdefault((row["dataset"], row["model"]), meta)
         proto_path = prototype_stats_path(args, row)
         if not proto_path.exists():
             print(f"[WARN] missing prototype stats: {proto_path}", file=sys.stderr)
@@ -750,6 +870,20 @@ def main() -> None:
                 }
                 out.update(metrics)
                 rows.append(out)
+                if args.plot_full_tsne and mode in full_tsne_modes:
+                    prototypes = geometry["prototypes"]
+                    assert isinstance(prototypes, torch.Tensor)
+                    tsne_records.append(
+                        {
+                            "dataset": row["dataset"],
+                            "model": row["model"],
+                            "num_clients": int(row["num_clients"]),
+                            "beta": beta_key(row["beta"]),
+                            "mode": mode,
+                            "num_classes": int(meta["num_classes"]),
+                            "prototypes": prototypes.detach().cpu().float().numpy(),
+                        }
+                    )
             except Exception as exc:
                 rows.append(
                     {
@@ -774,6 +908,8 @@ def main() -> None:
     plot_geometry_bars(dataset_rows, overall_rows, args.figure_dir)
     if args.plot_tsne:
         plot_tsne(args, rows_by_key)
+    if args.plot_full_tsne:
+        plot_full_scope_tsne(args, tsne_records, meta_by_dataset_model)
     print(f"Wrote prototype geometry CSV: {args.output_csv}")
     print(f"Wrote prototype geometry summary: {args.summary_md}")
     print(f"Wrote prototype geometry figures: {args.figure_dir}")
