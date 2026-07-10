@@ -2,6 +2,29 @@
 
 本文档给出 LAMP-Merge 的模块间消融、模块内消融、预测坍缩诊断、原型几何分析、联合 t-SNE 可视化与超参数敏感性结果。模块内消融、诊断、几何与超参数分析均采用 5 个医学图像数据集、4 个 backbone、3 个客户端数量和 3 个 Dirichlet $\beta$ 设置；因此每个方法包含 180 个 raw cells，并在固定 `(dataset, backbone, K)` 下对三个 $\beta$ 取均值得到 60 个 client-average cells。模块间消融与正式主表保持一致，额外纳入 CLIP-ViT backbone，因此包含 225 个 raw cells 和 75 个 client-average cells。本文档不引用任何单一数据集、单一 backbone 或单一 $\beta$ 的阶段性结果。
 
+## 模块间消融核心结果
+
+模块间消融采用正式主表口径，覆盖 5 个数据集、5 个 backbone、3 个客户端数量与 3 个 Dirichlet $\beta$，共 225 个 raw cells 和 75 个 client-average cells。该表直接比较完整 LAMP-Merge、仅保留诊断原型重建的 M1 only、将 M2 附加到普通平均模型的 avg+M2，以及普通参数平均 avg。
+
+| 设置 | Client-average cells | Client-average mean Acc | Best/tied cells | >= avg cells | Mean margin vs avg |
+|---|---:|---:|---:|---:|---:|
+| LAMP-Merge | 75 | 0.5618 | 51/75 | 71/75 | +0.3345 |
+| M1 only | 75 | 0.5362 | 46/75 | 66/75 | +0.3089 |
+| avg+M2 | 75 | 0.2198 | 4/75 | 43/75 | -0.0075 |
+| avg | 75 | 0.2273 | 2/75 | 75/75 | 0.0000 |
+
+数据集级模块间消融如下：
+
+| Dataset | Cells | LAMP-Merge | M1 only | avg+M2 | avg | LAMP best/tied |
+|---|---:|---:|---:|---:|---:|---:|
+| bloodmnist_224 | 15 | 0.7156 | 0.7155 | 0.1726 | 0.1699 | 12/15 |
+| chaoshengmnist_224 | 15 | 0.4040 | 0.4040 | 0.1551 | 0.1516 | 15/15 |
+| dermamnist_224 | 15 | 0.6257 | 0.4975 | 0.4913 | 0.5304 | 12/15 |
+| organcmnist_224 | 15 | 0.5543 | 0.5543 | 0.1331 | 0.1358 | 6/15 |
+| organsmnist_224 | 15 | 0.5096 | 0.5096 | 0.1469 | 0.1488 | 6/15 |
+
+该消融表明，M1 是主要有效成分；M2 在 Derma 这类强长尾诊断分布中提供额外收益，使 LAMP-Merge 相比 M1 only 的数据集均值提高 0.1282。avg+M2 的总体均值低于 avg，说明患病率校准不能独立修复已经坍缩或语义错配的平均模型；M2 必须作为诊断原型分类器上的有界先验项使用。
+
 ## 一、实验口径与符号
 
 正式 LAMP-Merge 结果来自 `outputs/lamp_merge_full_client_local_20260708_193654`，模块内消融来自 `outputs/lamp_merge_internal_ablation_full_20260708_force_all_analysis_after_client_stats_internal_ablation`。模块间消融表读取 `My_merge_ret/reports/lamp_merge_client_avg_ablation_*.csv`。所有分支均读取同一客户端统计目录 `outputs/lamp_merge_client_local_proto_stats`，并固定使用 $\gamma=0.45$、$s=20$、$\tau=2.5$ 与 $\lambda=5.0$。
@@ -93,7 +116,7 @@ b_c
 最终分类分数为：
 
 ```math
-\operatorname{score}_c(x)
+\mathrm{score}_c(x)
 =
 w_c^\top\phi_0(T(x))+b_c.
 ```
@@ -186,34 +209,11 @@ N_i=\sum_{c=1}^{C}n_{i,c},
 
 ## 三、全量 Accuracy 消融
 
-### 3.1 模块间消融
-
-模块间消融采用正式主表口径，覆盖 5 个数据集、5 个 backbone、3 个客户端数量与 3 个 Dirichlet $\beta$，共 225 个 raw cells 和 75 个 client-average cells。
-
-| 设置 | Client-average cells | Client-average mean Acc | Best/tied cells | $\ge$ avg cells | Mean margin vs avg |
-|---|---:|---:|---:|---:|
-| LAMP-Merge | 75 | 0.5618 | 51/75 | 71/75 | +0.3345 |
-| M1 only | 75 | 0.5362 | 46/75 | 66/75 | +0.3089 |
-| avg+M2 | 75 | 0.2198 | 4/75 | 43/75 | -0.0075 |
-| avg | 75 | 0.2273 | 2/75 | 75/75 | 0.0000 |
-
-数据集级模块间消融如下：
-
-| Dataset | Cells | LAMP-Merge | M1 only | avg+M2 | avg | LAMP best/tied |
-|---|---:|---:|---:|---:|---:|---:|
-| bloodmnist_224 | 15 | 0.7156 | 0.7155 | 0.1726 | 0.1699 | 12/15 |
-| chaoshengmnist_224 | 15 | 0.4040 | 0.4040 | 0.1551 | 0.1516 | 15/15 |
-| dermamnist_224 | 15 | 0.6257 | 0.4975 | 0.4913 | 0.5304 | 12/15 |
-| organcmnist_224 | 15 | 0.5543 | 0.5543 | 0.1331 | 0.1358 | 6/15 |
-| organsmnist_224 | 15 | 0.5096 | 0.5096 | 0.1469 | 0.1488 | 6/15 |
-
-该消融表明，M1 是主要有效成分；M2 在 Derma 这类强长尾诊断分布中提供额外收益，使 LAMP-Merge 相比 M1 only 的数据集均值提高 0.1282。`avg+M2` 的总体均值低于 `avg`，说明患病率校准不能独立修复已经坍缩或语义错配的平均模型；M2 必须作为诊断原型分类器上的有界先验项使用。
-
-### 3.2 模块内总体结果
+### 3.1 模块内总体结果
 
 模块内消融覆盖 5 个数据集、4 个 backbone、3 个客户端数量与 3 个 Dirichlet $\beta$，共 180 个 raw cells 和 60 个 client-average cells。该组实验不再展示 `M1 only`，因为它已在模块间消融中作为 M2 的直接对照。
 
-| 设置 | Raw cells | Client-average mean Acc | Mean margin vs LAMP | Client-average $\ge$ LAMP |
+| 设置 | Raw cells | Client-average mean Acc | Mean margin vs LAMP | Client-average >= LAMP |
 |---|---:|---:|---:|---:|
 | LAMP-Merge | 180 | 0.6209 | 0.0000 | 60/60 |
 | Classifier-head aggregation | 180 | 0.2579 | -0.3630 | 2/60 |
@@ -229,7 +229,7 @@ N_i=\sum_{c=1}^{C}n_{i,c},
 
 诊断原型替代项均显著低于正式方法，说明性能收益不能由额外分类头、随机方向或类别计数本身解释。`No prevalence calibration` 与 `Uniform prevalence prior` 均移除了有效长尾先验项，二者之间小于 $5\times10^{-5}$ 的均值差异来自独立评估过程的浮点数值误差。加性平滑先验与正式方法仅相差 $7.8\times10^{-6}$，表明 M2 对轻微计数扰动稳定。
 
-### 3.3 模块内数据集级结果
+### 3.2 模块内数据集级结果
 
 原型信息消融如下：
 
@@ -281,17 +281,17 @@ C_{\mathrm{eff}}
 $\rho$ 越接近 1，模型越接近单类预测器；$C_{\mathrm{eff}}$ 越大，模型实际使用的诊断类别越充分。Balanced Accuracy、Macro-F1 和预测分布总变差分别为：
 
 ```math
-\operatorname{BA}
+\mathrm{BA}
 =
-\frac{1}{C}\sum_{c=1}^{C}\operatorname{Recall}_c,
+\frac{1}{C}\sum_{c=1}^{C}\mathrm{Recall}_c,
 \qquad
-\operatorname{MacroF1}
+\mathrm{MacroF1}
 =
-\frac{1}{C}\sum_{c=1}^{C}\operatorname{F1}_c,
+\frac{1}{C}\sum_{c=1}^{C}\mathrm{F1}_c,
 ```
 
 ```math
-\operatorname{TV}(q,p_{\mathrm{test}})
+\mathrm{TV}(q,p_{\mathrm{test}})
 =
 \frac{1}{2}\sum_{c=1}^{C}
 |q(c)-p_{\mathrm{test}}(c)|.
@@ -492,7 +492,7 @@ $s\in[12,22]$ 时，平均 Accuracy 保持在 0.6204--0.6209；$\lambda\in[4,8]$
 \alpha_{i,c}^2
 \frac{\sigma_c^2}{n_{i,c}}
 +
-\operatorname{Bias}_c^2.
+\mathrm{Bias}_c^2.
 ```
 
 该上界说明，类别支持数 $n_{i,c}$ 直接控制原型估计方差；没有观察到类别 $c$ 的客户端不应参与该类别方向构造，具有更多同类样本的客户端应获得更高但次线性的权重。客户端总规模 $N_i$ 或二值类别存在性无法提供同等的类别级方差控制，这与对应消融退化一致。
