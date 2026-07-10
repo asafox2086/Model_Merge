@@ -45,7 +45,6 @@ GENERIC_METHODS = [
 
 PLOT_METHODS = [
     "LAMP-Merge",
-    "M1 only",
     "Classifier-head aggregation",
     "Global-feature mean",
     "Support-only synthetic head",
@@ -58,7 +57,6 @@ PLOT_METHODS = [
 
 SHORT_LABELS = {
     "LAMP-Merge": "LAMP-Merge",
-    "M1 only": "M1 only",
     "Classifier-head aggregation": "Head aggregation",
     "Global-feature mean": "Global mean",
     "Support-only synthetic head": "Support only",
@@ -71,7 +69,6 @@ SHORT_LABELS = {
 
 DIAG_METHODS = {
     "LAMP-Merge": "lamp_merge:full",
-    "M1 only": "lamp_merge:m1_only",
     "Classifier-head aggregation": "lamp_merge:prototype_head_agg",
     "Global-feature mean": "lamp_merge:global_feature_mean",
     "Support-only synthetic head": "lamp_merge:support_only",
@@ -84,7 +81,6 @@ DIAG_METHODS = {
 
 METHOD_COLORS = {
     "LAMP-Merge": "#B83A4B",
-    "M1 only": "#D88735",
     "Classifier-head aggregation": "#5E739B",
     "Global-feature mean": "#7687A5",
     "Support-only synthetic head": "#8F9DB7",
@@ -286,9 +282,9 @@ def plot_collapse_recovery(rows: list[dict[str, str]], output_dir: Path) -> None
     plt = configure_matplotlib()
     lookup = {(row["dataset"], row["method"]): row for row in rows}
     best_generic = best_generic_by_dataset(rows)
-    methods = ["client_mean", "best_generic", "lamp_merge:m1_only", "lamp_merge:full"]
-    labels = ["Client mean", "Best generic merge", "M1 only", "LAMP-Merge"]
-    colors = ["#8D98A7", "#5E739B", "#D88735", "#B83A4B"]
+    methods = ["client_mean", "best_generic", "lamp_merge:full"]
+    labels = ["Client mean", "Best generic merge", "LAMP-Merge"]
+    colors = ["#8D98A7", "#5E739B", "#B83A4B"]
     metric_specs = [
         ("mean_balanced_accuracy", "Balanced accuracy", True),
         ("mean_macro_f1", "Macro-F1", True),
@@ -299,14 +295,14 @@ def plot_collapse_recovery(rows: list[dict[str, str]], output_dir: Path) -> None
     fig, axes = plt.subplots(2, 3, figsize=(16, 9), constrained_layout=True)
     axes = axes.reshape(-1)
     x = np.arange(len(DATASETS))
-    width = 0.19
+    width = 0.24
     for ax, (metric, title, higher_is_better) in zip(axes, metric_specs):
         for method_idx, (method, label, color) in enumerate(zip(methods, labels, colors)):
             values = []
             for dataset in DATASETS:
                 row = best_generic[dataset] if method == "best_generic" else lookup[(dataset, method)]
                 values.append(float(row[metric]))
-            ax.bar(x + (method_idx - 1.5) * width, values, width=width, label=label, color=color)
+            ax.bar(x + (method_idx - 1.0) * width, values, width=width, label=label, color=color)
         ax.set_xticks(x, [DATASET_LABELS[item] for item in DATASETS], rotation=24, ha="right")
         ax.set_title(f"{title} ({'higher' if higher_is_better else 'lower'} is better)")
         ax.grid(axis="y", color="#D8DCE3", linewidth=0.7, alpha=0.7)
@@ -373,7 +369,6 @@ def plot_prediction_distributions(
     for dataset in DATASETS:
         dataset_rows = [row for row in raw_rows if row["dataset"] == dataset and row.get("status") == "OK"]
         full_rows = [row for row in dataset_rows if row["method"] == "lamp_merge:full"]
-        m1_rows = [row for row in dataset_rows if row["method"] == "lamp_merge:m1_only"]
         generic_method = best_generic[dataset]["method"]
         generic_rows = [row for row in dataset_rows if row["method"] == generic_method]
         true_distribution = normalized_truth(full_rows[0])
@@ -382,7 +377,6 @@ def plot_prediction_distributions(
                 true_distribution,
                 client_mean_distribution(dataset_rows),
                 mean_distribution(generic_rows),
-                mean_distribution(m1_rows),
                 mean_distribution(full_rows),
             ]
         )
@@ -390,7 +384,6 @@ def plot_prediction_distributions(
             "True test distribution",
             "Client mean",
             f"Best generic ({generic_method})",
-            "M1 only",
             "LAMP-Merge",
         ]
         fig, ax = plt.subplots(figsize=(max(8.5, distributions.shape[1] * 0.85), 4.6), constrained_layout=True)

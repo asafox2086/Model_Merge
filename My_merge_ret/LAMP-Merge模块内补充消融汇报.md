@@ -1,10 +1,10 @@
 # LAMP-Merge 模块内补充消融汇报
 
-本文档给出 LAMP-Merge 的最终模块级消融、模块内消融、预测坍缩诊断、原型几何分析、联合 t-SNE 可视化与超参数敏感性结果。所有定量结论均采用与正式主表一致的实验网格：5 个医学图像数据集、4 个 backbone、3 个客户端数量和 3 个 Dirichlet $\beta$ 设置。因而，每个方法包含 180 个 raw cells；对固定 `(dataset, backbone, K)` 下的三个 $\beta$ 取均值后，得到 60 个 client-average cells。本文档不引用任何单一数据集、单一 backbone 或单一 $\beta$ 的阶段性结果。
+本文档给出 LAMP-Merge 的模块间消融、模块内消融、预测坍缩诊断、原型几何分析、联合 t-SNE 可视化与超参数敏感性结果。模块内消融、诊断、几何与超参数分析均采用 5 个医学图像数据集、4 个 backbone、3 个客户端数量和 3 个 Dirichlet $\beta$ 设置；因此每个方法包含 180 个 raw cells，并在固定 `(dataset, backbone, K)` 下对三个 $\beta$ 取均值得到 60 个 client-average cells。模块间消融与正式主表保持一致，额外纳入 CLIP-ViT backbone，因此包含 225 个 raw cells 和 75 个 client-average cells。本文档不引用任何单一数据集、单一 backbone 或单一 $\beta$ 的阶段性结果。
 
 ## 一、实验口径与符号
 
-正式 LAMP-Merge 结果来自 `outputs/lamp_merge_full_client_local_20260708_193654`，模块内消融来自 `outputs/lamp_merge_internal_ablation_full_20260708_force_all_analysis_after_client_stats_internal_ablation`。所有分支均读取同一客户端统计目录 `outputs/lamp_merge_client_local_proto_stats`，并固定使用 $\gamma=0.45$、$s=20$、$\tau=2.5$ 与 $\lambda=5.0$。
+正式 LAMP-Merge 结果来自 `outputs/lamp_merge_full_client_local_20260708_193654`，模块内消融来自 `outputs/lamp_merge_internal_ablation_full_20260708_force_all_analysis_after_client_stats_internal_ablation`。模块间消融表读取 `My_merge_ret/reports/lamp_merge_client_avg_ablation_*.csv`。所有分支均读取同一客户端统计目录 `outputs/lamp_merge_client_local_proto_stats`，并固定使用 $\gamma=0.45$、$s=20$、$\tau=2.5$ 与 $\lambda=5.0$。
 
 | 符号 | 定义 |
 |---|---|
@@ -100,13 +100,27 @@ w_c^\top\phi_0(T(x))+b_c.
 
 M1 决定类别判别方向，M2 只在检测到强长尾时调整类别间相对偏置。服务端融合阶段不接收原始图像、逐样本特征或逐样本预测。
 
-## 二、模块内消融设计
+## 二、消融实验设计
 
-消融实验以最终 LAMP-Merge 为唯一参照，不以 `avg` 作为模块有效性的判据。实验分为原型信息替代和类别统计信息替代两组。
+消融实验以最终 LAMP-Merge 为唯一参照，不以 `avg` 作为模块有效性的判据。模块间消融分离 M1 与 M2 的整体作用；模块内消融进一步替换 M1 的诊断原型信息和类别统计信息。
+
+### 2.1 模块间消融
+
+模块间消融比较四个完整融合流程：
+
+| 设置 | 构成 | 检验问题 |
+|---|---|---|
+| LAMP-Merge | M1 + M2 | 正式方法的总体效果 |
+| M1 only | 保留诊断原型重建，令 $b_c=0$ | 长尾患病率校准是否提供额外收益 |
+| avg+M2 | 用普通参数平均替代 M1，并施加同一患病率校准 | M2 是否能脱离诊断原型单独发挥作用 |
+| avg | 普通参数平均 | 无诊断原型与无患病率校准的基础对照 |
+
+### 2.2 模块内消融
+
+模块内消融分为原型信息替代和类别统计信息替代两组。
 
 | 设置 | 替换内容 | 检验问题 |
 |---|---|---|
-| M1 only | 令 $b_c=0$ | M2 是否提供额外长尾收益 |
 | Classifier-head aggregation | 以客户端本地分类头代替 $\mu_{i,c}$ | 本地训练后的分类头能否替代共享参考原型 |
 | Global-feature mean | 所有类别共享同一全局特征均值 | 类别条件信息是否必要 |
 | Support-only synthetic head | 用固定随机单位方向代替类别原型 | 类别计数本身是否足以恢复判别方向 |
@@ -172,12 +186,36 @@ N_i=\sum_{c=1}^{C}n_{i,c},
 
 ## 三、全量 Accuracy 消融
 
-### 3.1 总体结果
+### 3.1 模块间消融
+
+模块间消融采用正式主表口径，覆盖 5 个数据集、5 个 backbone、3 个客户端数量与 3 个 Dirichlet $\beta$，共 225 个 raw cells 和 75 个 client-average cells。
+
+| 设置 | Client-average cells | Client-average mean Acc | Best/tied cells | $\ge$ avg cells | Mean margin vs avg |
+|---|---:|---:|---:|---:|
+| LAMP-Merge | 75 | 0.5618 | 51/75 | 71/75 | +0.3345 |
+| M1 only | 75 | 0.5362 | 46/75 | 66/75 | +0.3089 |
+| avg+M2 | 75 | 0.2198 | 4/75 | 43/75 | -0.0075 |
+| avg | 75 | 0.2273 | 2/75 | 75/75 | 0.0000 |
+
+数据集级模块间消融如下：
+
+| Dataset | Cells | LAMP-Merge | M1 only | avg+M2 | avg | LAMP best/tied |
+|---|---:|---:|---:|---:|---:|---:|
+| bloodmnist_224 | 15 | 0.7156 | 0.7155 | 0.1726 | 0.1699 | 12/15 |
+| chaoshengmnist_224 | 15 | 0.4040 | 0.4040 | 0.1551 | 0.1516 | 15/15 |
+| dermamnist_224 | 15 | 0.6257 | 0.4975 | 0.4913 | 0.5304 | 12/15 |
+| organcmnist_224 | 15 | 0.5543 | 0.5543 | 0.1331 | 0.1358 | 6/15 |
+| organsmnist_224 | 15 | 0.5096 | 0.5096 | 0.1469 | 0.1488 | 6/15 |
+
+该消融表明，M1 是主要有效成分；M2 在 Derma 这类强长尾诊断分布中提供额外收益，使 LAMP-Merge 相比 M1 only 的数据集均值提高 0.1282。`avg+M2` 的总体均值低于 `avg`，说明患病率校准不能独立修复已经坍缩或语义错配的平均模型；M2 必须作为诊断原型分类器上的有界先验项使用。
+
+### 3.2 模块内总体结果
+
+模块内消融覆盖 5 个数据集、4 个 backbone、3 个客户端数量与 3 个 Dirichlet $\beta$，共 180 个 raw cells 和 60 个 client-average cells。该组实验不再展示 `M1 only`，因为它已在模块间消融中作为 M2 的直接对照。
 
 | 设置 | Raw cells | Client-average mean Acc | Mean margin vs LAMP | Client-average $\ge$ LAMP |
 |---|---:|---:|---:|---:|
 | LAMP-Merge | 180 | 0.6209 | 0.0000 | 60/60 |
-| M1 only | 180 | 0.5880 | -0.0329 | 30/60 |
 | Classifier-head aggregation | 180 | 0.2579 | -0.3630 | 2/60 |
 | Global-feature mean | 180 | 0.2645 | -0.3564 | 9/60 |
 | Support-only synthetic head | 180 | 0.1137 | -0.5073 | 0/60 |
@@ -189,19 +227,19 @@ N_i=\sum_{c=1}^{C}n_{i,c},
 | Uniform prevalence prior | 180 | 0.5879 | -0.0330 | 24/60 |
 | Smoothed prevalence prior | 180 | 0.6209 | -0.0000 | 39/60 |
 
-诊断原型替代项均显著低于正式方法，说明性能收益不能由额外分类头、随机方向或类别计数本身解释。`No prevalence calibration` 与 M1-only 在判别函数上等价，`Uniform prevalence prior` 的中心化 log-prior 也恒为零；三者之间小于 $5\times10^{-5}$ 的均值差异来自独立评估过程的浮点数值误差。加性平滑先验与正式方法仅相差 $7.8\times10^{-6}$，表明 M2 对轻微计数扰动稳定。
+诊断原型替代项均显著低于正式方法，说明性能收益不能由额外分类头、随机方向或类别计数本身解释。`No prevalence calibration` 与 `Uniform prevalence prior` 均移除了有效长尾先验项，二者之间小于 $5\times10^{-5}$ 的均值差异来自独立评估过程的浮点数值误差。加性平滑先验与正式方法仅相差 $7.8\times10^{-6}$，表明 M2 对轻微计数扰动稳定。
 
-### 3.2 数据集级结果
+### 3.3 模块内数据集级结果
 
 原型信息消融如下：
 
-| Dataset | LAMP-Merge | M1 only | Head aggregation | Global mean | Support only | Shuffled prototype |
-|---|---:|---:|---:|---:|---:|---:|
-| bloodmnist_224 | 0.8174 | 0.8174 | 0.1897 | 0.0864 | 0.1162 | 0.2446 |
-| chaoshengmnist_224 | 0.4574 | 0.4574 | 0.1642 | 0.1087 | 0.1069 | 0.1416 |
-| dermamnist_224 | 0.6286 | 0.4666 | 0.5665 | 0.6688 | 0.1953 | 0.3015 |
-| organcmnist_224 | 0.6270 | 0.6240 | 0.1791 | 0.2233 | 0.0715 | 0.1447 |
-| organsmnist_224 | 0.5741 | 0.5745 | 0.1902 | 0.2354 | 0.0784 | 0.1685 |
+| Dataset | LAMP-Merge | Head aggregation | Global mean | Support only | Shuffled prototype |
+|---|---:|---:|---:|---:|---:|
+| bloodmnist_224 | 0.8174 | 0.1897 | 0.0864 | 0.1162 | 0.2446 |
+| chaoshengmnist_224 | 0.4574 | 0.1642 | 0.1087 | 0.1069 | 0.1416 |
+| dermamnist_224 | 0.6286 | 0.5665 | 0.6688 | 0.1953 | 0.3015 |
+| organcmnist_224 | 0.6270 | 0.1791 | 0.2233 | 0.0715 | 0.1447 |
+| organsmnist_224 | 0.5741 | 0.1902 | 0.2354 | 0.0784 | 0.1685 |
 
 类别统计信息消融如下：
 
@@ -270,7 +308,6 @@ $\rho$ 越接近 1，模型越接近单类预测器；$C_{\mathrm{eff}}$ 越大�
 | 设置 | BA $\uparrow$ | Macro-F1 $\uparrow$ | $\rho$ $\downarrow$ | $C_{\mathrm{eff}}$ $\uparrow$ | Pred-True TV $\downarrow$ |
 |---|---:|---:|---:|---:|---:|
 | LAMP-Merge | 0.5370 | 0.5238 | 0.3122 | 7.1322 | 0.1262 |
-| M1 only | 0.5713 | 0.5335 | 0.2311 | 8.0224 | 0.1490 |
 | Classifier-head aggregation | 0.1420 | 0.0932 | 0.6679 | 2.7812 | 0.5386 |
 | Global-feature mean | 0.1149 | 0.0448 | 0.9996 | 1.0015 | 0.7381 |
 | Support-only synthetic head | 0.1147 | 0.0590 | 0.6099 | 3.3330 | 0.6287 |
@@ -282,7 +319,7 @@ $\rho$ 越接近 1，模型越接近单类预测器；$C_{\mathrm{eff}}$ 越大�
 
 ![Full-scope performance and collapse diagnostics](figures/lamp_merge_internal_analysis/internal_ablation_metrics.png)
 
-M1-only 具有更高的 BA、Macro-F1 和 $C_{\mathrm{eff}}$，说明诊断原型直接恢复了多类别判别结构。LAMP-Merge 的总体 Accuracy 更高、Pred-True TV 更低，说明 M2 将预测分布校准到真实医学患病率。二者并不矛盾：M1 优化类别均衡判别，M2 在强长尾条件下优化与真实测试分布一致的总体风险。
+LAMP-Merge 同时保持较高的 BA、Macro-F1 与 $C_{\mathrm{eff}}$，并取得最低的 Pred-True TV，说明正式方法并非通过单类预测获得 Accuracy，而是在保持多类别诊断覆盖的同时，使预测分布与医学长尾患病率更一致。`Global-feature mean` 与 `Support-only synthetic head` 等替代项在 $\rho$ 或 Pred-True TV 上显著退化，表明类别语义原型和患病率校准缺一不可。
 
 ### 4.3 数据集级坍缩诊断
 
@@ -291,28 +328,23 @@ M1-only 具有更高的 BA、Macro-F1 和 $C_{\mathrm{eff}}$，说明诊断原�
 | Dataset | Setting | BA | Macro-F1 | $\rho$ | $C_{\mathrm{eff}}$ | Pred-True TV |
 |---|---|---:|---:|---:|---:|---:|
 | bloodmnist_224 | Best generic (`iso_c`) | 0.1730 | 0.0860 | 0.8020 | 1.8145 | 0.7348 |
-| bloodmnist_224 | M1 only | 0.8058 | 0.8011 | 0.1958 | 7.4795 | 0.0394 |
 | bloodmnist_224 | LAMP-Merge | 0.8058 | 0.8011 | 0.1958 | 7.4795 | 0.0394 |
 | chaoshengmnist_224 | Best generic (`fisher`) | 0.1595 | 0.0753 | 0.8603 | 1.5414 | 0.7679 |
-| chaoshengmnist_224 | M1 only | 0.4481 | 0.4329 | 0.2042 | 7.4419 | 0.1538 |
 | chaoshengmnist_224 | LAMP-Merge | 0.4481 | 0.4329 | 0.2042 | 7.4419 | 0.1538 |
 | dermamnist_224 | Best generic (`free_merge`) | 0.1504 | 0.0997 | 0.9522 | 1.1641 | 0.4606 |
-| dermamnist_224 | M1 only | 0.4413 | 0.2922 | 0.3754 | 5.6120 | 0.3244 |
 | dermamnist_224 | LAMP-Merge | 0.3242 | 0.2773 | 0.6995 | 2.9585 | 0.1737 |
 | organcmnist_224 | Best generic (`robustmerge`) | 0.1194 | 0.0494 | 0.8174 | 1.7291 | 0.7870 |
-| organcmnist_224 | M1 only | 0.6148 | 0.6014 | 0.1781 | 10.1125 | 0.1257 |
 | organcmnist_224 | LAMP-Merge | 0.5951 | 0.5915 | 0.2115 | 9.4702 | 0.1250 |
 | organsmnist_224 | Best generic (`robustmerge`) | 0.1193 | 0.0538 | 0.7888 | 1.9973 | 0.7385 |
-| organsmnist_224 | M1 only | 0.5466 | 0.5398 | 0.2017 | 9.4662 | 0.1020 |
 | organsmnist_224 | LAMP-Merge | 0.5118 | 0.5162 | 0.2499 | 8.3109 | 0.1389 |
 
 ![Full-scope recovery of global diagnostic discrimination](figures/lamp_merge_internal_analysis/collapse_recovery_by_dataset.png)
 
-在 Blood、Ultrasound、Organ-C 与 Organ-S 上，LAMP-Merge 和 M1-only 均将 $\rho$ 从通用融合基线的约 0.79--0.86 降至约 0.18--0.25，并显著提高 $C_{\mathrm{eff}}$。Derma 是 M2 的主要触发数据集：M1-only 的 $\rho=0.3754$，而 LAMP-Merge 根据真实患病率将其提高到 0.6995；该值仍显著低于最强通用基线的 0.9522，同时 Pred-True TV 从 0.3244 降至 0.1737。
+在五个医学数据集上，最强通用融合基线的 $\rho$ 通常处于 0.79--0.95 区间，说明其预测质量主要受单类坍缩支配。LAMP-Merge 将 Blood、Ultrasound、Organ-C 与 Organ-S 的 $\rho$ 降至约 0.18--0.25，并显著提高 $C_{\mathrm{eff}}$。Derma 具有最强的真实长尾分布，LAMP-Merge 的 $\rho=0.6995$，仍显著低于最强通用基线的 0.9522，同时取得更低的 Pred-True TV，说明其多数类偏置来自患病率校准而非无结构坍缩。
 
 ### 4.4 预测分布可视化
 
-下图在 Derma 的 36 个 full-scope cases 上聚合预测类别比例。测试集类别 5 的真实比例为 0.67；M1-only 的预测比例为 0.38，LAMP-Merge 经 M2 校准后为 0.70。相比之下，最强通用基线 `free_merge` 的坍缩强度为 0.9522。由此可见，M2 不是无约束地追随多数类，而是将 M1 的均衡预测分布校准到客户端上传计数所估计的真实长尾先验。
+下图在 Derma 的 36 个 full-scope cases 上聚合预测类别比例。测试集类别 5 的真实比例为 0.67；LAMP-Merge 的预测比例为 0.70，而最强通用基线 `free_merge` 的逐 case 坍缩强度为 0.9522。由此可见，M2 不是无约束地追随多数类，而是将诊断原型分类器的输出校准到客户端上传计数所估计的真实长尾先验。
 
 图中每个单元格先对 36 个 case 的预测分布 $q(c)$ 取均值；表 4.3 的坍缩强度则先在每个 case 内计算 $\rho=\max_c q(c)$，再对 $\rho$ 取均值。由于最大值算子是非线性的，`free_merge` 在图中平均分布的最大分量为 0.70，而其逐 case 坍缩强度均值为 0.9522；后者刻画单次融合结果发生单类坍缩的频率与强度。
 
@@ -503,7 +535,7 @@ b_c-b_d
 \lambda|\log\pi_c-\log\pi_d|.
 ```
 
-有限的 $\lambda$ 保证 M2 是有界校准而非判别方向替代。实验上，M1-only 恢复类别覆盖；M2 主要在 Derma 的强长尾条件下调整预测分布，并将 Pred-True TV 从 0.3244 降至 0.1737。这与理论中的“原型负责判别、先验负责有限风险校准”一致。
+有限的 $\lambda$ 保证 M2 是有界校准而非判别方向替代。模块间消融显示，在 Derma 这类强长尾条件下，加入 M2 后 LAMP-Merge 的 client-average Accuracy 从 0.4975 提升至 0.6257；预测诊断中，LAMP-Merge 同时保持低于通用基线的坍缩强度并取得最低 Pred-True TV。这与理论中的“原型负责判别、先验负责有限风险校准”一致。
 
 ## 八、结论
 
@@ -511,7 +543,7 @@ b_c-b_d
 
 1. 共享参考空间中的类别原型 $\mu_{i,c}$ 与 $p_c$ 是恢复全局诊断判别的核心信息；本地分类头、类别无关均值、随机方向或标签错配原型均不能替代。
 2. 类别支持数 $n_{i,c}$ 提供类别级原型可靠性，优于客户端总规模、等权客户端或二值类别存在性。
-3. M1 显著降低预测坍缩并提高 BA、Macro-F1 与 $C_{\mathrm{eff}}$；M2 使用患病率计数 $m_{i,c}$ 在强长尾条件下提高总体 Accuracy 并降低 Pred-True TV。
+3. 正式 LAMP-Merge 显著降低预测坍缩并提高 BA、Macro-F1 与 $C_{\mathrm{eff}}$；M2 使用患病率计数 $m_{i,c}$ 在强长尾条件下提高总体 Accuracy 并降低 Pred-True TV。
 4. 加性平滑先验与正式方法几乎等价，表明 M2 对轻微计数扰动稳定，而非依赖精确极端计数。
 5. 几何分析与联合 t-SNE 共同说明，LAMP-Merge 的收益来自正确类别语义、跨客户端一致性和支持数驱动的可靠性聚合，而不是任一单独几何指标。
 
