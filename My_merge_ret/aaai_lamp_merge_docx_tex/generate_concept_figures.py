@@ -1,310 +1,214 @@
 from pathlib import Path
 import math
-import subprocess
+
+from PIL import Image, ImageDraw, ImageFont
 
 
 ROOT = Path(__file__).resolve().parent
 FIG_DIR = ROOT / "figures"
+FONT_REGULAR = "/usr/share/fonts/opentype/noto/NotoSansCJK-Regular.ttc"
+FONT_BOLD = "/usr/share/fonts/opentype/noto/NotoSansCJK-Bold.ttc"
 
 
-def esc(text):
-    return str(text).replace("\\", "\\\\").replace("(", "\\(").replace(")", "\\)")
+def font(size, bold=False):
+    return ImageFont.truetype(FONT_BOLD if bold else FONT_REGULAR, size)
 
 
-class EPS:
-    def __init__(self, path, width=1200, height=620):
-        self.path = Path(path)
-        self.width = width
-        self.height = height
-        self.buf = [
-            "%!PS-Adobe-3.0 EPSF-3.0",
-            f"%%BoundingBox: 0 0 {width} {height}",
-            "%%LanguageLevel: 2",
-            "%%Pages: 1",
-            "%%EndComments",
-            "/Helvetica findfont 10 scalefont setfont",
-            "1 setlinejoin 1 setlinecap",
-        ]
-
-    def color(self, rgb):
-        r, g, b = rgb
-        self.buf.append(f"{r:.3f} {g:.3f} {b:.3f} setrgbcolor")
-
-    def lw(self, width):
-        self.buf.append(f"{width:.2f} setlinewidth")
-
-    def rect(self, x, y, w, h, fill, stroke=(0.12, 0.16, 0.22), lw=1.2):
-        self.color(fill)
-        self.buf.append(f"newpath {x} {y} moveto {w} 0 rlineto 0 {h} rlineto {-w} 0 rlineto closepath fill")
-        self.color(stroke)
-        self.lw(lw)
-        self.buf.append(f"newpath {x} {y} moveto {w} 0 rlineto 0 {h} rlineto {-w} 0 rlineto closepath stroke")
-
-    def round_rect(self, x, y, w, h, r, fill, stroke=(0.12, 0.16, 0.22), lw=1.2):
-        # PostScript rounded rectangle.
-        self.color(fill)
-        self.buf.append(
-            f"newpath {x+r} {y} moveto {x+w-r} {y} lineto "
-            f"{x+w-r} {y} {x+w} {y} {x+w} {y+r} curveto "
-            f"{x+w} {y+h-r} lineto {x+w} {y+h-r} {x+w} {y+h} {x+w-r} {y+h} curveto "
-            f"{x+r} {y+h} lineto {x+r} {y+h} {x} {y+h} {x} {y+h-r} curveto "
-            f"{x} {y+r} lineto {x} {y+r} {x} {y} {x+r} {y} curveto closepath fill"
-        )
-        self.color(stroke)
-        self.lw(lw)
-        self.buf.append(
-            f"newpath {x+r} {y} moveto {x+w-r} {y} lineto "
-            f"{x+w-r} {y} {x+w} {y} {x+w} {y+r} curveto "
-            f"{x+w} {y+h-r} lineto {x+w} {y+h-r} {x+w} {y+h} {x+w-r} {y+h} curveto "
-            f"{x+r} {y+h} lineto {x+r} {y+h} {x} {y+h} {x} {y+h-r} curveto "
-            f"{x} {y+r} lineto {x} {y+r} {x} {y} {x+r} {y} curveto closepath stroke"
-        )
-
-    def text(self, x, y, text, size=16, color=(0.08, 0.10, 0.14), font="Helvetica"):
-        self.color(color)
-        self.buf.append(f"/{font} findfont {size} scalefont setfont")
-        self.buf.append(f"{x} {y} moveto ({esc(text)}) show")
-
-    def text_center(self, x, y, text, size=16, color=(0.08, 0.10, 0.14), font="Helvetica"):
-        self.color(color)
-        self.buf.append(f"/{font} findfont {size} scalefont setfont")
-        self.buf.append(f"({esc(text)}) dup stringwidth pop 2 div neg {x} add {y} moveto show")
-
-    def multiline(self, x, y, lines, size=14, leading=18, color=(0.08, 0.10, 0.14), font="Helvetica"):
-        for idx, line in enumerate(lines):
-            self.text(x, y - idx * leading, line, size=size, color=color, font=font)
-
-    def line(self, x1, y1, x2, y2, color=(0.14, 0.18, 0.24), lw=1.2, dash=None):
-        self.color(color)
-        self.lw(lw)
-        if dash:
-            self.buf.append(f"[{dash}] 0 setdash")
-        self.buf.append(f"newpath {x1} {y1} moveto {x2} {y2} lineto stroke")
-        if dash:
-            self.buf.append("[] 0 setdash")
-
-    def arrow(self, x1, y1, x2, y2, color=(0.14, 0.18, 0.24), lw=2.0):
-        self.line(x1, y1, x2, y2, color=color, lw=lw)
-        ang = math.atan2(y2 - y1, x2 - x1)
-        head = 13
-        spread = 0.42
-        p1 = (x2 - head * math.cos(ang - spread), y2 - head * math.sin(ang - spread))
-        p2 = (x2 - head * math.cos(ang + spread), y2 - head * math.sin(ang + spread))
-        self.color(color)
-        self.buf.append(
-            f"newpath {x2} {y2} moveto {p1[0]:.2f} {p1[1]:.2f} lineto {p2[0]:.2f} {p2[1]:.2f} lineto closepath fill"
-        )
-
-    def small_bars(self, x, y, vals, colors, w=16, h=64, gap=6, label=None):
-        if label:
-            self.text(x, y + h + 12, label, size=11, color=(0.25, 0.29, 0.36))
-        self.line(x, y, x + len(vals) * (w + gap) - gap, y, color=(0.55, 0.59, 0.64), lw=0.8)
-        for idx, val in enumerate(vals):
-            bh = h * val
-            self.rect(x + idx * (w + gap), y, w, bh, fill=colors[idx], stroke=colors[idx], lw=0.4)
-
-    def circle(self, x, y, r, fill, stroke=(0.12, 0.16, 0.22), lw=1.0):
-        self.color(fill)
-        self.buf.append(f"newpath {x} {y} {r} 0 360 arc fill")
-        self.color(stroke)
-        self.lw(lw)
-        self.buf.append(f"newpath {x} {y} {r} 0 360 arc stroke")
-
-    def save(self):
-        self.buf += ["showpage", "%%EOF"]
-        self.path.write_text("\n".join(self.buf) + "\n")
+def text(draw, xy, content, size=28, fill=(20, 24, 33), bold=False, anchor=None):
+    draw.text(xy, content, font=font(size, bold=bold), fill=fill, anchor=anchor)
 
 
-PALETTE = {
-    "blue": (0.18, 0.42, 0.73),
-    "teal": (0.10, 0.55, 0.54),
-    "green": (0.29, 0.58, 0.31),
-    "orange": (0.86, 0.43, 0.14),
-    "red": (0.78, 0.22, 0.22),
-    "purple": (0.45, 0.32, 0.75),
-    "gray": (0.42, 0.46, 0.53),
-    "light_blue": (0.88, 0.94, 1.00),
-    "light_teal": (0.86, 0.96, 0.94),
-    "light_red": (1.00, 0.91, 0.90),
-    "light_orange": (1.00, 0.94, 0.86),
-    "light_green": (0.91, 0.97, 0.90),
-    "ink": (0.08, 0.10, 0.14),
-}
+def multiline(draw, xy, lines, size=24, fill=(20, 24, 33), bold=False, leading=34):
+    x, y = xy
+    for i, line in enumerate(lines):
+        text(draw, (x, y + i * leading), line, size=size, fill=fill, bold=bold)
 
 
-def draw_problem_figure():
-    eps = EPS(FIG_DIR / "concept_predictive_collapse.eps")
-    eps.rect(0, 0, eps.width, eps.height, fill=(1, 1, 1), stroke=(1, 1, 1), lw=0)
-    eps.text(40, 575, "Why class-agnostic post-hoc merging collapses in multi-center medical imaging", size=25, font="Helvetica-Bold")
-    eps.text(42, 548, "Local classifiers retain partial diagnostic ability, but parameter-only fusion ignores which client has evidence for each class.", size=14, color=(0.25, 0.29, 0.36))
+def rounded(draw, xy, radius, fill, outline, width=3):
+    draw.rounded_rectangle(xy, radius=radius, fill=fill, outline=outline, width=width)
 
-    # Column headers.
-    eps.text_center(210, 512, "Independent hospitals", size=17, font="Helvetica-Bold")
-    eps.text_center(600, 512, "Generic post-hoc merge", size=17, font="Helvetica-Bold")
-    eps.text_center(990, 512, "Collapsed global predictor", size=17, font="Helvetica-Bold")
 
-    class_cols = [PALETTE["blue"], PALETTE["teal"], PALETTE["orange"], PALETTE["red"], PALETTE["purple"]]
+def arrow(draw, start, end, fill=(75, 86, 105), width=6):
+    draw.line([start, end], fill=fill, width=width)
+    x1, y1 = start
+    x2, y2 = end
+    angle = math.atan2(y2 - y1, x2 - x1)
+    head = 24
+    spread = 0.42
+    p1 = (x2 - head * math.cos(angle - spread), y2 - head * math.sin(angle - spread))
+    p2 = (x2 - head * math.cos(angle + spread), y2 - head * math.sin(angle + spread))
+    draw.polygon([end, p1, p2], fill=fill)
+
+
+def bars(draw, x, y, vals, colors, bar_w=28, height=82, gap=10):
+    base = y + height
+    draw.line([(x, base), (x + len(vals) * (bar_w + gap) - gap, base)], fill=(120, 130, 145), width=2)
+    for i, val in enumerate(vals):
+        h = int(height * val)
+        x0 = x + i * (bar_w + gap)
+        draw.rectangle([x0, base - h, x0 + bar_w, base], fill=colors[i])
+
+
+BLUE = (44, 103, 178)
+TEAL = (29, 143, 139)
+ORANGE = (226, 108, 35)
+RED = (202, 50, 52)
+PURPLE = (112, 80, 190)
+GREEN = (67, 150, 74)
+INK = (19, 24, 34)
+GRAY = (73, 83, 99)
+CLASS_COLORS = [BLUE, TEAL, ORANGE, RED, PURPLE]
+
+
+def draw_problem():
+    img = Image.new("RGB", (2400, 1240), "white")
+    d = ImageDraw.Draw(img)
+
+    text(d, (80, 70), "为什么类别无关的后置模型融合会在多中心医学图像中坍缩", 48, INK, True)
+    text(d, (84, 128), "本地模型仍具有局部诊断能力，但通用融合不知道哪个客户端在哪个诊断类别上有可靠证据。", 30, (70, 78, 94))
+
+    text(d, (420, 215), "独立医院客户端", 36, INK, True, anchor="mm")
+    text(d, (1200, 215), "通用后置融合", 36, INK, True, anchor="mm")
+    text(d, (1980, 215), "坍缩的全局预测器", 36, INK, True, anchor="mm")
+
     clients = [
-        ("Client 1", "local labels: A, B, C", [0.39, 0.33, 0.21, 0.05, 0.02], "rho=0.39"),
-        ("Client 2", "local labels: B, D", [0.07, 0.44, 0.06, 0.37, 0.06], "rho=0.44"),
-        ("Client 3", "local labels: C, E", [0.04, 0.10, 0.36, 0.08, 0.42], "rho=0.42"),
+        ("客户端 1", "本地可见类别：甲、乙、丙", [0.39, 0.33, 0.21, 0.05, 0.02], "坍缩强度 0.39"),
+        ("客户端 2", "本地可见类别：乙、丁", [0.07, 0.44, 0.06, 0.37, 0.06], "坍缩强度 0.44"),
+        ("客户端 3", "本地可见类别：丙、戊", [0.04, 0.10, 0.36, 0.08, 0.42], "坍缩强度 0.42"),
     ]
-    ys = [390, 255, 120]
-    for (name, labels, vals, rho), y in zip(clients, ys):
-        eps.round_rect(55, y, 310, 98, 12, fill=(0.97, 0.99, 1.00), stroke=(0.70, 0.78, 0.88), lw=1.2)
-        eps.text(75, y + 70, name, size=15, font="Helvetica-Bold")
-        eps.text(75, y + 49, labels, size=12, color=(0.26, 0.30, 0.36))
-        eps.text(75, y + 30, "non-degenerate local predictions", size=12, color=PALETTE["green"])
-        eps.text(75, y + 12, rho, size=12, color=(0.22, 0.26, 0.32), font="Helvetica-Bold")
-        eps.small_bars(245, y + 18, vals, class_cols, w=14, h=54, gap=4)
+    ys = [290, 560, 830]
+    for (name, visible, vals, rho), y in zip(clients, ys):
+        rounded(d, (110, y, 740, y + 170), 22, (247, 252, 255), (177, 198, 225), 3)
+        text(d, (150, y + 34), name, 30, INK, True)
+        text(d, (150, y + 78), visible, 24, (48, 56, 70))
+        text(d, (150, y + 116), "预测分布未退化为单类", 24, GREEN)
+        text(d, (150, y + 150), rho, 24, (48, 56, 70), True)
+        bars(d, 500, y + 55, vals, CLASS_COLORS, bar_w=30, height=72, gap=8)
 
-    # Merge module.
-    eps.round_rect(440, 262, 320, 160, 16, fill=PALETTE["light_orange"], stroke=(0.80, 0.55, 0.20), lw=1.5)
-    eps.text_center(600, 390, "parameter-only fusion", size=18, font="Helvetica-Bold", color=(0.46, 0.25, 0.07))
-    eps.multiline(
-        467,
-        357,
+    rounded(d, (900, 420, 1530, 710), 30, (255, 243, 224), (206, 132, 39), 4)
+    text(d, (1215, 485), "参数级整体融合", 36, (126, 64, 10), True, anchor="mm")
+    multiline(
+        d,
+        (955, 545),
         [
-            "operates on whole checkpoints",
-            "theta_1, ..., theta_K",
-            "no class evidence variable",
-            "n_i,c = 0 is not masked",
+            "只处理完整模型参数",
+            "融合变量仅为各客户端参数",
+            "没有类别证据变量",
+            "未见类别不会被显式屏蔽",
         ],
-        size=13,
-        leading=21,
-        color=(0.27, 0.22, 0.16),
+        26,
+        (47, 39, 29),
+        leading=40,
     )
-    eps.round_rect(463, 182, 274, 54, 10, fill=(1.0, 0.98, 0.90), stroke=(0.83, 0.65, 0.32), lw=1.0)
-    eps.text_center(600, 214, "missing-class and majority directions", size=13, font="Helvetica-Bold", color=(0.44, 0.28, 0.04))
-    eps.text_center(600, 196, "are mixed in the same parameter space", size=12, color=(0.44, 0.28, 0.04))
+    rounded(d, (940, 765, 1490, 870), 18, (255, 249, 232), (214, 160, 65), 3)
+    text(d, (1215, 805), "缺失类方向与多数类方向", 26, (110, 69, 6), True, anchor="mm")
+    text(d, (1215, 843), "在同一参数空间中被混合", 24, (110, 69, 6), anchor="mm")
 
-    eps.arrow(365, 438, 440, 368, color=(0.35, 0.39, 0.46), lw=2.0)
-    eps.arrow(365, 304, 440, 342, color=(0.35, 0.39, 0.46), lw=2.0)
-    eps.arrow(365, 168, 440, 318, color=(0.35, 0.39, 0.46), lw=2.0)
-    eps.arrow(760, 342, 860, 342, color=(0.35, 0.39, 0.46), lw=2.2)
+    arrow(d, (740, 375), (900, 520))
+    arrow(d, (740, 645), (900, 575))
+    arrow(d, (740, 915), (900, 630))
+    arrow(d, (1530, 565), (1720, 565))
 
-    # Collapse result.
-    eps.round_rect(860, 235, 285, 230, 16, fill=PALETTE["light_red"], stroke=(0.78, 0.25, 0.24), lw=1.5)
-    eps.text_center(1002, 432, "merged predictor", size=18, font="Helvetica-Bold", color=(0.50, 0.12, 0.10))
-    eps.small_bars(922, 312, [0.03, 0.04, 0.05, 0.92, 0.03], class_cols, w=32, h=88, gap=10, label="predicted class distribution q(c)")
-    eps.text_center(1002, 282, "rho = max_c q(c) -> 1", size=15, font="Helvetica-Bold", color=(0.50, 0.12, 0.10))
-    eps.text_center(1002, 258, "single-class or few-class prediction", size=12, color=(0.38, 0.18, 0.17))
+    rounded(d, (1720, 330, 2320, 785), 30, (255, 231, 229), (205, 65, 63), 5)
+    text(d, (2020, 405), "融合后模型", 36, (130, 30, 25), True, anchor="mm")
+    text(d, (2020, 455), "预测类别分布", 24, (70, 55, 70), anchor="mm")
+    bars(d, 1860, 520, [0.03, 0.04, 0.05, 0.92, 0.03], CLASS_COLORS, bar_w=62, height=120, gap=17)
+    text(d, (2020, 700), "坍缩强度接近一", 32, (130, 30, 25), True, anchor="mm")
+    text(d, (2020, 748), "退化为单类或少数类预测器", 25, (110, 54, 50), anchor="mm")
 
-    # Cause strip.
-    eps.round_rect(85, 36, 1030, 54, 12, fill=(0.95, 0.97, 0.99), stroke=(0.70, 0.75, 0.82), lw=1.1)
-    eps.text(110, 67, "Cause:", size=15, font="Helvetica-Bold", color=(0.16, 0.20, 0.28))
-    eps.text(168, 67, "class availability is client-dependent, but generic fusion is class-agnostic.", size=14)
-    eps.text(168, 47, "Majority and observed-class directions survive; rare or locally missing diagnostic directions are absorbed.", size=14)
+    rounded(d, (170, 1060, 2230, 1168), 22, (242, 247, 252), (181, 194, 211), 3)
+    text(d, (220, 1110), "原因：", 30, (38, 46, 62), True)
+    text(d, (310, 1110), "类别可及性依赖客户端，但通用融合是类别无关的。", 29, INK)
+    text(d, (310, 1150), "多数类方向更容易保留；稀有类或局部缺失类的诊断方向被吸收。", 29, INK)
 
-    eps.save()
+    img.save(FIG_DIR / "concept_predictive_collapse.png", dpi=(220, 220))
 
 
-def draw_method_figure():
-    eps = EPS(FIG_DIR / "concept_lamp_merge_pipeline.eps", width=1200, height=660)
-    eps.rect(0, 0, eps.width, eps.height, fill=(1, 1, 1), stroke=(1, 1, 1), lw=0)
-    eps.text(40, 615, "LAMP-Merge: one-shot class-level medical model merging", size=26, font="Helvetica-Bold")
-    eps.text(42, 588, "Clients compute diagnostic evidence locally; the server reconstructs a prototype head and calibrates it with bounded prevalence priors.", size=14, color=(0.25, 0.29, 0.36))
+def draw_method():
+    img = Image.new("RGB", (2400, 1320), "white")
+    d = ImageDraw.Draw(img)
 
-    # Privacy boundary background.
-    eps.round_rect(35, 70, 360, 480, 18, fill=(0.97, 0.99, 1.00), stroke=(0.70, 0.78, 0.88), lw=1.2)
-    eps.text_center(215, 520, "Client side", size=18, font="Helvetica-Bold")
-    eps.text_center(215, 500, "raw images stay local", size=12, color=PALETTE["red"], font="Helvetica-Bold")
+    text(d, (80, 70), "长尾自适应医学原型融合", 54, INK, True)
+    text(d, (84, 132), "客户端本地计算诊断证据；服务端重建原型分类头，并用有界患病率先验进行长尾校准。", 30, (70, 78, 94))
 
-    eps.round_rect(805, 70, 360, 480, 18, fill=(0.98, 0.99, 0.97), stroke=(0.74, 0.84, 0.70), lw=1.2)
-    eps.text_center(985, 520, "Server side", size=18, font="Helvetica-Bold")
-    eps.text_center(985, 500, "single post-hoc construction", size=12, color=PALETTE["green"], font="Helvetica-Bold")
+    rounded(d, (70, 235, 820, 1215), 30, (247, 252, 255), (177, 198, 225), 3)
+    text(d, (445, 295), "客户端侧", 38, INK, True, anchor="mm")
+    text(d, (445, 340), "原始图像仅留在本地", 26, RED, True, anchor="mm")
 
-    # Clients.
-    for idx, y in enumerate([405, 285, 165], start=1):
-        eps.round_rect(70, y, 285, 84, 12, fill=(1.00, 1.00, 1.00), stroke=(0.74, 0.80, 0.88), lw=1.0)
-        eps.text(90, y + 58, f"Client {idx}: local training", size=14, font="Helvetica-Bold")
-        eps.text(90, y + 38, "private data D_i, class subset", size=11, color=(0.30, 0.34, 0.40))
-        eps.text(90, y + 20, "fixed reference z = phi_0(T(x))", size=11, color=(0.30, 0.34, 0.40))
-        eps.small_bars(270, y + 18, [0.55, 0.23, 0.06, 0.12, 0.04] if idx == 1 else ([0.04, 0.48, 0.05, 0.38, 0.05] if idx == 2 else [0.03, 0.06, 0.42, 0.07, 0.44]), [PALETTE["blue"], PALETTE["teal"], PALETTE["orange"], PALETTE["red"], PALETTE["purple"]], w=10, h=42, gap=3)
+    rounded(d, (1630, 235, 2330, 1215), 30, (248, 252, 246), (185, 214, 180), 3)
+    text(d, (1980, 295), "服务端侧", 38, INK, True, anchor="mm")
+    text(d, (1980, 340), "一次性事后构造", 26, GREEN, True, anchor="mm")
 
-    # Upload packet.
-    eps.round_rect(440, 255, 310, 190, 16, fill=(0.94, 0.97, 1.00), stroke=PALETTE["blue"], lw=1.4)
-    eps.text_center(595, 414, "one upload after local training", size=17, font="Helvetica-Bold", color=(0.12, 0.28, 0.52))
-    eps.multiline(
-        465,
-        383,
+    client_vals = [
+        [0.55, 0.23, 0.06, 0.12, 0.04],
+        [0.04, 0.48, 0.05, 0.38, 0.05],
+        [0.03, 0.06, 0.42, 0.07, 0.44],
+    ]
+    for i, y in enumerate([405, 650, 895], start=1):
+        rounded(d, (145, y, 735, y + 168), 18, (255, 255, 255), (187, 201, 224), 3)
+        text(d, (185, y + 36), f"客户端 {i}：本地训练", 30, INK, True)
+        text(d, (185, y + 80), "私有图像数据，类别覆盖不完整", 24, (65, 72, 88))
+        text(d, (185, y + 120), "用共享参考骨干提取类别特征", 24, (65, 72, 88))
+        bars(d, 555, y + 45, client_vals[i - 1], CLASS_COLORS, bar_w=24, height=70, gap=8)
+
+    rounded(d, (900, 470, 1540, 835), 30, (238, 247, 255), BLUE, 5)
+    text(d, (1220, 540), "本地训练结束后一次上传", 36, (32, 78, 140), True, anchor="mm")
+    multiline(
+        d,
+        (960, 590),
         [
-            "checkpoint: theta_i",
-            "class prototype: mu_i,c",
-            "support count: n_i,c",
-            "prevalence count: m_i,c",
+            "模型检查点",
+            "类别原型",
+            "类别支持数",
+            "患病率计数",
         ],
-        size=13,
-        leading=22,
-        color=(0.12, 0.18, 0.28),
+        28,
+        (30, 42, 62),
+        leading=36,
     )
-    eps.round_rect(465, 266, 260, 47, 9, fill=(1.00, 0.96, 0.96), stroke=(0.82, 0.45, 0.45), lw=1.0)
-    eps.text_center(595, 294, "not uploaded: raw images, logits,", size=12, color=(0.55, 0.10, 0.10), font="Helvetica-Bold")
-    eps.text_center(595, 278, "per-sample features or validation data", size=12, color=(0.55, 0.10, 0.10), font="Helvetica-Bold")
+    rounded(d, (955, 735, 1485, 815), 18, (255, 246, 246), (220, 116, 116), 4)
+    text(d, (1220, 766), "不上传：原始图像、逐样本输出、", 24, (145, 25, 25), True, anchor="mm")
+    text(d, (1220, 796), "逐样本特征或验证集数据", 24, (145, 25, 25), True, anchor="mm")
 
-    eps.arrow(355, 445, 440, 395, color=(0.28, 0.34, 0.44), lw=2.0)
-    eps.arrow(355, 327, 440, 350, color=(0.28, 0.34, 0.44), lw=2.0)
-    eps.arrow(355, 207, 440, 305, color=(0.28, 0.34, 0.44), lw=2.0)
-    eps.arrow(750, 350, 805, 350, color=(0.28, 0.34, 0.44), lw=2.0)
+    arrow(d, (735, 485), (900, 585))
+    arrow(d, (735, 735), (900, 655))
+    arrow(d, (735, 980), (900, 725))
+    arrow(d, (1540, 655), (1630, 655))
 
-    # Server M1/M2/output.
-    eps.round_rect(835, 390, 300, 88, 12, fill=PALETTE["light_teal"], stroke=PALETTE["teal"], lw=1.3)
-    eps.text(858, 453, "M1: prototype reconstruction", size=15, font="Helvetica-Bold", color=(0.05, 0.34, 0.34))
-    eps.text(858, 431, "e_i,c = (n_i,c+1)^gamma 1[n_i,c>0]", size=11)
-    eps.text(858, 414, "p_c = sum_i alpha_i,c mu_i,c", size=11)
-    eps.text(858, 397, "w_c = s p_c / ||p_c||_2", size=11)
+    rounded(d, (1695, 385, 2265, 600), 20, (218, 246, 241), TEAL, 4)
+    text(d, (1745, 430), "模块一：诊断原型重建", 30, (9, 91, 88), True)
+    text(d, (1745, 478), "按类别支持数评估证据可靠性", 24, INK)
+    text(d, (1745, 515), "同一诊断类别的原型加权汇聚", 24, INK)
+    text(d, (1745, 548), "归一化后形成全局诊断分类头", 24, INK)
 
-    eps.round_rect(835, 255, 300, 90, 12, fill=PALETTE["light_orange"], stroke=PALETTE["orange"], lw=1.3)
-    eps.text(858, 320, "M2: long-tail calibration", size=15, font="Helvetica-Bold", color=(0.55, 0.25, 0.06))
-    eps.text(858, 298, "pi_c = sum_i m_i,c / sum_k sum_i m_i,k", size=11)
-    eps.text(858, 281, "activate if r = C max_c pi_c > tau", size=11)
-    eps.text(858, 264, "b_c = lambda(centered log pi_c)", size=11)
+    rounded(d, (1695, 690, 2265, 900), 20, (255, 240, 220), ORANGE, 4)
+    text(d, (1745, 735), "模块二：长尾患病率校准", 30, (135, 62, 9), True)
+    text(d, (1745, 782), "由客户端计数估计全局患病率", 23, INK)
+    text(d, (1745, 818), "主导类别过强时激活校准", 23, INK)
+    text(d, (1745, 854), "对分类偏置做有界长尾修正", 23, INK)
 
-    eps.arrow(985, 390, 985, 345, color=(0.28, 0.34, 0.44), lw=2.0)
+    rounded(d, (1695, 1000, 2265, 1190), 20, (231, 248, 229), GREEN, 4)
+    text(d, (1745, 1045), "融合后的全局诊断模型", 30, (35, 102, 42), True)
+    text(d, (1745, 1095), "类别得分 = 原型相似度 + 长尾偏置", 24, INK)
+    text(d, (1745, 1135), "保留类别级诊断证据", 24, (53, 74, 55))
+    text(d, (1745, 1170), "对真实医学长尾先验做有界校准", 24, (53, 74, 55))
 
-    eps.round_rect(835, 112, 300, 93, 12, fill=PALETTE["light_green"], stroke=PALETTE["green"], lw=1.3)
-    eps.text(858, 178, "merged diagnostic model", size=15, font="Helvetica-Bold", color=(0.15, 0.38, 0.16))
-    eps.text(858, 154, "score_c(x) = w_c^T phi_0(T(x)) + b_c", size=12)
-    eps.text(858, 134, "class-wise evidence is preserved;", size=11, color=(0.25, 0.31, 0.25))
-    eps.text(858, 118, "long-tail prevalence is boundedly calibrated", size=11, color=(0.25, 0.31, 0.25))
+    arrow(d, (1980, 600), (1980, 690))
+    arrow(d, (1980, 900), (1980, 1000))
 
-    eps.arrow(985, 255, 985, 205, color=(0.28, 0.34, 0.44), lw=2.0)
+    rounded(d, (890, 965, 1545, 1155), 22, (246, 246, 255), (160, 156, 205), 3)
+    text(d, (1218, 1015), "形式化设计原则", 30, (71, 63, 128), True, anchor="mm")
+    text(d, (945, 1072), "融合类别证据，而不是只融合参数", 26, INK)
+    text(d, (945, 1110), "用类别支持数屏蔽缺失类别并加权可靠证据", 26, INK)
+    text(d, (945, 1148), "用患病率计数保留医学长尾先验信息", 26, INK)
 
-    # Bottom summary.
-    eps.round_rect(435, 80, 320, 108, 14, fill=(0.96, 0.96, 0.99), stroke=(0.62, 0.61, 0.78), lw=1.1)
-    eps.text_center(595, 160, "formal design principle", size=15, font="Helvetica-Bold", color=(0.28, 0.25, 0.49))
-    eps.text(458, 134, "merge class evidence, not only parameters", size=12)
-    eps.text(458, 114, "mask absent classes through n_i,c", size=12)
-    eps.text(458, 94, "retain prevalence through m_i,c", size=12)
-
-    eps.save()
-
-
-def convert_eps_to_pdf(stem):
-    eps_path = FIG_DIR / f"{stem}.eps"
-    pdf_path = FIG_DIR / f"{stem}.pdf"
-    subprocess.run(
-        [
-            "gs",
-            "-dBATCH",
-            "-dNOPAUSE",
-            "-dSAFER",
-            "-sDEVICE=pdfwrite",
-            "-dEPSCrop",
-            f"-sOutputFile={pdf_path}",
-            str(eps_path),
-        ],
-        check=True,
-    )
-    eps_path.unlink()
+    img.save(FIG_DIR / "concept_lamp_merge_pipeline.png", dpi=(220, 220))
 
 
 def main():
     FIG_DIR.mkdir(parents=True, exist_ok=True)
-    draw_problem_figure()
-    draw_method_figure()
-    convert_eps_to_pdf("concept_predictive_collapse")
-    convert_eps_to_pdf("concept_lamp_merge_pipeline")
+    draw_problem()
+    draw_method()
 
 
 if __name__ == "__main__":

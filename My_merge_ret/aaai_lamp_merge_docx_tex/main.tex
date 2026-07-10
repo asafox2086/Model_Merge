@@ -119,7 +119,7 @@ This observation motivates M2: eliminating collapse is not equivalent to forcing
 % Original: Introduction 机制图：说明现有通用后置融合为何在多中心医学图像中诱发预测坍缩。
 \begin{figure*}[t]
 \centering
-\includegraphics[width=\textwidth,keepaspectratio]{figures/concept_predictive_collapse.pdf}
+\includegraphics[width=\textwidth,keepaspectratio]{figures/concept_predictive_collapse.png}
 \caption{Mechanism of aggregation-induced predictive collapse. In multi-center medical image classification, local clients usually retain partial but non-degenerate diagnostic ability over their observed class subsets. Generic post-hoc merging methods operate on whole checkpoints and do not encode whether client $i$ has reliable evidence for class $c$. As a result, missing-class directions and majority-class directions are mixed in the same parameter space, causing the merged predictor to concentrate its predictions on one or a few diagnostic classes.}
 \label{fig:predictive-collapse-mechanism}
 \end{figure*}
@@ -188,7 +188,7 @@ Federated learning and decentralized learning are important directions in privac
 % Original: Method 机制图：说明 LAMP-Merge 的一次性异步融合流程和两个模块。
 \begin{figure*}[t]
 \centering
-\includegraphics[width=\textwidth,keepaspectratio]{figures/concept_lamp_merge_pipeline.pdf}
+\includegraphics[width=\textwidth,keepaspectratio]{figures/concept_lamp_merge_pipeline.png}
 \caption{Formal workflow of LAMP-Merge. Each client computes class-level diagnostic statistics locally using the shared reference feature space and uploads them once together with the trained checkpoint. The server does not access raw images, per-sample features, per-sample logits, validation data, or proxy data. Module 1 reconstructs class-wise diagnostic prototypes from client-uploaded prototypes and support counts, while Module 2 applies bounded long-tail calibration from uploaded prevalence counts. The final merged model preserves class-specific diagnostic evidence and calibrates it to medical prevalence without multi-round client-server communication.}
 \label{fig:lamp-merge-workflow}
 \end{figure*}
