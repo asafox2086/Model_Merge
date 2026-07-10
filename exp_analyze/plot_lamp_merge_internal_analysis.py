@@ -414,8 +414,10 @@ def plot_prototype_geometry(rows: list[dict[str, str]], output_dir: Path) -> Non
         "LAMP-Merge",
         "Classifier-head aggregation",
         "Global-feature mean",
+        "Support-only synthetic head",
         "Shuffled-label prototype",
         "Uniform client weight",
+        "Binary support only",
         "Global client-size weight",
     ]
     lookup = {row["label"]: row for row in rows}
@@ -449,7 +451,7 @@ def plot_prototype_geometry(rows: list[dict[str, str]], output_dir: Path) -> Non
                 color="#30343B",
             )
     fig.suptitle(
-        "Full-scope prototype geometry in the shared reference space",
+        "Full-scope prototype geometry for internal ablations",
         fontsize=15,
         fontweight="bold",
     )
