@@ -46,9 +46,9 @@ To characterize this phenomenon, we first measure the predicted class distributi
 
 % --- DOCX block 008 ---
 % Original image: image1.png
-\begin{center}
-\includegraphics[width=0.62\linewidth,keepaspectratio]{figures/image1.png}
-\end{center}
+\begin{equation}
+q(c)=\frac{1}{N}\sum_{n=1}^{N}\mathbf{1}\left[\hat{y}_n=c\right].
+\end{equation}
 
 % --- DOCX block 009 ---
 % Original: 其中，N 表示测试图像数量，c 表示诊断类别，q(c) 表示模型将测试图像预测为类别 c 的比例。进一步定义预测坍缩强度为：
@@ -57,9 +57,9 @@ Here, $N$ denotes the number of test images, $c$ denotes a diagnostic class, and
 
 % --- DOCX block 010 ---
 % Original image: image2.png
-\begin{center}
-\includegraphics[width=0.62\linewidth,keepaspectratio]{figures/image2.png}
-\end{center}
+\begin{equation}
+\rho=\max_{c} q(c).
+\end{equation}
 
 % --- DOCX block 011 ---
 % Original: ρ 是预测分布中的最大类别占比；ρ 越接近 1，模型越接近单一类别预测器。
@@ -92,9 +92,9 @@ Medical image classification usually inherits real clinical prevalence or sampli
 
 % --- DOCX block 017 ---
 % Original image: image3.png
-\begin{center}
-\includegraphics[width=0.62\linewidth,keepaspectratio]{figures/image3.png}
-\end{center}
+\begin{equation}
+p_{\max}=\max_{c} P(y=c).
+\end{equation}
 
 % --- DOCX block 018 ---
 % Original: 如果一个模型完全坍缩到这个最高频类别，那么它虽然没有真正的多类别诊断能力，但仍可以得到如下 accuracy：
@@ -103,9 +103,9 @@ If a model completely collapses to this highest-frequency class, then it has no 
 
 % --- DOCX block 019 ---
 % Original image: image4.png
-\begin{center}
-\includegraphics[width=0.62\linewidth,keepaspectratio]{figures/image4.png}
-\end{center}
+\begin{equation}
+\mathrm{Acc}_{\mathrm{collapse}}=p_{\max}.
+\end{equation}
 
 % --- DOCX block 020 ---
 % Original: 因此，当最高频类别占比较大时，单类预测器可以在没有多类别诊断能力的情况下获得较高 accuracy。换言之，在长尾医学数据上，accuracy 可能将多数类坍缩误判为有效融合。这一现象解释了部分基线方法虽然预测分布高度集中，却仍能获得较高 accuracy 的原因。
@@ -188,12 +188,7 @@ To address the problem that post-hoc parameter merging can degenerate into a glo
 
 % --- DOCX block 037 ---
 % Original: LAMP-Merge首先在共享的参考特征空间中重建按类别划分的诊断头部模型。设为本地训练前从共享模型配置中实例化的固定参考骨干网络，T（·）为评估变 
-LAMP-Merge first reconstructs a class-wise diagnostic head in the shared reference feature space. Let the fixed reference backbone be instantiated from the shared model configuration before local training, and let $T(\cdot)$ be the evaluation transform.
-
-% Original image: image5.png
-\begin{center}
-\includegraphics[width=0.62\linewidth,keepaspectratio]{figures/image5.png}
-\end{center}
+LAMP-Merge first reconstructs a class-wise diagnostic head in the shared reference feature space. Let $\phi_0$ be the fixed reference backbone instantiated from the shared model configuration before local training, and let $T(\cdot)$ be the evaluation transform.
 
 % --- DOCX block 038 ---
 % Original: 换函数。对于每个诊断类别c，客户端i均计算出对应的 
@@ -207,18 +202,18 @@ reference-space class prototype.
 
 % --- DOCX block 040 ---
 % Original image: image6.png
-\begin{center}
-\includegraphics[width=0.62\linewidth,keepaspectratio]{figures/image6.png}
-\end{center}
+\begin{equation}
+\mu_{i,c}=\frac{1}{n_{i,c}}\sum_{(x,y)\in D_i}\mathbf{1}[y=c]\phi_0(T(x)).
+\end{equation}
 
 % --- DOCX block 041 ---
 % Original: 其中表示该类别的支持数量。若ni,c= 0，则客户端对该类别未上传任何支持数据，亦未提供原型证据。 
 Here, the term denotes the support size of this class. If $n_{i,c}=0$, then the client uploads no support data for this class and provides no prototype evidence.
 
 % Original image: image7.png
-\begin{center}
-\includegraphics[width=0.62\linewidth,keepaspectratio]{figures/image7.png}
-\end{center}
+\begin{equation}
+n_{i,c}=|D_{i,c}|.
+\end{equation}
 
 % --- DOCX block 042 ---
 % Original: 服务器将支持计数转换为证据权重： 
@@ -230,9 +225,10 @@ The server converts support counts into evidence weights:
 where
 
 % Original image: image8.png
-\begin{center}
-\includegraphics[width=0.62\linewidth,keepaspectratio]{figures/image8.png}
-\end{center}
+\begin{equation}
+e_{i,c}=(n_{i,c}+1)^\gamma \mathbf{1}[n_{i,c}>0],
+\quad \gamma=0.45.
+\end{equation}
 
 % --- DOCX block 044 ---
 % Original: 默认证据指数。客户端i对类别c的归一化可靠性为 
@@ -241,9 +237,9 @@ is the default evidence exponent. The normalized reliability of client $i$ for c
 
 % --- DOCX block 045 ---
 % Original image: image9.png
-\begin{center}
-\includegraphics[width=0.62\linewidth,keepaspectratio]{figures/image9.png}
-\end{center}
+\begin{equation}
+\alpha_{i,c}=\frac{e_{i,c}}{\sum_{j=1}^{K}e_{j,c}}.
+\end{equation}
 
 % --- DOCX block 046 ---
 % Original: 随后，诊断原型被建立为。 
@@ -252,9 +248,9 @@ Then the diagnostic prototype is constructed as
 
 % --- DOCX block 047 ---
 % Original image: image10.png
-\begin{center}
-\includegraphics[width=0.62\linewidth,keepaspectratio]{figures/image10.png}
-\end{center}
+\begin{equation}
+p_c=\sum_{i=1}^{K}\alpha_{i,c}\mu_{i,c}.
+\end{equation}
 
 % --- DOCX block 048 ---
 % Original: 最后，LAMP-Merge算法可合成一个余弦原型分类器： 
@@ -263,9 +259,9 @@ Finally, LAMP-Merge synthesizes a cosine prototype classifier:
 
 % --- DOCX block 049 ---
 % Original image: image11.png
-\begin{center}
-\includegraphics[width=0.62\linewidth,keepaspectratio]{figures/image11.png}
-\end{center}
+\begin{equation}
+w_c=s\frac{p_c}{\|p_c\|_2}.
+\end{equation}
 
 % --- DOCX block 050 ---
 % Original: 其中s=20为默认头部规模。
@@ -303,9 +299,9 @@ count value for each class. The server then estimates the global class prior dis
 
 % --- DOCX block 057 ---
 % Original image: image12.png
-\begin{center}
-\includegraphics[width=0.62\linewidth,keepaspectratio]{figures/image12.png}
-\end{center}
+\begin{equation}
+\pi_c=\frac{\sum_{i=1}^{K}m_{i,c}}{\sum_{k=1}^{C}\sum_{i=1}^{K}m_{i,k}}.
+\end{equation}
 
 % --- DOCX block 058 ---
 % Original: 我们通过以下方式衡量主导阶层的失衡状况： 
@@ -317,9 +313,9 @@ We measure the imbalance of the dominant class as follows:
 where $C$ is the total number of classes.
 
 % Original image: image13.png
-\begin{center}
-\includegraphics[width=0.62\linewidth,keepaspectratio]{figures/image13.png}
-\end{center}
+\begin{equation}
+r=C\max_c \pi_c.
+\end{equation}
 
 % --- DOCX block 060 ---
 % Original: M2仅在r > τ时被激活（默认情况下τ= 2.5）。激活后，它会添加一个居中的对数先验偏置项。 
@@ -328,9 +324,9 @@ M2 is activated only when $r>\tau$ (default $\tau=2.5$). Once activated, it adds
 
 % --- DOCX block 061 ---
 % Original image: image14.png
-\begin{center}
-\includegraphics[width=0.62\linewidth,keepaspectratio]{figures/image14.png}
-\end{center}
+\begin{equation}
+b_c=\lambda\left(\log \pi_c-\frac{1}{C}\sum_{k=1}^{C}\log \pi_k\right).
+\end{equation}
 
 % --- DOCX block 062 ---
 % Original: 默认最大校准强度λ=5.0。最终得分为 
@@ -339,9 +335,9 @@ The default maximum calibration strength is $\lambda=5.0$. The final score is
 
 % --- DOCX block 063 ---
 % Original image: image15.png
-\begin{center}
-\includegraphics[width=0.62\linewidth,keepaspectratio]{figures/image15.png}
-\end{center}
+\begin{equation}
+\mathrm{score}_c(x)=w_c^\top\phi_0(T(x))+b_c.
+\end{equation}
 
 % --- DOCX block 064 ---
 % Original: 实验设计
@@ -668,17 +664,82 @@ LAMP-Merge & 0.7731 & 0.7715 & 0.7701 & 0.6397 & 0.6406 & 0.6396 & 0.6850 & 0.68
 
 % --- DOCX block 101 ---
 % Original image: image16.png
-\begin{figure}[t]
-\centering
-\includegraphics[width=\linewidth,keepaspectratio]{figures/image16.png}
-\end{figure}
+% Original image transcription: Classifier-head aggregation. 记客户端 i 训练后分类头中类别 c 的权重向量为 h_{i,c}。该对照不用参考特征均值 μ_{i,c}，而是令
+\paragraph{Classifier-head aggregation.}
+Let $h_{i,c}$ denote the class-$c$ weight vector in the classifier head after client $i$ is trained. This control does not use the reference-space feature mean $\mu_{i,c}$, but instead defines
+\begin{equation}
+p_c^{\mathrm{head}}=\sum_{i=1}^{K}\alpha_{i,c}h_{i,c},
+\qquad
+w_c^{\mathrm{head}}=s\frac{p_c^{\mathrm{head}}}{\|p_c^{\mathrm{head}}\|_2}.
+\end{equation}
+% Original image transcription: 最终分数为
+The final score is
+\begin{equation}
+\mathrm{score}_c^{\mathrm{head}}(x)
+=\left(w_c^{\mathrm{head}}\right)^\top\phi_0(T(x))+b_c.
+\end{equation}
+% Original image transcription: 该对照检验本地训练后的分类头方向是否能够替代共享参考骨干上的类别原型。
+This control tests whether the locally trained classifier-head direction can replace class prototypes on the shared reference backbone.
+
+% Original image transcription: Global-feature mean. 先将每个客户端的类别原型压缩为类别无关全局均值
+\paragraph{Global-feature mean.}
+Each client-side class prototype is first compressed into a class-agnostic global mean:
+\begin{equation}
+g_i=\frac{\sum_{c=1}^{C}n_{i,c}\mu_{i,c}}{\sum_{c=1}^{C}n_{i,c}},
+\qquad
+g=\frac{\sum_{i=1}^{K}N_i g_i}{\sum_{i=1}^{K}N_i}.
+\end{equation}
+% Original image transcription: 其中 N_i = Σ_c n_{i,c}。该对照对所有类别使用同一个方向:
+where $N_i=\sum_c n_{i,c}$. This control uses the same direction for all classes:
+\begin{equation}
+p_c^{\mathrm{global}}=g,
+\qquad
+w_c^{\mathrm{global}}=s\frac{g}{\|g\|_2}.
+\end{equation}
+% Original image transcription: 最终分数为
+The final score is
+\begin{equation}
+\mathrm{score}_c^{\mathrm{global}}(x)
+=\left(w_c^{\mathrm{global}}\right)^\top\phi_0(T(x))+b_c.
+\end{equation}
+% Original image transcription: 该对照检验类别条件原型是否可以被类别无关的医学图像域均值替代。
+This control tests whether class-conditional prototypes can be replaced by a class-agnostic mean of the medical image domain.
+
+% Original image transcription: Support-only synthetic head. 该对照不使用任何客户端特征方向。令 u_c 为由固定随机种子生成的单位向量，且与 D_i、μ_{i,c} 和 m_{i,c} 无关:
+\paragraph{Support-only synthetic head.}
+This control does not use any client feature direction. Let $u_c$ be a unit vector generated from a fixed random seed, independent of $D_i$, $\mu_{i,c}$, and $m_{i,c}$:
+\begin{equation}
+p_c^{\mathrm{sup}}=u_c,
+\qquad
+w_c^{\mathrm{sup}}=s u_c.
+\end{equation}
+% Original image transcription: 最终分数为
+The final score is
+\begin{equation}
+\mathrm{score}_c^{\mathrm{sup}}(x)
+=\left(w_c^{\mathrm{sup}}\right)^\top\phi_0(T(x))+b_c.
+\end{equation}
+% Original image transcription: 该对照检验类别支持统计本身是否足以恢复诊断判别方向。
+This control tests whether class-support statistics alone are sufficient to recover diagnostic discriminative directions.
 
 % --- DOCX block 102 ---
 % Original image: image17.png
-\begin{figure}[t]
-\centering
-\includegraphics[width=\linewidth,keepaspectratio]{figures/image17.png}
-\end{figure}
+% Original image transcription: Shuffled-label prototype. 先按正式方法得到 p_c，再用随机置换 σ 破坏原型与诊断类别的对应关系:
+\paragraph{Shuffled-label prototype.}
+We first obtain $p_c$ using the formal method, then use a random permutation $\sigma$ to break the correspondence between prototypes and diagnostic classes:
+\begin{equation}
+p_c^{\mathrm{shuf}}=p_{\sigma(c)},
+\qquad
+w_c^{\mathrm{shuf}}=s\frac{p_{\sigma(c)}}{\|p_{\sigma(c)}\|_2}.
+\end{equation}
+% Original image transcription: 最终分数为
+The final score is
+\begin{equation}
+\mathrm{score}_c^{\mathrm{shuf}}(x)
+=\left(w_c^{\mathrm{shuf}}\right)^\top\phi_0(T(x))+b_c.
+\end{equation}
+% Original image transcription: 该对照验证正式方法的收益是否来自真实诊断类别语义，而不是来自原型范数、参数量或归一化形式。
+This control tests whether the benefit of the formal method comes from genuine diagnostic-class semantics, rather than from prototype norms, parameter count, or the normalization form.
 
 % --- DOCX block 103 ---
 % Original: 类别统计信息
@@ -686,10 +747,90 @@ LAMP-Merge & 0.7731 & 0.7715 & 0.7701 & 0.6397 & 0.6406 & 0.6396 & 0.6850 & 0.68
 
 % --- DOCX block 104 ---
 % Original image: image18.png
-\begin{figure}[t]
-\centering
-\includegraphics[width=\linewidth,keepaspectratio]{figures/image18.png}
-\end{figure}
+% Original image transcription: Uniform client weight. 该设置不使用类别支持数的大小，只使用类别是否出现:
+\paragraph{Uniform client weight.}
+This setting does not use the magnitude of class support counts and only uses whether a class appears:
+\begin{equation}
+e_{i,c}^{\mathrm{uni}}=\mathbf{1}[n_{i,c}>0],
+\qquad
+\alpha_{i,c}^{\mathrm{uni}}
+=\frac{e_{i,c}^{\mathrm{uni}}}{\sum_{j=1}^{K}e_{j,c}^{\mathrm{uni}}}.
+\end{equation}
+% Original image transcription: 其余原型头和长尾偏置公式与正式方法一致。该对照正对应“不使用类别支持数；每个出现该类别的客户端等权参与原型聚合”，用于检验类别支持数大小是否提供了超越类别存在性的可靠性信息。
+The remaining prototype-head and long-tail bias formulas are the same as in the formal method. This control corresponds to not using class support counts: every client containing the class participates equally in prototype aggregation. It tests whether the magnitude of class support counts provides reliability information beyond class presence.
+
+% Original image transcription: Binary support only. 该设置同时将原型聚合和先验估计都限制为类别是否出现:
+\paragraph{Binary support only.}
+This setting restricts both prototype aggregation and prior estimation to class presence:
+\begin{equation}
+e_{i,c}^{\mathrm{bin}}=\mathbf{1}[n_{i,c}>0],
+\qquad
+\pi_c^{\mathrm{bin}}
+=\frac{\sum_{i=1}^{K}\mathbf{1}[n_{i,c}>0]}
+{\sum_{k=1}^{C}\sum_{i=1}^{K}\mathbf{1}[n_{i,k}>0]}.
+\end{equation}
+% Original image transcription: 该对照检验“只知道某类是否在客户端出现”是否足以替代样本数统计。
+This control tests whether knowing only whether a class appears on a client is sufficient to replace sample-count statistics.
+
+% Original image transcription: Global client-size weight. 令 N_i = Σ_c n_{i,c} 为客户端总样本数。该设置不用类别级支持数作为可靠性，而是对客户端 i 的所有类别使用同一个规模权重:
+\paragraph{Global client-size weight.}
+Let $N_i=\sum_c n_{i,c}$ be the total number of samples on client $i$. This setting does not use class-level support as reliability, but uses the same size weight for all classes of client $i$:
+\begin{equation}
+e_{i,c}^{\mathrm{size}}=N_i\mathbf{1}[n_{i,c}>0],
+\qquad
+\alpha_{i,c}^{\mathrm{size}}
+=\frac{e_{i,c}^{\mathrm{size}}}{\sum_{j=1}^{K}e_{j,c}^{\mathrm{size}}}.
+\end{equation}
+% Original image transcription: 其余原型头和长尾偏置公式与正式方法一致。该对照检验类别级支持数 n_{i,c} 是否优于客户端级总规模 N_i。
+The remaining prototype-head and long-tail bias formulas are the same as in the formal method. This control tests whether class-level support $n_{i,c}$ is better than client-level total size $N_i$.
+
+% Original image transcription: No prevalence calibration. 该设置保留正式的 p_c 和 w_c，但移除长尾偏置:
+\paragraph{No prevalence calibration.}
+This setting preserves the formal $p_c$ and $w_c$, but removes the long-tail bias:
+\begin{equation}
+b_c^{\mathrm{none}}=0,
+\qquad
+\mathrm{score}_c^{\mathrm{none}}(x)=w_c^\top\phi_0(T(x)).
+\end{equation}
+% Original image transcription: 该对照检验 M2 是否为必要模块。
+This control tests whether M2 is a necessary module.
+
+% Original image transcription: Uniform prevalence prior. 该设置保留正式的 p_c 和 w_c，但将患病率先验替换为均匀分布:
+\paragraph{Uniform prevalence prior.}
+This setting preserves the formal $p_c$ and $w_c$, but replaces the prevalence prior with the uniform distribution:
+\begin{equation}
+\pi_c^{\mathrm{unif}}=\frac{1}{C}.
+\end{equation}
+% Original image transcription: 由于中心化 log-prior 为零，最终有
+Since the centered log-prior is zero, we have
+\begin{equation}
+b_c^{\mathrm{unif}}=0.
+\end{equation}
+% Original image transcription: 该对照检验 M2 的作用是否来自真实长尾统计，而不是来自偏置项形式本身。
+This control tests whether M2's effect comes from real long-tail statistics rather than from the bias form itself.
+
+% Original image transcription: Smoothed prevalence prior. 该设置对客户端上传的患病率计数做加性平滑:
+\paragraph{Smoothed prevalence prior.}
+This setting applies additive smoothing to the prevalence counts uploaded by clients:
+\begin{equation}
+\pi_c^{\mathrm{smooth}}
+=\frac{\sum_{i=1}^{K}(m_{i,c}+\delta)}
+{\sum_{k=1}^{C}\sum_{i=1}^{K}(m_{i,k}+\delta)}.
+\end{equation}
+% Original image transcription: 随后用 π_c^{smooth} 计算 b_c^{smooth}。当前实现中 δ=1。具体地,
+Then $\pi_c^{\mathrm{smooth}}$ is used to compute $b_c^{\mathrm{smooth}}$. In the current implementation, $\delta=1$. Specifically,
+\begin{equation}
+r^{\mathrm{smooth}}=C\max_c \pi_c^{\mathrm{smooth}},
+\qquad
+b_c^{\mathrm{smooth}}
+=\mathbf{1}[r^{\mathrm{smooth}}>\tau]\lambda
+\left(
+\log \pi_c^{\mathrm{smooth}}
+-\frac{1}{C}\sum_{k=1}^{C}\log \pi_k^{\mathrm{smooth}}
+\right).
+\end{equation}
+% Original image transcription: 其余原型头公式与正式方法一致。该对照检验 M2 对极端计数的敏感性。
+The remaining prototype-head formulas are the same as in the formal method. This control tests M2's sensitivity to extreme counts.
 
 % --- DOCX block 105 ---
 % Original: 注：No prevalence calibration到时候删掉，这是模块间消融
@@ -847,24 +988,25 @@ In addition to Accuracy, this experiment reports the following new metrics:
 
 % --- DOCX block 120 ---
 % Original image: image21.png
-\begin{center}
-\includegraphics[width=0.62\linewidth,keepaspectratio]{figures/image21.png}
-\end{center}
+\begin{equation}
+\mathrm{BA}=\frac{1}{C}\sum_{c=1}^{C}
+\frac{\mathrm{TP}_c}{\mathrm{TP}_c+\mathrm{FN}_c}.
+\end{equation}
 
 % --- DOCX block 121 ---
 % Original: 其中 BA 是 balanced accuracy，即 macro recall，用于衡量各诊断类别是否同时被召回。设 q(c) 表示模型在测试集上预测为类别 c 的比例，p(c) 表示测试集真实类别比例，则预测坍缩强度与预测分布偏差定义为：
 Here, BA is balanced accuracy, i.e., macro recall, used to measure whether all diagnostic classes are recalled. Let $q(c)$ denote the proportion of predictions assigned to class $c$ on the test set, and let $p(c)$ denote the true class proportion in the test set. Then prediction-collapse strength and prediction-distribution deviation are defined as:
 
 % Original image: image22.png
-\begin{center}
-\includegraphics[width=0.62\linewidth,keepaspectratio]{figures/image22.png}
-\end{center}
+\begin{equation}
+\rho=\max_c q(c),
+\end{equation}
 
 % --- DOCX block 122 ---
 % Original image: image23.png
-\begin{center}
-\includegraphics[width=0.62\linewidth,keepaspectratio]{figures/image23.png}
-\end{center}
+\begin{equation}
+\mathrm{TV}(q,p)=\frac{1}{2}\sum_{c=1}^{C}|q(c)-p(c)|.
+\end{equation}
 
 % --- DOCX block 123 ---
 % Original: ρ 越接近 1，模型越接近单类预测器；TV(q,p) 越小，预测类别分布越接近真实诊断分布。有效预测类别数定义为：
@@ -873,9 +1015,9 @@ The closer $\rho$ is to 1, the closer the model is to a single-class predictor; 
 
 % --- DOCX block 124 ---
 % Original image: image24.png
-\begin{center}
-\includegraphics[width=0.62\linewidth,keepaspectratio]{figures/image24.png}
-\end{center}
+\begin{equation}
+C_{\mathrm{eff}}=\exp\left(-\sum_{c=1}^{C}q(c)\log q(c)\right).
+\end{equation}
 
 % --- DOCX block 125 ---
 % Original: 该指标越大，表示模型实际使用的诊断类别越多。若一个方法仅在多数类上坍缩，则通常会表现为 Accuracy 较高但 BA、Macro F1 和 Ceff 较低，同时 ρ 和 TV 较高。
@@ -1063,10 +1205,65 @@ The Accuracy ablation contains 11 settings; this section lists only the 8 settin
 
 % --- DOCX block 146 ---
 % Original image: image33.png
-\begin{figure}[t]
-\centering
-\includegraphics[width=\linewidth,keepaspectratio]{figures/image33.png}
-\end{figure}
+% Original image transcription: Pairwise distance 定义为不同诊断类别全局原型之间的平均余弦距离:
+\paragraph{Pairwise distance}
+is defined as the average cosine distance between global prototypes of different diagnostic classes:
+\begin{equation}
+D_{\mathrm{pair}}
+=\frac{1}{C(C-1)}
+\sum_{c\ne d}\left(1-\bar{p}_c^\top\bar{p}_d\right).
+\end{equation}
+% Original image transcription: 该指标衡量全局诊断方向在参考特征空间中的整体分离程度。较大的 D_pair 表示类别方向相互远离，但它不能单独证明诊断语义有效，因为随机分类头也可能产生很大的类间距离。
+This metric measures the overall separation of global diagnostic directions in the reference feature space. A larger $D_{\mathrm{pair}}$ indicates that class directions are farther apart, but it cannot by itself prove diagnostic semantic validity, because random classifier heads may also produce large inter-class distances.
+
+% Original image transcription: Nearest-class distance 定义为每个类别到最近错误类别的平均余弦距离:
+\paragraph{Nearest-class distance}
+is defined as the average cosine distance from each class to its nearest incorrect class:
+\begin{equation}
+D_{\mathrm{nn}}
+=\frac{1}{C}\sum_{c=1}^{C}
+\min_{d\ne c}\left(1-\bar{p}_c^\top\bar{p}_d\right).
+\end{equation}
+% Original image transcription: 该指标衡量最容易混淆类别对的几何间隔，是比平均类间距离更严格的分离度诊断。较小的 D_nn 表示至少存在相邻诊断类别在原型空间中难以区分，融合后更容易发生类别吸收或局部坍缩。
+This metric measures the geometric gap of the most easily confused class pairs and is a stricter separability diagnostic than the average inter-class distance. A smaller $D_{\mathrm{nn}}$ indicates that at least one neighboring diagnostic class is difficult to distinguish in prototype space, making class absorption or local collapse more likely after merging.
+
+% Original image transcription: Prototype consistency 定义为同一诊断类别在不同客户端原型之间的平均余弦相似度:
+\paragraph{Prototype consistency}
+is defined as the average cosine similarity between prototypes of the same diagnostic class from different clients:
+\begin{equation}
+A_{\mathrm{client}}
+=\frac{1}{|\Omega_{\mathrm{client}}|}
+\sum_{(c,i,j)\in\Omega_{\mathrm{client}}}
+\frac{\mu_{i,c}^\top\mu_{j,c}}
+{\|\mu_{i,c}\|_2\|\mu_{j,c}\|_2}.
+\end{equation}
+% Original image transcription: 其中 Ω_client = {(c,i,j): i ≠ j, i,j ∈ I_c}。该指标衡量不同医院对同一诊断类别是否形成一致的参考空间方向。若该值接近零或为负，说明被聚合的类别向量不处于稳定共享语义坐标系中，即使类间距离很大，也可能只是跨客户端方向错配。
+where $\Omega_{\mathrm{client}}=\{(c,i,j):i\ne j,\ i,j\in I_c\}$. This metric measures whether different hospitals form consistent reference-space directions for the same diagnostic class. If the value is close to zero or negative, the aggregated class vectors are not in a stable shared semantic coordinate system; even if inter-class distance is large, it may only reflect cross-client directional mismatch.
+
+% Original image transcription: Prototype-client alignment 定义为全局原型与参与该类别聚合的客户端原型之间的平均余弦相似度:
+\paragraph{Prototype-client alignment}
+is defined as the average cosine similarity between the global prototype and the client prototypes participating in the aggregation of that class:
+\begin{equation}
+A_{\mathrm{proto}}
+=\frac{1}{|\Omega_{\mathrm{align}}|}
+\sum_{(c,i)\in\Omega_{\mathrm{align}}}
+\frac{p_c^\top\mu_{i,c}}
+{\|p_c\|_2\|\mu_{i,c}\|_2}.
+\end{equation}
+% Original image transcription: 其中 Ω_align = {(c,i): i ∈ I_c}。该指标衡量聚合后的全局原型是否仍与真实参与证据保持一致。若该值下降，说明聚合过程虽然生成了一个类别方向，但该方向已经偏离客户端上传的同类诊断证据。
+where $\Omega_{\mathrm{align}}=\{(c,i):i\in I_c\}$. This metric measures whether the aggregated global prototype remains aligned with the real participating evidence. If this value decreases, the aggregation process may have produced a class direction that has already deviated from the same-class diagnostic evidence uploaded by clients.
+
+% Original image transcription: Evidence entropy 定义为类别证据权重的归一化熵。令 α_{i,c} 为类别 c 上客户端 i 的聚合权重，则
+\paragraph{Evidence entropy}
+is defined as the normalized entropy of class-evidence weights. Let $\alpha_{i,c}$ denote the aggregation weight of client $i$ for class $c$. Then
+\begin{equation}
+H_{\mathrm{evi}}
+=\frac{1}{C}\sum_{c=1}^{C}
+\frac{-\sum_{i\in I_c}\alpha_{i,c}\log\alpha_{i,c}}
+{\log\max(|I_c|,2)}.
+\end{equation}
+% Original image transcription: 该指标衡量类别证据由多个客户端共同贡献，还是集中在少数高支持客户端上。较高的 H_evi 表示聚合权重更均匀；较低的 H_evi 表示服务端更依赖少数类别证据更充分的客户端。因此，该指标反映类别支持数是否实际改变了证据分配，而不是只改变最终偏置项。
+This metric measures whether class evidence is contributed jointly by multiple clients or concentrated on a few high-support clients. A higher $H_{\mathrm{evi}}$ indicates more uniform aggregation weights, while a lower $H_{\mathrm{evi}}$ indicates that the server relies more on a few clients with stronger class evidence. Therefore, this metric reflects whether class support counts actually change evidence allocation, rather than only changing the final bias term.
 
 % --- DOCX block 147 ---
 % Original image: image34.png
@@ -1091,9 +1288,48 @@ Therefore, the fact that some ablation settings exceed LAMP-Merge on individual 
 
 % --- DOCX block 151 ---
 % Original image: image35.png
-\begin{figure}[t]
-\centering
-\includegraphics[width=\linewidth,keepaspectratio]{figures/image35.png}
-\end{figure}
+% Original image transcription: 理论分析应围绕“为什么原型信息和统计信息能缓解坍缩”展开，而不是只解释实现细节。符号必须与正文保持一致：共享参考特征写作 z = φ_0(T(x))，客户端 i 上传的类别原型写作 μ_{i,c}，服务端聚合得到的全局诊断原型写作 p_c，类别支持数写作 n_{i,c}，患病率先验写作 π_c，预测坍缩强度写作 ρ。若需要表示类别 c 的真实参考特征均值，仅在理论分析中额外引入 μ_c^*，且不替代正文中的 μ_{i,c} 或 p_c。服务端聚合原型为:
+The theoretical analysis should explain why prototype information and statistical information mitigate collapse, rather than only explaining implementation details. The notation must remain consistent with the main text: the shared reference feature is written as $z=\phi_0(T(x))$, the class prototype uploaded by client $i$ is written as $\mu_{i,c}$, the global diagnostic prototype aggregated by the server is written as $p_c$, the class support count is written as $n_{i,c}$, the prevalence prior is written as $\pi_c$, and the prediction-collapse strength is written as $\rho$. If the true reference-feature mean of class $c$ is needed, we introduce $\mu_c^*$ only in the theoretical analysis and do not replace $\mu_{i,c}$ or $p_c$ in the main text. The server aggregates prototypes as
+\begin{equation}
+p_c=\sum_i \alpha_{i,c}\mu_{i,c}.
+\end{equation}
+% Original image transcription: 若每个客户端的类别特征估计方差有界，则原型估计误差可写成如下形式:
+If the class-feature estimation variance of each client is bounded, the prototype estimation error can be written as
+\begin{equation}
+\mathbb{E}\|p_c-\mu_c^*\|_2^2
+\le
+\sum_i \alpha_{i,c}^2\frac{\sigma_c^2}{n_{i,c}}
+\;+\;\mathrm{Bias}_c^2.
+\end{equation}
+% Original image transcription: 该上界说明类别支持数的作用不是经验性调参，而是降低类别原型估计方差。具有更多类别样本的客户端提供更稳定的原型估计；未观察到类别 c 的客户端不应参与该类别方向构造。普通参数平均没有这种类别级屏蔽机制，因此会把无证据客户端的参数方向混入类别 c，增加类别方向误差，并提高少数类被多数类吸收的风险。
+This upper bound shows that class support counts are not an empirical tuning device, but reduce the estimation variance of class prototypes. Clients with more samples of a class provide more stable prototype estimates; clients that have not observed class $c$ should not participate in constructing the direction of that class. Ordinary parameter averaging lacks such a class-level masking mechanism, so it mixes parameter directions from clients without evidence into class $c$, increasing class-direction error and raising the risk that minority classes are absorbed by majority classes.
+
+% Original image transcription: 进一步设类别 c 与类别 d 对样本 x 的真实 margin 为:
+Further, define the true margin between class $c$ and class $d$ for sample $x$ as
+\begin{equation}
+\Delta_{c,d}(x)=(\mu_c^*)^\top z-(\mu_d^*)^\top z.
+\end{equation}
+% Original image transcription: 当原型估计误差满足:
+When the prototype estimation error satisfies
+\begin{equation}
+\|p_c-\mu_c^*\|_2+\|p_d-\mu_d^*\|_2
+<
+\frac{\Delta_{c,d}(x)}{\|z\|_2},
+\end{equation}
+% Original image transcription: 则使用估计原型后不会改变样本在类别 c 和类别 d 之间的判别顺序。因此，M1 通过降低类别原型误差来维持多类别 margin，从理论上抑制多类方向吞并少数类方向。
+then using estimated prototypes does not change the discriminative order of the sample between classes $c$ and $d$. Therefore, M1 maintains multi-class margins by reducing class-prototype error, theoretically suppressing the absorption of minority-class directions by dominant-class directions.
+
+% Original image transcription: M2 的理论作用是有界地引入医学长尾先验。设客户端上传的患病率计数 m_{i,c} 估计出的类别先验为 π_c，M2 对分类分数加入中心化 log-prior:
+The theoretical role of M2 is to introduce medical long-tail priors in a bounded manner. Let the class prior estimated from prevalence counts $m_{i,c}$ uploaded by clients be $\pi_c$. M2 adds a centered log-prior to the classification score:
+\begin{equation}
+b_c=\lambda\left(\log\pi_c-\frac{1}{C}\sum_k\log\pi_k\right).
+\end{equation}
+% Original image transcription: 任意两个类别之间的先验 margin 改变量满足:
+For any pair of classes, the prior-induced margin change satisfies
+\begin{equation}
+|b_c-b_d|\le \lambda|\log\pi_c-\log\pi_d|.
+\end{equation}
+% Original image transcription: 因此，只要 λ 有界，M2 就不会替代 M1 的多类别判别方向，而只是对真实长尾患病率进行有限校准。该理论解释与实验设计相对应：若关闭 M1，只保留 M2，模型无法恢复多类别判别；若保留 M1 并使用真实患病率统计，模型可以在避免坍缩的同时利用主导类别的真实医学先验。
+Therefore, as long as $\lambda$ is bounded, M2 does not replace the multi-class discriminative directions of M1, but only applies limited calibration to the real long-tail prevalence. This theoretical interpretation corresponds to the experimental design: if M1 is disabled and only M2 is retained, the model cannot recover multi-class discrimination; if M1 is retained and real prevalence statistics are used, the model can exploit the true medical prior of dominant classes while avoiding collapse.
 
 \end{document}
