@@ -878,10 +878,10 @@ Smoothed prevalence prior & 180 & 0.6209 & -0.0000 & 39/6 \\
 \end{table}
 
 % --- DOCX block 107 ---
-% Original image: image19.png
+% Original image: full_scope_internal_ablation_accuracy_heatmap.png
 \begin{figure*}[t]
 \centering
-\includegraphics[width=\textwidth,keepaspectratio]{figures/image19.png}
+\includegraphics[width=\textwidth,keepaspectratio]{figures/full_scope_internal_ablation_accuracy_heatmap.png}
 \end{figure*}
 
 % --- DOCX block 108 ---
@@ -966,10 +966,10 @@ The hyperparameter analysis summarizes the value range, best point, worst point,
 % Original: 全量结果表明，LAMP-Merge 对两个超参数均具有稳定平台，而不是依赖单点调参。对于 M1，s=20 取得最高 client-average mean Accuracy 0.6209；在 s∈[12,22] 内，平均 Accuracy 始终保持在 0.6204 至 0.6209 之间，说明诊断原型头只需要适度 logit 尺度即可稳定工作。对于 M2，λ=5 取得最高 client-average mean Accuracy 0.6209；在 λ∈[4,8] 内，平均 Accuracy 始终保持在 0.6198 至 0.6209 之间，说明长尾校准的收益来自有界医学患病率先验，而不是无界追随多数类。
 Full-scope results show that LAMP-Merge has a stable plateau for both hyperparameters, rather than relying on single-point tuning. For M1, $s=20$ obtains the highest client-average mean Accuracy of 0.6209; within $s\in[12,22]$, the mean Accuracy remains between 0.6204 and 0.6209, indicating that the diagnostic prototype head only needs a moderate logit scale to work stably. For M2, $\lambda=5$ obtains the highest client-average mean Accuracy of 0.6209; within $\lambda\in[4,8]$, the mean Accuracy remains between 0.6198 and 0.6209, indicating that the benefit of long-tail calibration comes from a bounded medical prevalence prior rather than unboundedly following the majority class.
 
-% Original image: image20.png
+% Original image: full_scope_hyperparameter_sensitivity.png
 \begin{figure*}[t]
 \centering
-\includegraphics[width=\textwidth,keepaspectratio]{figures/image20.png}
+\includegraphics[width=\textwidth,keepaspectratio]{figures/full_scope_hyperparameter_sensitivity.png}
 \end{figure*}
 
 % --- DOCX block 117 ---
@@ -1059,10 +1059,10 @@ Smoothed prevalence prior & 0.5371 & 0.5238 & 0.3120 & 7.1357 & 0.1261 \\
 \end{table}
 
 % --- DOCX block 127 ---
-% Original image: image25.png
+% Original image: full_scope_internal_ablation_performance_collapse_diagnostics.png
 \begin{figure*}[t]
 \centering
-\includegraphics[width=\textwidth,keepaspectratio]{figures/image25.png}
+\includegraphics[width=\textwidth,keepaspectratio]{figures/full_scope_internal_ablation_performance_collapse_diagnostics.png}
 \end{figure*}
 
 % --- DOCX block 128 ---
@@ -1117,10 +1117,10 @@ best generic denotes the strongest fixed general merging baseline selected by fu
 
 
 % --- DOCX block 132 ---
-% Original image: image26.png
+% Original image: full_scope_global_diagnostic_discrimination_recovery.png
 \begin{figure*}[t]
 \centering
-\includegraphics[width=\textwidth,keepaspectratio]{figures/image26.png}
+\includegraphics[width=\textwidth,keepaspectratio]{figures/full_scope_global_diagnostic_discrimination_recovery.png}
 \end{figure*}
 
 % --- DOCX block 133 ---
@@ -1136,36 +1136,36 @@ The following figure aggregates predicted class proportions over 36 full-scope c
 % Original: 其余数据集如下：
 The remaining datasets are as follows:
 
-% Original image: image27.png
+% Original image: full_scope_predicted_distribution_derma.png
 \begin{figure}[t]
 \centering
-\includegraphics[width=\linewidth,keepaspectratio]{figures/image27.png}
+\includegraphics[width=\linewidth,keepaspectratio]{figures/full_scope_predicted_distribution_derma.png}
 \end{figure}
 
 % --- DOCX block 136 ---
-% Original image: image28.png
+% Original image: full_scope_predicted_distribution_blood.png
 \begin{figure}[t]
 \centering
-\includegraphics[width=\linewidth,keepaspectratio]{figures/image28.png}
+\includegraphics[width=\linewidth,keepaspectratio]{figures/full_scope_predicted_distribution_blood.png}
 \end{figure}
 
 % --- DOCX block 137 ---
-% Original image: image29.png
+% Original image: full_scope_predicted_distribution_ultrasound.png
 \begin{figure}[t]
 \centering
-\includegraphics[width=\linewidth,keepaspectratio]{figures/image29.png}
+\includegraphics[width=\linewidth,keepaspectratio]{figures/full_scope_predicted_distribution_ultrasound.png}
 \end{figure}
-% Original image: image30.png
+% Original image: full_scope_predicted_distribution_organ_c.png
 \begin{figure}[t]
 \centering
-\includegraphics[width=\linewidth,keepaspectratio]{figures/image30.png}
+\includegraphics[width=\linewidth,keepaspectratio]{figures/full_scope_predicted_distribution_organ_c.png}
 \end{figure}
 
 % --- DOCX block 138 ---
-% Original image: image31.png
+% Original image: full_scope_predicted_distribution_organ_s.png
 \begin{figure}[t]
 \centering
-\includegraphics[width=\linewidth,keepaspectratio]{figures/image31.png}
+\includegraphics[width=\linewidth,keepaspectratio]{figures/full_scope_predicted_distribution_organ_s.png}
 \end{figure}
 
 % --- DOCX block 139 ---
@@ -1178,15 +1178,68 @@ t-SNE is used only for paper analysis and does not participate in server-side me
 
 
 % --- DOCX block 141 ---
-% Original image: image32.png
+% Original: 只保留联合 t-SNE 对比图和 LAMP-Merge 单方法 t-SNE 图。
+The complete t-SNE appendix includes only joint comparison plots and LAMP-Merge-only plots. Other single-method t-SNE visualizations are omitted because they are not part of the proposed method.
+
+\newcommand{\tsneJointFigure}[3]{%
 \begin{figure*}[t]
 \centering
-\includegraphics[width=\textwidth,keepaspectratio]{figures/image32.png}
+\includegraphics[width=\textwidth,keepaspectratio]{figures/#1}
+\caption{Joint t-SNE comparison on #2 with #3 backbone.}
 \end{figure*}
+}
 
-% --- DOCX block 142 ---
-% Original: 剩余的图没放进来
-The remaining figures are not included.
+\newcommand{\tsneLampFigure}[3]{%
+\begin{figure*}[t]
+\centering
+\includegraphics[width=\textwidth,keepaspectratio]{figures/#1}
+\caption{LAMP-Merge-only t-SNE visualization on #2 with #3 backbone.}
+\end{figure*}
+}
+
+\paragraph{Joint t-SNE comparisons.}
+\tsneJointFigure{tsne_joint_bloodmnist_224_convnext.png}{BloodMNIST-224}{ConvNeXt}
+\tsneJointFigure{tsne_joint_bloodmnist_224_resnet.png}{BloodMNIST-224}{ResNet}
+\tsneJointFigure{tsne_joint_bloodmnist_224_swin_tiny.png}{BloodMNIST-224}{Swin-Tiny}
+\tsneJointFigure{tsne_joint_bloodmnist_224_vit_t.png}{BloodMNIST-224}{ViT-Tiny}
+\tsneJointFigure{tsne_joint_chaoshengmnist_224_convnext.png}{ChaoshengMNIST-224}{ConvNeXt}
+\tsneJointFigure{tsne_joint_chaoshengmnist_224_resnet.png}{ChaoshengMNIST-224}{ResNet}
+\tsneJointFigure{tsne_joint_chaoshengmnist_224_swin_tiny.png}{ChaoshengMNIST-224}{Swin-Tiny}
+\tsneJointFigure{tsne_joint_chaoshengmnist_224_vit_t.png}{ChaoshengMNIST-224}{ViT-Tiny}
+\tsneJointFigure{tsne_joint_dermamnist_224_convnext.png}{DermaMNIST-224}{ConvNeXt}
+\tsneJointFigure{tsne_joint_dermamnist_224_resnet.png}{DermaMNIST-224}{ResNet}
+\tsneJointFigure{tsne_joint_dermamnist_224_swin_tiny.png}{DermaMNIST-224}{Swin-Tiny}
+\tsneJointFigure{tsne_joint_dermamnist_224_vit_t.png}{DermaMNIST-224}{ViT-Tiny}
+\tsneJointFigure{tsne_joint_organcmnist_224_convnext.png}{OrganCMNIST-224}{ConvNeXt}
+\tsneJointFigure{tsne_joint_organcmnist_224_resnet.png}{OrganCMNIST-224}{ResNet}
+\tsneJointFigure{tsne_joint_organcmnist_224_swin_tiny.png}{OrganCMNIST-224}{Swin-Tiny}
+\tsneJointFigure{tsne_joint_organcmnist_224_vit_t.png}{OrganCMNIST-224}{ViT-Tiny}
+\tsneJointFigure{tsne_joint_organsmnist_224_convnext.png}{OrganSMNIST-224}{ConvNeXt}
+\tsneJointFigure{tsne_joint_organsmnist_224_resnet.png}{OrganSMNIST-224}{ResNet}
+\tsneJointFigure{tsne_joint_organsmnist_224_swin_tiny.png}{OrganSMNIST-224}{Swin-Tiny}
+\tsneJointFigure{tsne_joint_organsmnist_224_vit_t.png}{OrganSMNIST-224}{ViT-Tiny}
+
+\paragraph{LAMP-Merge-only t-SNE visualizations.}
+\tsneLampFigure{tsne_lamp_bloodmnist_224_convnext.png}{BloodMNIST-224}{ConvNeXt}
+\tsneLampFigure{tsne_lamp_bloodmnist_224_resnet.png}{BloodMNIST-224}{ResNet}
+\tsneLampFigure{tsne_lamp_bloodmnist_224_swin_tiny.png}{BloodMNIST-224}{Swin-Tiny}
+\tsneLampFigure{tsne_lamp_bloodmnist_224_vit_t.png}{BloodMNIST-224}{ViT-Tiny}
+\tsneLampFigure{tsne_lamp_chaoshengmnist_224_convnext.png}{ChaoshengMNIST-224}{ConvNeXt}
+\tsneLampFigure{tsne_lamp_chaoshengmnist_224_resnet.png}{ChaoshengMNIST-224}{ResNet}
+\tsneLampFigure{tsne_lamp_chaoshengmnist_224_swin_tiny.png}{ChaoshengMNIST-224}{Swin-Tiny}
+\tsneLampFigure{tsne_lamp_chaoshengmnist_224_vit_t.png}{ChaoshengMNIST-224}{ViT-Tiny}
+\tsneLampFigure{tsne_lamp_dermamnist_224_convnext.png}{DermaMNIST-224}{ConvNeXt}
+\tsneLampFigure{tsne_lamp_dermamnist_224_resnet.png}{DermaMNIST-224}{ResNet}
+\tsneLampFigure{tsne_lamp_dermamnist_224_swin_tiny.png}{DermaMNIST-224}{Swin-Tiny}
+\tsneLampFigure{tsne_lamp_dermamnist_224_vit_t.png}{DermaMNIST-224}{ViT-Tiny}
+\tsneLampFigure{tsne_lamp_organcmnist_224_convnext.png}{OrganCMNIST-224}{ConvNeXt}
+\tsneLampFigure{tsne_lamp_organcmnist_224_resnet.png}{OrganCMNIST-224}{ResNet}
+\tsneLampFigure{tsne_lamp_organcmnist_224_swin_tiny.png}{OrganCMNIST-224}{Swin-Tiny}
+\tsneLampFigure{tsne_lamp_organcmnist_224_vit_t.png}{OrganCMNIST-224}{ViT-Tiny}
+\tsneLampFigure{tsne_lamp_organsmnist_224_convnext.png}{OrganSMNIST-224}{ConvNeXt}
+\tsneLampFigure{tsne_lamp_organsmnist_224_resnet.png}{OrganSMNIST-224}{ResNet}
+\tsneLampFigure{tsne_lamp_organsmnist_224_swin_tiny.png}{OrganSMNIST-224}{Swin-Tiny}
+\tsneLampFigure{tsne_lamp_organsmnist_224_vit_t.png}{OrganSMNIST-224}{ViT-Tiny}
 
 
 % --- DOCX block 143 ---
@@ -1266,10 +1319,10 @@ H_{\mathrm{evi}}
 This metric measures whether class evidence is contributed jointly by multiple clients or concentrated on a few high-support clients. A higher $H_{\mathrm{evi}}$ indicates more uniform aggregation weights, while a lower $H_{\mathrm{evi}}$ indicates that the server relies more on a few clients with stronger class evidence. Therefore, this metric reflects whether class support counts actually change evidence allocation, rather than only changing the final bias term.
 
 % --- DOCX block 147 ---
-% Original image: image34.png
+% Original image: full_scope_prototype_geometry_internal_ablation.png
 \begin{figure*}[t]
 \centering
-\includegraphics[width=\textwidth,keepaspectratio]{figures/image34.png}
+\includegraphics[width=\textwidth,keepaspectratio]{figures/full_scope_prototype_geometry_internal_ablation.png}
 \end{figure*}
 
 % --- DOCX block 148 ---
