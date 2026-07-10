@@ -19,6 +19,7 @@ Expected cases per mode: `180`.
 | Global client-size weight | 180 | 0.1369 | 0.0551 | 0.8751 | 0.9502 | 0.3399 |
 | Uniform prevalence prior | 180 | 0.1122 | 0.0361 | 0.8751 | 0.9446 | 0.2505 |
 | Smoothed prevalence prior | 180 | 0.1122 | 0.0361 | 0.8751 | 0.9446 | 0.2505 |
+| No prevalence calibration | 180 | 0.1122 | 0.0361 | 0.8751 | 0.9446 | 0.2505 |
 
 ## Dataset-Level Geometry
 
@@ -37,6 +38,7 @@ Expected cases per mode: `180`.
 | Global client-size weight | 36 | 0.0812 | 0.0405 | 0.9409 | 0.9787 | 0.3420 |
 | Uniform prevalence prior | 36 | 0.0705 | 0.0324 | 0.9409 | 0.9746 | 0.2406 |
 | Smoothed prevalence prior | 36 | 0.0705 | 0.0324 | 0.9409 | 0.9746 | 0.2406 |
+| No prevalence calibration | 36 | 0.0705 | 0.0324 | 0.9409 | 0.9746 | 0.2406 |
 
 ### chaoshengmnist_224
 
@@ -53,6 +55,7 @@ Expected cases per mode: `180`.
 | Global client-size weight | 36 | 0.0614 | 0.0328 | 0.8847 | 0.9536 | 0.3069 |
 | Uniform prevalence prior | 36 | 0.0447 | 0.0227 | 0.8847 | 0.9487 | 0.2549 |
 | Smoothed prevalence prior | 36 | 0.0447 | 0.0227 | 0.8847 | 0.9487 | 0.2549 |
+| No prevalence calibration | 36 | 0.0447 | 0.0227 | 0.8847 | 0.9487 | 0.2549 |
 
 ### dermamnist_224
 
@@ -69,6 +72,7 @@ Expected cases per mode: `180`.
 | Global client-size weight | 36 | 0.0965 | 0.0529 | 0.8575 | 0.9304 | 0.2528 |
 | Uniform prevalence prior | 36 | 0.0550 | 0.0298 | 0.8575 | 0.9393 | 0.2822 |
 | Smoothed prevalence prior | 36 | 0.0550 | 0.0298 | 0.8575 | 0.9393 | 0.2822 |
+| No prevalence calibration | 36 | 0.0550 | 0.0298 | 0.8575 | 0.9393 | 0.2822 |
 
 ### organcmnist_224
 
@@ -85,6 +89,7 @@ Expected cases per mode: `180`.
 | Global client-size weight | 36 | 0.2204 | 0.0801 | 0.8467 | 0.9466 | 0.4080 |
 | Uniform prevalence prior | 36 | 0.1964 | 0.0567 | 0.8467 | 0.9325 | 0.2505 |
 | Smoothed prevalence prior | 36 | 0.1964 | 0.0567 | 0.8467 | 0.9325 | 0.2505 |
+| No prevalence calibration | 36 | 0.1964 | 0.0567 | 0.8467 | 0.9325 | 0.2505 |
 
 ### organsmnist_224
 
@@ -101,6 +106,7 @@ Expected cases per mode: `180`.
 | Global client-size weight | 36 | 0.2251 | 0.0691 | 0.8459 | 0.9416 | 0.3899 |
 | Uniform prevalence prior | 36 | 0.1944 | 0.0387 | 0.8459 | 0.9280 | 0.2244 |
 | Smoothed prevalence prior | 36 | 0.1944 | 0.0387 | 0.8459 | 0.9280 | 0.2244 |
+| No prevalence calibration | 36 | 0.1944 | 0.0387 | 0.8459 | 0.9280 | 0.2244 |
 
 ## Interpretation
 

@@ -1,6 +1,6 @@
 # LAMP-Merge Full-Scope Hyperparameter Sensitivity
 
-Experiment root: `/data2/liyapeng_grp/program/MedMNISTMerge/outputs/lamp_merge_hparam_full_20260708_overnight_hparam_tau5_client_stats`.
+Experiment root: `outputs/lamp_merge_hparam_full_20260708_overnight_hparam_tau5_client_stats`.
 
 The sensitivity analysis is evaluated on the full medical-image grid: five datasets, four backbones, three client counts, and three beta values. Each value therefore has 180 raw cells and 60 client-average cells when complete.
 

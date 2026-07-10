@@ -268,19 +268,38 @@ def plot(rows: list[dict[str, object]], figure_path: Path) -> None:
         items = sorted(grouped[key], key=lambda row: float(row["value"]))
         xs = [float(row["value"]) for row in items]
         ys = [float(row["client_average_mean_acc"]) for row in items]
+        display_symbol = r"$s$" if key[2] == "s" else r"$\lambda$"
         ax.plot(xs, ys, marker="o", linewidth=1.8, markersize=4.0, color="#1f77b4")
         best_idx = max(range(len(ys)), key=lambda idx: ys[idx])
-        ax.scatter([xs[best_idx]], [ys[best_idx]], marker="*", s=95, color="#d62728", edgecolor="white", linewidth=0.5, zorder=4)
+        ax.scatter(
+            [xs[best_idx]],
+            [ys[best_idx]],
+            marker="*",
+            s=95,
+            color="#d62728",
+            edgecolor="white",
+            linewidth=0.5,
+            zorder=4,
+            label="Grid maximum",
+        )
         default_value = 20.0 if key[2] == "s" else 5.0
         if default_value in xs:
             default_idx = xs.index(default_value)
-            ax.axvline(default_value, color="#2ca02c", linestyle="--", linewidth=1.1, alpha=0.85)
+            ax.axvline(
+                default_value,
+                color="#2ca02c",
+                linestyle="--",
+                linewidth=1.1,
+                alpha=0.85,
+                label="Selected setting",
+            )
             ax.scatter([default_value], [ys[default_idx]], marker="s", s=34, color="#2ca02c", edgecolor="white", linewidth=0.5, zorder=5)
-        ax.set_title(f"{key[0]}: {key[2]}", fontsize=9)
-        ax.set_xlabel(f"value of {key[2]}", fontsize=8)
+        ax.set_title(f"{key[0]}: {display_symbol}", fontsize=9)
+        ax.set_xlabel(f"Value of {display_symbol}", fontsize=8)
         ax.set_ylabel("client-average accuracy", fontsize=8)
         ax.grid(True, alpha=0.3, linewidth=0.4)
         ax.tick_params(axis="both", labelsize=8)
+        ax.legend(loc="lower right", fontsize=7, frameon=False)
     fig.suptitle("Full-scope LAMP-Merge hyperparameter sensitivity", fontsize=10)
     fig.tight_layout(rect=[0, 0, 1, 0.93])
     figure_path.parent.mkdir(parents=True, exist_ok=True)

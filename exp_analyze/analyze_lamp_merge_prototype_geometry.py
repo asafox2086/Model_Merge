@@ -722,31 +722,38 @@ def plot_full_scope_tsne(
     import matplotlib.pyplot as plt
     from sklearn.manifold import TSNE
 
-    tsne_dir = args.figure_dir / "full_scope_tsne"
+    tsne_dir = args.figure_dir / "full_scope_tsne_comparison"
     tsne_dir.mkdir(parents=True, exist_ok=True)
-    grouped: dict[tuple[str, str, str], list[dict[str, object]]] = defaultdict(list)
+    grouped: dict[tuple[str, str], list[dict[str, object]]] = defaultdict(list)
     for record in tsne_records:
-        grouped[(str(record["dataset"]), str(record["model"]), str(record["mode"]))].append(record)
+        grouped[(str(record["dataset"]), str(record["model"]))].append(record)
 
-    for (dataset, model_name, mode), items in sorted(grouped.items()):
+    mode_order = [mode for mode in args.full_tsne_modes if mode in set(args.modes)]
+    for (dataset, model_name), items in sorted(grouped.items()):
         meta = meta_by_dataset_model.get((dataset, model_name))
         if meta is None:
             continue
         sample_features, sample_labels = reference_sample_features(args, meta, dataset)
-        proto_arrays = [np.asarray(item["prototypes"], dtype=np.float32) for item in items]
-        if not proto_arrays:
+        mode_items = {
+            mode: sorted(
+                [item for item in items if item["mode"] == mode],
+                key=lambda item: (int(item["num_clients"]), float(item["beta"])),
+            )
+            for mode in mode_order
+        }
+        mode_items = {mode: records for mode, records in mode_items.items() if records}
+        if not mode_items:
             continue
-        proto_np = np.concatenate(proto_arrays, axis=0)
-        proto_labels = np.concatenate(
-            [np.arange(int(item["num_classes"]), dtype=np.int64) for item in items],
-            axis=0,
-        )
-        case_labels = []
-        for item in items:
-            num_classes = int(item["num_classes"])
-            case_label = f"K={int(item['num_clients'])}, beta={item['beta']}"
-            case_labels.extend([case_label] * num_classes)
-        all_points = np.vstack([sample_features, proto_np])
+        prototype_blocks = []
+        block_sizes = {}
+        for mode, records in mode_items.items():
+            block = np.concatenate(
+                [np.asarray(item["prototypes"], dtype=np.float32) for item in records],
+                axis=0,
+            )
+            prototype_blocks.append(block)
+            block_sizes[mode] = int(block.shape[0])
+        all_points = np.vstack([sample_features, *prototype_blocks])
         perplexity = max(5, min(40, (all_points.shape[0] - 1) // 4))
         embed = TSNE(
             n_components=2,
@@ -756,54 +763,93 @@ def plot_full_scope_tsne(
             random_state=1701,
         ).fit_transform(all_points)
         sample_embed = embed[: sample_features.shape[0]]
-        proto_embed = embed[sample_features.shape[0] :]
+        prototype_embeddings = {}
+        offset = sample_features.shape[0]
+        for mode in mode_items:
+            size = block_sizes[mode]
+            prototype_embeddings[mode] = embed[offset : offset + size]
+            offset += size
 
-        fig, ax = plt.subplots(figsize=(9, 8), constrained_layout=True)
-        scatter = ax.scatter(
-            sample_embed[:, 0],
-            sample_embed[:, 1],
-            c=sample_labels,
-            s=7,
-            alpha=0.45,
-            cmap="tab20",
-            linewidths=0,
+        num_classes = int(meta["num_classes"])
+        cmap = plt.get_cmap("tab20", num_classes)
+        fig, axes = plt.subplots(
+            1,
+            len(mode_items),
+            figsize=(4.5 * len(mode_items), 4.8),
+            sharex=True,
+            sharey=True,
+            constrained_layout=True,
         )
-        ax.scatter(
-            proto_embed[:, 0],
-            proto_embed[:, 1],
-            c=proto_labels,
-            s=70,
-            marker="X",
-            alpha=0.88,
-            cmap="tab20",
-            edgecolors="black",
-            linewidths=0.45,
-        )
-        for class_id in sorted(set(proto_labels.tolist())):
-            idx = np.flatnonzero(proto_labels == int(class_id))
-            if idx.size == 0:
-                continue
-            center = proto_embed[idx].mean(axis=0)
-            ax.text(
-                float(center[0]),
-                float(center[1]),
-                str(int(class_id)),
-                fontsize=8,
-                weight="bold",
-                ha="center",
-                va="center",
-                bbox={"boxstyle": "round,pad=0.18", "facecolor": "white", "edgecolor": "none", "alpha": 0.65},
+        axes = np.atleast_1d(axes)
+        x_min, x_max = float(embed[:, 0].min()), float(embed[:, 0].max())
+        y_min, y_max = float(embed[:, 1].min()), float(embed[:, 1].max())
+        x_pad = max((x_max - x_min) * 0.04, 1e-3)
+        y_pad = max((y_max - y_min) * 0.04, 1e-3)
+        scatter = None
+        for ax, mode in zip(axes, mode_items):
+            scatter = ax.scatter(
+                sample_embed[:, 0],
+                sample_embed[:, 1],
+                c=sample_labels,
+                s=6,
+                alpha=0.30,
+                cmap=cmap,
+                vmin=-0.5,
+                vmax=num_classes - 0.5,
+                linewidths=0,
             )
-        ax.set_title(
-            f"{dataset} / {model_name} / {MODE_LABELS.get(mode, mode)}: full-scope prototype t-SNE"
+            proto_embed = prototype_embeddings[mode]
+            records = mode_items[mode]
+            proto_labels = np.concatenate(
+                [np.arange(int(item["num_classes"]), dtype=np.int64) for item in records]
+            )
+            ax.scatter(
+                proto_embed[:, 0],
+                proto_embed[:, 1],
+                c=proto_labels,
+                s=55,
+                marker="X",
+                alpha=0.90,
+                cmap=cmap,
+                vmin=-0.5,
+                vmax=num_classes - 0.5,
+                edgecolors="#1E2228",
+                linewidths=0.45,
+            )
+            for class_id in range(num_classes):
+                class_indices = np.flatnonzero(proto_labels == class_id)
+                if class_indices.size == 0:
+                    continue
+                center = proto_embed[class_indices].mean(axis=0)
+                ax.text(
+                    float(center[0]),
+                    float(center[1]),
+                    str(class_id),
+                    fontsize=7,
+                    weight="bold",
+                    ha="center",
+                    va="center",
+                    bbox={"boxstyle": "round,pad=0.12", "facecolor": "white", "edgecolor": "none", "alpha": 0.72},
+                )
+            ax.set_title(MODE_LABELS.get(mode, mode), fontsize=10, fontweight="bold")
+            ax.set_xlim(x_min - x_pad, x_max + x_pad)
+            ax.set_ylim(y_min - y_pad, y_max + y_pad)
+            ax.set_xticks([])
+            ax.set_yticks([])
+            for spine in ax.spines.values():
+                spine.set_color("#D6DAE0")
+        fig.suptitle(
+            f"{dataset} / {model_name}: joint full-scope prototype t-SNE",
+            fontsize=14,
+            fontweight="bold",
         )
-        ax.set_xlabel("t-SNE dimension 1")
-        ax.set_ylabel("t-SNE dimension 2")
-        ax.set_xticks([])
-        ax.set_yticks([])
-        fig.colorbar(scatter, ax=ax, fraction=0.03, pad=0.02, label="true class")
-        safe_mode = mode.replace("/", "_")
-        fig.savefig(tsne_dir / f"{dataset}_{model_name}_{safe_mode}_full_scope_tsne.png", dpi=180)
+        if scatter is not None:
+            colorbar = fig.colorbar(scatter, ax=axes.tolist(), fraction=0.018, pad=0.012)
+            colorbar.set_label("True diagnostic class")
+            colorbar.set_ticks(np.arange(num_classes))
+        stem = f"{dataset}_{model_name}_joint_full_scope_tsne"
+        fig.savefig(tsne_dir / f"{stem}.png", dpi=220, bbox_inches="tight")
+        fig.savefig(tsne_dir / f"{stem}.pdf", bbox_inches="tight")
         plt.close(fig)
 
 
