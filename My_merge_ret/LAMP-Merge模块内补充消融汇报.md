@@ -424,6 +424,8 @@ H_{\mathrm{evi}}
 
 ### 5.2 全量几何结果
 
+Accuracy 消融共有 11 个设置；本节只列出 8 个会改变原型几何的设置。`No prevalence calibration`、`Uniform prevalence prior` 与 `Smoothed prevalence prior` 只改变 M2 的类别 bias $b_c$，不改变全局原型 $p_c$、客户端权重 $\alpha_{i,c}$ 或客户端类别原型 $\mu_{i,c}$，因此其几何指标与对应原型构造完全重合。将它们重复画入几何图不会提供新的几何证据。
+
 | 设置 | Cases | $D_{\mathrm{pair}}$ | $D_{\mathrm{nn}}$ | $A_{\mathrm{client}}$ | $A_{\mathrm{proto}}$ | $H_{\mathrm{evi}}$ |
 |---|---:|---:|---:|---:|---:|---:|
 | LAMP-Merge | 180 | 0.1122 | 0.0361 | 0.8751 | 0.9446 | 0.2505 |
