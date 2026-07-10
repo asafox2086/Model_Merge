@@ -1178,8 +1178,8 @@ t-SNE is used only for paper analysis and does not participate in server-side me
 
 
 % --- DOCX block 141 ---
-% Original: 只保留联合 t-SNE 对比图和 LAMP-Merge 单方法 t-SNE 图。
-The complete t-SNE appendix includes only joint comparison plots and LAMP-Merge-only plots. Other single-method t-SNE visualizations are omitted because they are not part of the proposed method.
+% Original: 只保留少量代表性 t-SNE 图，包括联合对比图和 LAMP-Merge 单方法图。
+We report a compact representative subset of t-SNE visualizations, including joint comparison plots and LAMP-Merge-only plots. The subset uses the ResNet backbone and covers BloodMNIST-224, DermaMNIST-224, and ChaoshengMNIST-224, representing microscopy, dermoscopy, and ultrasound-style medical images.
 
 \newcommand{\tsneJointFigure}[3]{%
 \begin{figure*}[t]
@@ -1198,48 +1198,14 @@ The complete t-SNE appendix includes only joint comparison plots and LAMP-Merge-
 }
 
 \paragraph{Joint t-SNE comparisons.}
-\tsneJointFigure{tsne_joint_bloodmnist_224_convnext.png}{BloodMNIST-224}{ConvNeXt}
 \tsneJointFigure{tsne_joint_bloodmnist_224_resnet.png}{BloodMNIST-224}{ResNet}
-\tsneJointFigure{tsne_joint_bloodmnist_224_swin_tiny.png}{BloodMNIST-224}{Swin-Tiny}
-\tsneJointFigure{tsne_joint_bloodmnist_224_vit_t.png}{BloodMNIST-224}{ViT-Tiny}
-\tsneJointFigure{tsne_joint_chaoshengmnist_224_convnext.png}{ChaoshengMNIST-224}{ConvNeXt}
 \tsneJointFigure{tsne_joint_chaoshengmnist_224_resnet.png}{ChaoshengMNIST-224}{ResNet}
-\tsneJointFigure{tsne_joint_chaoshengmnist_224_swin_tiny.png}{ChaoshengMNIST-224}{Swin-Tiny}
-\tsneJointFigure{tsne_joint_chaoshengmnist_224_vit_t.png}{ChaoshengMNIST-224}{ViT-Tiny}
-\tsneJointFigure{tsne_joint_dermamnist_224_convnext.png}{DermaMNIST-224}{ConvNeXt}
 \tsneJointFigure{tsne_joint_dermamnist_224_resnet.png}{DermaMNIST-224}{ResNet}
-\tsneJointFigure{tsne_joint_dermamnist_224_swin_tiny.png}{DermaMNIST-224}{Swin-Tiny}
-\tsneJointFigure{tsne_joint_dermamnist_224_vit_t.png}{DermaMNIST-224}{ViT-Tiny}
-\tsneJointFigure{tsne_joint_organcmnist_224_convnext.png}{OrganCMNIST-224}{ConvNeXt}
-\tsneJointFigure{tsne_joint_organcmnist_224_resnet.png}{OrganCMNIST-224}{ResNet}
-\tsneJointFigure{tsne_joint_organcmnist_224_swin_tiny.png}{OrganCMNIST-224}{Swin-Tiny}
-\tsneJointFigure{tsne_joint_organcmnist_224_vit_t.png}{OrganCMNIST-224}{ViT-Tiny}
-\tsneJointFigure{tsne_joint_organsmnist_224_convnext.png}{OrganSMNIST-224}{ConvNeXt}
-\tsneJointFigure{tsne_joint_organsmnist_224_resnet.png}{OrganSMNIST-224}{ResNet}
-\tsneJointFigure{tsne_joint_organsmnist_224_swin_tiny.png}{OrganSMNIST-224}{Swin-Tiny}
-\tsneJointFigure{tsne_joint_organsmnist_224_vit_t.png}{OrganSMNIST-224}{ViT-Tiny}
 
 \paragraph{LAMP-Merge-only t-SNE visualizations.}
-\tsneLampFigure{tsne_lamp_bloodmnist_224_convnext.png}{BloodMNIST-224}{ConvNeXt}
 \tsneLampFigure{tsne_lamp_bloodmnist_224_resnet.png}{BloodMNIST-224}{ResNet}
-\tsneLampFigure{tsne_lamp_bloodmnist_224_swin_tiny.png}{BloodMNIST-224}{Swin-Tiny}
-\tsneLampFigure{tsne_lamp_bloodmnist_224_vit_t.png}{BloodMNIST-224}{ViT-Tiny}
-\tsneLampFigure{tsne_lamp_chaoshengmnist_224_convnext.png}{ChaoshengMNIST-224}{ConvNeXt}
 \tsneLampFigure{tsne_lamp_chaoshengmnist_224_resnet.png}{ChaoshengMNIST-224}{ResNet}
-\tsneLampFigure{tsne_lamp_chaoshengmnist_224_swin_tiny.png}{ChaoshengMNIST-224}{Swin-Tiny}
-\tsneLampFigure{tsne_lamp_chaoshengmnist_224_vit_t.png}{ChaoshengMNIST-224}{ViT-Tiny}
-\tsneLampFigure{tsne_lamp_dermamnist_224_convnext.png}{DermaMNIST-224}{ConvNeXt}
 \tsneLampFigure{tsne_lamp_dermamnist_224_resnet.png}{DermaMNIST-224}{ResNet}
-\tsneLampFigure{tsne_lamp_dermamnist_224_swin_tiny.png}{DermaMNIST-224}{Swin-Tiny}
-\tsneLampFigure{tsne_lamp_dermamnist_224_vit_t.png}{DermaMNIST-224}{ViT-Tiny}
-\tsneLampFigure{tsne_lamp_organcmnist_224_convnext.png}{OrganCMNIST-224}{ConvNeXt}
-\tsneLampFigure{tsne_lamp_organcmnist_224_resnet.png}{OrganCMNIST-224}{ResNet}
-\tsneLampFigure{tsne_lamp_organcmnist_224_swin_tiny.png}{OrganCMNIST-224}{Swin-Tiny}
-\tsneLampFigure{tsne_lamp_organcmnist_224_vit_t.png}{OrganCMNIST-224}{ViT-Tiny}
-\tsneLampFigure{tsne_lamp_organsmnist_224_convnext.png}{OrganSMNIST-224}{ConvNeXt}
-\tsneLampFigure{tsne_lamp_organsmnist_224_resnet.png}{OrganSMNIST-224}{ResNet}
-\tsneLampFigure{tsne_lamp_organsmnist_224_swin_tiny.png}{OrganSMNIST-224}{Swin-Tiny}
-\tsneLampFigure{tsne_lamp_organsmnist_224_vit_t.png}{OrganSMNIST-224}{ViT-Tiny}
 
 
 % --- DOCX block 143 ---
