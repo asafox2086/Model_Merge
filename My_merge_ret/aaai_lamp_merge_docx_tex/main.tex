@@ -116,6 +116,14 @@ Therefore, when the highest-frequency class proportion is large, a single-class 
 % Original: 该观察引出 M2：消除坍缩并不等价于强制预测分布均匀化，因为医学数据中的长尾先验具有真实统计含义；同时，模型也不能退化为多数类预测器。M2 因此不改变 M1 已经重建出的诊断原型，而是在客户端上传的患病率计数显示存在强主导类别时，对分类分数加入有界的中心化 log-prior。这样既保留每个诊断类别的独立判别方向，又允许真实高频类别获得必要的 accuracy 校准。
 This observation motivates M2: eliminating collapse is not equivalent to forcing the prediction distribution to become uniform, because long-tailed priors in medical data have real statistical meaning; at the same time, the model must not degenerate into a majority-class predictor. M2 therefore does not change the diagnostic prototypes reconstructed by M1. Instead, when prevalence counts uploaded by clients indicate a strong dominant class, M2 adds a bounded centered log-prior to the classification scores. This preserves the independent discriminative direction of each diagnostic class while allowing real high-frequency classes to receive necessary Accuracy calibration.
 
+% Original: Introduction 机制图：说明现有通用后置融合为何在多中心医学图像中诱发预测坍缩。
+\begin{figure*}[t]
+\centering
+\includegraphics[width=\textwidth,keepaspectratio]{figures/concept_predictive_collapse.pdf}
+\caption{Mechanism of aggregation-induced predictive collapse. In multi-center medical image classification, local clients usually retain partial but non-degenerate diagnostic ability over their observed class subsets. Generic post-hoc merging methods operate on whole checkpoints and do not encode whether client $i$ has reliable evidence for class $c$. As a result, missing-class directions and majority-class directions are mixed in the same parameter space, causing the merged predictor to concentrate its predictions on one or a few diagnostic classes.}
+\label{fig:predictive-collapse-mechanism}
+\end{figure*}
+
 
 % --- DOCX block 022 ---
 % Original: 相关工作
@@ -176,6 +184,14 @@ Federated learning and decentralized learning are important directions in privac
 % --- DOCX block 034 ---
 % Original: 方法设计
 \section{Method Design}
+
+% Original: Method 机制图：说明 LAMP-Merge 的一次性异步融合流程和两个模块。
+\begin{figure*}[t]
+\centering
+\includegraphics[width=\textwidth,keepaspectratio]{figures/concept_lamp_merge_pipeline.pdf}
+\caption{Formal workflow of LAMP-Merge. Each client computes class-level diagnostic statistics locally using the shared reference feature space and uploads them once together with the trained checkpoint. The server does not access raw images, per-sample features, per-sample logits, validation data, or proxy data. Module 1 reconstructs class-wise diagnostic prototypes from client-uploaded prototypes and support counts, while Module 2 applies bounded long-tail calibration from uploaded prevalence counts. The final merged model preserves class-specific diagnostic evidence and calibrates it to medical prevalence without multi-round client-server communication.}
+\label{fig:lamp-merge-workflow}
+\end{figure*}
 
 % --- DOCX block 035 ---
 % Original: 模块1：原型重建模块
