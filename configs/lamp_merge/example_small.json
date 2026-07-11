@@ -1,0 +1,22 @@
+{
+  "task_type": "small",
+  "dataset": "bloodmnist_224",
+  "model": "resnet",
+  "num_clients": 3,
+  "beta": 0.01,
+  "seed": 42,
+  "method": "lamp_merge",
+  "merge_weight_mode": "sample",
+  "model_hub_root": "model_hub",
+  "data_root": "Med_data",
+  "output_root": "outputs/lamp_merge_example",
+  "lamp_merge_prototype_root": "outputs/lamp_merge_client_local_proto_stats",
+  "lamp_merge_proto_count_power": 0.45,
+  "lamp_merge_reference_head_scale": 20.0,
+  "lamp_merge_reference_prior_threshold": 2.5,
+  "lamp_merge_reference_prior_max_tau": 5.0,
+  "split": "test",
+  "device": "cuda:0",
+  "batch_size": 128,
+  "num_workers": 4
+}
