@@ -43,12 +43,12 @@
 \definecolor{GainGreen}{RGB}{32,132,84}
 \definecolor{DropRed}{RGB}{190,54,54}
 \newcommand{\tblhead}[1]{\strut #1}
-\newcommand{\lampcell}[1]{\begingroup\setlength{\fboxsep}{1.8pt}\colorbox{LAMPYellow}{\makebox[5.6em][c]{\strut\bfseries\boldmath #1}}\endgroup}
-\newcommand{\avgcell}[1]{\begingroup\setlength{\fboxsep}{1.2pt}\colorbox{AvgBlue}{\makebox[2.85em][c]{\strut #1}}\endgroup}
+\newcommand{\lampcell}[1]{\begingroup\setlength{\fboxsep}{0.65pt}\colorbox{LAMPYellow}{\makebox[5.6em][c]{\rule[-0.45ex]{0pt}{2.90ex}\bfseries\boldmath #1}}\endgroup}
+\newcommand{\avgcell}[1]{\begingroup\def\avgcontent{#1}\def\avgheader{Avg}\ifx\avgcontent\avgheader\setlength{\fboxsep}{0pt}\colorbox{AvgBlue}{\makebox[3.35em][c]{\rule[-1.15ex]{0pt}{4.20ex}\bfseries #1}}\else\setlength{\fboxsep}{1.2pt}\colorbox{AvgBlue}{\makebox[2.85em][c]{\strut #1}}\fi\endgroup}
 \newcommand{\lampband}{\noalign{\begingroup\color{LAMPYellow}\hrule height 3.6ex\endgroup\kern-3.6ex}}
-\newcommand{\headband}{\noalign{\begingroup\color{HeaderGray}\hrule height 4.8ex\endgroup\kern-4.8ex}}
-\newcommand{\gainup}[1]{\textcolor{GainGreen}{\(\uparrow\)#1}}
-\newcommand{\gaindown}[1]{\textcolor{GainGreen}{\(\downarrow\)#1}}
+\newcommand{\headband}{\noalign{\begingroup\color{HeaderGray}\hrule height 8.15ex\endgroup\kern-8.15ex}}
+\newcommand{\gainup}[1]{\makebox[5.85em][l]{\textcolor{GainGreen}{\(\uparrow\)#1}}}
+\newcommand{\gaindown}[1]{\makebox[5.85em][l]{\textcolor{GainGreen}{\(\downarrow\)#1}}}
 \newcommand{\dropdown}[1]{\textcolor{DropRed}{\(\downarrow\)#1}}
 \newcommand{\neutraldelta}[1]{\textcolor{GainGreen}{#1}}
 
@@ -703,13 +703,13 @@ To visually show the prediction-distribution changes measured by the new diagnos
 \end{figure}
 
 \subsection{t-SNE Visualization Experiment}
-% 所有原型均位于共享参考特征空间 z=phi_0(T(x)) 中。我们仅将 t-SNE 用于分析，而不用于服务器端选择或融合。图中给出了 Blood 数据集上的联合 t-SNE 对比，不同消融设置被投影到同一二维空间中，用于观察诊断原型是否与真实类别结构保持一致。
-All prototypes live in the shared reference feature space $z=\phi_0(T(x))$. We use t-SNE only for analysis, not for server-side selection or fusion. Fig.~\ref{fig:tsne} shows a joint t-SNE comparison on the Blood dataset, where different ablation settings are projected into the same two-dimensional space to examine whether diagnostic prototypes remain aligned with the true class structure.
+% 我们仅将 t-SNE 用于分析，而不用于服务器端选择或融合。图中给出了 Blood 数据集上 ResNet、K=3、beta=0.01 设置下的联合 t-SNE 对比。每个点对应一个测试图像的模型输出概率向量，不同正式融合方法在同一二维空间中投影，用于比较预测表征的类别结构。
+We use t-SNE only for analysis, not for server-side selection or fusion. Fig.~\ref{fig:tsne} shows a joint comparison on Blood with ResNet, $K=3$, and $\beta=0.01$. Each point is the output-probability representation of a test image, and formal merging methods are projected into the same two-dimensional space to compare the class structure of their predictive representations.
 
 \begin{figure*}[t]
 \centering
-\includegraphics[width=0.98\textwidth]{figures/tsne_joint_bloodmnist_224_resnet.png}
-\caption{Joint t-SNE visualization of ResNet feature representations and diagnostic prototypes on the Blood dataset. From left to right: LAMP-Merge, classifier-head aggregation, global-feature mean, and shuffled-label prototype.}
+\includegraphics[width=0.90\textwidth]{figures/tsne_joint_bloodmnist_224_resnet.png}
+\caption{Joint t-SNE visualization of output-probability representations on Blood. From left to right: LAMP-Merge, weight averaging, TIES-Merging, and DARE-Linear.}
 \label{fig:tsne}
 \end{figure*}
 
