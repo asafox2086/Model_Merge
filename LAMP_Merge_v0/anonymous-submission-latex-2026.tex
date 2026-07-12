@@ -197,7 +197,7 @@ Medical imaging makes this problem particularly challenging. Inter-hospital hete
 
 \begin{figure}[t]
     \centering
-    \includegraphics[width=0.44\linewidth]{figures/intro.png}
+    \includegraphics[width=\linewidth]{figures/intro.png}
     \caption{In multicenter healthcare settings, individual clients typically observe only a subset of the global diagnostic space. Conventional parameter-level model-merging methods can therefore cause the merged global model’s predictions to concentrate on a small number of dominant classes.}
     \label{fig:placeholder}
 \end{figure}
@@ -246,7 +246,7 @@ Medical image model merging requires an explicit representation of class-level d
 \section{III Method}
 \begin{figure}[t]
     \centering
-    \includegraphics[width=0.46\linewidth]{figures/method.png}
+    \includegraphics[width=\linewidth]{figures/method.png}
     \caption{Local models from multicenter hospitals typically contain only partial diagnostic knowledge, while raw medical images cannot be centrally shared. LAMP-Merge reconstructs a privacy-friendly global medical classifier through diagnostic prototype reconstruction and long-tail prevalence calibration, without accessing raw data or requiring multi-round federated optimization.}
     \label{fig_method}
 \end{figure}
