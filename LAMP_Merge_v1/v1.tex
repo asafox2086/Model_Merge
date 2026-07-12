@@ -44,14 +44,13 @@
 \definecolor{DropRed}{RGB}{190,54,54}
 \newcommand{\tblhead}[1]{\strut #1}
 \newcommand{\lampcell}[1]{\begingroup\setlength{\fboxsep}{0.65pt}\colorbox{LAMPYellow}{\makebox[5.6em][c]{\rule[-0.45ex]{0pt}{2.90ex}\bfseries\boldmath #1}}\endgroup}
-\newcommand{\avgheadcell}{\begingroup\setlength{\fboxsep}{0pt}\colorbox{AvgBlue}{\makebox[3.35em][c]{\rule[-1.50ex]{0pt}{4.00ex}}}\endgroup}
-\newcommand{\avgcell}[1]{\begingroup\def\avgcontent{#1}\def\avgheader{Avg}\ifx\avgcontent\avgheader\setlength{\fboxsep}{0pt}\colorbox{AvgBlue}{\makebox[3.35em][c]{\rule[-1.15ex]{0pt}{4.20ex}\bfseries #1}}\else\setlength{\fboxsep}{1.2pt}\colorbox{AvgBlue}{\makebox[2.85em][c]{\strut #1}}\fi\endgroup}
+\newcommand{\avgcell}[1]{\begingroup\def\avgcontent{#1}\def\avgheader{Avg}\ifx\avgcontent\avgheader\setlength{\fboxsep}{0pt}\colorbox{AvgBlue}{\makebox[3.35em][c]{\rule[-1.50ex]{0pt}{4.80ex}\bfseries #1}}\else\setlength{\fboxsep}{1.2pt}\colorbox{AvgBlue}{\makebox[2.85em][c]{\strut #1}}\fi\endgroup}
 \newcommand{\lampband}{\noalign{\begingroup\color{LAMPYellow}\hrule height 3.6ex\endgroup\kern-3.6ex}}
 \newcommand{\headband}{\noalign{\begingroup\color{HeaderGray}\hrule height 8.15ex\endgroup\kern-8.15ex}}
 \newcommand{\gainup}[1]{\makebox[5.85em][l]{\textcolor{GainGreen}{\(\uparrow\)#1}}}
 \newcommand{\gaindown}[1]{\makebox[5.85em][l]{\textcolor{GainGreen}{\(\downarrow\)#1}}}
-\newcommand{\dropdown}[1]{\textcolor{DropRed}{\(\downarrow\)#1}}
-\newcommand{\neutraldelta}[1]{\textcolor{GainGreen}{#1}}
+\newcommand{\dropdown}[1]{\makebox[5.85em][l]{\textcolor{DropRed}{\(\downarrow\)#1}}}
+\newcommand{\neutraldelta}[1]{\makebox[5.85em][l]{\textcolor{GainGreen}{#1}}}
 
 % DISALLOWED PACKAGES
 % \usepackage{authblk} -- This package is specifically forbidden
@@ -242,17 +241,23 @@ We conduct extensive experiments on multiple medical imaging datasets. The resul
 \subsection{Model Merging}
 
 % 模型融合方法通常从参数空间、任务向量空间或几何空间整合多个检查点。权重平均和 Model Soups 直接插值模型参数；Task Arithmetic、TIES-Merging 与 DARE 处理任务增量和符号冲突；Fisher、RegMean、Model Stock、Breadcrumbs、Iso-C、FreeMerge 与 RobustMerge 进一步引入曲率、统计均值、子空间或鲁棒方向假设。然而，这些方法的核心变量仍然是全局参数、任务向量或更新方向，并不显式表示医学任务中的诊断类别证据。因此，在客户端类别覆盖不完整且患病率长尾的多中心医学图像场景中，它们容易混合“见过某类的可靠方向”和“没见过某类的缺失方向”，从而产生预测坍缩。
-Model-merging methods commonly integrate checkpoints in parameter, task-vector, or geometric spaces. Weight averaging and Model Soups interpolate model parameters\cite{pmlr-v162-wortsman22a}; Task Arithmetic, TIES-Merging, and DARE operate on task deltas and sign conflicts\cite{ilharco2023editingmodelstaskarithmetic,yadav2023tiesmergingresolvinginterferencemerging,yu2024languagemodelssupermario}; Fisher merging, RegMean, Model Stock, Breadcrumbs, Iso-C, FreeMerge, and RobustMerge further introduce curvature, mean-statistic, subspace, or robustness assumptions\cite{matena2022mergingmodelsfisherweightedaveraging,jin2025datalessknowledgefusionmerging,jang2025modelstockneedjust,davari2024modelbreadcrumbsscalingmultitask,marczak2025taskleftbehindisotropic,zheng2025freemergingfouriertransformefficient,zeng2025robustmergeparameterefficientmodelmerging}. However, these variables are still global parameters, task vectors, or update directions rather than class-level diagnostic evidence. \textbf{They do not ask whether a client has reliable supervision for a specific medical class.} Under incomplete local class coverage and long-tailed prevalence, reliable directions from clients that observed a class can be averaged with absent or conflicting directions from clients that did not, leading to aggregation-induced prediction collapse.
+Model-merging methods commonly integrate checkpoints in parameter, task-vector, or geometric spaces. Weight averaging and Model Soups interpolate model parameters\cite{pmlr-v162-wortsman22a}; Task Arithmetic, TIES-Merging, and DARE operate on task deltas and sign conflicts\cite{ilharco2023editingmodelstaskarithmetic,yadav2023tiesmergingresolvinginterferencemerging,yu2024languagemodelssupermario}; Fisher merging, RegMean, Model Stock, Breadcrumbs, Iso-C, FreeMerge, and RobustMerge further introduce curvature, mean-statistic, subspace, or robustness assumptions\cite{matena2022mergingmodelsfisherweightedaveraging,jin2025datalessknowledgefusionmerging,jang2025modelstockneedjust,davari2024modelbreadcrumbsscalingmultitask,marczak2025taskleftbehindisotropic,zheng2025freemergingfouriertransformefficient,zeng2025robustmergeparameterefficientmodelmerging}.
+
+However, these variables are still global parameters, task vectors, or update directions rather than class-level diagnostic evidence. \textbf{They do not ask whether a client has reliable supervision for a specific medical class.} Under incomplete local class coverage and long-tailed prevalence, reliable directions from clients that observed a class can be averaged with absent or conflicting directions from clients that did not, leading to aggregation-induced prediction collapse.
 
 \subsection{Medical Model Merging}
 
 % 医学融合研究通常利用医学数据的领域结构，例如非规则采样时间序列、临床传感器图结构以及影像-电子病历融合。mTAN、Raindrop 和 MedFuse 表明，医学任务需要利用临床采样机制、模态异质性和患者级时间关系。然而，这些方法通常融合患者级输入或临床表征，而不是融合已经独立训练完成的图像分类器检查点；同时，它们往往需要患者样本、时间戳、多模态记录、电子病历或服务器端验证反馈。MedMerge 等训练自由医学知识迁移方法也针对视觉语言跨模态适配，而非同一任务下的单次异步检查点融合。因此，现有医学融合路线在本文约束下的核心问题是隐私与协议不匹配。
-Medical fusion studies often exploit domain structures such as irregular clinical time series, physiological sensor graphs, and image-EHR fusion. mTAN, Raindrop, and MedFuse show that medical tasks benefit from modeling clinical sampling mechanisms, modality heterogeneity, and patient-level temporal relations\cite{shukla2021multitimeattentionnetworksirregularly,zhang2022graphguidednetworkirregularlysampled,hayat2023medfusemultimodalfusionclinical}. However, these methods usually fuse patient-level inputs or clinical representations rather than independently trained image-classifier checkpoints, and they often require patient samples, timestamps, multimodal records, electronic health records, or server-side validation feedback. MedMerge is a relevant training-free medical knowledge-transfer framework\cite{11382027}; however, it targets cross-modal adaptation for medical vision-language models rather than asynchronous checkpoint merging for the same classification task. \textbf{Thus, existing medical fusion routes are mismatched with our privacy and single-upload protocol constraints.} LAMP-Merge keeps the medical structure uploadable by using only class-level prototypes and prevalence counts computed locally by clients.
+Medical fusion studies often exploit domain structures such as irregular clinical time series, physiological sensor graphs, and image-EHR fusion. mTAN, Raindrop, and MedFuse show that medical tasks benefit from modeling clinical sampling mechanisms, modality heterogeneity, and patient-level temporal relations\cite{shukla2021multitimeattentionnetworksirregularly,zhang2022graphguidednetworkirregularlysampled,hayat2023medfusemultimodalfusionclinical}.
+
+However, these methods usually fuse patient-level inputs or clinical representations rather than independently trained image-classifier checkpoints, and they often require patient samples, timestamps, multimodal records, electronic health records, or server-side validation feedback. MedMerge is a relevant training-free medical knowledge-transfer framework\cite{11382027}; however, it targets cross-modal adaptation for medical vision-language models rather than asynchronous checkpoint merging for the same classification task. \textbf{Thus, existing medical fusion routes are mismatched with our privacy and single-upload protocol constraints.} LAMP-Merge keeps the medical structure uploadable by using only class-level prototypes and prevalence counts computed locally by clients.
 
 \subsection{Federated Learning}
 
 % 联邦学习和去中心化学习通过通信协议完成协作训练。FedAvg 及其变体依赖多轮服务器-客户端更新；Swarm Learning 和 Gossip Learning 减弱中心化服务器角色，但仍要求参与者持续训练、交换模型并从中间模型继续优化。然而，本文研究的是训练完成后的单次异步模型融合，医院可能无法长期在线，也不能反复接收全局模型并重新训练。因此，联邦学习解决多轮协作训练问题，而 LAMP-Merge 解决单次上传后的统一模型构建问题。
-Federated and decentralized learning perform collaborative training through communication protocols. FedAvg and its variants rely on repeated server-client updates\cite{pmlr-v54-mcmahan17a,kaissis_secure_2020}; Swarm Learning and Gossip Learning reduce centralization but still require participants to continue training, exchanging models, and optimizing from intermediate states\cite{warnat-herresthal_swarm_2021,hegedhus_gossip_2019}. However, our problem is single-shot asynchronous model merging after local training has finished: hospitals may not remain online, receive global checkpoints repeatedly, or run additional optimization rounds. \textbf{The limitation is therefore communication feasibility rather than only privacy.} LAMP-Merge requires one upload of a local model interface and class-level statistics, enabling the server to construct a unified diagnostic model without a multi-round feedback loop.
+Federated and decentralized learning perform collaborative training through communication protocols. FedAvg and its variants rely on repeated server-client updates\cite{pmlr-v54-mcmahan17a,kaissis_secure_2020}; Swarm Learning and Gossip Learning reduce centralization but still require participants to continue training, exchanging models, and optimizing from intermediate states\cite{warnat-herresthal_swarm_2021,hegedhus_gossip_2019}.
+
+However, our problem is single-shot asynchronous model merging after local training has finished: hospitals may not remain online, receive global checkpoints repeatedly, or run additional optimization rounds. \textbf{The limitation is therefore communication feasibility rather than only privacy.} LAMP-Merge requires one upload of a local model interface and class-level statistics, enabling the server to construct a unified diagnostic model without a multi-round feedback loop.
 
 \section{III Method}
 
@@ -312,6 +317,13 @@ Finally, LAMP-Merge synthesizes a cosine prototype classifier:
 w_c=s\frac{p_c}{\|p_c\|_2},
 \end{equation}
 where $s=20$ is the default head scale. This module addresses a key limitation of existing methods: it preserves the classes for which each client has supporting evidence and reconstructs a global multiclass diagnostic head.
+
+\begin{figure*}[t]
+\centering
+\includegraphics[width=0.92\textwidth]{figures/full_scope_module_ablation_dataset_accuracy.png}
+\caption{Dataset-level client-average accuracy in the module ablation. Each dataset contains 15 cells from five model families and three client counts; each cell is averaged over three Dirichlet skew levels.}
+\label{fig:dataset-ablation-acc}
+\end{figure*}
 
 \subsection{Long-tail Prevalence Calibration}
 
@@ -392,8 +404,8 @@ Tables~\ref{tab:client-avg-resnet}--\ref{tab:client-avg-clip} report the full cl
 \begin{tabular}{lcccccccccccccccccccc}
 \hline
 \headband
-& \multicolumn{3}{c}{\tblhead{Blood}} & \avgheadcell & \multicolumn{3}{c}{\tblhead{Derma}} & \avgheadcell & \multicolumn{3}{c}{\tblhead{Organ-C}} & \avgheadcell & \multicolumn{3}{c}{\tblhead{Organ-S}} & \avgheadcell & \multicolumn{3}{c}{\tblhead{Ultrasound}} & \avgheadcell \\
-\cline{2-4}\cline{6-8}\cline{10-12}\cline{14-16}\cline{18-20}
+& \multicolumn{4}{c}{\tblhead{Blood}} & \multicolumn{4}{c}{\tblhead{Derma}} & \multicolumn{4}{c}{\tblhead{Organ-C}} & \multicolumn{4}{c}{\tblhead{Organ-S}} & \multicolumn{4}{c}{\tblhead{Ultrasound}} \\
+\cline{2-5}\cline{6-9}\cline{10-13}\cline{14-17}\cline{18-21}
 \tblhead{Method} & \tblhead{$K=3$} & \tblhead{$K=5$} & \tblhead{$K=7$} & \avgcell{Avg} & \tblhead{$K=3$} & \tblhead{$K=5$} & \tblhead{$K=7$} & \avgcell{Avg} & \tblhead{$K=3$} & \tblhead{$K=5$} & \tblhead{$K=7$} & \avgcell{Avg} & \tblhead{$K=3$} & \tblhead{$K=5$} & \tblhead{$K=7$} & \avgcell{Avg} & \tblhead{$K=3$} & \tblhead{$K=5$} & \tblhead{$K=7$} & \avgcell{Avg} \\
 \hline
 \texttt{avg}\cite{pmlr-v162-wortsman22a} & 0.3345 & 0.2467 & 0.2822 & \avgcell{0.2878} & 0.6291 & 0.4700 & 0.6244 & \avgcell{0.5745} & 0.2261 & 0.1772 & 0.1396 & \avgcell{0.1810} & \underline{0.2864} & 0.1794 & 0.2475 & \avgcell{0.2378} & 0.2435 & 0.1581 & 0.1542 & \avgcell{0.1853} \\
@@ -425,8 +437,8 @@ Tables~\ref{tab:client-avg-resnet}--\ref{tab:client-avg-clip} report the full cl
 \begin{tabular}{lcccccccccccccccccccc}
 \hline
 \headband
-& \multicolumn{3}{c}{\tblhead{Blood}} & \avgheadcell & \multicolumn{3}{c}{\tblhead{Derma}} & \avgheadcell & \multicolumn{3}{c}{\tblhead{Organ-C}} & \avgheadcell & \multicolumn{3}{c}{\tblhead{Organ-S}} & \avgheadcell & \multicolumn{3}{c}{\tblhead{Ultrasound}} & \avgheadcell \\
-\cline{2-4}\cline{6-8}\cline{10-12}\cline{14-16}\cline{18-20}
+& \multicolumn{4}{c}{\tblhead{Blood}} & \multicolumn{4}{c}{\tblhead{Derma}} & \multicolumn{4}{c}{\tblhead{Organ-C}} & \multicolumn{4}{c}{\tblhead{Organ-S}} & \multicolumn{4}{c}{\tblhead{Ultrasound}} \\
+\cline{2-5}\cline{6-9}\cline{10-13}\cline{14-17}\cline{18-21}
 \tblhead{Method} & \tblhead{$K=3$} & \tblhead{$K=5$} & \tblhead{$K=7$} & \avgcell{Avg} & \tblhead{$K=3$} & \tblhead{$K=5$} & \tblhead{$K=7$} & \avgcell{Avg} & \tblhead{$K=3$} & \tblhead{$K=5$} & \tblhead{$K=7$} & \avgcell{Avg} & \tblhead{$K=3$} & \tblhead{$K=5$} & \tblhead{$K=7$} & \avgcell{Avg} & \tblhead{$K=3$} & \tblhead{$K=5$} & \tblhead{$K=7$} & \avgcell{Avg} \\
 \hline
 \texttt{avg}\cite{pmlr-v162-wortsman22a} & 0.1565 & 0.1122 & 0.1384 & \avgcell{0.1357} & 0.2966 & \underline{0.4830} & \textbf{0.6688} & \avgcell{0.4828} & 0.1037 & 0.1218 & 0.0944 & \avgcell{0.1066} & 0.1308 & 0.1035 & 0.1416 & \avgcell{0.1253} & 0.1506 & 0.1506 & 0.1252 & \avgcell{0.1421} \\
@@ -458,8 +470,8 @@ Tables~\ref{tab:client-avg-resnet}--\ref{tab:client-avg-clip} report the full cl
 \begin{tabular}{lcccccccccccccccccccc}
 \hline
 \headband
-& \multicolumn{3}{c}{\tblhead{Blood}} & \avgheadcell & \multicolumn{3}{c}{\tblhead{Derma}} & \avgheadcell & \multicolumn{3}{c}{\tblhead{Organ-C}} & \avgheadcell & \multicolumn{3}{c}{\tblhead{Organ-S}} & \avgheadcell & \multicolumn{3}{c}{\tblhead{Ultrasound}} & \avgheadcell \\
-\cline{2-4}\cline{6-8}\cline{10-12}\cline{14-16}\cline{18-20}
+& \multicolumn{4}{c}{\tblhead{Blood}} & \multicolumn{4}{c}{\tblhead{Derma}} & \multicolumn{4}{c}{\tblhead{Organ-C}} & \multicolumn{4}{c}{\tblhead{Organ-S}} & \multicolumn{4}{c}{\tblhead{Ultrasound}} \\
+\cline{2-5}\cline{6-9}\cline{10-13}\cline{14-17}\cline{18-21}
 \tblhead{Method} & \tblhead{$K=3$} & \tblhead{$K=5$} & \tblhead{$K=7$} & \avgcell{Avg} & \tblhead{$K=3$} & \tblhead{$K=5$} & \tblhead{$K=7$} & \avgcell{Avg} & \tblhead{$K=3$} & \tblhead{$K=5$} & \tblhead{$K=7$} & \avgcell{Avg} & \tblhead{$K=3$} & \tblhead{$K=5$} & \tblhead{$K=7$} & \avgcell{Avg} & \tblhead{$K=3$} & \tblhead{$K=5$} & \tblhead{$K=7$} & \avgcell{Avg} \\
 \hline
 \texttt{avg}\cite{pmlr-v162-wortsman22a} & 0.1343 & 0.1082 & 0.1160 & \avgcell{0.1195} & 0.4638 & 0.4369 & 0.3696 & \avgcell{0.4234} & 0.1657 & 0.1043 & 0.0952 & \avgcell{0.1217} & 0.0844 & 0.0852 & 0.1710 & \avgcell{0.1135} & 0.1450 & 0.1327 & \underline{0.1884} & \avgcell{0.1554} \\
@@ -491,8 +503,8 @@ Tables~\ref{tab:client-avg-resnet}--\ref{tab:client-avg-clip} report the full cl
 \begin{tabular}{lcccccccccccccccccccc}
 \hline
 \headband
-& \multicolumn{3}{c}{\tblhead{Blood}} & \avgheadcell & \multicolumn{3}{c}{\tblhead{Derma}} & \avgheadcell & \multicolumn{3}{c}{\tblhead{Organ-C}} & \avgheadcell & \multicolumn{3}{c}{\tblhead{Organ-S}} & \avgheadcell & \multicolumn{3}{c}{\tblhead{Ultrasound}} & \avgheadcell \\
-\cline{2-4}\cline{6-8}\cline{10-12}\cline{14-16}\cline{18-20}
+& \multicolumn{4}{c}{\tblhead{Blood}} & \multicolumn{4}{c}{\tblhead{Derma}} & \multicolumn{4}{c}{\tblhead{Organ-C}} & \multicolumn{4}{c}{\tblhead{Organ-S}} & \multicolumn{4}{c}{\tblhead{Ultrasound}} \\
+\cline{2-5}\cline{6-9}\cline{10-13}\cline{14-17}\cline{18-21}
 \tblhead{Method} & \tblhead{$K=3$} & \tblhead{$K=5$} & \tblhead{$K=7$} & \avgcell{Avg} & \tblhead{$K=3$} & \tblhead{$K=5$} & \tblhead{$K=7$} & \avgcell{Avg} & \tblhead{$K=3$} & \tblhead{$K=5$} & \tblhead{$K=7$} & \avgcell{Avg} & \tblhead{$K=3$} & \tblhead{$K=5$} & \tblhead{$K=7$} & \avgcell{Avg} & \tblhead{$K=3$} & \tblhead{$K=5$} & \tblhead{$K=7$} & \avgcell{Avg} \\
 \hline
 \texttt{avg}\cite{pmlr-v162-wortsman22a} & 0.1565 & 0.1186 & 0.1524 & \avgcell{0.1425} & 0.4569 & \underline{0.4830} & \textbf{0.6688} & \avgcell{0.5362} & 0.1068 & 0.1294 & 0.0787 & \avgcell{0.1050} & 0.0682 & 0.0604 & 0.1381 & \avgcell{0.0889} & 0.1527 & 0.1294 & 0.1465 & \avgcell{0.1429} \\
@@ -524,8 +536,8 @@ Tables~\ref{tab:client-avg-resnet}--\ref{tab:client-avg-clip} report the full cl
 \begin{tabular}{lcccccccccccccccccccc}
 \hline
 \headband
-& \multicolumn{3}{c}{\tblhead{Blood}} & \avgheadcell & \multicolumn{3}{c}{\tblhead{Derma}} & \avgheadcell & \multicolumn{3}{c}{\tblhead{Organ-C}} & \avgheadcell & \multicolumn{3}{c}{\tblhead{Organ-S}} & \avgheadcell & \multicolumn{3}{c}{\tblhead{Ultrasound}} & \avgheadcell \\
-\cline{2-4}\cline{6-8}\cline{10-12}\cline{14-16}\cline{18-20}
+& \multicolumn{4}{c}{\tblhead{Blood}} & \multicolumn{4}{c}{\tblhead{Derma}} & \multicolumn{4}{c}{\tblhead{Organ-C}} & \multicolumn{4}{c}{\tblhead{Organ-S}} & \multicolumn{4}{c}{\tblhead{Ultrasound}} \\
+\cline{2-5}\cline{6-9}\cline{10-13}\cline{14-17}\cline{18-21}
 \tblhead{Method} & \tblhead{$K=3$} & \tblhead{$K=5$} & \tblhead{$K=7$} & \avgcell{Avg} & \tblhead{$K=3$} & \tblhead{$K=5$} & \tblhead{$K=7$} & \avgcell{Avg} & \tblhead{$K=3$} & \tblhead{$K=5$} & \tblhead{$K=7$} & \avgcell{Avg} & \tblhead{$K=3$} & \tblhead{$K=5$} & \tblhead{$K=7$} & \avgcell{Avg} & \tblhead{$K=3$} & \tblhead{$K=5$} & \tblhead{$K=7$} & \avgcell{Avg} \\
 \hline
 \texttt{avg}\cite{pmlr-v162-wortsman22a} & 0.1857 & 0.1199 & 0.1863 & \avgcell{0.1640} & 0.6688 & 0.6688 & 0.5682 & \avgcell{0.6353} & 0.2360 & 0.1348 & 0.1226 & \avgcell{0.1645} & 0.2978 & 0.0926 & 0.1447 & \avgcell{0.1784} & 0.1602 & 0.1282 & 0.1087 & \avgcell{0.1324} \\
@@ -551,14 +563,6 @@ Tables~\ref{tab:client-avg-resnet}--\ref{tab:client-avg-clip} report the full cl
 
 % 模块级消融采用与主实验完全相同的实验设置。再比较三种情景：完整 LAMP-Merge、仅使用诊断原型重建、在权重平均上仅加入长尾患病率校准。表中结果显示，这两个模块均对算法的性能有较为显著的提升
 Module-level ablations use exactly the same experimental setup as the main experiments. We compare three configurations: full LAMP-Merge, diagnostic prototype reconstruction only, and weight averaging augmented only with long-tail prevalence calibration. Fig.~\ref{fig:dataset-ablation-acc} shows that both modules provide substantial performance improvements.
-
-\begin{figure*}[t]
-\centering
-\includegraphics[width=0.92\textwidth]{figures/full_scope_module_ablation_dataset_accuracy.png}
-\caption{Dataset-level client-average accuracy in the module ablation. Each dataset contains 15 cells from five model families and three client counts; each cell is averaged over three Dirichlet skew levels.}
-\label{fig:dataset-ablation-acc}
-\end{figure*}
-
 
 \subsubsection{1) Effectiveness of Diagnostic Prototype Reconstruction}
 % 为进一步定位诊断原型重建内部哪些信息是必要的，我们在完整范围上进行受控替换。所有设置均保留长尾患病率校准，只替换诊断原型重建中的原型语义或支持数权重。
@@ -612,7 +616,7 @@ We further replace the prior term inside long-tail prevalence calibration. This 
 \item \textbf{Smoothed prevalence prior} uses \(\pi_c\leftarrow\sum_i(m_{i,c}+1)/\sum_k\sum_i(m_{i,k}+1)\), preserving the same prior structure with additive smoothing.
 \end{itemize}
 
-\begin{table*}[t]
+\begin{table}[t]
 \centering
 \caption{Internal ablation of long-tail prevalence calibration.}
 \label{tab:prevalence-internal-ablation}
@@ -629,7 +633,7 @@ Uniform prevalence prior & 0.5879 & \dropdown{0.0330} \\
 Smoothed prevalence prior & 0.6209 & \neutraldelta{0.0000} \\
 \hline
 \end{tabular}
-\end{table*}
+\end{table}
 
 % 表*中结果说明，完全移除患病率校准或将真实先验替换为均匀先验都会降低平均准确率，说明长尾信息是完整方法的一部分。平滑先验与正式方法接近，说明 LAMP-Merge 不依赖单个精确计数的偶然波动；只要先验仍保留真实长尾结构，有界校准即可发挥作用。
 Table ~\ref{tab:prevalence-internal-ablation} shows that removing prevalence calibration or replacing the real prior with a uniform prior reduces mean ACC, confirming that long-tailed prevalence is part of the full method. The smoothed prior remains close to the official method, indicating that LAMP-Merge does not depend on accidental fluctuations of exact counts; bounded calibration remains effective as long as the prior preserves the real long-tailed structure.
@@ -669,7 +673,7 @@ Although the main experiments use ACC for direct comparison, long-tailed medical
 \setlength{\tabcolsep}{3.2pt}
 \begin{tabular}{lrrr}
 \hline
-\tblhead{Metric} & \tblhead{LAMP-Merge} & \tblhead{Best reference} & \tblhead{Difference} \\
+\tblhead{Metric} & \lampcell{LAMP-Merge} & \tblhead{Best reference} & \tblhead{Difference} \\
 \hline
 Accuracy $\uparrow$ & \lampcell{0.5885} & 0.3156 & \gainup{+0.2729} \\
 BA / macro recall $\uparrow$ & \lampcell{0.5747} & 0.1810 & \gainup{+0.3937} \\
