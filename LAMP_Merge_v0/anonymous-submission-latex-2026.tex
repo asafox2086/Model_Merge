@@ -6,9 +6,6 @@
 \usepackage{courier}  % DO NOT CHANGE THIS
 \usepackage[hyphens]{url}  % DO NOT CHANGE THIS
 \usepackage{graphicx} % DO NOT CHANGE THIS
-\usepackage{booktabs}
-\usepackage{adjustbox}
-\usepackage{amsmath,amssymb}
 \urlstyle{rm} % DO NOT CHANGE THIS
 \def\UrlFont{\rm}  % DO NOT CHANGE THIS
 \usepackage{natbib}  % DO NOT CHANGE THIS AND DO NOT ADD ANY OPTIONS TO IT
@@ -82,13 +79,6 @@
 % \vskip{- -- No negative value may be used to alter spacing above or below a caption, figure, table, section, subsection, subsubsection, or reference
 
 \setcounter{secnumdepth}{0} %May be changed to 1 or 2 if section numbers are desired.
-\setcounter{topnumber}{5}
-\setcounter{dbltopnumber}{5}
-\renewcommand{\topfraction}{0.95}
-\renewcommand{\dbltopfraction}{0.95}
-\renewcommand{\textfraction}{0.05}
-\renewcommand{\floatpagefraction}{0.80}
-\renewcommand{\dblfloatpagefraction}{0.80}
 
 % The file aaai2026.sty is the style file for AAAI Press
 % proceedings, working notes, and technical reports.
@@ -205,7 +195,7 @@ This practical setting motivates a need for single-shot asynchronous model mergi
 % 医学图像使这一问题具有特殊难度。医院之间的差异不仅表现为图像风格或设备域偏移，还表现为诊断类别可及性的差异：一个中心可能积累了某些常见病或常规检查的大量样本，却几乎没有某些罕见诊断；另一个中心可能具有相反的病例结构。由此得到的本地模型并不是完整全局任务的独立副本，而是带有局部诊断证据的部分专家。更重要的是，医学类别分布通常呈长尾结构，多数类诊断可能占据大量样本，而少数类诊断仍然具有临床意义。一个有效的融合方法必须同时保留分散在不同客户端中的类别证据，并避免把真实长尾患病率误解释为无意义噪声。
 Medical imaging makes this problem particularly challenging. Inter-hospital heterogeneity arises not only from image-style and device-domain shifts, but also from differences in diagnostic-class availability: one center may accumulate abundant samples for common diseases or routine examinations while having virtually no cases of certain rare diagnoses, whereas another may exhibit the opposite case composition. The resulting local models are therefore not independent replicas of a complete global task; rather, they are partial experts containing localized diagnostic evidence. More importantly, medical class distributions are typically long-tailed: majority diagnoses may account for a substantial fraction of samples, whereas minority diagnoses remain clinically meaningful. An effective merging method must both preserve class-specific evidence distributed across clients and avoid misinterpreting genuine long-tail prevalence as irrelevant noise.
 
-\begin{figure}[!t]
+\begin{figure}[t]
     \centering
     \includegraphics[width=0.44\linewidth]{figures/intro.png}
     \caption{In multicenter healthcare settings, individual clients typically observe only a subset of the global diagnostic space. Conventional parameter-level model-merging methods can therefore cause the merged global model’s predictions to concentrate on a small number of dominant classes.}
@@ -254,7 +244,7 @@ These methods are appropriate when clients can remain online for extended period
 Medical image model merging requires an explicit representation of class-level diagnostic availability while preserving patient privacy without multi-round communication. LAMP-Merge is designed to address this gap: clients upload class prototypes and class-support counts in a single round, and the server reconstructs a global diagnostic prototype classifier on a per-class basis, thereby rebuilding the class-specific diagnostic head.
 
 \section{III Method}
-\begin{figure}[!t]
+\begin{figure}[t]
     \centering
     \includegraphics[width=0.46\linewidth]{figures/method.png}
     \caption{Local models from multicenter hospitals typically contain only partial diagnostic knowledge, while raw medical images cannot be centrally shared. LAMP-Merge reconstructs a privacy-friendly global medical classifier through diagnostic prototype reconstruction and long-tail prevalence calibration, without accessing raw data or requiring multi-round federated optimization.}
@@ -347,24 +337,24 @@ All experiments were run on a server with two Intel(R) Xeon(R) Silver 4210 CPUs,
 
 \subsubsection{2) Evaluation Datasets:}
 
-\begin{table}[!t]
+\begin{table}[t]
 \centering
 \caption{Dataset statistics used in the experiments.}
 \label{tab:dataset-stats}
 \scriptsize
 \setlength{\tabcolsep}{3.2pt}
 \begin{tabular}{lrrrrr}
-\toprule
+\hline
 Dataset & Classes & Channels & Train & Val & Test \\
-\midrule
+\hline
 Blood & 8 & 3 & 11959 & 1712 & 3421 \\
 Derma & 7 & 3 & 7007 & 1003 & 2005 \\
 Organ-C & 11 & 1 & 12975 & 2392 & 8216 \\
 Organ-S & 11 & 1 & 13932 & 2452 & 8827 \\
 Ultrasound & 8 & 3 & 3869 & 549 & 1113 \\
-\midrule
+\hline
 Total & -- & -- & 49742 & 8108 & 23582 \\
-\bottomrule
+\hline
 \end{tabular}
 \end{table}
 
@@ -405,19 +395,19 @@ We compare LAMP-Merge with twelve post-hoc merging baselines: \texttt{avg}, \tex
 Tables~\ref{tab:client-avg-resnet}--\ref{tab:client-avg-clip} report the full client-average results. Across the 75 client-average cells, LAMP-Merge wins or ties the strongest non-LAMP baseline in 68 cells, corresponding to 90.7\%. This result indicates that the gain is not an accidental effect of one client number, one partition skew, or one model family; instead, it appears consistently across multiple medical image modalities and backbone architectures.
 
 
-\begin{table*}[!t]
+\begin{table*}[t]
 \centering
 \scriptsize
 \setlength{\tabcolsep}{2.6pt}
 \caption{Client-average test accuracy on resnet. Each entry averages the three Dirichlet settings for a fixed client number.Best in blod and second with \underline{underline}. These notes are the same to others.}
 \label{tab:client-avg-resnet}
-\begin{adjustbox}{width=\textwidth,center}
+\resizebox{\textwidth}{!}{%
 \begin{tabular}{lccccccccccccccc}
-\toprule
+\hline
 & \multicolumn{3}{c}{Blood} & \multicolumn{3}{c}{Derma} & \multicolumn{3}{c}{Organ-C} & \multicolumn{3}{c}{Organ-S} & \multicolumn{3}{c}{Ultrasound} \\
-\cmidrule(lr){2-4}\cmidrule(lr){5-7}\cmidrule(lr){8-10}\cmidrule(lr){11-13}\cmidrule(lr){14-16}
+\cline{2-4}\cline{5-7}\cline{8-10}\cline{11-13}\cline{14-16}
 Method & $K=3$ & $K=5$ & $K=7$ & $K=3$ & $K=5$ & $K=7$ & $K=3$ & $K=5$ & $K=7$ & $K=3$ & $K=5$ & $K=7$ & $K=3$ & $K=5$ & $K=7$ \\
-\midrule
+\hline
 \texttt{avg} & 0.3345 & 0.2467 & 0.2822 & 0.6291 & 0.4700 & 0.6244 & 0.2261 & 0.1772 & 0.1396 & \underline{0.2864} & 0.1794 & 0.2475 & 0.2435 & 0.1581 & 0.1542 \\
 \texttt{ties} & 0.2601 & 0.1872 & 0.1787 & 0.5995 & 0.4841 & 0.6484 & 0.2650 & 0.1684 & \underline{0.2118} & 0.1981 & 0.1915 & 0.1874 & \underline{0.3477} & 0.1989 & 0.1854 \\
 \texttt{dare\_linear} & 0.2832 & \underline{0.2856} & 0.2392 & 0.6357 & 0.4841 & 0.6288 & 0.2018 & \underline{0.2588} & 0.1650 & 0.2545 & 0.2245 & \underline{0.2537} & 0.2162 & 0.1728 & 0.1608 \\
@@ -431,24 +421,24 @@ Method & $K=3$ & $K=5$ & $K=7$ & $K=3$ & $K=5$ & $K=7$ & $K=3$ & $K=5$ & $K=7$ &
 \texttt{free\_merge} & 0.3345 & 0.2467 & 0.2822 & 0.6291 & 0.4700 & 0.6246 & 0.2261 & 0.1771 & 0.1396 & 0.2863 & 0.1793 & 0.2475 & 0.2435 & 0.1581 & 0.1545 \\
 \texttt{robustmerge} & 0.3401 & 0.2430 & 0.2256 & 0.2956 & 0.2085 & 0.3942 & 0.2458 & 0.1764 & 0.1653 & 0.2680 & 0.2227 & 0.2301 & 0.2189 & \underline{0.2231} & 0.1707 \\
 \textbf{LAMP-Merge} & \textbf{0.8002} & \textbf{0.7999} & \textbf{0.8007} & \textbf{0.6745} & \textbf{0.6761} & \textbf{0.6763} & \textbf{0.6074} & \textbf{0.6069} & \textbf{0.6076} & \textbf{0.5531} & \textbf{0.5524} & \textbf{0.5517} & \textbf{0.4762} & \textbf{0.4762} & \textbf{0.4762} \\
-\bottomrule
+\hline
 \end{tabular}
-\end{adjustbox}
+}
 \end{table*}
 
-\begin{table*}[!t]
+\begin{table*}[t]
 \centering
 \scriptsize
 \setlength{\tabcolsep}{2.6pt}
 \caption{Client-average test accuracy on convnext. Each entry averages the three Dirichlet settings for a fixed client number.}
 \label{tab:client-avg-convnext}
-\begin{adjustbox}{width=\textwidth,center}
+\resizebox{\textwidth}{!}{%
 \begin{tabular}{lccccccccccccccc}
-\toprule
+\hline
 & \multicolumn{3}{c}{Blood} & \multicolumn{3}{c}{Derma} & \multicolumn{3}{c}{Organ-C} & \multicolumn{3}{c}{Organ-S} & \multicolumn{3}{c}{Ultrasound} \\
-\cmidrule(lr){2-4}\cmidrule(lr){5-7}\cmidrule(lr){8-10}\cmidrule(lr){11-13}\cmidrule(lr){14-16}
+\cline{2-4}\cline{5-7}\cline{8-10}\cline{11-13}\cline{14-16}
 Method & $K=3$ & $K=5$ & $K=7$ & $K=3$ & $K=5$ & $K=7$ & $K=3$ & $K=5$ & $K=7$ & $K=3$ & $K=5$ & $K=7$ & $K=3$ & $K=5$ & $K=7$ \\
-\midrule
+\hline
 \texttt{avg} & 0.1565 & 0.1122 & 0.1384 & 0.2966 & \underline{0.4830} & \textbf{0.6688} & 0.1037 & 0.1218 & 0.0944 & 0.1308 & 0.1035 & 0.1416 & 0.1506 & 0.1506 & 0.1252 \\
 \texttt{ties} & 0.1715 & 0.1214 & 0.1524 & 0.2966 & 0.1797 & 0.2713 & 0.1217 & 0.0786 & 0.0716 & 0.1123 & 0.0761 & 0.0796 & 0.1518 & 0.1456 & 0.1291 \\
 \texttt{dare\_linear} & 0.1756 & 0.1122 & 0.1345 & 0.2705 & \underline{0.4830} & 0.4830 & 0.1035 & 0.0699 & 0.1085 & 0.1282 & 0.1035 & 0.0797 & 0.1575 & 0.1575 & 0.1264 \\
@@ -462,24 +452,24 @@ Method & $K=3$ & $K=5$ & $K=7$ & $K=3$ & $K=5$ & $K=7$ & $K=3$ & $K=5$ & $K=7$ &
 \texttt{free\_merge} & 0.1575 & 0.1190 & 0.1384 & 0.2971 & \underline{0.4830} & \textbf{0.6688} & 0.0906 & 0.1218 & 0.1385 & 0.1308 & 0.1035 & 0.1416 & 0.1506 & 0.1291 & \underline{0.1695} \\
 \texttt{robustmerge} & 0.1410 & 0.1405 & 0.0752 & 0.0908 & 0.4507 & 0.4830 & \underline{0.1394} & 0.1218 & \underline{0.1793} & \underline{0.2354} & 0.0961 & \underline{0.2077} & 0.1300 & 0.1135 & 0.1363 \\
 \textbf{LAMP-Merge} & \textbf{0.8482} & \textbf{0.8483} & \textbf{0.8493} & \textbf{0.5992} & \textbf{0.5920} & \underline{0.5852} & \textbf{0.6482} & \textbf{0.6480} & \textbf{0.6495} & \textbf{0.5977} & \textbf{0.5985} & \textbf{0.5990} & \textbf{0.4259} & \textbf{0.4259} & \textbf{0.4259} \\
-\bottomrule
+\hline
 \end{tabular}
-\end{adjustbox}
+}
 \end{table*}
 
-\begin{table*}[!t]
+\begin{table*}[t]
 \centering
 \scriptsize
 \setlength{\tabcolsep}{2.6pt}
 \caption{Client-average test accuracy on vit\_t. Each entry averages the three Dirichlet settings for a fixed client number.}
 \label{tab:client-avg-vit-t}
-\begin{adjustbox}{width=\textwidth,center}
+\resizebox{\textwidth}{!}{%
 \begin{tabular}{lccccccccccccccc}
-\toprule
+\hline
 & \multicolumn{3}{c}{Blood} & \multicolumn{3}{c}{Derma} & \multicolumn{3}{c}{Organ-C} & \multicolumn{3}{c}{Organ-S} & \multicolumn{3}{c}{Ultrasound} \\
-\cmidrule(lr){2-4}\cmidrule(lr){5-7}\cmidrule(lr){8-10}\cmidrule(lr){11-13}\cmidrule(lr){14-16}
+\cline{2-4}\cline{5-7}\cline{8-10}\cline{11-13}\cline{14-16}
 Method & $K=3$ & $K=5$ & $K=7$ & $K=3$ & $K=5$ & $K=7$ & $K=3$ & $K=5$ & $K=7$ & $K=3$ & $K=5$ & $K=7$ & $K=3$ & $K=5$ & $K=7$ \\
-\midrule
+\hline
 \texttt{avg} & 0.1343 & 0.1082 & 0.1160 & 0.4638 & 0.4369 & 0.3696 & 0.1657 & 0.1043 & 0.0952 & 0.0844 & 0.0852 & 0.1710 & 0.1450 & 0.1327 & \underline{0.1884} \\
 \texttt{ties} & 0.0796 & 0.1421 & 0.1285 & 0.4780 & 0.3498 & 0.4615 & 0.1341 & 0.1223 & 0.0953 & 0.1192 & 0.1002 & 0.1597 & \underline{0.2001} & 0.1306 & 0.1018 \\
 \texttt{dare\_linear} & \underline{0.2397} & 0.1129 & 0.1387 & 0.2850 & 0.1002 & 0.1204 & 0.1534 & 0.0946 & 0.0704 & 0.0748 & 0.0549 & 0.1611 & 0.1366 & 0.1051 & 0.1435 \\
@@ -493,24 +483,24 @@ Method & $K=3$ & $K=5$ & $K=7$ & $K=3$ & $K=5$ & $K=7$ & $K=3$ & $K=5$ & $K=7$ &
 \texttt{free\_merge} & 0.1989 & 0.1457 & 0.1392 & 0.4630 & 0.4770 & 0.3855 & 0.1425 & 0.0980 & 0.0759 & 0.0727 & 0.0914 & 0.1643 & 0.1405 & 0.1593 & 0.1647 \\
 \texttt{robustmerge} & 0.1482 & 0.1070 & 0.1425 & 0.0347 & 0.2768 & 0.1724 & 0.0954 & 0.0617 & 0.1438 & 0.1260 & 0.0707 & 0.1217 & 0.1698 & \underline{0.1854} & 0.1563 \\
 \textbf{LAMP-Merge} & \textbf{0.8523} & \textbf{0.8522} & \textbf{0.8516} & \textbf{0.5970} & \textbf{0.5938} & 0.5860 & \textbf{0.5805} & \textbf{0.5790} & \textbf{0.5790} & \textbf{0.5406} & \textbf{0.5372} & \textbf{0.5388} & \textbf{0.4645} & \textbf{0.4645} & \textbf{0.4645} \\
-\bottomrule
+\hline
 \end{tabular}
-\end{adjustbox}
+}
 \end{table*}
 
-\begin{table*}[!t]
+\begin{table*}[t]
 \centering
 \scriptsize
 \setlength{\tabcolsep}{2.6pt}
 \caption{Client-average test accuracy on swin\_tiny. Each entry averages the three Dirichlet settings for a fixed client number.}
 \label{tab:client-avg-swin-tiny}
-\begin{adjustbox}{width=\textwidth,center}
+\resizebox{\textwidth}{!}{%
 \begin{tabular}{lccccccccccccccc}
-\toprule
+\hline
 & \multicolumn{3}{c}{Blood} & \multicolumn{3}{c}{Derma} & \multicolumn{3}{c}{Organ-C} & \multicolumn{3}{c}{Organ-S} & \multicolumn{3}{c}{Ultrasound} \\
-\cmidrule(lr){2-4}\cmidrule(lr){5-7}\cmidrule(lr){8-10}\cmidrule(lr){11-13}\cmidrule(lr){14-16}
+\cline{2-4}\cline{5-7}\cline{8-10}\cline{11-13}\cline{14-16}
 Method & $K=3$ & $K=5$ & $K=7$ & $K=3$ & $K=5$ & $K=7$ & $K=3$ & $K=5$ & $K=7$ & $K=3$ & $K=5$ & $K=7$ & $K=3$ & $K=5$ & $K=7$ \\
-\midrule
+\hline
 \texttt{avg} & 0.1565 & 0.1186 & 0.1524 & 0.4569 & \underline{0.4830} & \textbf{0.6688} & 0.1068 & 0.1294 & 0.0787 & 0.0682 & 0.0604 & 0.1381 & 0.1527 & 0.1294 & 0.1465 \\
 \texttt{ties} & 0.0972 & 0.1190 & 0.1384 & 0.0841 & 0.0780 & \textbf{0.6688} & 0.1160 & 0.0702 & 0.0934 & 0.0734 & 0.0607 & 0.1107 & 0.1695 & 0.1303 & 0.1261 \\
 \texttt{dare\_linear} & 0.1565 & 0.1161 & 0.1825 & 0.4569 & 0.2771 & 0.4630 & 0.1155 & 0.1272 & 0.0776 & 0.0640 & 0.0720 & 0.1381 & 0.1743 & 0.1536 & 0.1497 \\
@@ -524,24 +514,24 @@ Method & $K=3$ & $K=5$ & $K=7$ & $K=3$ & $K=5$ & $K=7$ & $K=3$ & $K=5$ & $K=7$ &
 \texttt{free\_merge} & 0.1154 & 0.0861 & \underline{0.1840} & 0.4569 & \underline{0.4830} & \textbf{0.6688} & 0.0959 & 0.1377 & 0.0890 & 0.0682 & 0.0497 & 0.1062 & 0.1518 & 0.1575 & 0.1599 \\
 \texttt{robustmerge} & 0.1374 & 0.1409 & 0.1670 & 0.2377 & 0.2771 & 0.0504 & \underline{0.1601} & 0.1442 & \underline{0.1960} & 0.1673 & 0.1151 & 0.2077 & 0.1761 & 0.1315 & 0.1629 \\
 \textbf{LAMP-Merge} & \textbf{0.7737} & \textbf{0.7753} & \textbf{0.7748} & \textbf{0.6374} & \textbf{0.6251} & \underline{0.6244} & \textbf{0.6651} & \textbf{0.6632} & \textbf{0.6630} & \textbf{0.6078} & \textbf{0.6076} & \textbf{0.6068} & \textbf{0.4816} & \textbf{0.4816} & \textbf{0.4816} \\
-\bottomrule
+\hline
 \end{tabular}
-\end{adjustbox}
+}
 \end{table*}
 
-\begin{table*}[!t]
+\begin{table*}[t]
 \centering
 \scriptsize
 \setlength{\tabcolsep}{2.6pt}
 \caption{Client-average test accuracy on CLIP-ViT-B/32. Each entry averages the three Dirichlet settings for a fixed client number.}
 \label{tab:client-avg-clip}
-\begin{adjustbox}{width=\textwidth,center}
+\resizebox{\textwidth}{!}{%
 \begin{tabular}{lccccccccccccccc}
-\toprule
+\hline
 & \multicolumn{3}{c}{Blood} & \multicolumn{3}{c}{Derma} & \multicolumn{3}{c}{Organ-C} & \multicolumn{3}{c}{Organ-S} & \multicolumn{3}{c}{Ultrasound} \\
-\cmidrule(lr){2-4}\cmidrule(lr){5-7}\cmidrule(lr){8-10}\cmidrule(lr){11-13}\cmidrule(lr){14-16}
+\cline{2-4}\cline{5-7}\cline{8-10}\cline{11-13}\cline{14-16}
 Method & $K=3$ & $K=5$ & $K=7$ & $K=3$ & $K=5$ & $K=7$ & $K=3$ & $K=5$ & $K=7$ & $K=3$ & $K=5$ & $K=7$ & $K=3$ & $K=5$ & $K=7$ \\
-\midrule
+\hline
 \texttt{avg} & 0.1857 & 0.1199 & 0.1863 & 0.6688 & 0.6688 & 0.5682 & 0.2360 & 0.1348 & 0.1226 & 0.2978 & 0.0926 & 0.1447 & 0.1602 & 0.1282 & 0.1087 \\
 \texttt{ties} & 0.2472 & 0.2286 & 0.1911 & 0.6677 & 0.6760 & 0.4906 & 0.2868 & 0.1682 & \underline{0.1728} & 0.2797 & 0.2139 & 0.1847 & 0.1668 & 0.1204 & 0.1264 \\
 \texttt{dare\_linear} & 0.1715 & 0.1202 & 0.1773 & 0.6688 & 0.6688 & 0.5644 & 0.2203 & 0.1342 & 0.1286 & \underline{0.3028} & 0.0863 & 0.1365 & 0.1518 & 0.1312 & 0.1093 \\
@@ -555,9 +545,9 @@ Method & $K=3$ & $K=5$ & $K=7$ & $K=3$ & $K=5$ & $K=7$ & $K=3$ & $K=5$ & $K=7$ &
 \texttt{free\_merge} & 0.2145 & 0.1141 & \underline{0.2349} & 0.6688 & 0.6683 & 0.5623 & 0.1501 & 0.1419 & 0.0816 & 0.2489 & 0.1136 & 0.0707 & 0.1488 & 0.1411 & 0.1186 \\
 \texttt{robustmerge} & 0.1680 & 0.1575 & 0.1947 & 0.6688 & 0.6680 & 0.4921 & 0.2487 & 0.1256 & 0.1200 & 0.2701 & 0.0677 & 0.1556 & 0.1575 & 0.1369 & 0.1539 \\
 \textbf{LAMP-Merge} & \textbf{0.3908} & \textbf{0.2679} & \textbf{0.2483} & 0.5646 & \textbf{0.6846} & \textbf{0.6688} & \textbf{0.4460} & \textbf{0.2242} & 0.1468 & 0.2670 & \textbf{0.2296} & \textbf{0.2558} & \textbf{0.1947} & \textbf{0.1608} & 0.1602 \\
-\bottomrule
+\hline
 \end{tabular}
-\end{adjustbox}
+}
 \end{table*}
 
 
@@ -566,22 +556,22 @@ Method & $K=3$ & $K=5$ & $K=7$ & $K=3$ & $K=5$ & $K=7$ & $K=3$ & $K=5$ & $K=7$ &
 % 模块级消融采用与主实验完全相同的实验设置。再比较三种情景：完整 LAMP-Merge、仅使用诊断原型重建、在权重平均上仅加入长尾患病率校准。表中结果显示，这两个模块均对算法的性能有较为显著的提升
 Module-level ablations use exactly the same experimental setup as the main experiments. We compare three configurations: full LAMP-Merge, diagnostic prototype reconstruction only, and weight averaging augmented only with long-tail prevalence calibration. The results show that both modules provide substantial performance improvements.
 
-\begin{table*}[!t]
+\begin{table*}[t]
 \centering
 \caption{Dataset-level client-average accuracy in the module ablation. Each dataset contains 15 cells from five model families and three client counts; each cell is averaged over three Dirichlet skew levels.}
 \label{tab:dataset-ablation-acc}
 \scriptsize
 \setlength{\tabcolsep}{3.0pt}
 \begin{tabular}{lrrrrr}
-\toprule
+\hline
 Dataset & Cells & LAMP-Merge & Prototype only & \texttt{avg}+calibration & \texttt{avg} \\
-\midrule
+\hline
 Blood & 15 & 0.7156 & 0.7155 & 0.1726 & 0.1699 \\
 Ultrasound & 15 & 0.4040 & 0.4040 & 0.1551 & 0.1516 \\
 Derma & 15 & 0.6257 & 0.4975 & 0.4913 & 0.5304 \\
 Organ-C & 15 & 0.5543 & 0.5543 & 0.1331 & 0.1358 \\
 Organ-S & 15 & 0.5096 & 0.5096 & 0.1469 & 0.1488 \\
-\bottomrule
+\hline
 \end{tabular}
 \end{table*}
 
@@ -590,16 +580,16 @@ Organ-S & 15 & 0.5096 & 0.5096 & 0.1469 & 0.1488 \\
 % 为进一步定位诊断原型重建内部哪些信息是必要的，我们在完整范围上进行受控替换。所有设置均保留长尾患病率校准，只替换诊断原型重建中的原型语义或支持数权重。
 To further identify which information within diagnostic prototype reconstruction is necessary, we conduct controlled substitutions across the full setting. All configurations retain long-tail prevalence calibration and vary only the prototype semantics or support-count weighting used in diagnostic prototype reconstruction.
 
-\begin{table*}[!t]
+\begin{table*}[t]
 \centering
 \caption{Internal ablation of diagnostic prototype reconstruction. All settings cover 180 raw cells and 60 client-average cells.}
 \label{tab:diagnostic-internal-ablation}
 \scriptsize
 \setlength{\tabcolsep}{2.5pt}
 \begin{tabular}{p{0.22\textwidth}p{0.58\textwidth}r}
-\toprule
+\hline
 Setting & Variable setting & Mean Acc \\
-\midrule
+\hline
 LAMP-Merge & \(p_c=\sum_i\alpha_{i,c}\mu_{i,c}\), \(e_{i,c}=(n_{i,c}+1)^\gamma\mathbf{1}[n_{i,c}>0]\).  & 0.6209 \\
 Classifier-head aggregation & \(\mu_{i,c}\leftarrow h_{i,c}\); \(h_{i,c}\) is the class-\(c\) local classifier-head direction of client \(i\). & 0.2579 \\
 Global-feature mean & \(\mu_{i,c}\leftarrow g,\ \forall c\); \(g\) is the class-agnostic global reference-feature mean. & 0.2645 \\
@@ -608,7 +598,7 @@ Shuffled-label prototype & \(p_c\leftarrow p_{\sigma(c)}\); \(\sigma\) is a rand
 Uniform client weight & \(\alpha_{i,c}\leftarrow \frac{\mathbf{1}[n_{i,c}>0]}{\sum_j\mathbf{1}[n_{j,c}>0]}\). & 0.5839 \\
 Binary support only & \(n_{i,c},m_{i,c}\leftarrow \mathbf{1}[n_{i,c}>0]\). & 0.5517 \\
 Global client-size weight & \(e_{i,c}\leftarrow (N_i+1)^\gamma\mathbf{1}[n_{i,c}>0]\), \(N_i=\sum_k n_{i,k}\); \(N_i\) is the total support of client \(i\). & 0.5944 \\
-\bottomrule
+\hline
 \end{tabular}
 \end{table*}
 
@@ -625,18 +615,18 @@ We further replace the prior term inside long-tail prevalence calibration. This 
 \label{tab:prevalence-internal-ablation}
 \scriptsize
 \setlength{\tabcolsep}{2.8pt}
-\begin{adjustbox}{width=\columnwidth,center}
+\resizebox{\columnwidth}{!}{%
 \begin{tabular}{p{0.42\columnwidth}p{0.42\columnwidth}r}
-\toprule
+\hline
 Setting & Variable setting & Mean Acc \\
-\midrule
+\hline
 LAMP-Merge & \(\pi_c=\frac{\sum_i m_{i,c}}{\sum_k\sum_i m_{i,k}}\).  & 0.6209 \\
 No prevalence calibration & \(b_c\leftarrow0\). & 0.5879 \\
 Uniform prevalence prior & \(\pi_c\leftarrow 1/C\); \(C\) is the number of diagnosis classes. & 0.5879 \\
 Smoothed prevalence prior & \(\pi_c\leftarrow\frac{\sum_i(m_{i,c}+1)}{\sum_k\sum_i(m_{i,k}+1)}\). & 0.6209 \\
-\bottomrule
+\hline
 \end{tabular}
-\end{adjustbox}
+}
 \end{center}
 
 % 表*中结果说明，完全移除患病率校准或将真实先验替换为均匀先验都会降低平均准确率，说明长尾信息是完整方法的一部分。平滑先验与正式方法接近，说明 LAMP-Merge 不依赖单个精确计数的偶然波动；只要先验仍保留真实长尾结构，有界校准即可发挥作用。
@@ -646,7 +636,7 @@ Table ~\ref{tab:prevalence-internal-ablation} shows that removing prevalence cal
 % 中文对照：诊断原型重建有一个连续超参数，即原型头缩放因子 s。长尾患病率校准有一个连续超参数，即长尾校准强度 lambda。图中每个取值都在 180 个原始单元和 60 个客户端平均单元上评估，覆盖五个医学数据集、四种骨干网络、三种客户端数量和三种Dirichlet 非独立同分布划分参数。
 Diagnostic prototype reconstruction has one continuous hyperparameter, the prototype head scale $s$. Long-tail prevalence calibration has one continuous hyperparameter, the calibration strength $\lambda$. Each value in figure ~\ref{fig:hparam-full} is evaluated over 180 raw cells and 60 client-average cells, covering five medical datasets, four backbones, three client counts, and three Dirichlet non-IID partitioning parameters.
 
-\begin{figure}[!t]
+\begin{figure}[t]
 \centering
 \includegraphics[width=0.92\linewidth]{figures/full_scope_hyperparameter_sensitivity.png}
 \caption{Full-scope hyperparameter sensitivity. The default setting $s=20$ and $\lambda=5$ lies in the stable high-accuracy plateau.}
@@ -669,27 +659,27 @@ Although the main experiments use ACC for direct comparison, long-tailed medical
 \end{itemize}
 
 
-\begin{table}[!t]
+\begin{table}[t]
 \centering
 \caption{Prediction-collapse diagnostics averaged over five medical datasets and four backbones per dataset.}
 \label{tab:collapse-key}
 \scriptsize
 \setlength{\tabcolsep}{3.2pt}
 \begin{tabular}{lrrr}
-\toprule
+\hline
 Metric & LAMP-Merge & Best reference & Difference \\
-\midrule
+\hline
 Accuracy $\uparrow$ & 0.5885 & 0.3156 & +0.2729 \\
 BA / macro recall $\uparrow$ & 0.5747 & 0.1810 & +0.3937 \\
 Macro F1 $\uparrow$ & 0.5352 & 0.1123 & +0.4229 \\
 Collapse ratio $\downarrow$ & 0.2294 & 0.7477 & -0.5184 \\
 Effective classes $\uparrow$ & 8.0390 & 2.1360 & +5.9030 \\
 Pred-true TV $\downarrow$ & 0.1510 & 0.6168 & -0.4658 \\
-\bottomrule
+\hline
 \end{tabular}
 \end{table}
 
-\begin{figure}[!t]
+\begin{figure}[t]
 \centering
 \includegraphics[width=0.94\linewidth]{figures/full_scope_global_diagnostic_discrimination_recovery.png}
 \caption{Recovery of global diagnostic discrimination under different datasets.}
@@ -704,7 +694,7 @@ Table \ref{tab:collapse-key} compares LAMP-Merge with the best-performing baseli
 % 为了直观展示新指标诊断所反映的预测分布变化，我们进一步给出预测坍缩恢复图和代表性数据集上的预测类别分布图。
 To visually show the prediction-distribution changes measured by the new diagnostic metrics, we further provide a collapse-recovery visualization in figure \ref{fig:collapse-recovery} and a representative predicted-class distribution in figure \ref{fig:visual-chaosheng_predict}. 
 
-\begin{figure}[!t]
+\begin{figure}[t]
 \centering
 \includegraphics[width=0.94\linewidth]{figures/full_scope_predicted_distribution_ultrasound.png}
 \caption{Prediction Distribution on the Ultrasound Dataset}
@@ -715,7 +705,7 @@ To visually show the prediction-distribution changes measured by the new diagnos
 % 所有原型均位于共享参考特征空间 z=phi_0(T(x)) 中。我们仅将 t-SNE 用于分析，而不用于服务器端选择或融合。BLODD 的 LAMP-Merge 原型视图如图所示。
 All prototypes live in the shared reference feature space $z=\phi_0(T(x))$. We use t-SNE only for analysis, not for server-side selection or fusion. The joint t-SNE view for Blood and the corresponding LAMP-Merge prototype view are shown in Fig.~\ref{fig:tsne}.
 
-\begin{figure}[!t]
+\begin{figure}[t]
 \centering
 \includegraphics[width=0.82\linewidth]{figures/tsne_lamp_bloodmnist_224_resnet.png}
 \caption{t-SNE Visualization of ResNet Feature Representations on the Blood Dataset}
@@ -734,7 +724,7 @@ Finally, we conduct an in-depth analysis of the geometry induced by diagnostic p
 \item \(A_{\mathrm{proto}}=\frac{1}{C}\sum_c\sum_{i\in\mathcal{I}_c}\alpha_{i,c}\cos(p_c,\mu_{i,c})\). This is the alignment between the server-side global prototype and the contributing client prototypes, measuring whether aggregation preserves client-side class evidence.
 \end{itemize}
 
-\begin{figure}[!t]
+\begin{figure}[t]
 \centering
 \includegraphics[width=0.92\linewidth]{figures/full_scope_prototype_geometry_internal_ablation.png}
 % 完整基准上的原型几何比较。该图总结了两两距离、最近类别距离、原型一致性和原型-客户端对齐程度。
@@ -746,7 +736,7 @@ Finally, we conduct an in-depth analysis of the geometry induced by diagnostic p
 % 令 mu_c^star 表示共享参考空间中的真实类别均值。如果客户端类别特征具有有界二阶矩，则原型估计误差满足如下上界。
 Let $\mu_c^\star$ denote the true class mean in the shared reference space. If client class features have bounded second moments, the prototype estimation error satisfies
 \begin{equation}
-\mathbb{E}\|p_c-\mu_c^\star\|_2^2
+\mathrm{E}\|p_c-\mu_c^\star\|_2^2
 \le
 \sum_i \alpha_{i,c}^2\frac{\sigma_c^2}{n_{i,c}}
 + \mathrm{Bias}_c^2.
