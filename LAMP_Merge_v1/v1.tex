@@ -43,8 +43,8 @@
 \definecolor{GainGreen}{RGB}{32,132,84}
 \definecolor{DropRed}{RGB}{190,54,54}
 \newcommand{\tblhead}[1]{\strut #1}
-\newcommand{\lampcell}[1]{\begingroup\setlength{\fboxsep}{0.65pt}\colorbox{LAMPYellow}{\makebox[5.6em][c]{\rule[-0.45ex]{0pt}{2.90ex}\bfseries\boldmath #1}}\endgroup}
-\newcommand{\avgcell}[1]{\begingroup\def\avgcontent{#1}\def\avgheader{Avg}\ifx\avgcontent\avgheader\setlength{\fboxsep}{0pt}\colorbox{AvgBlue}{\makebox[3.35em][c]{\rule[-1.50ex]{0pt}{4.80ex}\bfseries #1}}\else\setlength{\fboxsep}{1.2pt}\colorbox{AvgBlue}{\makebox[2.85em][c]{\strut #1}}\fi\endgroup}
+\newcommand{\lampcell}[1]{\begingroup\setlength{\fboxsep}{0pt}\colorbox{LAMPYellow}{\makebox[5.6em][c]{\rule[-0.90ex]{0pt}{3.75ex}\bfseries\boldmath #1}}\endgroup}
+\newcommand{\avgcell}[1]{\begingroup\def\avgcontent{#1}\def\avgheader{Avg}\ifx\avgcontent\avgheader\setlength{\fboxsep}{0pt}\colorbox{AvgBlue}{\makebox[3.25em][c]{\rule[-1.18ex]{0pt}{4.12ex}\bfseries #1}}\else\setlength{\fboxsep}{1.2pt}\colorbox{AvgBlue}{\makebox[2.85em][c]{\strut #1}}\fi\endgroup}
 \newcommand{\lampband}{\noalign{\begingroup\color{LAMPYellow}\hrule height 3.6ex\endgroup\kern-3.6ex}}
 \newcommand{\headband}{\noalign{\begingroup\color{HeaderGray}\hrule height 8.15ex\endgroup\kern-8.15ex}}
 \newcommand{\gainup}[1]{\makebox[5.85em][l]{\textcolor{GainGreen}{\(\uparrow\)#1}}}
@@ -202,7 +202,7 @@ Index Terms:medical model merging, asynchronous fusion, predictive collapse, lon
 \section{I Introduction}
 
 % 医学人工智能正在从单中心模型开发走向多中心协作部署。临床诊断模型的可靠性通常依赖于跨医院、跨设备和跨患者群体的经验，因为单一机构很难同时覆盖完整疾病谱、罕见病例和不同成像条件。然而，医学数据受到伦理审批、隐私法规、设备差异和院内流程的共同限制，原始影像很难被集中到统一服务器。更现实的协作形态是：各医院在本地完成模型训练，并在训练完成后以有限的信息共享方式参与全局模型构建。
-Medical artificial intelligence is transitioning from single-center model development toward multicenter collaborative deployment. The reliability of clinical diagnostic models typically depends on experience spanning hospitals, imaging devices, and patient populations, as no single institution can readily cover the full disease spectrum, rare cases, and diverse imaging conditions simultaneously \cite{sheller2020federated,rieke2020future}. However, medical data are jointly constrained by ethical approval requirements, privacy regulations, device heterogeneity, and institutional workflows, making centralization of raw images on a common server difficult\cite{kaissis2020secure}. A more practical collaboration paradigm is for hospitals to train models locally and, upon completion, participate in global model construction through limited information sharing.
+Medical artificial intelligence increasingly requires multicenter collaboration because no single hospital can cover the full disease spectrum, rare cases, and imaging conditions \cite{sheller2020federated,rieke2020future}. Yet privacy requirements, device heterogeneity, and institutional workflows make centralizing raw images impractical \cite{kaissis2020secure}. A realistic alternative is for hospitals to train locally and share limited post-training information.
 
 \begin{figure}[t]
     \centering
@@ -219,22 +219,21 @@ Medical artificial intelligence is transitioning from single-center model develo
 \end{figure*}
 
 % 这一现实背景产生了一个单次异步的模型融合需求。不同医院不一定同时在线，也不一定有条件在全局模型更新后反复重新训练；某些中心可能更早完成训练，某些中心可能只在固定窗口内上传模型。与此同时，服务器在部署阶段需要得到一个可供统一使用的全局诊断模型，而不是多个彼此独立、覆盖范围有限的本地模型。因此，本文研究一种模型融合场景：每个客户端只上传一次，服务器在不侵犯患者隐私(不读取客户端原始医学图像)的条件下合成一个共享检查点。
-This practical setting motivates a need for single-shot asynchronous model merging. Hospitals may not be online simultaneously or be able to repeatedly retrain after each global-model update; some centers may finish training earlier, whereas others may upload their models only within fixed time windows. Meanwhile, at deployment time, the server must produce a globally usable diagnostic model rather than a collection of independent local models with limited coverage. Accordingly, we study a model-merging setting in which each client uploads exactly once and the server synthesizes a shared checkpoint without compromising patient privacy, i.e., without accessing clients’ raw medical images.
+This setting requires single-shot asynchronous model merging. Hospitals may complete training at different times and cannot necessarily participate in repeated global updates. The server must therefore construct one deployable diagnostic model from exactly one upload per client, without accessing raw medical images.
 
 % 医学图像使这一问题具有特殊难度。医院之间的差异不仅表现为图像风格或设备域偏移，还表现为诊断类别可及性的差异：一个中心可能积累了某些常见病或常规检查的大量样本，却几乎没有某些罕见诊断；另一个中心可能具有相反的病例结构。由此得到的本地模型并不是完整全局任务的独立副本，而是带有局部诊断证据的部分专家。更重要的是，医学类别分布通常呈长尾结构，多数类诊断可能占据大量样本，而少数类诊断仍然具有临床意义。一个有效的融合方法必须同时保留分散在不同客户端中的类别证据，并避免把真实长尾患病率误解释为无意义噪声。
-Medical imaging makes this problem particularly challenging. Inter-hospital heterogeneity arises not only from image-style and device-domain shifts, but also from differences in diagnostic-class availability\cite{9557808,10.1371/journal.pmed.1002683}: one center may accumulate abundant samples for common diseases or routine examinations while having virtually no cases of certain rare diagnoses, whereas another may exhibit the opposite case composition. The resulting local models are therefore not independent replicas of a complete global task; rather, they are partial experts containing localized diagnostic evidence. More importantly, medical class distributions are typically long-tailed: majority diagnoses may account for a substantial fraction of samples, whereas minority diagnoses remain clinically meaningful. An effective merging method must both preserve class-specific evidence distributed across clients and avoid misinterpreting genuine long-tail prevalence as irrelevant noise\cite{BUDA2018249}.
+Medical imaging makes the problem especially difficult because hospitals differ not only in device domain but also in diagnostic-class availability \cite{9557808,10.1371/journal.pmed.1002683}. Local models are partial experts: a client may provide strong evidence for common diagnoses while lacking rare ones. Moreover, medical labels are often long-tailed, so a useful merge must preserve distributed class-specific evidence while respecting genuine prevalence \cite{BUDA2018249}.
 
 % 本文提出 LAMP-Merge，即长尾感知医学原型融合框架。其核心思想是将医学模型融合从全局参数平均问题转化为类别级诊断证据重建问题。客户端在本地使用共享参考特征提取器计算每个诊断类别的聚合原型和类别计数，并仅上传这些类别级统计及本地检查点接口。服务器随后在共享参考空间中构建全局诊断原型分类器，并在类别患病率呈现强长尾结构时引入有界的先验校准。整个过程保持单次上传，不要求服务器访问原始图像、逐样本特征、逐样本 logits 或逐样本预测。
-We propose LAMP-Merge, a long-tail-aware medical prototype-merging framework. Its central idea is to recast medical model merging from a problem of global parameter averaging into one of class-level diagnostic-evidence reconstruction. Using a shared reference feature extractor, each client computes an aggregated prototype and sample count for every diagnostic class locally, and uploads only these class-level statistics together with an interface to its local checkpoint. The server then constructs a global diagnostic prototype classifier in the shared reference space and introduces bounded prior calibration when class prevalence exhibits a pronounced long-tailed structure. The entire procedure requires only a single upload and does not require the server to access raw images, per-sample features, per-sample logits, or per-sample predictions.
+We propose LAMP-Merge, a long-tail-aware medical prototype-merging framework. It recasts global parameter averaging as class-level diagnostic-evidence reconstruction: each client uploads class prototypes and counts computed with a shared reference extractor, and the server constructs a global prototype classifier with bounded prevalence calibration. The procedure requires one upload and never exposes raw images, per-sample features, logits, or predictions.
 
 % 本文贡献总结如下。第一，我们提出并形式化了单次异步医学图像模型融合问题，其中客户端在本地独立训练，服务器只能使用一次上传的信息构建全局模型。第二，我们从医学诊断类别可及性和长尾患病率出发，刻画了该问题区别于一般模型融合任务的核心结构。第三，我们提出 LAMP-Merge，通过客户端侧类别原型和患病率统计重建全局诊断分类器，在保护原始图像隐私的同时缓解融合后的预测坍缩。我们在多个医学影像数据集上开展了大量实验。结果表明，无论原始数据分布情况如何，我们的LAMP-Merge均显著优于所有对比方法。此外，我们的融合方法在训练过程中无需辅助数据集或计算资源支持。
 Our main contributions are as follows:
 \begin{itemize}
-    \item We introduce and formalize the problem of single-shot asynchronous medical image model merging, in which clients train independently on local data and the server must construct a global model using information from a single upload. 
-    \item We characterize the key structures that distinguish this setting from general model-merging tasks, namely heterogeneous diagnostic-class availability across medical institutions and long-tailed disease prevalence. \item We propose LAMP-Merge, which reconstructs a global diagnostic classifier from client-side class prototypes and prevalence statistics, mitigating post-merging prediction collapse while preserving the privacy of raw medical images. 
+    \item We formalize single-shot asynchronous medical image model merging, where independently trained clients provide one upload for global model construction.
+    \item We identify heterogeneous diagnostic-class availability and long-tailed disease prevalence as the defining structures of this setting.
+    \item We propose LAMP-Merge, which reconstructs a global diagnostic classifier from client-side class prototypes and prevalence statistics to mitigate prediction collapse without exposing raw images.
 \end{itemize}
-
-We conduct extensive experiments on multiple medical imaging datasets. The results show that LAMP-Merge consistently and substantially outperforms all competing methods across the considered data distributions. Moreover, our merging approach requires neither an auxiliary dataset nor additional computational resources during training.
 
 \section{II Related Works}
 
@@ -394,7 +393,7 @@ The main comparison uses client-average ACC: for each fixed dataset, model, and 
 Tables~\ref{tab:client-avg-resnet}--\ref{tab:client-avg-clip} report the full client-average results. Across the 75 client-average cells, LAMP-Merge wins or ties the strongest non-LAMP baseline in 68 cells, corresponding to 90.7\%. This result indicates that the gain is not an accidental effect of one client number, one partition skew, or one model family; instead, it appears consistently across multiple medical image modalities and backbone architectures.
 
 
-\begin{table*}[t]
+\begin{table*}[!t]
 \centering
 \scriptsize
 \setlength{\tabcolsep}{2.1pt}
@@ -427,7 +426,7 @@ Tables~\ref{tab:client-avg-resnet}--\ref{tab:client-avg-clip} report the full cl
 }
 \end{table*}
 
-\begin{table*}[t]
+\begin{table*}[!t]
 \centering
 \scriptsize
 \setlength{\tabcolsep}{2.1pt}
@@ -460,7 +459,7 @@ Tables~\ref{tab:client-avg-resnet}--\ref{tab:client-avg-clip} report the full cl
 }
 \end{table*}
 
-\begin{table*}[t]
+\begin{table*}[!t]
 \centering
 \scriptsize
 \setlength{\tabcolsep}{2.1pt}
@@ -493,7 +492,7 @@ Tables~\ref{tab:client-avg-resnet}--\ref{tab:client-avg-clip} report the full cl
 }
 \end{table*}
 
-\begin{table*}[t]
+\begin{table*}[!t]
 \centering
 \scriptsize
 \setlength{\tabcolsep}{2.1pt}
@@ -526,7 +525,7 @@ Tables~\ref{tab:client-avg-resnet}--\ref{tab:client-avg-clip} report the full cl
 }
 \end{table*}
 
-\begin{table*}[t]
+\begin{table*}[!t]
 \centering
 \scriptsize
 \setlength{\tabcolsep}{2.1pt}
@@ -695,7 +694,7 @@ Pred-true TV $\downarrow$ & \lampcell{0.1510} & 0.6168 & \gaindown{-0.4658} \\
 % 表*中将LAMP-Merge与各个指标的最高基线相对比。可以看到，该方法显著优于目前已有的算法。这说明 LAMP-Merge 的准确率提升并非来自更强的单类坍缩，而是来自更完整的全局诊断判别。
 Table \ref{tab:collapse-key} compares LAMP-Merge with the best-performing baseline for each metric. LAMP-Merge consistently and substantially outperforms the existing methods. This indicates that its accuracy gains do not arise from more severe single-class prediction collapse, but rather from more complete global diagnostic discrimination.
 
-\subsection{F. Visualization Experiment}
+\subsection{Visualization Experiment}
 
 % 为了直观展示新指标诊断所反映的预测分布变化，我们进一步给出预测坍缩恢复图和代表性数据集上的预测类别分布图。
 To visually show the prediction-distribution changes measured by the new diagnostic metrics, we further provide a collapse-recovery visualization in Fig.~\ref{fig:collapse-recovery} and a representative predicted-class distribution in Fig.~\ref{fig:visual-chaosheng_predict}.
