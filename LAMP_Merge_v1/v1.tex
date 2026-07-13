@@ -44,8 +44,8 @@
 \definecolor{DropRed}{RGB}{190,54,54}
 \newcommand{\tblhead}[1]{\strut #1}
 \newcommand{\lampcell}[1]{\begingroup\setlength{\fboxsep}{0pt}\colorbox{LAMPYellow}{\makebox[6.7em][c]{\rule[-1.12ex]{0pt}{4.45ex}\bfseries\boldmath #1}}\endgroup}
-\newcommand{\avgcell}[1]{\begingroup\def\avgcontent{#1}\def\avgheader{Avg}\setlength{\fboxsep}{0pt}\ifx\avgcontent\avgheader\colorbox{AvgBlue}{\makebox[3.55em][c]{\strut\bfseries #1}}\else\colorbox{AvgBlue}{\makebox[3.55em][c]{\strut #1}}\fi\endgroup}
-\newcommand{\lampband}{\noalign{\begingroup\color{LAMPYellow}\hrule height 3.6ex\endgroup\kern-3.6ex}}
+\newcommand{\avgcell}[1]{\begingroup\def\avgcontent{#1}\def\avgheader{Avg}\setlength{\fboxsep}{0pt}\ifx\avgcontent\avgheader\colorbox{AvgBlue}{\makebox[3.55em][c]{\rule{0pt}{2.25ex}\raisebox{0.12ex}{\smash{\bfseries #1}}}}\else\colorbox{AvgBlue}{\makebox[3.55em][c]{\strut #1}}\fi\endgroup}
+\newcommand{\lampband}{\noalign{\begingroup\color{LAMPYellow}\hrule height 3.35ex\endgroup\kern-3.35ex}}
 \newcommand{\headband}{\noalign{\begingroup\color{HeaderGray}\hrule height 6.15ex\endgroup\kern-6.15ex}}
 \newcommand{\gainup}[1]{\makebox[5.85em][l]{\textcolor{GainGreen}{\(\uparrow\)#1}}}
 \newcommand{\gaindown}[1]{\makebox[5.85em][l]{\textcolor{GainGreen}{\(\downarrow\)#1}}}
@@ -659,12 +659,12 @@ Table \ref{tab:collapse-key} compares LAMP-Merge with the best-performing baseli
 % 为了直观展示新指标诊断所反映的预测分布变化，我们进一步给出预测坍缩恢复图和代表性数据集上的预测类别分布图。
 To visualize the prediction-distribution changes measured by the new diagnostic metrics, we provide a representative predicted-class distribution in Fig.~\ref{fig:visual-chaosheng_predict}.
 
-\begin{figure*}[t]
+\begin{figure}[t]
 \centering
-\includegraphics[width=0.86\textwidth]{figures/full_scope_predicted_distribution_ultrasound_stacked.png}
-\caption{Predicted class distributions on Ultrasound. Each bar summarizes all formal settings for one prediction source; the generic merge concentrates predictions on one class, while LAMP-Merge recovers a broader class allocation aligned with the test distribution.}
+\includegraphics[width=\columnwidth]{figures/full_scope_predicted_distribution_ultrasound_stacked.png}
+\caption{Predicted class distributions on Ultrasound, averaged over the four visual backbones, $K\in\{3,5,7\}$, and the three Dirichlet skew levels. The generic merge concentrates predictions on one class, while LAMP-Merge recovers a broader class allocation aligned with the test distribution.}
 \label{fig:visual-chaosheng_predict}
-\end{figure*}
+\end{figure}
 
 \subsection{t-SNE Visualization Experiment}
 % 我们仅将 t-SNE 用于分析，而不用于服务器端选择或融合。图中给出了 Blood 数据集上 ResNet、K=3、beta=0.01 设置下的联合 t-SNE 对比。每个点对应一个测试图像的模型输出概率向量，不同正式融合方法在同一二维空间中投影，用于比较预测表征的类别结构。

@@ -384,7 +384,7 @@ def plot_prediction_distributions(
             f"Best generic ({generic_method})",
             "LAMP-Merge",
         ]
-        fig, ax = plt.subplots(figsize=(11.5, 4.4), constrained_layout=True)
+        fig, ax = plt.subplots(figsize=(5.8, 3.4), constrained_layout=True)
         class_colors = plt.get_cmap("tab20")(np.linspace(0.0, 0.95, distributions.shape[1]))
         positions = np.arange(len(row_labels))
         offsets = np.zeros(len(row_labels))
@@ -394,32 +394,32 @@ def plot_prediction_distributions(
                 positions,
                 values,
                 left=offsets,
-                height=0.62,
+                height=0.52,
                 color=class_colors[class_index],
                 edgecolor="white",
                 linewidth=0.45,
                 label=f"Class {class_index}",
             )
             offsets += values
-        ax.set_yticks(positions, row_labels)
+        ax.set_yticks(positions, row_labels, fontsize=11)
         ax.invert_yaxis()
         ax.get_yticklabels()[-1].set_color(METHOD_COLORS["LAMP-Merge"])
         ax.get_yticklabels()[-1].set_fontweight("bold")
         ax.set_xlim(0.0, 1.0)
-        ax.set_xlabel("Predicted class fraction")
+        ax.set_xlabel("Predicted class fraction", fontsize=11)
         ax.grid(axis="x", color="#D8DCE3", linewidth=0.7, alpha=0.75)
         ax.set_axisbelow(True)
         ax.set_title(
             f"{DATASET_LABELS[dataset]}: full-scope predicted class distribution",
-            fontsize=13,
+            fontsize=14,
             fontweight="bold",
         )
         ax.legend(
-            ncol=min(6, distributions.shape[1]),
+            ncol=4,
             loc="upper center",
             bbox_to_anchor=(0.5, -0.17),
             frameon=False,
-            fontsize=8,
+            fontsize=9,
         )
         save_figure(fig, output_dir, f"{dataset}_prediction_distribution")
         plt.close(fig)
