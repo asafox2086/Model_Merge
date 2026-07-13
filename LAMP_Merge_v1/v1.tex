@@ -261,13 +261,6 @@ However, our problem is single-shot asynchronous model merging after local train
 
 \section{III Method}
 
-\begin{figure*}[t]
-\centering
-\includegraphics[width=0.96\textwidth]{figures/dataset_examples.png}
-\caption{Representative training images from the five medical image datasets used in the experiments. The class IDs are shown only to illustrate category diversity within each dataset.}
-\label{fig:dataset-examples}
-\end{figure*}
-
 \subsection{Motivation and Overall Idea}
 
 % 我们发现，在局部类别覆盖的医学场景中，参数级模型融合会将多个非退化的局部预测器转化为全局坍缩预测器。而当最常见诊断类别在分布中占据很大比例时，坍缩预测器可以在缺乏真实多类别诊断能力的情况下取得较高准确率。这解释了为什么某些基线在原始准确率上依旧具有竞争力。一个有效的医学融合方法应当避免丢失罕见类别判别能力，同时在任务确实呈强长尾分布时尊重真实患病率信息。
@@ -318,13 +311,6 @@ w_c=s\frac{p_c}{\|p_c\|_2},
 \end{equation}
 where $s=20$ is the default head scale. This module addresses a key limitation of existing methods: it preserves the classes for which each client has supporting evidence and reconstructs a global multiclass diagnostic head.
 
-\begin{figure*}[t]
-\centering
-\includegraphics[width=0.92\textwidth]{figures/full_scope_module_ablation_dataset_accuracy.png}
-\caption{Dataset-level client-average accuracy in the module ablation. Each dataset contains 12 cells from four vision-model families and three client counts; each cell is averaged over three Dirichlet skew levels.}
-\label{fig:dataset-ablation-acc}
-\end{figure*}
-
 \subsection{Long-tail Prevalence Calibration}
 
 % 得到这个全新的诊断头之后，为应对真实医学任务包含的长尾患病率，每个客户端还上传类别患病率计数 m_i,c。服务器据此估计全局类别先验 pi_c。我们使用 r=C max_c pi_c 度量主导类别不平衡。该模块仅在 r>tau 时激活，其中 tau=2.5 为默认值。激活后，添加一个中心化的对数先验偏置 b_c，其默认最大校准强度为 lambda=5.0。最终得分为 score_c(x)。该偏置是中心化且有界的，并附着在原型分类器上；它校准患病率，但不替代 M1 重建的多类别诊断方向。
@@ -372,22 +358,15 @@ We evaluate four vision-model families: ResNet, ConvNeXt, ViT-Tiny, and Swin-Tin
 % 所有实验运行在配备两颗 Intel Xeon Silver 4210 CPU、四张 NVIDIA GeForce RTX 2080 Ti GPU 的服务器上；软件环境为 conda 环境 MM，使用 Python 3.10.20、PyTorch 2.6.0+cu118 和 CUDA runtime 11.8。
 All experiments were run on a server with two Intel(R) Xeon(R) Silver 4210 CPUs, four NVIDIA GeForce RTX 2080 Ti GPUs, and the conda environment \texttt{MM} with Python 3.10.20, PyTorch 2.6.0+\texttt{cu118}, and CUDA runtime 11.8.
 
-\begin{figure*}[!t]
-\centering
-\includegraphics[width=0.98\textwidth]{figures/tsne_joint_bloodmnist_224_resnet.png}
-\caption{Joint t-SNE visualization of output-probability representations on Blood. From left to right: LAMP-Merge, weight averaging, TIES-Merging, and DARE-Linear.}
-\label{fig:tsne}
-\end{figure*}
-
 \subsection{Comparison With the State of the Arts}
 % 我们将 LAMP-Merge 与十二种模型融合基线比较，包括 avg、ties、dare_linear、dare_ties、regmean、fisher、breadcrumbs、model_stock、from、iso_c、free_merge 和 robustmerge。这些基线覆盖权重平均、任务向量修剪、符号冲突处理、曲率或均值校正、模型库存和鲁棒融合等当前主流模型融合路线。主比较采用客户端平均准确率：对于每个固定的数据集、模型和客户端数量，先对三个 beta 偏斜水平求平均，再比较不同融合方法。若 LAMP-Merge 在某个单元中大于或等于最强非 LAMP 基线，则该单元计为成功。
 The main comparison uses client-average ACC: for each fixed dataset, model, and client number, we first average over the three $\beta$ skew levels and then compare merging methods. A cell is counted as successful when LAMP-Merge is greater than or equal to the strongest non-LAMP baseline in that cell.
 
 % 表 1 至表 4 给出了完整客户端平均结果。在 60 个客户端平均单元中，LAMP-Merge 在 57 个单元达到或并列超过最强非 LAMP 基线，对应 95.0%。该结果表明，LAMP-Merge 的收益不是由单一客户端数量、单一划分偏斜或单一模型族产生的偶然现象，而是在多种医学图像模态和多种骨干网络上稳定出现。
-Table~\ref{tab:client-avg-resnet} reports the ResNet client-average results (complete ConvNeXt, ViT-Tiny, and Swin-Tiny tables are provided in the Appendix). Across the 60 client-average cells, LAMP-Merge wins or ties the strongest non-LAMP baseline in \textbf{57 cells (95.0\%)}. This result indicates that the gain is not an accidental effect of one client number, one partition skew, or one model family; instead, it appears consistently across multiple medical image modalities and backbone architectures.
+Tables~\ref{tab:client-avg-resnet}--\ref{tab:client-avg-swin-tiny} report the full client-average results for all four backbones. Across the 60 client-average cells, LAMP-Merge wins or ties the strongest non-LAMP baseline in \textbf{57 cells (95.0\%)}.
 
 
-\begin{table*}[!t]
+\begin{table*}[!p]
 \centering
 \scriptsize
 \setlength{\tabcolsep}{2.1pt}
@@ -423,10 +402,109 @@ Table~\ref{tab:client-avg-resnet} reports the ResNet client-average results (com
 
 
 
+\begin{table*}[!p]
+\centering
+\scriptsize
+\setlength{\tabcolsep}{2.1pt}
+\caption{Client-average test accuracy on ConvNeXt. Each entry averages the three Dirichlet settings for a fixed client number; Avg denotes the mean over $K=3,5,7$ within the corresponding dataset.}
+\label{tab:client-avg-convnext}
+\resizebox{\textwidth}{!}{%
+\begin{tabular}{lcccccccccccccccccccc}
+\hline
+\headband
+& \multicolumn{4}{c}{\tblhead{Blood}} & \multicolumn{4}{c}{\tblhead{Derma}} & \multicolumn{4}{c}{\tblhead{Organ-C}} & \multicolumn{4}{c}{\tblhead{Organ-S}} & \multicolumn{4}{c}{\tblhead{Ultrasound}} \\
+\cline{2-5}\cline{6-9}\cline{10-13}\cline{14-17}\cline{18-21}
+\tblhead{Method} & \tblhead{$K=3$} & \tblhead{$K=5$} & \tblhead{$K=7$} & \avgcell{Avg} & \tblhead{$K=3$} & \tblhead{$K=5$} & \tblhead{$K=7$} & \avgcell{Avg} & \tblhead{$K=3$} & \tblhead{$K=5$} & \tblhead{$K=7$} & \avgcell{Avg} & \tblhead{$K=3$} & \tblhead{$K=5$} & \tblhead{$K=7$} & \avgcell{Avg} & \tblhead{$K=3$} & \tblhead{$K=5$} & \tblhead{$K=7$} & \avgcell{Avg} \\
+\hline
+\texttt{avg}\cite{pmlr-v162-wortsman22a} & 0.1565 & 0.1122 & 0.1384 & \avgcell{0.1357} & 0.2966 & 0.4830 & \underline{0.6688} & \avgcell{0.4828} & 0.1037 & 0.1218 & 0.0944 & \avgcell{0.1066} & 0.1308 & 0.1035 & 0.1416 & \avgcell{0.1253} & 0.1506 & 0.1506 & 0.1252 & \avgcell{0.1421} \\
+\texttt{ties}\cite{yadav2023tiesmergingresolvinginterferencemerging} & 0.1715 & 0.1214 & 0.1524 & \avgcell{0.1484} & 0.2966 & 0.1797 & 0.2713 & \avgcell{0.2492} & 0.1217 & 0.0786 & 0.0716 & \avgcell{0.0906} & 0.1123 & 0.0761 & 0.0796 & \avgcell{0.0893} & 0.1518 & 0.1456 & 0.1291 & \avgcell{0.1422} \\
+\texttt{dare\_linear}\cite{yu2024languagemodelssupermario} & 0.1756 & 0.1122 & 0.1345 & \avgcell{0.1408} & 0.2705 & 0.4830 & 0.4830 & \avgcell{0.4122} & 0.1035 & 0.0699 & 0.1085 & \avgcell{0.0940} & 0.1282 & 0.1035 & 0.0797 & \avgcell{0.1038} & 0.1575 & 0.1575 & 0.1264 & \avgcell{0.1471} \\
+\texttt{dare\_ties}\cite{yu2024languagemodelssupermario} & 0.1096 & 0.1519 & 0.1497 & \avgcell{0.1371} & 0.0908 & 0.2798 & 0.2451 & \avgcell{0.2052} & 0.1305 & 0.1346 & 0.0770 & \avgcell{0.1140} & 0.1096 & 0.0946 & 0.0709 & \avgcell{0.0917} & 0.1456 & 0.1297 & 0.1500 & \avgcell{0.1418} \\
+\texttt{regmean}\cite{jin2025datalessknowledgefusionmerging} & 0.1565 & 0.0817 & 0.1856 & \avgcell{0.1413} & 0.2633 & 0.0773 & 0.2720 & \avgcell{0.2042} & 0.1143 & 0.1017 & 0.0768 & \avgcell{0.0976} & 0.1014 & 0.1259 & 0.1038 & \avgcell{0.1104} & 0.1575 & 0.1539 & 0.1500 & \avgcell{0.1538} \\
+\texttt{fisher}\cite{matena2022mergingmodelsfisherweightedaveraging} & 0.1565 & 0.0999 & 0.1189 & \avgcell{0.1251} & 0.4825 & 0.2638 & 0.2971 & \avgcell{0.3478} & 0.1003 & 0.0974 & 0.0915 & \avgcell{0.0964} & 0.0604 & 0.0517 & 0.0843 & \avgcell{0.0655} & 0.1695 & 0.1360 & 0.1456 & \avgcell{0.1504} \\
+\texttt{breadcrumbs}\cite{davari2024modelbreadcrumbsscalingmultitask} & 0.1516 & 0.1366 & 0.1163 & \avgcell{0.1348} & 0.0524 & 0.2766 & 0.4630 & \avgcell{0.2640} & 0.1031 & 0.1444 & 0.1574 & \avgcell{0.1350} & 0.1516 & 0.1554 & 0.2077 & \avgcell{0.1716} & 0.1384 & 0.1363 & 0.1363 & \avgcell{0.1370} \\
+\texttt{model\_stock}\cite{jang2025modelstockneedjust} & 0.1756 & 0.1144 & 0.1778 & \avgcell{0.1559} & 0.2966 & 0.4830 & \underline{0.6688} & \avgcell{0.4828} & 0.1276 & 0.1218 & 0.1385 & \avgcell{0.1293} & 0.1308 & 0.1035 & 0.1935 & \avgcell{0.1426} & 0.1575 & 0.1291 & 0.1479 & \avgcell{0.1448} \\
+\texttt{from}\cite{ilharco2023editingmodelstaskarithmetic} & 0.1565 & 0.1083 & 0.1671 & \avgcell{0.1440} & 0.2966 & 0.3406 & 0.4569 & \avgcell{0.3647} & 0.1232 & 0.1224 & 0.0650 & \avgcell{0.1035} & 0.1324 & 0.1105 & 0.0897 & \avgcell{0.1109} & 0.1575 & 0.1578 & 0.1087 & \avgcell{0.1413} \\
+\texttt{iso\_c}\cite{marczak2025taskleftbehindisotropic} & 0.1947 & 0.1865 & 0.1480 & \avgcell{0.1764} & 0.2971 & 0.4830 & \underline{0.6688} & \avgcell{0.4830} & 0.0991 & 0.0699 & 0.0945 & \avgcell{0.0878} & 0.0789 & 0.1477 & 0.0867 & \avgcell{0.1044} & 0.1518 & 0.1291 & 0.1605 & \avgcell{0.1471} \\
+\texttt{free\_merge}\cite{zheng2025freemergingfouriertransformefficient} & 0.1575 & 0.1190 & 0.1384 & \avgcell{0.1383} & 0.2971 & 0.4830 & \underline{0.6688} & \avgcell{0.4830} & 0.0906 & 0.1218 & 0.1385 & \avgcell{0.1170} & 0.1308 & 0.1035 & 0.1416 & \avgcell{0.1253} & 0.1506 & 0.1291 & 0.1695 & \avgcell{0.1497} \\
+\texttt{robustmerge}\cite{zeng2025robustmergeparameterefficientmodelmerging} & 0.1410 & 0.1405 & 0.0752 & \avgcell{0.1189} & 0.0908 & 0.4507 & 0.4830 & \avgcell{0.3415} & 0.1394 & 0.1218 & 0.1793 & \avgcell{0.1468} & 0.2354 & 0.0961 & 0.2077 & \avgcell{0.1797} & 0.1300 & 0.1135 & 0.1363 & \avgcell{0.1266} \\
+\lampband
+\textbf{LAMP-Merge} & \underline{0.8482} & \underline{0.8483} & \underline{0.8493} & \underline{0.8486} & \underline{0.5992} & \underline{0.5920} & 0.5852 & \underline{0.5921} & \underline{0.6482} & \underline{0.6480} & \underline{0.6495} & \underline{0.6486} & \underline{0.5977} & \underline{0.5985} & \underline{0.5990} & \underline{0.5984} & \underline{0.4259} & \underline{0.4259} & \underline{0.4259} & \underline{0.4259} \\
+\hline
+\end{tabular}
+}
+\end{table*}
+\begin{table*}[!p]
+\centering
+\scriptsize
+\setlength{\tabcolsep}{2.1pt}
+\caption{Client-average test accuracy on ViT-Tiny. Each entry averages the three Dirichlet settings for a fixed client number; Avg denotes the mean over $K=3,5,7$ within the corresponding dataset.}
+\label{tab:client-avg-vit-t}
+\resizebox{\textwidth}{!}{%
+\begin{tabular}{lcccccccccccccccccccc}
+\hline
+\headband
+& \multicolumn{4}{c}{\tblhead{Blood}} & \multicolumn{4}{c}{\tblhead{Derma}} & \multicolumn{4}{c}{\tblhead{Organ-C}} & \multicolumn{4}{c}{\tblhead{Organ-S}} & \multicolumn{4}{c}{\tblhead{Ultrasound}} \\
+\cline{2-5}\cline{6-9}\cline{10-13}\cline{14-17}\cline{18-21}
+\tblhead{Method} & \tblhead{$K=3$} & \tblhead{$K=5$} & \tblhead{$K=7$} & \avgcell{Avg} & \tblhead{$K=3$} & \tblhead{$K=5$} & \tblhead{$K=7$} & \avgcell{Avg} & \tblhead{$K=3$} & \tblhead{$K=5$} & \tblhead{$K=7$} & \avgcell{Avg} & \tblhead{$K=3$} & \tblhead{$K=5$} & \tblhead{$K=7$} & \avgcell{Avg} & \tblhead{$K=3$} & \tblhead{$K=5$} & \tblhead{$K=7$} & \avgcell{Avg} \\
+\hline
+\texttt{avg}\cite{pmlr-v162-wortsman22a} & 0.1343 & 0.1082 & 0.1160 & \avgcell{0.1195} & 0.4638 & 0.4369 & 0.3696 & \avgcell{0.4234} & 0.1657 & 0.1043 & 0.0952 & \avgcell{0.1217} & 0.0844 & 0.0852 & 0.1710 & \avgcell{0.1135} & 0.1450 & 0.1327 & 0.1884 & \avgcell{0.1554} \\
+\texttt{ties}\cite{yadav2023tiesmergingresolvinginterferencemerging} & 0.0796 & 0.1421 & 0.1285 & \avgcell{0.1167} & 0.4780 & 0.3498 & 0.4615 & \avgcell{0.4298} & 0.1341 & 0.1223 & 0.0953 & \avgcell{0.1172} & 0.1192 & 0.1002 & 0.1597 & \avgcell{0.1264} & 0.2001 & 0.1306 & 0.1018 & \avgcell{0.1442} \\
+\texttt{dare\_linear}\cite{yu2024languagemodelssupermario} & 0.2397 & 0.1129 & 0.1387 & \avgcell{0.1638} & 0.2850 & 0.1002 & 0.1204 & \avgcell{0.1685} & 0.1534 & 0.0946 & 0.0704 & \avgcell{0.1061} & 0.0748 & 0.0549 & 0.1611 & \avgcell{0.0969} & 0.1366 & 0.1051 & 0.1435 & \avgcell{0.1284} \\
+\texttt{dare\_ties}\cite{yu2024languagemodelssupermario} & 0.0735 & 0.1189 & 0.1146 & \avgcell{0.1023} & 0.2735 & 0.4502 & 0.3528 & \avgcell{0.3588} & 0.1252 & 0.0903 & 0.1033 & \avgcell{0.1063} & 0.0541 & 0.0874 & 0.0591 & \avgcell{0.0669} & 0.1447 & 0.1120 & 0.1042 & \avgcell{0.1203} \\
+\texttt{regmean}\cite{jin2025datalessknowledgefusionmerging} & 0.1748 & 0.1417 & 0.1290 & \avgcell{0.1485} & 0.5114 & 0.3667 & 0.6658 & \avgcell{0.5146} & 0.1250 & 0.0964 & 0.0983 & \avgcell{0.1066} & 0.1263 & 0.0717 & 0.1068 & \avgcell{0.1016} & 0.1491 & 0.1384 & 0.1144 & \avgcell{0.1340} \\
+\texttt{fisher}\cite{matena2022mergingmodelsfisherweightedaveraging} & 0.1166 & 0.1512 & 0.1944 & \avgcell{0.1541} & 0.4780 & 0.2042 & 0.4820 & \avgcell{0.3881} & 0.0799 & 0.1072 & 0.1424 & \avgcell{0.1098} & 0.0856 & 0.1218 & 0.1222 & \avgcell{0.1099} & 0.1611 & 0.1315 & 0.1420 & \avgcell{0.1449} \\
+\texttt{breadcrumbs}\cite{davari2024modelbreadcrumbsscalingmultitask} & 0.1363 & 0.1039 & 0.1300 & \avgcell{0.1234} & 0.0489 & 0.2572 & 0.0607 & \avgcell{0.1223} & 0.0773 & 0.1000 & 0.1644 & \avgcell{0.1139} & 0.1237 & 0.0483 & 0.1219 & \avgcell{0.0980} & 0.1360 & 0.1141 & 0.1524 & \avgcell{0.1342} \\
+\texttt{model\_stock}\cite{jang2025modelstockneedjust} & 0.1940 & 0.1120 & 0.1134 & \avgcell{0.1398} & 0.3805 & 0.3079 & 0.2735 & \avgcell{0.3206} & 0.1488 & 0.1227 & 0.1215 & \avgcell{0.1310} & 0.0893 & 0.0859 & 0.1867 & \avgcell{0.1206} & 0.1599 & 0.1809 & 0.1641 & \avgcell{0.1683} \\
+\texttt{from}\cite{ilharco2023editingmodelstaskarithmetic} & 0.1802 & 0.0781 & 0.1405 & \avgcell{0.1329} & 0.4695 & 0.5121 & \underline{0.6688} & \avgcell{0.5501} & 0.2148 & 0.1301 & 0.0972 & \avgcell{0.1474} & 0.0772 & 0.0798 & 0.1485 & \avgcell{0.1018} & 0.1836 & 0.1743 & 0.1776 & \avgcell{0.1785} \\
+\texttt{iso\_c}\cite{marczak2025taskleftbehindisotropic} & 0.1234 & 0.1483 & 0.1018 & \avgcell{0.1245} & 0.5709 & 0.4529 & 0.2306 & \avgcell{0.4181} & 0.1084 & 0.0567 & 0.0897 & \avgcell{0.0849} & 0.0611 & 0.0531 & 0.1081 & \avgcell{0.0741} & 0.1417 & 0.1527 & 0.1869 & \avgcell{0.1604} \\
+\texttt{free\_merge}\cite{zheng2025freemergingfouriertransformefficient} & 0.1989 & 0.1457 & 0.1392 & \avgcell{0.1613} & 0.4630 & 0.4770 & 0.3855 & \avgcell{0.4418} & 0.1425 & 0.0980 & 0.0759 & \avgcell{0.1055} & 0.0727 & 0.0914 & 0.1643 & \avgcell{0.1095} & 0.1405 & 0.1593 & 0.1647 & \avgcell{0.1548} \\
+\texttt{robustmerge}\cite{zeng2025robustmergeparameterefficientmodelmerging} & 0.1482 & 0.1070 & 0.1425 & \avgcell{0.1326} & 0.0347 & 0.2768 & 0.1724 & \avgcell{0.1613} & 0.0954 & 0.0617 & 0.1438 & \avgcell{0.1003} & 0.1260 & 0.0707 & 0.1217 & \avgcell{0.1061} & 0.1698 & 0.1854 & 0.1563 & \avgcell{0.1705} \\
+\lampband
+\textbf{LAMP-Merge} & \underline{0.8523} & \underline{0.8522} & \underline{0.8516} & \underline{0.8520} & \underline{0.5970} & \underline{0.5938} & 0.5860 & \underline{0.5923} & \underline{0.5805} & \underline{0.5790} & \underline{0.5790} & \underline{0.5795} & \underline{0.5406} & \underline{0.5372} & \underline{0.5388} & \underline{0.5389} & \underline{0.4645} & \underline{0.4645} & \underline{0.4645} & \underline{0.4645} \\
+\hline
+\end{tabular}
+}
+\end{table*}
+\begin{table*}[!p]
+\centering
+\scriptsize
+\setlength{\tabcolsep}{2.1pt}
+\caption{Client-average test accuracy on Swin-Tiny. Each entry averages the three Dirichlet settings for a fixed client number; Avg denotes the mean over $K=3,5,7$ within the corresponding dataset.}
+\label{tab:client-avg-swin-tiny}
+\resizebox{\textwidth}{!}{%
+\begin{tabular}{lcccccccccccccccccccc}
+\hline
+\headband
+& \multicolumn{4}{c}{\tblhead{Blood}} & \multicolumn{4}{c}{\tblhead{Derma}} & \multicolumn{4}{c}{\tblhead{Organ-C}} & \multicolumn{4}{c}{\tblhead{Organ-S}} & \multicolumn{4}{c}{\tblhead{Ultrasound}} \\
+\cline{2-5}\cline{6-9}\cline{10-13}\cline{14-17}\cline{18-21}
+\tblhead{Method} & \tblhead{$K=3$} & \tblhead{$K=5$} & \tblhead{$K=7$} & \avgcell{Avg} & \tblhead{$K=3$} & \tblhead{$K=5$} & \tblhead{$K=7$} & \avgcell{Avg} & \tblhead{$K=3$} & \tblhead{$K=5$} & \tblhead{$K=7$} & \avgcell{Avg} & \tblhead{$K=3$} & \tblhead{$K=5$} & \tblhead{$K=7$} & \avgcell{Avg} & \tblhead{$K=3$} & \tblhead{$K=5$} & \tblhead{$K=7$} & \avgcell{Avg} \\
+\hline
+\texttt{avg}\cite{pmlr-v162-wortsman22a} & 0.1565 & 0.1186 & 0.1524 & \avgcell{0.1425} & 0.4569 & 0.4830 & \underline{0.6688} & \avgcell{0.5362} & 0.1068 & 0.1294 & 0.0787 & \avgcell{0.1050} & 0.0682 & 0.0604 & 0.1381 & \avgcell{0.0889} & 0.1527 & 0.1294 & 0.1465 & \avgcell{0.1429} \\
+\texttt{ties}\cite{yadav2023tiesmergingresolvinginterferencemerging} & 0.0972 & 0.1190 & 0.1384 & \avgcell{0.1182} & 0.0841 & 0.0780 & \underline{0.6688} & \avgcell{0.2770} & 0.1160 & 0.0702 & 0.0934 & \avgcell{0.0932} & 0.0734 & 0.0607 & 0.1107 & \avgcell{0.0816} & 0.1695 & 0.1303 & 0.1261 & \avgcell{0.1420} \\
+\texttt{dare\_linear}\cite{yu2024languagemodelssupermario} & 0.1565 & 0.1161 & 0.1825 & \avgcell{0.1517} & 0.4569 & 0.2771 & 0.4630 & \avgcell{0.3990} & 0.1155 & 0.1272 & 0.0776 & \avgcell{0.1068} & 0.0640 & 0.0720 & 0.1381 & \avgcell{0.0914} & 0.1743 & 0.1536 & 0.1497 & \avgcell{0.1592} \\
+\texttt{dare\_ties}\cite{yu2024languagemodelssupermario} & 0.1384 & 0.1162 & 0.1384 & \avgcell{0.1310} & 0.2961 & 0.2638 & \underline{0.6688} & \avgcell{0.4096} & 0.1276 & 0.0774 & 0.1116 & \avgcell{0.1055} & 0.1194 & 0.0434 & 0.1230 & \avgcell{0.0953} & 0.1791 & 0.1351 & 0.1300 & \avgcell{0.1481} \\
+\texttt{regmean}\cite{jin2025datalessknowledgefusionmerging} & 0.1374 & 0.1715 & 0.1578 & \avgcell{0.1556} & 0.2705 & 0.4630 & 0.4569 & \avgcell{0.3968} & 0.1411 & 0.0773 & 0.0811 & \avgcell{0.0998} & 0.1215 & 0.0821 & 0.0926 & \avgcell{0.0987} & 0.1465 & 0.1105 & 0.1779 & \avgcell{0.1450} \\
+\texttt{fisher}\cite{matena2022mergingmodelsfisherweightedaveraging} & 0.1633 & 0.1756 & 0.1565 & \avgcell{0.1651} & 0.4582 & 0.0652 & 0.4718 & \avgcell{0.3317} & 0.0814 & 0.0899 & 0.0978 & \avgcell{0.0897} & 0.0651 & 0.0650 & 0.1092 & \avgcell{0.0798} & 0.1746 & 0.1165 & 0.1755 & \avgcell{0.1555} \\
+\texttt{breadcrumbs}\cite{davari2024modelbreadcrumbsscalingmultitask} & 0.1500 & 0.1365 & 0.1537 & \avgcell{0.1467} & 0.0647 & 0.2771 & 0.0715 & \avgcell{0.1378} & 0.1445 & 0.1783 & 0.1660 & \avgcell{0.1629} & 0.2354 & 0.2077 & 0.2111 & \avgcell{0.2181} & 0.1450 & 0.1312 & 0.1653 & \avgcell{0.1472} \\
+\texttt{model\_stock}\cite{jang2025modelstockneedjust} & 0.1374 & 0.1440 & 0.1715 & \avgcell{0.1510} & 0.4569 & 0.2771 & 0.4825 & \avgcell{0.4055} & 0.1110 & 0.0771 & 0.1404 & \avgcell{0.1095} & 0.0671 & 0.1106 & 0.1714 & \avgcell{0.1164} & 0.1539 & 0.1273 & 0.1869 & \avgcell{0.1560} \\
+\texttt{from}\cite{ilharco2023editingmodelstaskarithmetic} & 0.1565 & 0.1495 & 0.1671 & \avgcell{0.1577} & 0.4569 & 0.2971 & \underline{0.6688} & \avgcell{0.4743} & 0.1174 & 0.1220 & 0.1051 & \avgcell{0.1148} & 0.1133 & 0.1016 & 0.1380 & \avgcell{0.1176} & 0.1539 & 0.1252 & 0.1476 & \avgcell{0.1422} \\
+\texttt{iso\_c}\cite{marczak2025taskleftbehindisotropic} & 0.1430 & 0.1722 & 0.1700 & \avgcell{0.1617} & 0.3099 & 0.2840 & 0.5174 & \avgcell{0.3704} & 0.1302 & 0.1327 & 0.1469 & \avgcell{0.1366} & 0.1545 & 0.1727 & 0.1880 & \avgcell{0.1717} & 0.1755 & 0.1731 & 0.1791 & \avgcell{0.1759} \\
+\texttt{free\_merge}\cite{zheng2025freemergingfouriertransformefficient} & 0.1154 & 0.0861 & 0.1840 & \avgcell{0.1285} & 0.4569 & 0.4830 & \underline{0.6688} & \avgcell{0.5362} & 0.0959 & 0.1377 & 0.0890 & \avgcell{0.1075} & 0.0682 & 0.0497 & 0.1062 & \avgcell{0.0747} & 0.1518 & 0.1575 & 0.1599 & \avgcell{0.1564} \\
+\texttt{robustmerge}\cite{zeng2025robustmergeparameterefficientmodelmerging} & 0.1374 & 0.1409 & 0.1670 & \avgcell{0.1484} & 0.2377 & 0.2771 & 0.0504 & \avgcell{0.1884} & 0.1601 & 0.1442 & 0.1960 & \avgcell{0.1668} & 0.1673 & 0.1151 & 0.2077 & \avgcell{0.1634} & 0.1761 & 0.1315 & 0.1629 & \avgcell{0.1568} \\
+\lampband
+\textbf{LAMP-Merge} & \underline{0.7737} & \underline{0.7753} & \underline{0.7748} & \underline{0.7746} & \underline{0.6374} & \underline{0.6251} & 0.6244 & \underline{0.6290} & \underline{0.6651} & \underline{0.6632} & \underline{0.6630} & \underline{0.6638} & \underline{0.6078} & \underline{0.6076} & \underline{0.6068} & \underline{0.6074} & \underline{0.4816} & \underline{0.4816} & \underline{0.4816} & \underline{0.4816} \\
+\hline
+\end{tabular}
+}
+\end{table*}
+
+\clearpage
+
 \subsection{Ablation Study}
 
 % 模块级消融采用与主实验完全相同的实验设置。再比较三种情景：完整 LAMP-Merge、仅使用诊断原型重建、在权重平均上仅加入长尾患病率校准。表中结果显示，这两个模块均对算法的性能有较为显著的提升
-Module-level ablations use exactly the same experimental setup as the main experiments. We compare three configurations: full LAMP-Merge, diagnostic prototype reconstruction only, and weight averaging augmented only with long-tail prevalence calibration. Fig.~\ref{fig:dataset-ablation-acc} shows that both modules provide substantial performance improvements.
+Module-level ablations use exactly the same experimental setup as the main experiments. We compare three configurations: full LAMP-Merge, diagnostic prototype reconstruction only, and weight averaging augmented only with long-tail prevalence calibration. Both components provide substantial performance improvements.
 
 \subsubsection{1) Effectiveness of Diagnostic Prototype Reconstruction}
 % 为进一步定位诊断原型重建内部哪些信息是必要的，我们在完整范围上进行受控替换。所有设置均保留长尾患病率校准，只替换诊断原型重建中的原型语义或支持数权重。
@@ -486,10 +564,24 @@ Smoothed prevalence prior & 0.6209 & \neutraldelta{0.0000} \\
 % 表*中结果说明，完全移除患病率校准或将真实先验替换为均匀先验都会降低平均准确率，说明长尾信息是完整方法的一部分。平滑先验与正式方法接近，说明 LAMP-Merge 不依赖单个精确计数的偶然波动；只要先验仍保留真实长尾结构，有界校准即可发挥作用。
 Table ~\ref{tab:prevalence-internal-ablation} shows that removing prevalence calibration or replacing the real prior with a uniform prior reduces mean ACC, confirming that long-tailed prevalence is part of the full method. The smoothed prior remains close to the official method, indicating that LAMP-Merge does not depend on accidental fluctuations of exact counts; bounded calibration remains effective as long as the prior preserves the real long-tailed structure.
 
+\section{Conclusion}
+
+% 本文研究了单次异步医学模型融合问题，其中独立训练的医院模型必须在没有联邦优化轮次且不向服务器暴露原始医学图像的条件下被融合。我们的实证分析表明，在局部诊断覆盖不完整时，通用模型融合方法会遭遇聚合诱导的预测坍缩。我们进一步表明，在长尾医学数据集上，这种坍缩可能被原始准确率掩盖，因此设计 Long-tail Prevalence Calibration模块并使用宏召回率、宏 F1 和预测分布诊断进行二次评估。
+We studied \textbf{one-shot asynchronous medical model merging}, where independently trained hospital models must be fused without federated optimization rounds and without exposing raw medical images to the server. Our empirical analysis shows that generic model-merging methods suffer from \textbf{aggregation-induced predictive collapse} under incomplete local diagnostic coverage. We further show that, on long-tailed medical datasets, such collapse can be masked by raw accuracy. We therefore introduce the Long-tail Prevalence Calibration module and perform secondary evaluation using macro recall, macro-F1, and predictive-distribution diagnostics\cite{BUDA2018249,5597285}.
+
+Taken together, the full-scope comparisons, prediction-distribution diagnostics, and prototype-error analysis establish a consistent mechanism: class-level support-weighted evidence reconstructs discriminative directions for locally absent diagnoses, while bounded prevalence calibration retains clinically meaningful imbalance without reintroducing majority-class collapse.
+
+% LAMP-Merge 以简洁的双模块设计处理这两个性质。未来我们将进一步扩展 LAMP-Merge 的适用范围：一方面，将其从医学图像分类拓展到分割、检测及多模态诊断任务；另一方面，研究更严格的隐私保护机制，例如差分隐私或安全聚合，以进一步降低类别级统计信息可能带来的隐私风险。同时，我们也将探索在更大规模真实多中心医疗场景中的部署与验证。
+LAMP-Merge addresses these two properties through a concise two-module design. Future work will extend its applicability in two directions: first, from medical image classification to segmentation, detection, and multimodal diagnostic tasks; and second, toward stronger privacy-preserving mechanisms, such as differential privacy and secure aggregation, to further reduce potential privacy risks associated with class-level statistics\cite{kaissis2020secure,geyer2017differentially,abadi2016deep}. We will also explore deployment and validation in larger-scale real-world multicenter healthcare settings.
+
+\clearpage
+
+\appendix
+\section{Supplementary Results and Analysis}
+
 \subsection{Hyperparameter Analysis Experiment}
 % 中文对照：诊断原型重建有一个连续超参数，即原型头缩放因子 s。长尾患病率校准有一个连续超参数，即长尾校准强度 lambda。图中每个取值都在 180 个原始单元和 60 个客户端平均单元上评估，覆盖五个医学数据集、四种骨干网络、三种客户端数量和三种Dirichlet 非独立同分布划分参数。
 Fig.~\ref{fig:hparam-full} evaluates the prototype-head scale $s$ and calibration strength $\lambda$ over 180 raw cells and 60 client-average cells, spanning five datasets, four vision backbones, three client counts, and three Dirichlet skew levels. The default setting is $s=20$ and $\lambda=5$.
-
 
 % 结果说明，LAMP-Merge 在较宽的超参数范围内均保持稳定性能。原型头缩放因子 (s) 和长尾校准强度 (\lambda) 的变化只带来小幅波动，默认设置 (s=20,\lambda=5) 位于稳定高性能区间。因此我们的收益主要来自诊断原型重建与长尾患病率校准本身，而非依赖精细的超参数搜索。
 Both curves remain stable over broad intervals. Small $s$ is insufficient to scale prototype logits, whereas bounded $\lambda$ calibrates prevalence without inducing majority-class prediction. Thus, the gain arises from the two components rather than narrow hyperparameter tuning.
@@ -504,8 +596,6 @@ Both curves remain stable over broad intervals. Small $s$ is insufficient to sca
 \subsection{New-metric Diagnostic Experiment}
 % 虽然主实验只用 ACC 进行横向比较，但医学长尾分布可能使单类或少数类预测器获得较高 ACC。因此，我们引入了新的指标。令 y_n 和 \hat y_n 分别表示第 n 个测试样本的真实标签和预测标签，令 q_c=N^{-1}\sum_n 1[\hat y_n=c] 表示预测类别分布，令 p_c=N^{-1}\sum_n 1[y_n=c] 表示真实类别分布，令 C_test 表示测试集中真实出现的类别集合。我们使用如下诊断指标。
 Although the main experiments use ACC for direct comparison, long-tailed medical distributions can allow single-class or few-class predictors to achieve high ACC\cite{BUDA2018249,5597285}. We therefore report balanced accuracy, macro-F1, collapse ratio, effective predicted classes, and predicted--true total variation.
-
-
 
 \begin{table}[t]
 \centering
@@ -547,16 +637,29 @@ To visualize the prediction-distribution changes measured by the new diagnostic 
 % 我们仅将 t-SNE 用于分析，而不用于服务器端选择或融合。图中给出了 Blood 数据集上 ResNet、K=3、beta=0.01 设置下的联合 t-SNE 对比。每个点对应一个测试图像的模型输出概率向量，不同正式融合方法在同一二维空间中投影，用于比较预测表征的类别结构。
 We use t-SNE\cite{vanDerMaaten2008} only for analysis, not for server-side selection or fusion. The joint comparison uses Blood with ResNet, $K=3$, and $\beta=0.01$. Each point is the output-probability representation of a test image, and formal merging methods are projected into the same two-dimensional space to compare the class structure of their predictive representations. LAMP-Merge retains separated predictive groups, whereas generic merges exhibit a substantially compressed output space.
 
+\begin{figure*}[!t]
+\centering
+\includegraphics[width=0.98\textwidth]{figures/tsne_joint_bloodmnist_224_resnet.png}
+\caption{Joint t-SNE visualization of output-probability representations on Blood. From left to right: LAMP-Merge, weight averaging, TIES-Merging, and DARE-Linear.}
+\label{fig:tsne}
+\end{figure*}
+
 \subsection{In-depth Analysis Experiment}
 \subsubsection{1) analysis of the geometry}
 % 最后，我们对诊断原型重建产生的几何结构进行深入分析。该实验对应模块内消融中的原型替换设置，用于解释为什么共享参考空间类别原型与类别级支持数共同带来稳定收益。令 d(a,b)=1-cos(a,b) 表示余弦距离，令 I_c 表示具有类别 c 样本的客户端集合。所用几何量定义如下。
 Finally, we conduct an in-depth analysis of the geometry induced by diagnostic prototype reconstruction. This experiment corresponds to the prototype-replacement settings in the internal ablation and explains why reference-space class prototypes and class-level support counts jointly provide stable gains. We assess inter-class separation, nearest-class margin, within-class client consistency, and prototype--client alignment.
 
-
 Across the controlled prototype substitutions, the full method jointly preserves nonzero inter-class separation and high cross-client consistency and prototype-client alignment, rather than maximizing a single geometric value. Together with the accuracy drops in Table~\ref{tab:diagnostic-internal-ablation}, this joint profile shows that the benefit arises from class-semantic reference-space prototypes weighted by class-specific support.
 
-
 The individual geometry values should therefore be interpreted as mechanism diagnostics, not standalone objectives: extreme separation or perfect alignment can be produced by class-agnostic or mismatched directions. LAMP-Merge is effective because its four quantities are simultaneously consistent with class semantics and the observed full-scope accuracy gains.
+
+\begin{figure*}[!t]
+\centering
+\includegraphics[width=0.96\textwidth]{figures/full_scope_prototype_geometry_internal_ablation.png}
+% 完整基准上的原型几何比较。该图总结了两两距离、最近类别距离、原型一致性和原型-客户端对齐程度。
+\caption{Prototype-geometry comparison on the full benchmark. The figure summarizes pairwise distance, nearest-class distance, prototype consistency, and prototype-client alignment.}
+\label{fig:prototype-geometry}
+\end{figure*}
 
 \subsubsection{2) Additional Theoretical Analysis}
 % 令 mu_c^star 表示共享参考空间中的真实类别均值。如果客户端类别特征具有有界二阶矩，则原型估计误差满足如下上界。
@@ -595,28 +698,6 @@ b_c=\lambda\left(\log\pi_c-\frac{1}{C}\sum_k\log\pi_k\right).
 \end{equation}
 As long as $\lambda$ is bounded, long-tail prevalence calibration does not replace the discriminative directions reconstructed by diagnostic prototype reconstruction; it only calibrates the output toward the real class prevalence. This explains why using long-tail prevalence calibration alone is insufficient, while full LAMP-Merge remains both non-collapsed and prevalence-aware.
 
-\section{Conclusion}
-
-% 本文研究了单次异步医学模型融合问题，其中独立训练的医院模型必须在没有联邦优化轮次且不向服务器暴露原始医学图像的条件下被融合。我们的实证分析表明，在局部诊断覆盖不完整时，通用模型融合方法会遭遇聚合诱导的预测坍缩。我们进一步表明，在长尾医学数据集上，这种坍缩可能被原始准确率掩盖，因此设计 Long-tail Prevalence Calibration模块并使用宏召回率、宏 F1 和预测分布诊断进行二次评估。
-We studied \textbf{one-shot asynchronous medical model merging}, where independently trained hospital models must be fused without federated optimization rounds and without exposing raw medical images to the server. Our empirical analysis shows that generic model-merging methods suffer from \textbf{aggregation-induced predictive collapse} under incomplete local diagnostic coverage. We further show that, on long-tailed medical datasets, such collapse can be masked by raw accuracy. We therefore introduce the Long-tail Prevalence Calibration module and perform secondary evaluation using macro recall, macro-F1, and predictive-distribution diagnostics\cite{BUDA2018249,5597285}.
-
-Taken together, the full-scope comparisons, prediction-distribution diagnostics, and prototype-error analysis establish a consistent mechanism: class-level support-weighted evidence reconstructs discriminative directions for locally absent diagnoses, while bounded prevalence calibration retains clinically meaningful imbalance without reintroducing majority-class collapse.
-
-% LAMP-Merge 以简洁的双模块设计处理这两个性质。未来我们将进一步扩展 LAMP-Merge 的适用范围：一方面，将其从医学图像分类拓展到分割、检测及多模态诊断任务；另一方面，研究更严格的隐私保护机制，例如差分隐私或安全聚合，以进一步降低类别级统计信息可能带来的隐私风险。同时，我们也将探索在更大规模真实多中心医疗场景中的部署与验证。
-LAMP-Merge addresses these two properties through a concise two-module design. Future work will extend its applicability in two directions: first, from medical image classification to segmentation, detection, and multimodal diagnostic tasks; and second, toward stronger privacy-preserving mechanisms, such as differential privacy and secure aggregation, to further reduce potential privacy risks associated with class-level statistics\cite{kaissis2020secure,geyer2017differentially,abadi2016deep}. We will also explore deployment and validation in larger-scale real-world multicenter healthcare settings.
-
-\bibliography{aaai2026}
-\appendix
-\section{Supplementary Results and Analysis}
-
-\begin{figure*}[!t]
-\centering
-\includegraphics[width=0.96\textwidth]{figures/full_scope_prototype_geometry_internal_ablation.png}
-% 完整基准上的原型几何比较。该图总结了两两距离、最近类别距离、原型一致性和原型-客户端对齐程度。
-\caption{Prototype-geometry comparison on the full benchmark. The figure summarizes pairwise distance, nearest-class distance, prototype consistency, and prototype-client alignment.}
-\label{fig:prototype-geometry}
-\end{figure*}
-
 \subsection{Evaluation Datasets}
 
 % \subsubsection{Evaluation Datasets}
@@ -632,107 +713,22 @@ The five MedMNIST v2 benchmarks\cite{yang2023medmnist} cover blood-cell microsco
 % 这些基准数据集覆盖了医学图像分类任务中的多种成像场景，为评估融合模型的跨模态鲁棒性、类别判别能力和任务泛化能力提供了系统测试平台。我们针对这些数据集开展系统性实验，以分析 LAMP-Merge 在不同医学图像类型和不同类别分布条件下的性能表现。
 Together, these benchmarks provide a systematic testbed for evaluating cross-modality robustness, class-discriminative capability, and task generalization under different medical image types and class-distribution conditions.
 
-\subsection{Complete Client-Average Results}
-\label{app:complete-results}
+\begin{figure*}[t]
+\centering
+\includegraphics[width=0.96\textwidth]{figures/dataset_examples.png}
+\caption{Representative training images from the five medical image datasets used in the experiments. The class IDs are shown only to illustrate category diversity within each dataset.}
+\label{fig:dataset-examples}
+\end{figure*}
 
-\begin{table*}[!t]
-\centering
-\scriptsize
-\setlength{\tabcolsep}{2.1pt}
-\caption{Client-average test accuracy on ConvNeXt. Each entry averages the three Dirichlet settings for a fixed client number; Avg denotes the mean over $K=3,5,7$ within the corresponding dataset.}
-\label{tab:client-avg-convnext}
-\resizebox{\textwidth}{!}{%
-\begin{tabular}{lcccccccccccccccccccc}
-\hline
-\headband
-& \multicolumn{4}{c}{\tblhead{Blood}} & \multicolumn{4}{c}{\tblhead{Derma}} & \multicolumn{4}{c}{\tblhead{Organ-C}} & \multicolumn{4}{c}{\tblhead{Organ-S}} & \multicolumn{4}{c}{\tblhead{Ultrasound}} \\
-\cline{2-5}\cline{6-9}\cline{10-13}\cline{14-17}\cline{18-21}
-\tblhead{Method} & \tblhead{$K=3$} & \tblhead{$K=5$} & \tblhead{$K=7$} & \avgcell{Avg} & \tblhead{$K=3$} & \tblhead{$K=5$} & \tblhead{$K=7$} & \avgcell{Avg} & \tblhead{$K=3$} & \tblhead{$K=5$} & \tblhead{$K=7$} & \avgcell{Avg} & \tblhead{$K=3$} & \tblhead{$K=5$} & \tblhead{$K=7$} & \avgcell{Avg} & \tblhead{$K=3$} & \tblhead{$K=5$} & \tblhead{$K=7$} & \avgcell{Avg} \\
-\hline
-\texttt{avg}\cite{pmlr-v162-wortsman22a} & 0.1565 & 0.1122 & 0.1384 & \avgcell{0.1357} & 0.2966 & 0.4830 & \underline{0.6688} & \avgcell{0.4828} & 0.1037 & 0.1218 & 0.0944 & \avgcell{0.1066} & 0.1308 & 0.1035 & 0.1416 & \avgcell{0.1253} & 0.1506 & 0.1506 & 0.1252 & \avgcell{0.1421} \\
-\texttt{ties}\cite{yadav2023tiesmergingresolvinginterferencemerging} & 0.1715 & 0.1214 & 0.1524 & \avgcell{0.1484} & 0.2966 & 0.1797 & 0.2713 & \avgcell{0.2492} & 0.1217 & 0.0786 & 0.0716 & \avgcell{0.0906} & 0.1123 & 0.0761 & 0.0796 & \avgcell{0.0893} & 0.1518 & 0.1456 & 0.1291 & \avgcell{0.1422} \\
-\texttt{dare\_linear}\cite{yu2024languagemodelssupermario} & 0.1756 & 0.1122 & 0.1345 & \avgcell{0.1408} & 0.2705 & 0.4830 & 0.4830 & \avgcell{0.4122} & 0.1035 & 0.0699 & 0.1085 & \avgcell{0.0940} & 0.1282 & 0.1035 & 0.0797 & \avgcell{0.1038} & 0.1575 & 0.1575 & 0.1264 & \avgcell{0.1471} \\
-\texttt{dare\_ties}\cite{yu2024languagemodelssupermario} & 0.1096 & 0.1519 & 0.1497 & \avgcell{0.1371} & 0.0908 & 0.2798 & 0.2451 & \avgcell{0.2052} & 0.1305 & 0.1346 & 0.0770 & \avgcell{0.1140} & 0.1096 & 0.0946 & 0.0709 & \avgcell{0.0917} & 0.1456 & 0.1297 & 0.1500 & \avgcell{0.1418} \\
-\texttt{regmean}\cite{jin2025datalessknowledgefusionmerging} & 0.1565 & 0.0817 & 0.1856 & \avgcell{0.1413} & 0.2633 & 0.0773 & 0.2720 & \avgcell{0.2042} & 0.1143 & 0.1017 & 0.0768 & \avgcell{0.0976} & 0.1014 & 0.1259 & 0.1038 & \avgcell{0.1104} & 0.1575 & 0.1539 & 0.1500 & \avgcell{0.1538} \\
-\texttt{fisher}\cite{matena2022mergingmodelsfisherweightedaveraging} & 0.1565 & 0.0999 & 0.1189 & \avgcell{0.1251} & 0.4825 & 0.2638 & 0.2971 & \avgcell{0.3478} & 0.1003 & 0.0974 & 0.0915 & \avgcell{0.0964} & 0.0604 & 0.0517 & 0.0843 & \avgcell{0.0655} & 0.1695 & 0.1360 & 0.1456 & \avgcell{0.1504} \\
-\texttt{breadcrumbs}\cite{davari2024modelbreadcrumbsscalingmultitask} & 0.1516 & 0.1366 & 0.1163 & \avgcell{0.1348} & 0.0524 & 0.2766 & 0.4630 & \avgcell{0.2640} & 0.1031 & 0.1444 & 0.1574 & \avgcell{0.1350} & 0.1516 & 0.1554 & 0.2077 & \avgcell{0.1716} & 0.1384 & 0.1363 & 0.1363 & \avgcell{0.1370} \\
-\texttt{model\_stock}\cite{jang2025modelstockneedjust} & 0.1756 & 0.1144 & 0.1778 & \avgcell{0.1559} & 0.2966 & 0.4830 & \underline{0.6688} & \avgcell{0.4828} & 0.1276 & 0.1218 & 0.1385 & \avgcell{0.1293} & 0.1308 & 0.1035 & 0.1935 & \avgcell{0.1426} & 0.1575 & 0.1291 & 0.1479 & \avgcell{0.1448} \\
-\texttt{from}\cite{ilharco2023editingmodelstaskarithmetic} & 0.1565 & 0.1083 & 0.1671 & \avgcell{0.1440} & 0.2966 & 0.3406 & 0.4569 & \avgcell{0.3647} & 0.1232 & 0.1224 & 0.0650 & \avgcell{0.1035} & 0.1324 & 0.1105 & 0.0897 & \avgcell{0.1109} & 0.1575 & 0.1578 & 0.1087 & \avgcell{0.1413} \\
-\texttt{iso\_c}\cite{marczak2025taskleftbehindisotropic} & 0.1947 & 0.1865 & 0.1480 & \avgcell{0.1764} & 0.2971 & 0.4830 & \underline{0.6688} & \avgcell{0.4830} & 0.0991 & 0.0699 & 0.0945 & \avgcell{0.0878} & 0.0789 & 0.1477 & 0.0867 & \avgcell{0.1044} & 0.1518 & 0.1291 & 0.1605 & \avgcell{0.1471} \\
-\texttt{free\_merge}\cite{zheng2025freemergingfouriertransformefficient} & 0.1575 & 0.1190 & 0.1384 & \avgcell{0.1383} & 0.2971 & 0.4830 & \underline{0.6688} & \avgcell{0.4830} & 0.0906 & 0.1218 & 0.1385 & \avgcell{0.1170} & 0.1308 & 0.1035 & 0.1416 & \avgcell{0.1253} & 0.1506 & 0.1291 & 0.1695 & \avgcell{0.1497} \\
-\texttt{robustmerge}\cite{zeng2025robustmergeparameterefficientmodelmerging} & 0.1410 & 0.1405 & 0.0752 & \avgcell{0.1189} & 0.0908 & 0.4507 & 0.4830 & \avgcell{0.3415} & 0.1394 & 0.1218 & 0.1793 & \avgcell{0.1468} & 0.2354 & 0.0961 & 0.2077 & \avgcell{0.1797} & 0.1300 & 0.1135 & 0.1363 & \avgcell{0.1266} \\
-\lampband
-\textbf{LAMP-Merge} & \underline{0.8482} & \underline{0.8483} & \underline{0.8493} & \underline{0.8486} & \underline{0.5992} & \underline{0.5920} & 0.5852 & \underline{0.5921} & \underline{0.6482} & \underline{0.6480} & \underline{0.6495} & \underline{0.6486} & \underline{0.5977} & \underline{0.5985} & \underline{0.5990} & \underline{0.5984} & \underline{0.4259} & \underline{0.4259} & \underline{0.4259} & \underline{0.4259} \\
-\hline
-\end{tabular}
-}
-\end{table*}
-\begin{table*}[!t]
-\centering
-\scriptsize
-\setlength{\tabcolsep}{2.1pt}
-\caption{Client-average test accuracy on ViT-Tiny. Each entry averages the three Dirichlet settings for a fixed client number; Avg denotes the mean over $K=3,5,7$ within the corresponding dataset.}
-\label{tab:client-avg-vit-t}
-\resizebox{\textwidth}{!}{%
-\begin{tabular}{lcccccccccccccccccccc}
-\hline
-\headband
-& \multicolumn{4}{c}{\tblhead{Blood}} & \multicolumn{4}{c}{\tblhead{Derma}} & \multicolumn{4}{c}{\tblhead{Organ-C}} & \multicolumn{4}{c}{\tblhead{Organ-S}} & \multicolumn{4}{c}{\tblhead{Ultrasound}} \\
-\cline{2-5}\cline{6-9}\cline{10-13}\cline{14-17}\cline{18-21}
-\tblhead{Method} & \tblhead{$K=3$} & \tblhead{$K=5$} & \tblhead{$K=7$} & \avgcell{Avg} & \tblhead{$K=3$} & \tblhead{$K=5$} & \tblhead{$K=7$} & \avgcell{Avg} & \tblhead{$K=3$} & \tblhead{$K=5$} & \tblhead{$K=7$} & \avgcell{Avg} & \tblhead{$K=3$} & \tblhead{$K=5$} & \tblhead{$K=7$} & \avgcell{Avg} & \tblhead{$K=3$} & \tblhead{$K=5$} & \tblhead{$K=7$} & \avgcell{Avg} \\
-\hline
-\texttt{avg}\cite{pmlr-v162-wortsman22a} & 0.1343 & 0.1082 & 0.1160 & \avgcell{0.1195} & 0.4638 & 0.4369 & 0.3696 & \avgcell{0.4234} & 0.1657 & 0.1043 & 0.0952 & \avgcell{0.1217} & 0.0844 & 0.0852 & 0.1710 & \avgcell{0.1135} & 0.1450 & 0.1327 & 0.1884 & \avgcell{0.1554} \\
-\texttt{ties}\cite{yadav2023tiesmergingresolvinginterferencemerging} & 0.0796 & 0.1421 & 0.1285 & \avgcell{0.1167} & 0.4780 & 0.3498 & 0.4615 & \avgcell{0.4298} & 0.1341 & 0.1223 & 0.0953 & \avgcell{0.1172} & 0.1192 & 0.1002 & 0.1597 & \avgcell{0.1264} & 0.2001 & 0.1306 & 0.1018 & \avgcell{0.1442} \\
-\texttt{dare\_linear}\cite{yu2024languagemodelssupermario} & 0.2397 & 0.1129 & 0.1387 & \avgcell{0.1638} & 0.2850 & 0.1002 & 0.1204 & \avgcell{0.1685} & 0.1534 & 0.0946 & 0.0704 & \avgcell{0.1061} & 0.0748 & 0.0549 & 0.1611 & \avgcell{0.0969} & 0.1366 & 0.1051 & 0.1435 & \avgcell{0.1284} \\
-\texttt{dare\_ties}\cite{yu2024languagemodelssupermario} & 0.0735 & 0.1189 & 0.1146 & \avgcell{0.1023} & 0.2735 & 0.4502 & 0.3528 & \avgcell{0.3588} & 0.1252 & 0.0903 & 0.1033 & \avgcell{0.1063} & 0.0541 & 0.0874 & 0.0591 & \avgcell{0.0669} & 0.1447 & 0.1120 & 0.1042 & \avgcell{0.1203} \\
-\texttt{regmean}\cite{jin2025datalessknowledgefusionmerging} & 0.1748 & 0.1417 & 0.1290 & \avgcell{0.1485} & 0.5114 & 0.3667 & 0.6658 & \avgcell{0.5146} & 0.1250 & 0.0964 & 0.0983 & \avgcell{0.1066} & 0.1263 & 0.0717 & 0.1068 & \avgcell{0.1016} & 0.1491 & 0.1384 & 0.1144 & \avgcell{0.1340} \\
-\texttt{fisher}\cite{matena2022mergingmodelsfisherweightedaveraging} & 0.1166 & 0.1512 & 0.1944 & \avgcell{0.1541} & 0.4780 & 0.2042 & 0.4820 & \avgcell{0.3881} & 0.0799 & 0.1072 & 0.1424 & \avgcell{0.1098} & 0.0856 & 0.1218 & 0.1222 & \avgcell{0.1099} & 0.1611 & 0.1315 & 0.1420 & \avgcell{0.1449} \\
-\texttt{breadcrumbs}\cite{davari2024modelbreadcrumbsscalingmultitask} & 0.1363 & 0.1039 & 0.1300 & \avgcell{0.1234} & 0.0489 & 0.2572 & 0.0607 & \avgcell{0.1223} & 0.0773 & 0.1000 & 0.1644 & \avgcell{0.1139} & 0.1237 & 0.0483 & 0.1219 & \avgcell{0.0980} & 0.1360 & 0.1141 & 0.1524 & \avgcell{0.1342} \\
-\texttt{model\_stock}\cite{jang2025modelstockneedjust} & 0.1940 & 0.1120 & 0.1134 & \avgcell{0.1398} & 0.3805 & 0.3079 & 0.2735 & \avgcell{0.3206} & 0.1488 & 0.1227 & 0.1215 & \avgcell{0.1310} & 0.0893 & 0.0859 & 0.1867 & \avgcell{0.1206} & 0.1599 & 0.1809 & 0.1641 & \avgcell{0.1683} \\
-\texttt{from}\cite{ilharco2023editingmodelstaskarithmetic} & 0.1802 & 0.0781 & 0.1405 & \avgcell{0.1329} & 0.4695 & 0.5121 & \underline{0.6688} & \avgcell{0.5501} & 0.2148 & 0.1301 & 0.0972 & \avgcell{0.1474} & 0.0772 & 0.0798 & 0.1485 & \avgcell{0.1018} & 0.1836 & 0.1743 & 0.1776 & \avgcell{0.1785} \\
-\texttt{iso\_c}\cite{marczak2025taskleftbehindisotropic} & 0.1234 & 0.1483 & 0.1018 & \avgcell{0.1245} & 0.5709 & 0.4529 & 0.2306 & \avgcell{0.4181} & 0.1084 & 0.0567 & 0.0897 & \avgcell{0.0849} & 0.0611 & 0.0531 & 0.1081 & \avgcell{0.0741} & 0.1417 & 0.1527 & 0.1869 & \avgcell{0.1604} \\
-\texttt{free\_merge}\cite{zheng2025freemergingfouriertransformefficient} & 0.1989 & 0.1457 & 0.1392 & \avgcell{0.1613} & 0.4630 & 0.4770 & 0.3855 & \avgcell{0.4418} & 0.1425 & 0.0980 & 0.0759 & \avgcell{0.1055} & 0.0727 & 0.0914 & 0.1643 & \avgcell{0.1095} & 0.1405 & 0.1593 & 0.1647 & \avgcell{0.1548} \\
-\texttt{robustmerge}\cite{zeng2025robustmergeparameterefficientmodelmerging} & 0.1482 & 0.1070 & 0.1425 & \avgcell{0.1326} & 0.0347 & 0.2768 & 0.1724 & \avgcell{0.1613} & 0.0954 & 0.0617 & 0.1438 & \avgcell{0.1003} & 0.1260 & 0.0707 & 0.1217 & \avgcell{0.1061} & 0.1698 & 0.1854 & 0.1563 & \avgcell{0.1705} \\
-\lampband
-\textbf{LAMP-Merge} & \underline{0.8523} & \underline{0.8522} & \underline{0.8516} & \underline{0.8520} & \underline{0.5970} & \underline{0.5938} & \underline{0.5860} & \underline{0.5923} & \underline{0.5805} & \underline{0.5790} & \underline{0.5790} & \underline{0.5795} & \underline{0.5406} & \underline{0.5372} & \underline{0.5388} & \underline{0.5389} & \underline{0.4645} & \underline{0.4645} & \underline{0.4645} & \underline{0.4645} \\
-\hline
-\end{tabular}
-}
-\end{table*}
-\begin{table*}[!t]
-\centering
-\scriptsize
-\setlength{\tabcolsep}{2.1pt}
-\caption{Client-average test accuracy on Swin-Tiny. Each entry averages the three Dirichlet settings for a fixed client number; Avg denotes the mean over $K=3,5,7$ within the corresponding dataset.}
-\label{tab:client-avg-swin-tiny}
-\resizebox{\textwidth}{!}{%
-\begin{tabular}{lcccccccccccccccccccc}
-\hline
-\headband
-& \multicolumn{4}{c}{\tblhead{Blood}} & \multicolumn{4}{c}{\tblhead{Derma}} & \multicolumn{4}{c}{\tblhead{Organ-C}} & \multicolumn{4}{c}{\tblhead{Organ-S}} & \multicolumn{4}{c}{\tblhead{Ultrasound}} \\
-\cline{2-5}\cline{6-9}\cline{10-13}\cline{14-17}\cline{18-21}
-\tblhead{Method} & \tblhead{$K=3$} & \tblhead{$K=5$} & \tblhead{$K=7$} & \avgcell{Avg} & \tblhead{$K=3$} & \tblhead{$K=5$} & \tblhead{$K=7$} & \avgcell{Avg} & \tblhead{$K=3$} & \tblhead{$K=5$} & \tblhead{$K=7$} & \avgcell{Avg} & \tblhead{$K=3$} & \tblhead{$K=5$} & \tblhead{$K=7$} & \avgcell{Avg} & \tblhead{$K=3$} & \tblhead{$K=5$} & \tblhead{$K=7$} & \avgcell{Avg} \\
-\hline
-\texttt{avg}\cite{pmlr-v162-wortsman22a} & 0.1565 & 0.1186 & 0.1524 & \avgcell{0.1425} & 0.4569 & 0.4830 & \underline{0.6688} & \avgcell{0.5362} & 0.1068 & 0.1294 & 0.0787 & \avgcell{0.1050} & 0.0682 & 0.0604 & 0.1381 & \avgcell{0.0889} & 0.1527 & 0.1294 & 0.1465 & \avgcell{0.1429} \\
-\texttt{ties}\cite{yadav2023tiesmergingresolvinginterferencemerging} & 0.0972 & 0.1190 & 0.1384 & \avgcell{0.1182} & 0.0841 & 0.0780 & \underline{0.6688} & \avgcell{0.2770} & 0.1160 & 0.0702 & 0.0934 & \avgcell{0.0932} & 0.0734 & 0.0607 & 0.1107 & \avgcell{0.0816} & 0.1695 & 0.1303 & 0.1261 & \avgcell{0.1420} \\
-\texttt{dare\_linear}\cite{yu2024languagemodelssupermario} & 0.1565 & 0.1161 & 0.1825 & \avgcell{0.1517} & 0.4569 & 0.2771 & 0.4630 & \avgcell{0.3990} & 0.1155 & 0.1272 & 0.0776 & \avgcell{0.1068} & 0.0640 & 0.0720 & 0.1381 & \avgcell{0.0914} & 0.1743 & 0.1536 & 0.1497 & \avgcell{0.1592} \\
-\texttt{dare\_ties}\cite{yu2024languagemodelssupermario} & 0.1384 & 0.1162 & 0.1384 & \avgcell{0.1310} & 0.2961 & 0.2638 & \underline{0.6688} & \avgcell{0.4096} & 0.1276 & 0.0774 & 0.1116 & \avgcell{0.1055} & 0.1194 & 0.0434 & 0.1230 & \avgcell{0.0953} & 0.1791 & 0.1351 & 0.1300 & \avgcell{0.1481} \\
-\texttt{regmean}\cite{jin2025datalessknowledgefusionmerging} & 0.1374 & 0.1715 & 0.1578 & \avgcell{0.1556} & 0.2705 & 0.4630 & 0.4569 & \avgcell{0.3968} & 0.1411 & 0.0773 & 0.0811 & \avgcell{0.0998} & 0.1215 & 0.0821 & 0.0926 & \avgcell{0.0987} & 0.1465 & 0.1105 & 0.1779 & \avgcell{0.1450} \\
-\texttt{fisher}\cite{matena2022mergingmodelsfisherweightedaveraging} & 0.1633 & 0.1756 & 0.1565 & \avgcell{0.1651} & 0.4582 & 0.0652 & 0.4718 & \avgcell{0.3317} & 0.0814 & 0.0899 & 0.0978 & \avgcell{0.0897} & 0.0651 & 0.0650 & 0.1092 & \avgcell{0.0798} & 0.1746 & 0.1165 & 0.1755 & \avgcell{0.1555} \\
-\texttt{breadcrumbs}\cite{davari2024modelbreadcrumbsscalingmultitask} & 0.1500 & 0.1365 & 0.1537 & \avgcell{0.1467} & 0.0647 & 0.2771 & 0.0715 & \avgcell{0.1378} & 0.1445 & 0.1783 & 0.1660 & \avgcell{0.1629} & 0.2354 & 0.2077 & 0.2111 & \avgcell{0.2181} & 0.1450 & 0.1312 & 0.1653 & \avgcell{0.1472} \\
-\texttt{model\_stock}\cite{jang2025modelstockneedjust} & 0.1374 & 0.1440 & 0.1715 & \avgcell{0.1510} & 0.4569 & 0.2771 & 0.4825 & \avgcell{0.4055} & 0.1110 & 0.0771 & 0.1404 & \avgcell{0.1095} & 0.0671 & 0.1106 & 0.1714 & \avgcell{0.1164} & 0.1539 & 0.1273 & 0.1869 & \avgcell{0.1560} \\
-\texttt{from}\cite{ilharco2023editingmodelstaskarithmetic} & 0.1565 & 0.1495 & 0.1671 & \avgcell{0.1577} & 0.4569 & 0.2971 & \underline{0.6688} & \avgcell{0.4743} & 0.1174 & 0.1220 & 0.1051 & \avgcell{0.1148} & 0.1133 & 0.1016 & 0.1380 & \avgcell{0.1176} & 0.1539 & 0.1252 & 0.1476 & \avgcell{0.1422} \\
-\texttt{iso\_c}\cite{marczak2025taskleftbehindisotropic} & 0.1430 & 0.1722 & 0.1700 & \avgcell{0.1617} & 0.3099 & 0.2840 & 0.5174 & \avgcell{0.3704} & 0.1302 & 0.1327 & 0.1469 & \avgcell{0.1366} & 0.1545 & 0.1727 & 0.1880 & \avgcell{0.1717} & 0.1755 & 0.1731 & 0.1791 & \avgcell{0.1759} \\
-\texttt{free\_merge}\cite{zheng2025freemergingfouriertransformefficient} & 0.1154 & 0.0861 & 0.1840 & \avgcell{0.1285} & 0.4569 & 0.4830 & \underline{0.6688} & \avgcell{0.5362} & 0.0959 & 0.1377 & 0.0890 & \avgcell{0.1075} & 0.0682 & 0.0497 & 0.1062 & \avgcell{0.0747} & 0.1518 & 0.1575 & 0.1599 & \avgcell{0.1564} \\
-\texttt{robustmerge}\cite{zeng2025robustmergeparameterefficientmodelmerging} & 0.1374 & 0.1409 & 0.1670 & \avgcell{0.1484} & 0.2377 & 0.2771 & 0.0504 & \avgcell{0.1884} & 0.1601 & 0.1442 & 0.1960 & \avgcell{0.1668} & 0.1673 & 0.1151 & 0.2077 & \avgcell{0.1634} & 0.1761 & 0.1315 & 0.1629 & \avgcell{0.1568} \\
-\lampband
-\textbf{LAMP-Merge} & \underline{0.7737} & \underline{0.7753} & \underline{0.7748} & \underline{0.7746} & \underline{0.6374} & \underline{0.6251} & 0.6244 & \underline{0.6290} & \underline{0.6651} & \underline{0.6632} & \underline{0.6630} & \underline{0.6638} & \underline{0.6078} & \underline{0.6076} & \underline{0.6068} & \underline{0.6074} & \underline{0.4816} & \underline{0.4816} & \underline{0.4816} & \underline{0.4816} \\
-\hline
-\end{tabular}
-}
-\end{table*}
 \subsection{Detailed Ablation Configurations}
 \label{app:ablation-configurations}
+
+\begin{figure*}[t]
+\centering
+\includegraphics[width=0.92\textwidth]{figures/full_scope_module_ablation_dataset_accuracy.png}
+\caption{Dataset-level client-average accuracy in the module ablation. Each dataset contains 12 cells from four vision-model families and three client counts; each cell is averaged over three Dirichlet skew levels.}
+\label{fig:dataset-ablation-acc}
+\end{figure*}
 
 % 为进一步定位诊断原型重建内部哪些信息是必要的，我们在完整范围上进行受控替换。所有设置均保留长尾患病率校准，只替换诊断原型重建中的原型语义或支持数权重。
 All diagnostic-prototype substitutions retain long-tail prevalence calibration and vary only prototype semantics or support-count weighting:
@@ -780,5 +776,8 @@ Let \(d(a,b)=1-\cos(a,b)\) denote cosine distance and let \(\mathcal{I}_c=\{i\mi
 \item \(D_{\mathrm{nn}}=\frac{1}{C}\sum_c \min_{d\ne c} d(p_c,p_d)\), the mean nearest-class distance and most vulnerable decision margin.
 \item \(A_{\mathrm{client}}=\frac{1}{C}\sum_c \mathrm{Avg}_{i<j,\,i,j\in\mathcal{I}_c}\cos(\mu_{i,c},\mu_{j,c})\), the within-class consistency among client prototypes; \(A_{\mathrm{proto}}=\frac{1}{C}\sum_c\sum_{i\in\mathcal{I}_c}\alpha_{i,c}\cos(p_c,\mu_{i,c})\), the alignment between the global prototype and contributing client prototypes.
 \end{itemize}
+
+\clearpage
+\bibliography{aaai2026}
 
 \end{document}
