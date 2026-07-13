@@ -386,24 +386,43 @@ def plot_prediction_distributions(
             f"Best generic ({generic_method})",
             "LAMP-Merge",
         ]
-        fig, ax = plt.subplots(figsize=(max(8.5, distributions.shape[1] * 0.85), 4.6), constrained_layout=True)
-        image = ax.imshow(distributions, cmap="magma", vmin=0.0, vmax=1.0, aspect="auto")
-        ax.set_xticks(np.arange(distributions.shape[1]), [str(idx) for idx in range(distributions.shape[1])])
-        ax.set_yticks(np.arange(len(row_labels)), row_labels)
+        fig, ax = plt.subplots(figsize=(11.5, 4.4), constrained_layout=True)
+        class_colors = plt.get_cmap("tab20")(np.linspace(0.0, 0.95, distributions.shape[1]))
+        positions = np.arange(len(row_labels))
+        offsets = np.zeros(len(row_labels))
+        for class_index in range(distributions.shape[1]):
+            values = distributions[:, class_index]
+            ax.barh(
+                positions,
+                values,
+                left=offsets,
+                height=0.62,
+                color=class_colors[class_index],
+                edgecolor="white",
+                linewidth=0.45,
+                label=f"Class {class_index}",
+            )
+            offsets += values
+        ax.set_yticks(positions, row_labels)
+        ax.invert_yaxis()
         ax.get_yticklabels()[-1].set_color(METHOD_COLORS["LAMP-Merge"])
         ax.get_yticklabels()[-1].set_fontweight("bold")
-        for row_idx in range(distributions.shape[0]):
-            for class_idx in range(distributions.shape[1]):
-                value = distributions[row_idx, class_idx]
-                text_color = "white" if value < 0.62 else "#111111"
-                ax.text(class_idx, row_idx, f"{value:.2f}", ha="center", va="center", color=text_color, fontsize=8)
-        ax.set_xlabel("Diagnostic class index")
+        ax.set_xlim(0.0, 1.0)
+        ax.set_xlabel("Predicted class fraction")
+        ax.grid(axis="x", color="#D8DCE3", linewidth=0.7, alpha=0.75)
+        ax.set_axisbelow(True)
         ax.set_title(
             f"{DATASET_LABELS[dataset]}: full-scope predicted class distribution",
             fontsize=13,
             fontweight="bold",
         )
-        fig.colorbar(image, ax=ax, fraction=0.025, pad=0.025, label=r"Predicted fraction $q(c)$")
+        ax.legend(
+            ncol=min(6, distributions.shape[1]),
+            loc="upper center",
+            bbox_to_anchor=(0.5, -0.17),
+            frameon=False,
+            fontsize=8,
+        )
         save_figure(fig, output_dir, f"{dataset}_prediction_distribution")
         plt.close(fig)
 
@@ -422,39 +441,28 @@ def plot_prototype_geometry(rows: list[dict[str, str]], output_dir: Path) -> Non
     ]
     lookup = {row["label"]: row for row in rows}
     metric_specs = [
-        ("mean_mean_pairwise_distance", r"Pairwise distance $D_{\mathrm{pair}}$"),
-        ("mean_mean_nearest_class_distance", r"Nearest-class distance $D_{\mathrm{nn}}$"),
-        ("mean_prototype_consistency", r"Prototype consistency $A_{\mathrm{client}}$"),
-        ("mean_prototype_to_client_alignment", r"Prototype-client alignment $A_{\mathrm{proto}}$"),
+        ("mean_mean_pairwise_distance", r"$D_{\mathrm{pair}}$"),
+        ("mean_mean_nearest_class_distance", r"$D_{\mathrm{nn}}$"),
+        ("mean_prototype_consistency", r"$A_{\mathrm{client}}$"),
+        ("mean_prototype_to_client_alignment", r"$A_{\mathrm{proto}}$"),
     ]
-    fig, axes = plt.subplots(2, 2, figsize=(12.5, 8.5), constrained_layout=True)
+    fig, axes = plt.subplots(1, 4, figsize=(18.0, 5.2), sharey=True, constrained_layout=True)
     positions = np.arange(len(selected))
-    for ax, (metric, title) in zip(axes.reshape(-1), metric_specs):
+    for index, (ax, (metric, title)) in enumerate(zip(axes, metric_specs)):
         values = [float(lookup[method][metric]) for method in selected]
         colors = [METHOD_COLORS.get(method, "#5E739B") for method in selected]
-        bars = ax.barh(positions, values, color=colors, height=0.72)
-        ax.set_yticks(positions, [SHORT_LABELS.get(method, method) for method in selected])
+        ax.barh(positions, values, color=colors, height=0.68)
+        ax.set_yticks(positions)
+        if index == 0:
+            ax.set_yticklabels([SHORT_LABELS.get(method, method) for method in selected])
+        else:
+            ax.tick_params(axis="y", left=False, labelleft=False)
         ax.invert_yaxis()
-        ax.set_title(title)
+        ax.set_title(title, fontsize=13, fontweight="bold")
         ax.grid(axis="x", color="#D8DCE3", linewidth=0.7, alpha=0.7)
         ax.set_axisbelow(True)
         max_value = max(values)
         ax.set_xlim(min(0.0, min(values) * 1.1), max_value * 1.18 if max_value > 0 else 1.0)
-        for bar, value in zip(bars, values):
-            display_value = 0.0 if abs(value) < 5e-4 else value
-            ax.text(
-                value + max(max_value * 0.015, 0.006),
-                bar.get_y() + bar.get_height() / 2,
-                f"{display_value:.3f}",
-                va="center",
-                fontsize=8,
-                color="#30343B",
-            )
-    fig.suptitle(
-        "Full-scope prototype geometry for internal ablations",
-        fontsize=15,
-        fontweight="bold",
-    )
     save_figure(fig, output_dir, "prototype_geometry_key_comparison")
     plt.close(fig)
 

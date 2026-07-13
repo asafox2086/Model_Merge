@@ -37,14 +37,14 @@
 \pdfinfo{
 /TemplateVersion (2026.1)
 }
-\definecolor{LAMPYellow}{RGB}{255,235,170}
+\definecolor{LAMPYellow}{RGB}{255,220,112}
 \definecolor{HeaderGray}{RGB}{235,235,235}
 \definecolor{AvgBlue}{RGB}{226,241,255}
 \definecolor{GainGreen}{RGB}{32,132,84}
 \definecolor{DropRed}{RGB}{190,54,54}
 \newcommand{\tblhead}[1]{\strut #1}
-\newcommand{\lampcell}[1]{\begingroup\setlength{\fboxsep}{0pt}\colorbox{LAMPYellow}{\makebox[5.6em][c]{\rule[-0.90ex]{0pt}{3.75ex}\bfseries\boldmath #1}}\endgroup}
-\newcommand{\avgcell}[1]{\begingroup\def\avgcontent{#1}\def\avgheader{Avg}\ifx\avgcontent\avgheader\setlength{\fboxsep}{0pt}\colorbox{AvgBlue}{\makebox[3.25em][c]{\rule[-1.18ex]{0pt}{4.12ex}\bfseries #1}}\else\setlength{\fboxsep}{1.2pt}\colorbox{AvgBlue}{\makebox[2.85em][c]{\strut #1}}\fi\endgroup}
+\newcommand{\lampcell}[1]{\begingroup\setlength{\fboxsep}{0pt}\colorbox{LAMPYellow}{\makebox[5.6em][c]{\rule[-1.12ex]{0pt}{4.45ex}\bfseries\boldmath #1}}\endgroup}
+\newcommand{\avgcell}[1]{\begingroup\def\avgcontent{#1}\def\avgheader{Avg}\ifx\avgcontent\avgheader\setlength{\fboxsep}{0.45pt}\colorbox{AvgBlue}{\makebox[2.85em][c]{\strut\bfseries #1}}\else\setlength{\fboxsep}{1.2pt}\colorbox{AvgBlue}{\makebox[2.85em][c]{\strut #1}}\fi\endgroup}
 \newcommand{\lampband}{\noalign{\begingroup\color{LAMPYellow}\hrule height 3.6ex\endgroup\kern-3.6ex}}
 \newcommand{\headband}{\noalign{\begingroup\color{HeaderGray}\hrule height 8.15ex\endgroup\kern-8.15ex}}
 \newcommand{\gainup}[1]{\makebox[5.85em][l]{\textcolor{GainGreen}{\(\uparrow\)#1}}}
@@ -183,8 +183,8 @@
 
 \begin{abstract}
 %
-% 多中心医学模型通常在具有不同设备、不同患者群体和不同诊断标签覆盖范围的医院之间异步训练。本文研究单次异步医学模型融合问题：每个客户端在本地训练后只上传一次，服务器在不访问原始医学图像且不进行联邦优化轮次的条件下构建全局模型。我们将聚合诱导的预测坍缩识别为通用模型融合方法的核心失效模式。研究进一步表明，由于长尾医学先验会使多数类坍缩在准确率上呈现出具有迷惑性的竞争力，原始准确率可能掩盖这一失效。为此，我们提出 LAMP-Merge，即一种长尾感知的医学原型融合框架，它根据客户端侧类别统计重建诊断原型头，并用有界先验偏置校准长尾患病率。在五个医学数据集、五类模型、三种客户端数量和三种非独立同分布偏斜水平上，LAMP-Merge 在 75 个客户端平均单元中的 68 个单元达到或并列超过最强非 LAMP 基线，同时提升了平衡准确率、宏 F1 和预测坍缩诊断指标。
-Multicenter medical models are typically trained asynchronously across hospitals with heterogeneous acquisition devices, patient populations, and diagnostic-label coverage. We study single-shot asynchronous medical model merging, where each client uploads its locally trained model only once and the server constructs a global model without accessing raw medical images or conducting federated optimization rounds. We identify aggregation-induced prediction collapse as the central failure mode of general-purpose model-merging methods. Furthermore, we show that long-tailed medical priors can make majority-class collapse deceptively competitive in terms of raw accuracy, thereby masking this failure. To address this issue, we propose LAMP-Merge, a long-tail-aware medical prototype-merging framework that reconstructs a diagnostic prototype head from client-side class statistics and calibrates long-tail prevalence using a bounded prior bias. Across five medical datasets, five model families, three client-population sizes, and three levels of non-IID skew, LAMP-Merge matches or surpasses the strongest non-LAMP baseline in 68 of 75 client-averaged settings, while improving balanced accuracy, macro-F1, and prediction-collapse diagnostic metrics.
+% 多中心医学模型通常在具有不同设备、不同患者群体和不同诊断标签覆盖范围的医院之间异步训练。本文研究单次异步医学模型融合问题：每个客户端在本地训练后只上传一次，服务器在不访问原始医学图像且不进行联邦优化轮次的条件下构建全局模型。我们将聚合诱导的预测坍缩识别为通用模型融合方法的核心失效模式。研究进一步表明，由于长尾医学先验会使多数类坍缩在准确率上呈现出具有迷惑性的竞争力，原始准确率可能掩盖这一失效。为此，我们提出 LAMP-Merge，即一种长尾感知的医学原型融合框架，它根据客户端侧类别统计重建诊断原型头，并用有界先验偏置校准长尾患病率。在五个医学数据集、四类视觉模型、三种客户端数量和三种非独立同分布偏斜水平上，LAMP-Merge 在 60 个客户端平均单元中的 57 个单元达到或并列超过最强非 LAMP 基线，同时提升了平衡准确率、宏 F1 和预测坍缩诊断指标。
+Multicenter medical models are typically trained asynchronously across hospitals with heterogeneous acquisition devices, patient populations, and diagnostic-label coverage. We study single-shot asynchronous medical model merging, where each client uploads its locally trained model only once and the server constructs a global model without accessing raw medical images or conducting federated optimization rounds. We identify aggregation-induced prediction collapse as the central failure mode of general-purpose model-merging methods. Furthermore, we show that long-tailed medical priors can make majority-class collapse deceptively competitive in terms of raw accuracy, thereby masking this failure. To address this issue, we propose LAMP-Merge, a long-tail-aware medical prototype-merging framework that reconstructs a diagnostic prototype head from client-side class statistics and calibrates long-tail prevalence using a bounded prior bias. Across five medical datasets, four vision-model families, three client-population sizes, and three levels of non-IID skew, LAMP-Merge matches or surpasses the strongest non-LAMP baseline in 57 of 60 client-averaged settings, while improving balanced accuracy, macro-F1, and prediction-collapse diagnostic metrics.
 
 %医学模型融合 异步融合 预测性坍缩 长尾校准 隐私保护学习
 Index Terms:medical model merging, asynchronous fusion, predictive collapse, long-tail calibration, privacy-preserving learning
@@ -270,10 +270,10 @@ However, our problem is single-shot asynchronous model merging after local train
 \subsection{Motivation and Overall Idea}
 
 % 我们发现，在局部类别覆盖的医学场景中，参数级模型融合会将多个非退化的局部预测器转化为全局坍缩预测器。而当最常见诊断类别在分布中占据很大比例时，坍缩预测器可以在缺乏真实多类别诊断能力的情况下取得较高准确率。这解释了为什么某些基线在原始准确率上依旧具有竞争力。一个有效的医学融合方法应当避免丢失罕见类别判别能力，同时在任务确实呈强长尾分布时尊重真实患病率信息。
-We find that, in medical settings with partial local class coverage, parameter-level model merging can transform multiple non-degenerate local predictors into a globally collapsed predictor. When the most prevalent diagnostic class accounts for a large proportion of the data distribution, such a collapsed predictor can achieve high accuracy despite lacking genuine multiclass diagnostic capability. This explains why some baselines remain competitive in terms of raw accuracy. An effective medical merging method should avoid losing discriminative capability for rare classes while respecting true prevalence information when the task genuinely exhibits a strongly long-tailed distribution.
+Under partial local class coverage, parameter-level merging can turn several non-degenerate local predictors into a globally collapsed predictor. Because medical prevalence is often long-tailed, such collapse can still appear competitive in raw accuracy. A useful merger must therefore recover rare-class discrimination without discarding genuine prevalence.
 
 % 为应对这些挑战，我们提出了MedMerge——一个基于类别级诊断原型重建的长尾感知医学模型融合框架，恢复完整诊断空间中的多类别判别方向，从结构上缓解融合后的单类或少数类预测坍缩。然而，为克服去除类别先验可能损害整体准确率的问题，我们进一步设计了长尾患病率校准模块。利用客户端上传的类别患病率计数估计全局诊断先验。具体而言，LAMP-Merge 包含两个核心组件：（1）一种用于聚合多个本地医学客户端中可靠的类别级知识，并重建不易发生坍缩的全局诊断分类器；（2）一种用于在保持多类别判别能力的同时，保留具有临床意义的多数类先验的策略。该设计实现了更加均衡且有效的诊断知识整合，使模型能够在不进行额外联邦训练、不暴露原始医学数据的条件下完成稳健的单次医学模型融合。
-To address these challenges, we propose LAMP-Merge, a long-tail-aware medical model-merging framework based on class-level diagnostic prototype reconstruction. It recovers multiclass discriminative directions over the complete diagnostic space, structurally mitigating post-merging prediction collapse toward a single class or a small subset of classes. However, because removing class priors may impair overall accuracy, we further design a long-tail prevalence calibration module that estimates the global diagnostic prior from client-uploaded class-prevalence counts. Specifically, LAMP-Merge comprises two core components:(1) a mechanism for aggregating reliable class-level knowledge across multiple local medical clients and reconstructing a global diagnostic classifier resistant to prediction collapse; and (2) a strategy for preserving clinically meaningful majority-class priors while maintaining multiclass discriminative capability. This design enables more balanced and effective integration of diagnostic knowledge, allowing robust single-shot medical model merging without additional federated training or exposure of raw medical data.
+LAMP-Merge addresses this tension with two components. Diagnostic prototype reconstruction aggregates only class-supported evidence in a shared reference space to recover global multiclass directions. Long-tail prevalence calibration then applies a bounded prior bias estimated from client-side counts, preserving clinically meaningful majority prevalence without replacing those directions. The resulting one-shot protocol requires neither additional federated training nor raw-data exposure.
 
 \subsection{Overview}
 
@@ -320,7 +320,7 @@ where $s=20$ is the default head scale. This module addresses a key limitation o
 \begin{figure*}[t]
 \centering
 \includegraphics[width=0.92\textwidth]{figures/full_scope_module_ablation_dataset_accuracy.png}
-\caption{Dataset-level client-average accuracy in the module ablation. Each dataset contains 15 cells from five model families and three client counts; each cell is averaged over three Dirichlet skew levels.}
+\caption{Dataset-level client-average accuracy in the module ablation. Each dataset contains 12 cells from four vision-model families and three client counts; each cell is averaged over three Dirichlet skew levels.}
 \label{fig:dataset-ablation-acc}
 \end{figure*}
 
@@ -376,8 +376,8 @@ We compare LAMP-Merge with twelve model-merging baselines covering the main tech
 % 实验遵循单次异步模型融合流程。每个客户端先在自己的医学图像数据上独立训练本地模型，在本地计算 LAMP-Merge 所需的类别级统计，包括类别支持数、参考空间类别原型和类别患病率计数，并与本地检查点接口一起上传一次。随后服务器只根据上传的检查点和类别级统计执行一次模型融合，并在全局测试集上评估融合模型。
 Experiments follow a single-shot asynchronous model-merging protocol. Each client first independently trains a local model on its own medical imaging data, then computes the class-level statistics required by LAMP-Merge locally, including class-support counts, reference-space class prototypes, and class-prevalence counts. These statistics are uploaded once together with an interface to the local checkpoint. The server subsequently performs a single model-merging step using only the uploaded checkpoints and class-level statistics, and evaluates the resulting merged model on a global test set.
 
-% 我们评估五类基础模型。标准视觉骨干网络包括 ResNet、ConvNeXt、ViT-Tiny 和 Swin-Tiny；视觉语言骨干网络包括 CLIP-ViT-B/32。对于每个数据集-模型组合，我们构造非独立同分布客户端划分，客户端数量 K 属于 {3,5,7}，Dirichlet 偏斜参数 beta 属于 {0,0.01,0.1}，随机种子固定为 42。客户端平均结果先固定数据集、模型和 K，再对三个 beta 值求平均。
-We evaluate five model families. The standard vision backbones include ResNet, ConvNeXt, ViT-Tiny, and Swin-Tiny, and the vision-language backbone is CLIP-ViT-B/32. For each dataset-model pair, we construct non-IID client partitions with $K\in\{3,5,7\}$ clients and Dirichlet skew parameter $\beta\in\{0,0.01,0.1\}$, using seed 42\cite{hsu2019measuringeffectsnonidenticaldata}. A client-average result fixes the dataset, model, and $K$, and then averages over the three $\beta$ values.
+% 我们评估四类基础视觉模型：ResNet、ConvNeXt、ViT-Tiny 和 Swin-Tiny。对于每个数据集-模型组合，我们构造非独立同分布客户端划分，客户端数量 K 属于 {3,5,7}，Dirichlet 偏斜参数 beta 属于 {0,0.01,0.1}，随机种子固定为 42。客户端平均结果先固定数据集、模型和 K，再对三个 beta 值求平均。
+We evaluate four vision-model families: ResNet, ConvNeXt, ViT-Tiny, and Swin-Tiny. For each dataset-model pair, we construct non-IID client partitions with $K\in\{3,5,7\}$ clients and Dirichlet skew parameter $\beta\in\{0,0.01,0.1\}$, using seed 42\cite{hsu2019measuringeffectsnonidenticaldata}. A client-average result fixes the dataset, model, and $K$, and then averages over the three $\beta$ values.
 
 \subsubsection{4) Implementation Environment:}
 
@@ -389,8 +389,8 @@ All experiments were run on a server with two Intel(R) Xeon(R) Silver 4210 CPUs,
 % 我们将 LAMP-Merge 与十二种模型融合基线比较，包括 avg、ties、dare_linear、dare_ties、regmean、fisher、breadcrumbs、model_stock、from、iso_c、free_merge 和 robustmerge。这些基线覆盖权重平均、任务向量修剪、符号冲突处理、曲率或均值校正、模型库存和鲁棒融合等当前主流模型融合路线。主比较采用客户端平均准确率：对于每个固定的数据集、模型和客户端数量，先对三个 beta 偏斜水平求平均，再比较不同融合方法。若 LAMP-Merge 在某个单元中大于或等于最强非 LAMP 基线，则该单元计为成功。
 The main comparison uses client-average ACC: for each fixed dataset, model, and client number, we first average over the three $\beta$ skew levels and then compare merging methods. A cell is counted as successful when LAMP-Merge is greater than or equal to the strongest non-LAMP baseline in that cell.
 
-% 表 2 至表 6 给出了完整客户端平均结果。在 75 个客户端平均单元中，LAMP-Merge 在 68 个单元达到或并列超过最强非 LAMP 基线，对应 90.7%。该结果表明，LAMP-Merge 的收益不是由单一客户端数量、单一划分偏斜或单一模型族产生的偶然现象，而是在多种医学图像模态和多种骨干网络上稳定出现。
-Tables~\ref{tab:client-avg-resnet}--\ref{tab:client-avg-clip} report the full client-average results. Across the 75 client-average cells, LAMP-Merge wins or ties the strongest non-LAMP baseline in 68 cells, corresponding to 90.7\%. This result indicates that the gain is not an accidental effect of one client number, one partition skew, or one model family; instead, it appears consistently across multiple medical image modalities and backbone architectures.
+% 表 1 至表 4 给出了完整客户端平均结果。在 60 个客户端平均单元中，LAMP-Merge 在 57 个单元达到或并列超过最强非 LAMP 基线，对应 95.0%。该结果表明，LAMP-Merge 的收益不是由单一客户端数量、单一划分偏斜或单一模型族产生的偶然现象，而是在多种医学图像模态和多种骨干网络上稳定出现。
+Tables~\ref{tab:client-avg-resnet}--\ref{tab:client-avg-swin} report the full client-average results. Across the 60 client-average cells, LAMP-Merge wins or ties the strongest non-LAMP baseline in 57 cells, corresponding to 95.0\%. This result indicates that the gain is not an accidental effect of one client number, one partition skew, or one model family; instead, it appears consistently across multiple medical image modalities and backbone architectures.
 
 
 \begin{table*}[!t]
@@ -525,39 +525,6 @@ Tables~\ref{tab:client-avg-resnet}--\ref{tab:client-avg-clip} report the full cl
 }
 \end{table*}
 
-\begin{table*}[!t]
-\centering
-\scriptsize
-\setlength{\tabcolsep}{2.1pt}
-\caption{Client-average test accuracy on CLIP-ViT-B/32. Each entry averages the three Dirichlet settings for a fixed client number; Avg denotes the mean over $K=3,5,7$ within the corresponding dataset.}
-\label{tab:client-avg-clip}
-\resizebox{\textwidth}{!}{%
-\begin{tabular}{lcccccccccccccccccccc}
-\hline
-\headband
-& \multicolumn{4}{c}{\tblhead{Blood}} & \multicolumn{4}{c}{\tblhead{Derma}} & \multicolumn{4}{c}{\tblhead{Organ-C}} & \multicolumn{4}{c}{\tblhead{Organ-S}} & \multicolumn{4}{c}{\tblhead{Ultrasound}} \\
-\cline{2-5}\cline{6-9}\cline{10-13}\cline{14-17}\cline{18-21}
-\tblhead{Method} & \tblhead{$K=3$} & \tblhead{$K=5$} & \tblhead{$K=7$} & \avgcell{Avg} & \tblhead{$K=3$} & \tblhead{$K=5$} & \tblhead{$K=7$} & \avgcell{Avg} & \tblhead{$K=3$} & \tblhead{$K=5$} & \tblhead{$K=7$} & \avgcell{Avg} & \tblhead{$K=3$} & \tblhead{$K=5$} & \tblhead{$K=7$} & \avgcell{Avg} & \tblhead{$K=3$} & \tblhead{$K=5$} & \tblhead{$K=7$} & \avgcell{Avg} \\
-\hline
-\texttt{avg}\cite{pmlr-v162-wortsman22a} & 0.1857 & 0.1199 & 0.1863 & \avgcell{0.1640} & 0.6688 & 0.6688 & 0.5682 & \avgcell{0.6353} & 0.2360 & 0.1348 & 0.1226 & \avgcell{0.1645} & 0.2978 & 0.0926 & 0.1447 & \avgcell{0.1784} & 0.1602 & 0.1282 & 0.1087 & \avgcell{0.1324} \\
-\texttt{ties}\cite{yadav2023tiesmergingresolvinginterferencemerging} & 0.2472 & 0.2286 & 0.1911 & \avgcell{0.2223} & 0.6677 & 0.6760 & 0.4906 & \avgcell{0.6114} & 0.2868 & 0.1682 & \underline{0.1728} & \avgcell{0.2093} & 0.2797 & 0.2139 & 0.1847 & \avgcell{0.2261} & 0.1668 & 0.1204 & 0.1264 & \avgcell{0.1379} \\
-\texttt{dare\_linear}\cite{yu2024languagemodelssupermario} & 0.1715 & 0.1202 & 0.1773 & \avgcell{0.1563} & 0.6688 & 0.6688 & 0.5644 & \avgcell{0.6340} & 0.2203 & 0.1342 & 0.1286 & \avgcell{0.1610} & \underline{0.3028} & 0.0863 & 0.1365 & \avgcell{0.1752} & 0.1518 & 0.1312 & 0.1093 & \avgcell{0.1308} \\
-\texttt{dare\_ties}\cite{yu2024languagemodelssupermario} & 0.2588 & \underline{0.2306} & 0.1616 & \avgcell{0.2170} & \textbf{0.6717} & 0.6756 & 0.4934 & \avgcell{0.6136} & 0.2498 & 0.1618 & 0.1586 & \avgcell{0.1901} & 0.2796 & 0.2063 & 0.1791 & \avgcell{0.2217} & 0.1752 & 0.1204 & 0.1441 & \avgcell{0.1466} \\
-\texttt{regmean}\cite{jin2025datalessknowledgefusionmerging} & \underline{0.2740} & 0.2043 & 0.1907 & \avgcell{0.2230} & 0.6710 & 0.5520 & 0.5104 & \avgcell{0.5778} & 0.2764 & \underline{0.1924} & 0.1394 & \avgcell{0.2027} & \textbf{0.3468} & \underline{0.2295} & 0.1853 & \avgcell{0.2539} & 0.1506 & 0.1423 & 0.1087 & \avgcell{0.1339} \\
-\texttt{fisher}\cite{matena2022mergingmodelsfisherweightedaveraging} & 0.1819 & 0.1384 & 0.1604 & \avgcell{0.1602} & \underline{0.6715} & 0.4830 & 0.4828 & \avgcell{0.5458} & \underline{0.2910} & 0.1753 & 0.1463 & \avgcell{0.2042} & 0.2397 & 0.0967 & 0.1403 & \avgcell{0.1589} & 0.1387 & 0.1087 & 0.1288 & \avgcell{0.1254} \\
-\texttt{breadcrumbs}\cite{davari2024modelbreadcrumbsscalingmultitask} & 0.1459 & 0.1202 & 0.1170 & \avgcell{0.1277} & 0.6688 & 0.6657 & 0.4894 & \avgcell{0.6080} & 0.1816 & 0.1236 & 0.0766 & \avgcell{0.1273} & 0.2034 & 0.0954 & 0.0768 & \avgcell{0.1252} & 0.1207 & 0.1330 & \textbf{0.1731} & \avgcell{0.1423} \\
-\texttt{model\_stock}\cite{jang2025modelstockneedjust} & 0.1689 & 0.1163 & 0.1947 & \avgcell{0.1600} & 0.6688 & 0.6687 & 0.5372 & \avgcell{0.6249} & 0.2121 & 0.1844 & 0.0661 & \avgcell{0.1542} & 0.2550 & 0.0861 & 0.1231 & \avgcell{0.1547} & 0.1539 & 0.1363 & \underline{0.1695} & \avgcell{0.1532} \\
-\texttt{from}\cite{ilharco2023editingmodelstaskarithmetic} & 0.2727 & 0.1618 & 0.1942 & \avgcell{0.2096} & \underline{0.6715} & \underline{0.6780} & \underline{0.6399} & \avgcell{0.6631} & 0.2491 & 0.1832 & \textbf{0.1943} & \avgcell{0.2089} & 0.2435 & 0.2243 & \underline{0.1886} & \avgcell{0.2188} & \underline{0.1758} & 0.1360 & 0.1264 & \avgcell{0.1461} \\
-\texttt{iso\_c}\cite{marczak2025taskleftbehindisotropic} & 0.1222 & 0.1303 & 0.1137 & \avgcell{0.1221} & 0.6369 & 0.2118 & 0.4698 & \avgcell{0.4395} & 0.1165 & 0.1050 & 0.1181 & \avgcell{0.1132} & 0.0762 & 0.1004 & 0.0831 & \avgcell{0.0866} & 0.1255 & \underline{0.1479} & 0.1692 & \avgcell{0.1475} \\
-\texttt{free\_merge}\cite{zheng2025freemergingfouriertransformefficient} & 0.2145 & 0.1141 & \underline{0.2349} & \avgcell{0.1878} & 0.6688 & 0.6683 & 0.5623 & \avgcell{0.6331} & 0.1501 & 0.1419 & 0.0816 & \avgcell{0.1245} & 0.2489 & 0.1136 & 0.0707 & \avgcell{0.1444} & 0.1488 & 0.1411 & 0.1186 & \avgcell{0.1362} \\
-\texttt{robustmerge}\cite{zeng2025robustmergeparameterefficientmodelmerging} & 0.1680 & 0.1575 & 0.1947 & \avgcell{0.1734} & 0.6688 & 0.6680 & 0.4921 & \avgcell{0.6096} & 0.2487 & 0.1256 & 0.1200 & \avgcell{0.1648} & 0.2701 & 0.0677 & 0.1556 & \avgcell{0.1645} & 0.1575 & 0.1369 & 0.1539 & \avgcell{0.1494} \\
-\lampband
-\textbf{LAMP-Merge} & \textbf{0.3908} & \textbf{0.2679} & \textbf{0.2483} & \textbf{0.3023} & \textbf{0.5646} & \textbf{0.6846} & \textbf{0.6688} & \textbf{0.6393} & \textbf{0.4460} & \textbf{0.2242} & \textbf{0.1468} & \textbf{0.2723} & \textbf{0.2670} & \textbf{0.2296} & \textbf{0.2558} & \textbf{0.2508} & \textbf{0.1947} & \textbf{0.1608} & \textbf{0.1602} & \textbf{0.1719} \\
-\hline
-\end{tabular}
-}
-\end{table*}
-
 \subsection{Ablation Study}
 
 % 模块级消融采用与主实验完全相同的实验设置。再比较三种情景：完整 LAMP-Merge、仅使用诊断原型重建、在权重平均上仅加入长尾患病率校准。表中结果显示，这两个模块均对算法的性能有较为显著的提升
@@ -639,7 +606,7 @@ Table ~\ref{tab:prevalence-internal-ablation} shows that removing prevalence cal
 
 \subsection{Hyperparameter Analysis Experiment}
 % 中文对照：诊断原型重建有一个连续超参数，即原型头缩放因子 s。长尾患病率校准有一个连续超参数，即长尾校准强度 lambda。图中每个取值都在 180 个原始单元和 60 个客户端平均单元上评估，覆盖五个医学数据集、四种骨干网络、三种客户端数量和三种Dirichlet 非独立同分布划分参数。
-Diagnostic prototype reconstruction has one continuous hyperparameter, the prototype head scale $s$. Long-tail prevalence calibration has one continuous hyperparameter, the calibration strength $\lambda$. Each value in Fig.~\ref{fig:hparam-full} is evaluated over 180 raw cells and 60 client-average cells, covering five medical datasets, four backbones, three client counts, and three Dirichlet non-IID partitioning parameters. The figure reports both the overall client-average curve and the dataset-level curves, so that stability can be inspected at global and modality-specific levels simultaneously.
+Fig.~\ref{fig:hparam-full} evaluates the prototype-head scale $s$ and calibration strength $\lambda$ over 180 raw cells and 60 client-average cells, spanning five datasets, four vision backbones, three client counts, and three Dirichlet skew levels. The default setting is $s=20$ and $\lambda=5$.
 
 \begin{figure*}[t]
 \centering
@@ -649,7 +616,7 @@ Diagnostic prototype reconstruction has one continuous hyperparameter, the proto
 \end{figure*}
 
 % 结果说明，LAMP-Merge 在较宽的超参数范围内均保持稳定性能。原型头缩放因子 (s) 和长尾校准强度 (\lambda) 的变化只带来小幅波动，默认设置 (s=20,\lambda=5) 位于稳定高性能区间。因此我们的收益主要来自诊断原型重建与长尾患病率校准本身，而非依赖精细的超参数搜索。
-The results show that LAMP-Merge maintains stable performance across a broad range of hyperparameter values. Increasing \(s\) from very small values first improves the overall score by giving the prototype head a sufficient logit scale, after which the curve becomes nearly flat. Increasing \(\lambda\) introduces useful prevalence calibration, but the bounded bias prevents the model from degenerating into a majority-class predictor. Therefore, our gains primarily stem from diagnostic prototype reconstruction and long-tail prevalence calibration themselves, rather than from finely tuned hyperparameter search.
+Both curves remain stable over broad intervals. Small $s$ is insufficient to scale prototype logits, whereas bounded $\lambda$ calibrates prevalence without inducing majority-class prediction. Thus, the gain arises from the two components rather than narrow hyperparameter tuning.
 
 \subsection{New-metric Diagnostic Experiment}
 % 虽然主实验只用 ACC 进行横向比较，但医学长尾分布可能使单类或少数类预测器获得较高 ACC。因此，我们引入了新的指标。令 y_n 和 \hat y_n 分别表示第 n 个测试样本的真实标签和预测标签，令 q_c=N^{-1}\sum_n 1[\hat y_n=c] 表示预测类别分布，令 p_c=N^{-1}\sum_n 1[y_n=c] 表示真实类别分布，令 C_test 表示测试集中真实出现的类别集合。我们使用如下诊断指标。
@@ -686,7 +653,7 @@ Pred-true TV $\downarrow$ & \lampcell{0.1510} & 0.6168 & \gaindown{-0.4658} \\
 
 \begin{figure*}[t]
 \centering
-\includegraphics[width=0.96\textwidth]{figures/full_scope_global_diagnostic_discrimination_recovery.png}
+\includegraphics[width=0.80\textwidth]{figures/full_scope_global_diagnostic_discrimination_recovery.png}
 \caption{Recovery of global diagnostic discrimination under different datasets.}
 \label{fig:collapse-recovery}
 \end{figure*}
@@ -699,12 +666,12 @@ Table \ref{tab:collapse-key} compares LAMP-Merge with the best-performing baseli
 % 为了直观展示新指标诊断所反映的预测分布变化，我们进一步给出预测坍缩恢复图和代表性数据集上的预测类别分布图。
 To visually show the prediction-distribution changes measured by the new diagnostic metrics, we further provide a collapse-recovery visualization in Fig.~\ref{fig:collapse-recovery} and a representative predicted-class distribution in Fig.~\ref{fig:visual-chaosheng_predict}.
 
-\begin{figure}[t]
+\begin{figure*}[t]
 \centering
-\includegraphics[width=0.98\linewidth]{figures/full_scope_predicted_distribution_ultrasound.png}
-\caption{Prediction Distribution on the Ultrasound Dataset}
+\includegraphics[width=0.86\textwidth]{figures/full_scope_predicted_distribution_ultrasound_stacked.png}
+\caption{Predicted class distributions on Ultrasound. Each bar summarizes all formal settings for one prediction source; the generic merge concentrates predictions on one class, while LAMP-Merge recovers a broader class allocation aligned with the test distribution.}
 \label{fig:visual-chaosheng_predict}
-\end{figure}
+\end{figure*}
 
 \subsection{t-SNE Visualization Experiment}
 % 我们仅将 t-SNE 用于分析，而不用于服务器端选择或融合。图中给出了 Blood 数据集上 ResNet、K=3、beta=0.01 设置下的联合 t-SNE 对比。每个点对应一个测试图像的模型输出概率向量，不同正式融合方法在同一二维空间中投影，用于比较预测表征的类别结构。
@@ -712,7 +679,7 @@ We use t-SNE only for analysis, not for server-side selection or fusion. Fig.~\r
 
 \begin{figure*}[t]
 \centering
-\includegraphics[width=0.90\textwidth]{figures/tsne_joint_bloodmnist_224_resnet.png}
+\includegraphics[width=0.98\textwidth]{figures/tsne_joint_bloodmnist_224_resnet.png}
 \caption{Joint t-SNE visualization of output-probability representations on Blood. From left to right: LAMP-Merge, weight averaging, TIES-Merging, and DARE-Linear.}
 \label{fig:tsne}
 \end{figure*}
@@ -729,6 +696,8 @@ Finally, we conduct an in-depth analysis of the geometry induced by diagnostic p
 \item \(A_{\mathrm{proto}}=\frac{1}{C}\sum_c\sum_{i\in\mathcal{I}_c}\alpha_{i,c}\cos(p_c,\mu_{i,c})\). This is the alignment between the server-side global prototype and the contributing client prototypes, measuring whether aggregation preserves client-side class evidence.
 \end{itemize}
 
+Fig.~\ref{fig:prototype-geometry} reports these four quantities for the controlled prototype substitutions in the internal ablation. The full method jointly preserves nonzero inter-class separation and high cross-client consistency and prototype-client alignment, rather than maximizing a single geometric value. Together with the accuracy drops in Table~\ref{tab:diagnostic-internal-ablation}, this joint profile shows that the benefit arises from class-semantic reference-space prototypes weighted by class-specific support.
+
 \begin{figure*}[t]
 \centering
 \includegraphics[width=0.98\textwidth]{figures/full_scope_prototype_geometry_internal_ablation.png}
@@ -736,6 +705,8 @@ Finally, we conduct an in-depth analysis of the geometry induced by diagnostic p
 \caption{Prototype-geometry comparison on the full benchmark. The figure summarizes pairwise distance, nearest-class distance, prototype consistency, and prototype-client alignment.}
 \label{fig:prototype-geometry}
 \end{figure*}
+
+The individual geometry values should therefore be interpreted as mechanism diagnostics, not standalone objectives: extreme separation or perfect alignment can be produced by class-agnostic or mismatched directions. LAMP-Merge is effective because its four quantities are simultaneously consistent with class semantics and the observed full-scope accuracy gains.
 
 \subsubsection{2) Additional Theoretical Analysis}
 % 令 mu_c^star 表示共享参考空间中的真实类别均值。如果客户端类别特征具有有界二阶矩，则原型估计误差满足如下上界。
