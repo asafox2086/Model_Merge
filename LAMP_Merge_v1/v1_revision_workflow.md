@@ -245,3 +245,14 @@
 2. [x] 编译并核验 Conclusion 在第 7 页结束、References 从第 8 页开始。
 3. [x] 复核 Appendix 的图文顺序和末页收束，确保末页以指标与几何定义文字结束。
 4. [x] 更新工作流并提交 push。
+
+## 2026-07-13 v2 Overleaf 基准回归与七页正文排版
+
+本轮以用户新推送的 `LAMP_MergeV4.zip` 中 `v2.tex`、`aaai2026.sty` 与配套图像为唯一排版基准。恢复此前为附录压缩掉的必要分析内容和十篇文献支撑，不使用 Appendix 缩减正文；不改变实验数值、方法公式、图像资产、中文注释或 AAAI 模板设置。
+
+1. [x] 同步远端 v2 包，确认 `v2.tex` 为无附录八页版本且 `v2_7page.tex` 与旧稿一致。
+2. [x] 确认本机缺少 LaTeX 编译链，开始在用户目录安装 TeX Live；不会修改系统或 AAAI 样式。
+3. [ ] 将 v2 作为稿件基线，并恢复此前为附录压缩的分析文字与十篇参考文献引用。
+4. [ ] 仅通过合法的浮动体位置和尺寸调整，使 Introduction 至 Conclusion（含全部主文图表）在第 7 页结束，References 从第 8 页开始。
+5. [ ] 用本地 TeX Live 按包内 `aaai2026.sty` 编译、逐页渲染检查，并消除 `Text page 6 contains only floats`。
+6. [ ] 更新 PDF、提交并 push 到 `MM/add-lamp-merge-v0`。
