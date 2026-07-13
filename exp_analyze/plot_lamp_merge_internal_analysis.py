@@ -444,15 +444,18 @@ def plot_prototype_geometry(rows: list[dict[str, str]], output_dir: Path) -> Non
         ("mean_prototype_consistency", r"$A_{\mathrm{client}}$"),
         ("mean_prototype_to_client_alignment", r"$A_{\mathrm{proto}}$"),
     ]
-    fig, axes = plt.subplots(1, 4, figsize=(18.0, 3.8), sharey=True, constrained_layout=True)
-    positions = np.arange(len(selected))
+    lamp_color = "#F2C14E"
+    fig, axes = plt.subplots(1, 4, figsize=(18.0, 3.05), sharey=True, constrained_layout=True)
+    positions = np.arange(len(selected)) * 0.74
     for index, (ax, (metric, title)) in enumerate(zip(axes, metric_specs)):
         values = [float(lookup[method][metric]) for method in selected]
-        colors = [METHOD_COLORS.get(method, "#5E739B") for method in selected]
-        ax.barh(positions, values, color=colors, height=0.46)
+        colors = [lamp_color if method == "LAMP-Merge" else METHOD_COLORS.get(method, "#5E739B") for method in selected]
+        ax.barh(positions, values, color=colors, height=0.30)
         ax.set_yticks(positions)
         if index == 0:
             ax.set_yticklabels([SHORT_LABELS.get(method, method) for method in selected])
+            ax.get_yticklabels()[0].set_color(lamp_color)
+            ax.get_yticklabels()[0].set_fontweight("bold")
         else:
             ax.tick_params(axis="y", left=False, labelleft=False)
         ax.invert_yaxis()
