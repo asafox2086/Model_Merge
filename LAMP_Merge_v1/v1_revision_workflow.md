@@ -198,6 +198,16 @@
 3. [x] 编译并检查正文独立性、附录图文交错、最后一页以文字结束及全部交叉引用。
 4. [x] 更新工作流并提交 push。
 
+## 2026-07-13 正文结尾与可视化重排
+
+本轮以 PDF 实际页码为准，确保 Conclusion 的标题和正文均在第 7 页完成。Fig.~6 移回正文并压缩为单栏半页图；五个数据集的详细介绍移至 Appendix，正文仅保留简洁的数据集范围说明及括号中的 ``detailed descriptions are provided in the Appendix''。Appendix 中仅保留连续的 Fig.~7 和 Fig.~8，移除额外视觉分析标题与图间诊断段落，随后直接进入补充说明文字。
+
+1. [x] 将正文数据集介绍改为简洁范围说明，并将五个数据集的详细条目移至 Appendix。
+2. [x] 将 Fig.~6 置于正文 Visualization Experiment，采用单栏半页尺寸并保留原图注与结果口径。
+3. [x] 移除 Appendix 的 Extended Visual Analyses 标题及三段图间诊断文字，使 Fig.~7--8 连续排列并在其后进入补充文字。
+4. [x] 编译核验 Conclusion 的全部正文在第 7 页结束、References 从第 8 页开始，且附录未改变正文说明字号。
+5. [x] 更新工作流并提交 push。
+
 ## 2026-07-13 理论分析回移正文
 
 本轮将原 Appendix 中的 ``Additional Theoretical Analysis'' 原样放回正文的深入分析之后，不删减公式、证明逻辑或中文对照注释；通过调整既有图表浮动位置，并在 Conclusion 增加一条基于现有实验与理论结果的综合性结论，恢复七页正文边界且不使用模板禁止的强制分页。

@@ -352,20 +352,7 @@ The bias is centered, bounded, and attached to the prototype classifier; it cali
 
 \subsubsection{1) Evaluation Datasets:}
 
-% \subsubsection{Evaluation Datasets}
-% 我们在多个具有代表性的医学图像基准数据集上对融合后的模型进行评估。这些数据集覆盖血液显微图像、皮肤镜图像、腹部 CT 器官切片和超声图像等关键医学影像模态，并包含细胞形态识别、皮肤病变诊断、器官结构识别和超声结构判别等任务。所用数据集包括：
-We evaluate the merged models on multiple representative medical image benchmarks from MedMNIST v2\cite{yang2023medmnist}. These datasets cover key medical imaging modalities, including blood-cell microscopy, dermoscopy, abdominal CT organ slices, and ultrasound images, and involve cell morphology recognition, skin-lesion diagnosis, organ-structure recognition, and ultrasound-structure discrimination. The datasets used in the experiments include:
-
-\begin{itemize}
-\item \textbf{Blood}: an eight-class blood-cell microscopy dataset for hematological morphology classification, focusing on fine-grained cellular appearance and inter-class morphological similarity.
-\item \textbf{Derma}: a seven-class dermoscopic skin-lesion dataset, characterized by strong long-tailed prevalence and visually subtle lesion categories.
-\item \textbf{Organ-C}: an 11-class abdominal CT dataset in the coronal view, evaluating organ-category recognition under grayscale cross-sectional imaging.
-\item \textbf{Organ-S}: an 11-class abdominal CT dataset in the sagittal view, complementing Organ-C with a different anatomical imaging plane.
-\item \textbf{Ultrasound}: an eight-class ultrasound image dataset, covering structure recognition under modality-specific speckle noise and low-contrast boundaries.
-\end{itemize}
-
-%  这些基准数据集覆盖了医学图像分类任务中的多种成像场景，为评估融合模型的跨模态鲁棒性、类别判别能力和任务泛化能力提供了系统测试平台。我们针对这些数据集开展系统性实验，以分析 LAMP-Merge 在不同医学图像类型和不同类别分布条件下的性能表现。
-These benchmark datasets cover diverse imaging settings in medical image classification, providing a systematic testbed for evaluating the cross-modality robustness, class-discriminative capability, and task generalization of merged models. We conduct systematic experiments on these datasets to analyze the performance of LAMP-Merge across different medical image types and class-distribution conditions.
+We evaluate the merged models on five representative MedMNIST v2 benchmarks\cite{yang2023medmnist}: Blood, Derma, Organ-C, Organ-S, and Ultrasound. They cover blood-cell microscopy, dermoscopy, abdominal CT, and ultrasound image classification (detailed dataset descriptions are provided in the Appendix).
 
 \subsubsection{2) Baselines:}
 
@@ -391,7 +378,7 @@ All experiments were run on a server with two Intel(R) Xeon(R) Silver 4210 CPUs,
 The main comparison uses client-average ACC: for each fixed dataset, model, and client number, we first average over the three $\beta$ skew levels and then compare merging methods. A cell is counted as successful when LAMP-Merge is greater than or equal to the strongest non-LAMP baseline in that cell.
 
 % 表 1 至表 4 给出了完整客户端平均结果。在 60 个客户端平均单元中，LAMP-Merge 在 57 个单元达到或并列超过最强非 LAMP 基线，对应 95.0%。该结果表明，LAMP-Merge 的收益不是由单一客户端数量、单一划分偏斜或单一模型族产生的偶然现象，而是在多种医学图像模态和多种骨干网络上稳定出现。
-Table~\ref{tab:client-avg-resnet} reports the ResNet client-average results; see the Appendix for complete ConvNeXt, ViT-Tiny, and Swin-Tiny tables. Across the 60 client-average cells, LAMP-Merge wins or ties the strongest non-LAMP baseline in \textbf{57 cells (95.0\%)}. This result indicates that the gain is not an accidental effect of one client number, one partition skew, or one model family; instead, it appears consistently across multiple medical image modalities and backbone architectures.
+Table~\ref{tab:client-avg-resnet} reports the ResNet client-average results (complete ConvNeXt, ViT-Tiny, and Swin-Tiny tables are provided in the Appendix). Across the 60 client-average cells, LAMP-Merge wins or ties the strongest non-LAMP baseline in \textbf{57 cells (95.0\%)}. This result indicates that the gain is not an accidental effect of one client number, one partition skew, or one model family; instead, it appears consistently across multiple medical image modalities and backbone architectures.
 
 
 \begin{table*}[!t]
@@ -543,6 +530,13 @@ Table \ref{tab:collapse-key} compares LAMP-Merge with the best-performing baseli
 % 为了直观展示新指标诊断所反映的预测分布变化，我们进一步给出预测坍缩恢复图和代表性数据集上的预测类别分布图。
 To visualize the prediction-distribution changes measured by the new diagnostic metrics, we compare the predicted class allocation induced by LAMP-Merge with that of the strongest generic merge. The generic merge concentrates predictions on one class, whereas LAMP-Merge recovers a broader class allocation aligned with the test distribution.
 
+\begin{figure}[t]
+\centering
+\includegraphics[width=\linewidth]{figures/full_scope_predicted_distribution_ultrasound_stacked.png}
+\caption{Predicted class distributions on Ultrasound, averaged over the four visual backbones, $K\in\{3,5,7\}$, and the three Dirichlet skew levels. The generic merge concentrates predictions on one class, while LAMP-Merge recovers a broader class allocation aligned with the test distribution.}
+\label{fig:visual-chaosheng_predict}
+\end{figure}
+
 \subsection{t-SNE Visualization Experiment}
 % 我们仅将 t-SNE 用于分析，而不用于服务器端选择或融合。图中给出了 Blood 数据集上 ResNet、K=3、beta=0.01 设置下的联合 t-SNE 对比。每个点对应一个测试图像的模型输出概率向量，不同正式融合方法在同一二维空间中投影，用于比较预测表征的类别结构。
 We use t-SNE\cite{vanDerMaaten2008} only for analysis, not for server-side selection or fusion. The joint comparison uses Blood with ResNet, $K=3$, and $\beta=0.01$. Each point is the output-probability representation of a test image, and formal merging methods are projected into the same two-dimensional space to compare the class structure of their predictive representations. LAMP-Merge retains separated predictive groups, whereas generic merges exhibit a substantially compressed output space.
@@ -612,29 +606,29 @@ LAMP-Merge addresses these two properties through a concise two-module design. F
 
 \begin{figure*}[!t]
 \centering
-\textbf{Extended Visual Analyses.}\par\medskip
-\includegraphics[width=0.62\textwidth]{figures/full_scope_predicted_distribution_ultrasound_stacked.png}
-\caption{Predicted class distributions on Ultrasound, averaged over the four visual backbones, $K\in\{3,5,7\}$, and the three Dirichlet skew levels. The generic merge concentrates predictions on one class, while LAMP-Merge recovers a broader class allocation aligned with the test distribution.}
-\label{fig:visual-chaosheng_predict}
-\begin{minipage}{0.94\textwidth}
-\noindent\textbf{Prediction-distribution diagnosis.} The generic merge allocates most test images to one dominant class, whereas LAMP-Merge retains a multi-class allocation close to the empirical test prevalence. Its accuracy gain therefore does not arise from stronger prediction collapse.
-\end{minipage}
-\vspace{0.4em}
 \includegraphics[width=0.98\textwidth]{figures/tsne_joint_bloodmnist_224_resnet.png}
 \caption{Joint t-SNE visualization of output-probability representations on Blood. From left to right: LAMP-Merge, weight averaging, TIES-Merging, and DARE-Linear.}
 \label{fig:tsne}
-\begin{minipage}{0.94\textwidth}
-\noindent\textbf{Representation diagnostic.} LAMP-Merge forms separated output-probability groups. Weight averaging, TIES-Merging, and DARE-Linear show compressed or entangled groups, consistent with the prediction-collapse diagnostics.
-\end{minipage}
-\vspace{0.4em}
 \includegraphics[width=0.96\textwidth]{figures/full_scope_prototype_geometry_internal_ablation.png}
 % 完整基准上的原型几何比较。该图总结了两两距离、最近类别距离、原型一致性和原型-客户端对齐程度。
 \caption{Prototype-geometry comparison on the full benchmark. The figure summarizes pairwise distance, nearest-class distance, prototype consistency, and prototype-client alignment.}
 \label{fig:prototype-geometry}
-\begin{minipage}{0.94\textwidth}
-\noindent\textbf{Geometric summary.} The full method simultaneously preserves class separation, cross-client consistency, and prototype--client alignment. Controlled substitutions may increase one quantity, but do not preserve this joint profile or the corresponding full-scope accuracy.
-\end{minipage}
 \end{figure*}
+
+\subsection{Evaluation Datasets}
+
+% \subsubsection{Evaluation Datasets}
+% 我们在多个具有代表性的医学图像基准数据集上对融合后的模型进行评估。这些数据集覆盖血液显微图像、皮肤镜图像、腹部 CT 器官切片和超声图像等关键医学影像模态，并包含细胞形态识别、皮肤病变诊断、器官结构识别和超声结构判别等任务。所用数据集包括：
+The five MedMNIST v2 benchmarks\cite{yang2023medmnist} cover blood-cell microscopy, dermoscopy, abdominal CT organ slices, and ultrasound images. They involve cell morphology recognition, skin-lesion diagnosis, organ-structure recognition, and ultrasound-structure discrimination:
+\begin{itemize}
+\item \textbf{Blood}: an eight-class blood-cell microscopy dataset for hematological morphology classification, focusing on fine-grained cellular appearance and inter-class morphological similarity.
+\item \textbf{Derma}: a seven-class dermoscopic skin-lesion dataset, characterized by strong long-tailed prevalence and visually subtle lesion categories.
+\item \textbf{Organ-C}: an 11-class abdominal CT dataset in the coronal view, evaluating organ-category recognition under grayscale cross-sectional imaging.
+\item \textbf{Organ-S}: an 11-class abdominal CT dataset in the sagittal view, complementing Organ-C with a different anatomical imaging plane.
+\item \textbf{Ultrasound}: an eight-class ultrasound image dataset, covering structure recognition under modality-specific speckle noise and low-contrast boundaries.
+\end{itemize}
+% 这些基准数据集覆盖了医学图像分类任务中的多种成像场景，为评估融合模型的跨模态鲁棒性、类别判别能力和任务泛化能力提供了系统测试平台。我们针对这些数据集开展系统性实验，以分析 LAMP-Merge 在不同医学图像类型和不同类别分布条件下的性能表现。
+Together, these benchmarks provide a systematic testbed for evaluating cross-modality robustness, class-discriminative capability, and task generalization under different medical image types and class-distribution conditions.
 
 \subsection{Complete Client-Average Results}
 \label{app:complete-results}
