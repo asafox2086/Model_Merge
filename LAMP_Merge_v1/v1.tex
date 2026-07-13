@@ -541,25 +541,11 @@ Table \ref{tab:collapse-key} compares LAMP-Merge with the best-performing baseli
 \subsection{Visualization Experiment}
 
 % 为了直观展示新指标诊断所反映的预测分布变化，我们进一步给出预测坍缩恢复图和代表性数据集上的预测类别分布图。
-To visualize the prediction-distribution changes measured by the new diagnostic metrics, we provide a representative predicted-class distribution in Fig.~\ref{fig:visual-chaosheng_predict}.
-
-\begin{figure}[t]
-\centering
-\includegraphics[width=\columnwidth]{figures/full_scope_predicted_distribution_ultrasound_stacked.png}
-\caption{Predicted class distributions on Ultrasound, averaged over the four visual backbones, $K\in\{3,5,7\}$, and the three Dirichlet skew levels. The generic merge concentrates predictions on one class, while LAMP-Merge recovers a broader class allocation aligned with the test distribution.}
-\label{fig:visual-chaosheng_predict}
-\end{figure}
+To visualize the prediction-distribution changes measured by the new diagnostic metrics, the representative Ultrasound predicted-class distribution in Fig.~\ref{fig:visual-chaosheng_predict} is provided in the Appendix. It shows that the generic merge concentrates predictions on one class, whereas LAMP-Merge recovers a broader class allocation aligned with the test distribution.
 
 \subsection{t-SNE Visualization Experiment}
 % 我们仅将 t-SNE 用于分析，而不用于服务器端选择或融合。图中给出了 Blood 数据集上 ResNet、K=3、beta=0.01 设置下的联合 t-SNE 对比。每个点对应一个测试图像的模型输出概率向量，不同正式融合方法在同一二维空间中投影，用于比较预测表征的类别结构。
-We use t-SNE\cite{vanDerMaaten2008} only for analysis, not for server-side selection or fusion. The joint comparison in Fig.~\ref{fig:tsne} uses Blood with ResNet, $K=3$, and $\beta=0.01$. Each point is the output-probability representation of a test image, and formal merging methods are projected into the same two-dimensional space to compare the class structure of their predictive representations. LAMP-Merge retains separated predictive groups, whereas generic merges exhibit a substantially compressed output space.
-
-\begin{figure}[t]
-\centering
-\includegraphics[width=\columnwidth]{figures/tsne_joint_bloodmnist_224_resnet.png}
-\caption{Joint t-SNE visualization of output-probability representations on Blood. From left to right: LAMP-Merge, weight averaging, TIES-Merging, and DARE-Linear.}
-\label{fig:tsne}
-\end{figure}
+We use t-SNE\cite{vanDerMaaten2008} only for analysis, not for server-side selection or fusion. The joint comparison in Fig.~\ref{fig:tsne} (see Appendix) uses Blood with ResNet, $K=3$, and $\beta=0.01$. Each point is the output-probability representation of a test image, and formal merging methods are projected into the same two-dimensional space to compare the class structure of their predictive representations. LAMP-Merge retains separated predictive groups, whereas generic merges exhibit a substantially compressed output space.
 
 
 \subsection{In-depth Analysis Experiment}
@@ -573,16 +559,53 @@ Fig.~\ref{fig:prototype-geometry} reports these four quantities for the controll
 
 The individual geometry values should therefore be interpreted as mechanism diagnostics, not standalone objectives: extreme separation or perfect alignment can be produced by class-agnostic or mismatched directions. LAMP-Merge is effective because its four quantities are simultaneously consistent with class semantics and the observed full-scope accuracy gains.
 
+\subsubsection{2) Additional Theoretical Analysis}
+% 令 mu_c^star 表示共享参考空间中的真实类别均值。如果客户端类别特征具有有界二阶矩，则原型估计误差满足如下上界。
+Let $\mu_c^\star$ denote the true class mean in the shared reference space. If client class features have bounded second moments, the prototype estimation error satisfies
+\begin{equation}
+\mathrm{E}\|p_c-\mu_c^\star\|_2^2
+\le
+\sum_i \alpha_{i,c}^2\frac{\sigma_c^2}{n_{i,c}}
++ \mathrm{Bias}_c^2.
+\end{equation}
+% 该上界表明，支持数直接控制类别原型估计的方差。没有观测到类别 c 的客户端不应为该类别贡献证据；样本更多的客户端应贡献更多证据，但该贡献应是次线性的。
+This upper bound shows that support counts directly control the variance of class-prototype estimation. A client that does not observe class $c$ should not contribute evidence for that class, and a client with more samples should contribute more, but only sublinearly.
+
+% 令样本 x 在类别 c 和 d 之间的真实间隔为 Delta_c,d(x)。
+Let the true margin between classes $c$ and $d$ for sample $x$ be
+\begin{equation}
+\Delta_{c,d}(x)=(\mu_c^\star)^\top z-(\mu_d^\star)^\top z.
+\end{equation}
+% 当原型误差满足下式时，估计原型能够保持类别 c 和类别 d 之间的排序。
+When the prototype error satisfies
+\begin{equation}
+\|p_c-\mu_c^\star\|_2+\|p_d-\mu_d^\star\|_2
+<
+\frac{\Delta_{c,d}(x)}{\|z\|_2},
+\end{equation}
+the estimated prototypes preserve the class order between $c$ and $d$.
+
+% 长尾患病率校准的作用是以有界方式引入长尾先验。对于患病率计数 m_i,c，类别先验为 pi_c，中心化对数先验偏置为 b_c。只要 lambda 有界，长尾患病率校准就不会替代诊断原型重建的判别方向；它只会将输出校准到真实类别患病率。这解释了为什么单独使用长尾患病率校准不充分，而完整 LAMP-Merge 能同时保持非坍缩性和患病率感知能力。
+The role of long-tail prevalence calibration is to introduce long-tail priors in a bounded manner. For prevalence counts $m_{i,c}$, the class prior is
+\begin{equation}
+\pi_c=\frac{\sum_i m_{i,c}}{\sum_k \sum_i m_{i,k}},
+\end{equation}
+and the centered log-prior bias is
+\begin{equation}
+b_c=\lambda\left(\log\pi_c-\frac{1}{C}\sum_k\log\pi_k\right).
+\end{equation}
+As long as $\lambda$ is bounded, long-tail prevalence calibration does not replace the discriminative directions reconstructed by diagnostic prototype reconstruction; it only calibrates the output toward the real class prevalence. This explains why using long-tail prevalence calibration alone is insufficient, while full LAMP-Merge remains both non-collapsed and prevalence-aware.
+
 \section{Conclusion}
 
 % 本文研究了单次异步医学模型融合问题，其中独立训练的医院模型必须在没有联邦优化轮次且不向服务器暴露原始医学图像的条件下被融合。我们的实证分析表明，在局部诊断覆盖不完整时，通用模型融合方法会遭遇聚合诱导的预测坍缩。我们进一步表明，在长尾医学数据集上，这种坍缩可能被原始准确率掩盖，因此设计 Long-tail Prevalence Calibration模块并使用宏召回率、宏 F1 和预测分布诊断进行二次评估。
 We studied one-shot asynchronous medical model merging, where independently trained hospital models must be fused without federated optimization rounds and without exposing raw medical images to the server. Our empirical analysis shows that generic model-merging methods suffer from aggregation-induced predictive collapse under incomplete local diagnostic coverage. We further show that, on long-tailed medical datasets, such collapse can be masked by raw accuracy. We therefore introduce the Long-tail Prevalence Calibration module and perform secondary evaluation using macro recall, macro-F1, and predictive-distribution diagnostics\cite{BUDA2018249,5597285}.
 
+Taken together, the full-scope comparisons, prediction-distribution diagnostics, and prototype-error analysis establish a consistent mechanism: class-level support-weighted evidence reconstructs discriminative directions for locally absent diagnoses, while bounded prevalence calibration retains clinically meaningful imbalance without reintroducing majority-class collapse.
+
 % LAMP-Merge 以简洁的双模块设计处理这两个性质。未来我们将进一步扩展 LAMP-Merge 的适用范围：一方面，将其从医学图像分类拓展到分割、检测及多模态诊断任务；另一方面，研究更严格的隐私保护机制，例如差分隐私或安全聚合，以进一步降低类别级统计信息可能带来的隐私风险。同时，我们也将探索在更大规模真实多中心医疗场景中的部署与验证。
 LAMP-Merge addresses these two properties through a concise two-module design. Future work will extend its applicability in two directions: first, from medical image classification to segmentation, detection, and multimodal diagnostic tasks; and second, toward stronger privacy-preserving mechanisms, such as differential privacy and secure aggregation, to further reduce potential privacy risks associated with class-level statistics\cite{kaissis2020secure}. We will also explore deployment and validation in larger-scale real-world multicenter healthcare settings.
 
-
-\clearpage
 \bibliography{aaai2026}
 \appendix
 \section{Supplementary Results and Analysis}
@@ -732,47 +755,20 @@ Let \(d(a,b)=1-\cos(a,b)\) denote cosine distance and let \(\mathcal{I}_c=\{i\mi
 \item \(A_{\mathrm{proto}}=\frac{1}{C}\sum_c\sum_{i\in\mathcal{I}_c}\alpha_{i,c}\cos(p_c,\mu_{i,c})\), the alignment between the global prototype and contributing client prototypes.
 \end{itemize}
 
-\subsection{Additional Theoretical Analysis}
-\label{app:theoretical-details}
-
-% 令 mu_c^star 表示共享参考空间中的真实类别均值。如果客户端类别特征具有有界二阶矩，则原型估计误差满足如下上界。
-Let $\mu_c^\star$ denote the true class mean in the shared reference space. If client class features have bounded second moments, the prototype estimation error satisfies
-\begin{equation}
-\mathrm{E}\|p_c-\mu_c^\star\|_2^2
-\le
-\sum_i \alpha_{i,c}^2\frac{\sigma_c^2}{n_{i,c}}
-+ \mathrm{Bias}_c^2.
-\end{equation}
-% 该上界表明，支持数直接控制类别原型估计的方差。没有观测到类别 c 的客户端不应为该类别贡献证据；样本更多的客户端应贡献更多证据，但该贡献应是次线性的。
-This upper bound shows that support counts directly control the variance of class-prototype estimation. A client that does not observe class $c$ should not contribute evidence for that class, and a client with more samples should contribute more, but only sublinearly.
-
-% 令样本 x 在类别 c 和 d 之间的真实间隔为 Delta_c,d(x)。
-Let the true margin between classes $c$ and $d$ for sample $x$ be
-\begin{equation}
-\Delta_{c,d}(x)=(\mu_c^\star)^\top z-(\mu_d^\star)^\top z.
-\end{equation}
-% 当原型误差满足下式时，估计原型能够保持类别 c 和类别 d 之间的排序。
-When the prototype error satisfies
-\begin{equation}
-\|p_c-\mu_c^\star\|_2+\|p_d-\mu_d^\star\|_2
-<
-\frac{\Delta_{c,d}(x)}{\|z\|_2},
-\end{equation}
-the estimated prototypes preserve the class order between $c$ and $d$.
-
-% 长尾患病率校准的作用是以有界方式引入长尾先验。对于患病率计数 m_i,c，类别先验为 pi_c，中心化对数先验偏置为 b_c。只要 lambda 有界，长尾患病率校准就不会替代诊断原型重建的判别方向；它只会将输出校准到真实类别患病率。这解释了为什么单独使用长尾患病率校准不充分，而完整 LAMP-Merge 能同时保持非坍缩性和患病率感知能力。
-The role of long-tail prevalence calibration is to introduce long-tail priors in a bounded manner. For prevalence counts $m_{i,c}$, the class prior is
-\begin{equation}
-\pi_c=\frac{\sum_i m_{i,c}}{\sum_k \sum_i m_{i,k}},
-\end{equation}
-and the centered log-prior bias is
-\begin{equation}
-b_c=\lambda\left(\log\pi_c-\frac{1}{C}\sum_k\log\pi_k\right).
-\end{equation}
-As long as $\lambda$ is bounded, long-tail prevalence calibration does not replace the discriminative directions reconstructed by diagnostic prototype reconstruction; it only calibrates the output toward the real class prevalence. This explains why using long-tail prevalence calibration alone is insufficient, while full LAMP-Merge remains both non-collapsed and prevalence-aware.
-
 \subsection{Extended Visual Analyses}
 \label{app:extended-visuals}
+\begin{figure}[t]
+\centering
+\includegraphics[width=\columnwidth]{figures/full_scope_predicted_distribution_ultrasound_stacked.png}
+\caption{Predicted class distributions on Ultrasound, averaged over the four visual backbones, $K\in\{3,5,7\}$, and the three Dirichlet skew levels. The generic merge concentrates predictions on one class, while LAMP-Merge recovers a broader class allocation aligned with the test distribution.}
+\label{fig:visual-chaosheng_predict}
+\end{figure}
+\begin{figure*}[t]
+\centering
+\includegraphics[width=0.98\textwidth]{figures/tsne_joint_bloodmnist_224_resnet.png}
+\caption{Joint t-SNE visualization of output-probability representations on Blood. From left to right: LAMP-Merge, weight averaging, TIES-Merging, and DARE-Linear.}
+\label{fig:tsne}
+\end{figure*}
 \begin{figure*}[t]
 \centering
 \includegraphics[width=0.96\textwidth]{figures/full_scope_prototype_geometry_internal_ablation.png}
