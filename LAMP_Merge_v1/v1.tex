@@ -43,10 +43,10 @@
 \definecolor{GainGreen}{RGB}{32,132,84}
 \definecolor{DropRed}{RGB}{190,54,54}
 \newcommand{\tblhead}[1]{\strut #1}
-\newcommand{\lampcell}[1]{\begingroup\setlength{\fboxsep}{0pt}\colorbox{LAMPYellow}{\makebox[5.6em][c]{\rule[-1.12ex]{0pt}{4.45ex}\bfseries\boldmath #1}}\endgroup}
-\newcommand{\avgcell}[1]{\begingroup\def\avgcontent{#1}\def\avgheader{Avg}\ifx\avgcontent\avgheader\setlength{\fboxsep}{0.45pt}\colorbox{AvgBlue}{\makebox[2.85em][c]{\strut\bfseries #1}}\else\setlength{\fboxsep}{1.2pt}\colorbox{AvgBlue}{\makebox[2.85em][c]{\strut #1}}\fi\endgroup}
+\newcommand{\lampcell}[1]{\begingroup\setlength{\fboxsep}{0pt}\colorbox{LAMPYellow}{\makebox[6.7em][c]{\rule[-1.12ex]{0pt}{4.45ex}\bfseries\boldmath #1}}\endgroup}
+\newcommand{\avgcell}[1]{\begingroup\def\avgcontent{#1}\def\avgheader{Avg}\setlength{\fboxsep}{0pt}\ifx\avgcontent\avgheader\colorbox{AvgBlue}{\makebox[3.55em][c]{\strut\bfseries #1}}\else\colorbox{AvgBlue}{\makebox[3.55em][c]{\strut #1}}\fi\endgroup}
 \newcommand{\lampband}{\noalign{\begingroup\color{LAMPYellow}\hrule height 3.6ex\endgroup\kern-3.6ex}}
-\newcommand{\headband}{\noalign{\begingroup\color{HeaderGray}\hrule height 8.15ex\endgroup\kern-8.15ex}}
+\newcommand{\headband}{\noalign{\begingroup\color{HeaderGray}\hrule height 6.15ex\endgroup\kern-6.15ex}}
 \newcommand{\gainup}[1]{\makebox[5.85em][l]{\textcolor{GainGreen}{\(\uparrow\)#1}}}
 \newcommand{\gaindown}[1]{\makebox[5.85em][l]{\textcolor{GainGreen}{\(\downarrow\)#1}}}
 \newcommand{\dropdown}[1]{\makebox[5.85em][l]{\textcolor{DropRed}{\(\downarrow\)#1}}}
@@ -390,7 +390,7 @@ All experiments were run on a server with two Intel(R) Xeon(R) Silver 4210 CPUs,
 The main comparison uses client-average ACC: for each fixed dataset, model, and client number, we first average over the three $\beta$ skew levels and then compare merging methods. A cell is counted as successful when LAMP-Merge is greater than or equal to the strongest non-LAMP baseline in that cell.
 
 % 表 1 至表 4 给出了完整客户端平均结果。在 60 个客户端平均单元中，LAMP-Merge 在 57 个单元达到或并列超过最强非 LAMP 基线，对应 95.0%。该结果表明，LAMP-Merge 的收益不是由单一客户端数量、单一划分偏斜或单一模型族产生的偶然现象，而是在多种医学图像模态和多种骨干网络上稳定出现。
-Tables~\ref{tab:client-avg-resnet}--\ref{tab:client-avg-swin} report the full client-average results. Across the 60 client-average cells, LAMP-Merge wins or ties the strongest non-LAMP baseline in 57 cells, corresponding to 95.0\%. This result indicates that the gain is not an accidental effect of one client number, one partition skew, or one model family; instead, it appears consistently across multiple medical image modalities and backbone architectures.
+Tables~\ref{tab:client-avg-resnet}--\ref{tab:client-avg-swin-tiny} report the full client-average results. Across the 60 client-average cells, LAMP-Merge wins or ties the strongest non-LAMP baseline in 57 cells, corresponding to 95.0\%. This result indicates that the gain is not an accidental effect of one client number, one partition skew, or one model family; instead, it appears consistently across multiple medical image modalities and backbone architectures.
 
 
 \begin{table*}[!t]
@@ -569,7 +569,7 @@ Global client-size weight & 0.5944 & \dropdown{0.0266} \\
 \end{table}
 
 % 表中结果表明，诊断原型重建的性能并非来自任意附加分类头。删除类别条件信息、打乱诊断语义或使用非参考空间的本地分类头都会造成显著退化；将类别支持数替换为等权、二值出现或客户端总规模也会降低性能。这说明该模块的有效性同时依赖两个因素：共享参考空间中的类别原型提供诊断语义方向，类别级支持数提供每个客户端-类别对的可靠性权重。
-The results show that the performance of diagnostic prototype reconstruction does not arise from adding an arbitrary classifier head. Removing class-conditional information, permuting diagnostic semantics, or using local classifier heads outside the shared reference space all leads to substantial degradation. Replacing class-support counts with uniform weights, binary presence indicators, or total client sizes also reduces performance. These findings indicate that the module’s effectiveness depends jointly on two factors: class prototypes in the shared reference space provide diagnostically meaningful semantic directions, while class-level support counts provide reliability weights for each client–class pair.
+Fig.~\ref{fig:dataset-ablation-acc} and Table~\ref{tab:diagnostic-internal-ablation} show that neither an arbitrary head nor a class-agnostic statistic explains the gain. Replacing reference-space prototypes or class-specific support weights consistently reduces ACC, confirming that diagnostic semantics and class-level reliability are jointly necessary.
 
 \subsubsection{2) Effectiveness of Long-tail Prevalence Calibration}
 % 我们进一步对长尾患病率校准内部的先验项进行替换。该组消融只改变校准偏置中的类别先验，表中第二列给出对应公式。
@@ -637,9 +637,9 @@ Although the main experiments use ACC for direct comparison, long-tailed medical
 \label{tab:collapse-key}
 \scriptsize
 \setlength{\tabcolsep}{3.2pt}
-\begin{tabular}{lrrr}
+\begin{tabular}{lrcc}
 \hline
-\tblhead{Metric} & \lampcell{LAMP-Merge} & \tblhead{Best reference} & \tblhead{Difference} \\
+\tblhead{Metric} & \lampcell{LAMP-Merge} & \tblhead{Best reference} & \tblhead{\(\Delta\) vs. LAMP} \\
 \hline
 Accuracy $\uparrow$ & \lampcell{0.5885} & 0.3156 & \gainup{+0.2729} \\
 BA / macro recall $\uparrow$ & \lampcell{0.5747} & 0.1810 & \gainup{+0.3937} \\
@@ -651,20 +651,13 @@ Pred-true TV $\downarrow$ & \lampcell{0.1510} & 0.6168 & \gaindown{-0.4658} \\
 \end{tabular}
 \end{table}
 
-\begin{figure*}[t]
-\centering
-\includegraphics[width=0.80\textwidth]{figures/full_scope_global_diagnostic_discrimination_recovery.png}
-\caption{Recovery of global diagnostic discrimination under different datasets.}
-\label{fig:collapse-recovery}
-\end{figure*}
-
 % 表*中将LAMP-Merge与各个指标的最高基线相对比。可以看到，该方法显著优于目前已有的算法。这说明 LAMP-Merge 的准确率提升并非来自更强的单类坍缩，而是来自更完整的全局诊断判别。
 Table \ref{tab:collapse-key} compares LAMP-Merge with the best-performing baseline for each metric. LAMP-Merge consistently and substantially outperforms the existing methods. This indicates that its accuracy gains do not arise from more severe single-class prediction collapse, but rather from more complete global diagnostic discrimination.
 
 \subsection{Visualization Experiment}
 
 % 为了直观展示新指标诊断所反映的预测分布变化，我们进一步给出预测坍缩恢复图和代表性数据集上的预测类别分布图。
-To visually show the prediction-distribution changes measured by the new diagnostic metrics, we further provide a collapse-recovery visualization in Fig.~\ref{fig:collapse-recovery} and a representative predicted-class distribution in Fig.~\ref{fig:visual-chaosheng_predict}.
+To visualize the prediction-distribution changes measured by the new diagnostic metrics, we provide a representative predicted-class distribution in Fig.~\ref{fig:visual-chaosheng_predict}.
 
 \begin{figure*}[t]
 \centering
@@ -700,7 +693,7 @@ Fig.~\ref{fig:prototype-geometry} reports these four quantities for the controll
 
 \begin{figure*}[t]
 \centering
-\includegraphics[width=0.98\textwidth]{figures/full_scope_prototype_geometry_internal_ablation.png}
+\includegraphics[width=0.96\textwidth]{figures/full_scope_prototype_geometry_internal_ablation.png}
 % 完整基准上的原型几何比较。该图总结了两两距离、最近类别距离、原型一致性和原型-客户端对齐程度。
 \caption{Prototype-geometry comparison on the full benchmark. The figure summarizes pairwise distance, nearest-class distance, prototype consistency, and prototype-client alignment.}
 \label{fig:prototype-geometry}
@@ -754,6 +747,5 @@ We studied one-shot asynchronous medical model merging, where independently trai
 LAMP-Merge addresses these two properties through a concise two-module design. Future work will extend its applicability in two directions: first, from medical image classification to segmentation, detection, and multimodal diagnostic tasks; and second, toward stronger privacy-preserving mechanisms, such as differential privacy and secure aggregation, to further reduce potential privacy risks associated with class-level statistics. We will also explore deployment and validation in larger-scale real-world multicenter healthcare settings.
 
 
-\clearpage
 \bibliography{aaai2026}
 \end{document}

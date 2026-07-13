@@ -375,14 +375,12 @@ def plot_prediction_distributions(
         distributions = np.stack(
             [
                 true_distribution,
-                client_mean_distribution(dataset_rows),
                 mean_distribution(generic_rows),
                 mean_distribution(full_rows),
             ]
         )
         row_labels = [
             "True test distribution",
-            "Client mean",
             f"Best generic ({generic_method})",
             "LAMP-Merge",
         ]
@@ -446,12 +444,12 @@ def plot_prototype_geometry(rows: list[dict[str, str]], output_dir: Path) -> Non
         ("mean_prototype_consistency", r"$A_{\mathrm{client}}$"),
         ("mean_prototype_to_client_alignment", r"$A_{\mathrm{proto}}$"),
     ]
-    fig, axes = plt.subplots(1, 4, figsize=(18.0, 5.2), sharey=True, constrained_layout=True)
+    fig, axes = plt.subplots(1, 4, figsize=(18.0, 3.8), sharey=True, constrained_layout=True)
     positions = np.arange(len(selected))
     for index, (ax, (metric, title)) in enumerate(zip(axes, metric_specs)):
         values = [float(lookup[method][metric]) for method in selected]
         colors = [METHOD_COLORS.get(method, "#5E739B") for method in selected]
-        ax.barh(positions, values, color=colors, height=0.68)
+        ax.barh(positions, values, color=colors, height=0.46)
         ax.set_yticks(positions)
         if index == 0:
             ax.set_yticklabels([SHORT_LABELS.get(method, method) for method in selected])
