@@ -499,8 +499,6 @@ Tables~\ref{tab:client-avg-resnet}--\ref{tab:client-avg-swin-tiny} report the fu
 }
 \end{table*}
 
-\clearpage
-
 \subsection{Ablation Study}
 
 % 模块级消融采用与主实验完全相同的实验设置。再比较三种情景：完整 LAMP-Merge、仅使用诊断原型重建、在权重平均上仅加入长尾患病率校准。表中结果显示，这两个模块均对算法的性能有较为显著的提升
@@ -574,10 +572,65 @@ Taken together, the full-scope comparisons, prediction-distribution diagnostics,
 % LAMP-Merge 以简洁的双模块设计处理这两个性质。未来我们将进一步扩展 LAMP-Merge 的适用范围：一方面，将其从医学图像分类拓展到分割、检测及多模态诊断任务；另一方面，研究更严格的隐私保护机制，例如差分隐私或安全聚合，以进一步降低类别级统计信息可能带来的隐私风险。同时，我们也将探索在更大规模真实多中心医疗场景中的部署与验证。
 LAMP-Merge addresses these two properties through a concise two-module design. Future work will extend its applicability in two directions: first, from medical image classification to segmentation, detection, and multimodal diagnostic tasks; and second, toward stronger privacy-preserving mechanisms, such as differential privacy and secure aggregation, to further reduce potential privacy risks associated with class-level statistics\cite{kaissis2020secure,geyer2017differentially,abadi2016deep}. We will also explore deployment and validation in larger-scale real-world multicenter healthcare settings.
 
-\clearpage
-
+\bibliography{aaai2026}
 \appendix
 \section{Supplementary Results and Analysis}
+
+\subsection{Evaluation Datasets}
+
+% \subsubsection{Evaluation Datasets}
+% 我们在多个具有代表性的医学图像基准数据集上对融合后的模型进行评估。这些数据集覆盖血液显微图像、皮肤镜图像、腹部 CT 器官切片和超声图像等关键医学影像模态，并包含细胞形态识别、皮肤病变诊断、器官结构识别和超声结构判别等任务。所用数据集包括：
+The five MedMNIST v2 benchmarks\cite{yang2023medmnist} cover blood-cell microscopy, dermoscopy, abdominal CT organ slices, and ultrasound images. They involve cell morphology recognition, skin-lesion diagnosis, organ-structure recognition, and ultrasound-structure discrimination:
+\begin{itemize}
+\item \textbf{Blood}: an eight-class blood-cell microscopy dataset for hematological morphology classification, focusing on fine-grained cellular appearance and inter-class morphological similarity.
+\item \textbf{Derma}: a seven-class dermoscopic skin-lesion dataset, characterized by strong long-tailed prevalence and visually subtle lesion categories.
+\item \textbf{Organ-C}: an 11-class abdominal CT dataset in the coronal view, evaluating organ-category recognition under grayscale cross-sectional imaging.
+\item \textbf{Organ-S}: an 11-class abdominal CT dataset in the sagittal view, complementing Organ-C with a different anatomical imaging plane.
+\item \textbf{Ultrasound}: an eight-class ultrasound image dataset, covering structure recognition under modality-specific speckle noise and low-contrast boundaries.
+\end{itemize}
+% 这些基准数据集覆盖了医学图像分类任务中的多种成像场景，为评估融合模型的跨模态鲁棒性、类别判别能力和任务泛化能力提供了系统测试平台。我们针对这些数据集开展系统性实验，以分析 LAMP-Merge 在不同医学图像类型和不同类别分布条件下的性能表现。
+Together, these benchmarks provide a systematic testbed for evaluating cross-modality robustness, class-discriminative capability, and task generalization under different medical image types and class-distribution conditions.
+
+\begin{figure*}[t]
+\centering
+\includegraphics[width=0.96\textwidth]{figures/dataset_examples.png}
+\caption{Representative training images from the five medical image datasets used in the experiments. The class IDs are shown only to illustrate category diversity within each dataset.}
+\label{fig:dataset-examples}
+\end{figure*}
+
+\subsection{Detailed Ablation Configurations}
+\label{app:ablation-configurations}
+
+\begin{figure*}[t]
+\centering
+\includegraphics[width=0.92\textwidth]{figures/full_scope_module_ablation_dataset_accuracy.png}
+\caption{Dataset-level client-average accuracy in the module ablation. Each dataset contains 12 cells from four vision-model families and three client counts; each cell is averaged over three Dirichlet skew levels.}
+\label{fig:dataset-ablation-acc}
+\end{figure*}
+
+% 为进一步定位诊断原型重建内部哪些信息是必要的，我们在完整范围上进行受控替换。所有设置均保留长尾患病率校准，只替换诊断原型重建中的原型语义或支持数权重。
+All diagnostic-prototype substitutions retain long-tail prevalence calibration and vary only prototype semantics or support-count weighting:
+\begin{itemize}
+\setlength{\itemsep}{0pt}
+\item \textbf{LAMP-Merge} uses \(p_c=\sum_i\alpha_{i,c}\mu_{i,c}\), where \(e_{i,c}=(n_{i,c}+1)^\gamma\mathbf{1}[n_{i,c}>0]\) determines the class-support reliability.
+\item \textbf{Classifier-head aggregation} replaces the reference-space class prototype by the local classifier-head direction, i.e., \(\mu_{i,c}\leftarrow h_{i,c}\).
+\item \textbf{Global-feature mean} removes class conditioning by setting \(\mu_{i,c}\leftarrow g\) for all \(c\), where \(g\) is the class-agnostic global reference-feature mean.
+\item \textbf{Support-only synthetic head} removes image evidence by replacing each prototype with a fixed random unit direction \(u_c\), i.e., \(p_c\leftarrow u_c\), \(\|u_c\|_2=1\).
+\item \textbf{Shuffled-label prototype} preserves prototype magnitudes but permutes diagnostic semantics, i.e., \(p_c\leftarrow p_{\sigma(c)}\), where \(\sigma\) is a random permutation over diagnosis labels.
+\item \textbf{Uniform client weight} replaces support-weighted aggregation with equal weights among clients containing class \(c\), i.e., \(\alpha_{i,c}\leftarrow \mathbf{1}[n_{i,c}>0]/\sum_j\mathbf{1}[n_{j,c}>0]\).
+\item \textbf{Binary support only} replaces fine-grained support and prevalence counts with class-presence indicators, i.e., \(n_{i,c},m_{i,c}\leftarrow \mathbf{1}[n_{i,c}>0]\).
+\item \textbf{Global client-size weight} uses the total client support \(N_i=\sum_k n_{i,k}\) rather than class-specific support, i.e., \(e_{i,c}\leftarrow (N_i+1)^\gamma\mathbf{1}[n_{i,c}>0]\).
+\end{itemize}
+
+% 我们进一步对长尾患病率校准内部的先验项进行替换。该组消融只改变校准偏置中的类别先验，表中第二列给出对应公式。
+The long-tail prevalence substitutions vary only the class prior used by the calibration bias:
+\begin{itemize}
+\setlength{\itemsep}{0pt}
+\item \textbf{LAMP-Merge} estimates the empirical class prior as \(\pi_c=\sum_i m_{i,c}/\sum_k\sum_i m_{i,k}\).
+\item \textbf{No prevalence calibration} removes the calibration bias by setting \(b_c\leftarrow0\).
+\item \textbf{Uniform prevalence prior} removes long-tail prevalence by setting \(\pi_c\leftarrow 1/C\), where \(C\) is the number of diagnosis classes.
+\item \textbf{Smoothed prevalence prior} uses \(\pi_c\leftarrow\sum_i(m_{i,c}+1)/\sum_k\sum_i(m_{i,k}+1)\), preserving the same prior structure with additive smoothing.
+\end{itemize}
 
 \subsection{Hyperparameter Analysis Experiment}
 % 中文对照：诊断原型重建有一个连续超参数，即原型头缩放因子 s。长尾患病率校准有一个连续超参数，即长尾校准强度 lambda。图中每个取值都在 180 个原始单元和 60 个客户端平均单元上评估，覆盖五个医学数据集、四种骨干网络、三种客户端数量和三种Dirichlet 非独立同分布划分参数。
@@ -698,62 +751,6 @@ b_c=\lambda\left(\log\pi_c-\frac{1}{C}\sum_k\log\pi_k\right).
 \end{equation}
 As long as $\lambda$ is bounded, long-tail prevalence calibration does not replace the discriminative directions reconstructed by diagnostic prototype reconstruction; it only calibrates the output toward the real class prevalence. This explains why using long-tail prevalence calibration alone is insufficient, while full LAMP-Merge remains both non-collapsed and prevalence-aware.
 
-\subsection{Evaluation Datasets}
-
-% \subsubsection{Evaluation Datasets}
-% 我们在多个具有代表性的医学图像基准数据集上对融合后的模型进行评估。这些数据集覆盖血液显微图像、皮肤镜图像、腹部 CT 器官切片和超声图像等关键医学影像模态，并包含细胞形态识别、皮肤病变诊断、器官结构识别和超声结构判别等任务。所用数据集包括：
-The five MedMNIST v2 benchmarks\cite{yang2023medmnist} cover blood-cell microscopy, dermoscopy, abdominal CT organ slices, and ultrasound images. They involve cell morphology recognition, skin-lesion diagnosis, organ-structure recognition, and ultrasound-structure discrimination:
-\begin{itemize}
-\item \textbf{Blood}: an eight-class blood-cell microscopy dataset for hematological morphology classification, focusing on fine-grained cellular appearance and inter-class morphological similarity.
-\item \textbf{Derma}: a seven-class dermoscopic skin-lesion dataset, characterized by strong long-tailed prevalence and visually subtle lesion categories.
-\item \textbf{Organ-C}: an 11-class abdominal CT dataset in the coronal view, evaluating organ-category recognition under grayscale cross-sectional imaging.
-\item \textbf{Organ-S}: an 11-class abdominal CT dataset in the sagittal view, complementing Organ-C with a different anatomical imaging plane.
-\item \textbf{Ultrasound}: an eight-class ultrasound image dataset, covering structure recognition under modality-specific speckle noise and low-contrast boundaries.
-\end{itemize}
-% 这些基准数据集覆盖了医学图像分类任务中的多种成像场景，为评估融合模型的跨模态鲁棒性、类别判别能力和任务泛化能力提供了系统测试平台。我们针对这些数据集开展系统性实验，以分析 LAMP-Merge 在不同医学图像类型和不同类别分布条件下的性能表现。
-Together, these benchmarks provide a systematic testbed for evaluating cross-modality robustness, class-discriminative capability, and task generalization under different medical image types and class-distribution conditions.
-
-\begin{figure*}[t]
-\centering
-\includegraphics[width=0.96\textwidth]{figures/dataset_examples.png}
-\caption{Representative training images from the five medical image datasets used in the experiments. The class IDs are shown only to illustrate category diversity within each dataset.}
-\label{fig:dataset-examples}
-\end{figure*}
-
-\subsection{Detailed Ablation Configurations}
-\label{app:ablation-configurations}
-
-\begin{figure*}[t]
-\centering
-\includegraphics[width=0.92\textwidth]{figures/full_scope_module_ablation_dataset_accuracy.png}
-\caption{Dataset-level client-average accuracy in the module ablation. Each dataset contains 12 cells from four vision-model families and three client counts; each cell is averaged over three Dirichlet skew levels.}
-\label{fig:dataset-ablation-acc}
-\end{figure*}
-
-% 为进一步定位诊断原型重建内部哪些信息是必要的，我们在完整范围上进行受控替换。所有设置均保留长尾患病率校准，只替换诊断原型重建中的原型语义或支持数权重。
-All diagnostic-prototype substitutions retain long-tail prevalence calibration and vary only prototype semantics or support-count weighting:
-\begin{itemize}
-\setlength{\itemsep}{0pt}
-\item \textbf{LAMP-Merge} uses \(p_c=\sum_i\alpha_{i,c}\mu_{i,c}\), where \(e_{i,c}=(n_{i,c}+1)^\gamma\mathbf{1}[n_{i,c}>0]\) determines the class-support reliability.
-\item \textbf{Classifier-head aggregation} replaces the reference-space class prototype by the local classifier-head direction, i.e., \(\mu_{i,c}\leftarrow h_{i,c}\).
-\item \textbf{Global-feature mean} removes class conditioning by setting \(\mu_{i,c}\leftarrow g\) for all \(c\), where \(g\) is the class-agnostic global reference-feature mean.
-\item \textbf{Support-only synthetic head} removes image evidence by replacing each prototype with a fixed random unit direction \(u_c\), i.e., \(p_c\leftarrow u_c\), \(\|u_c\|_2=1\).
-\item \textbf{Shuffled-label prototype} preserves prototype magnitudes but permutes diagnostic semantics, i.e., \(p_c\leftarrow p_{\sigma(c)}\), where \(\sigma\) is a random permutation over diagnosis labels.
-\item \textbf{Uniform client weight} replaces support-weighted aggregation with equal weights among clients containing class \(c\), i.e., \(\alpha_{i,c}\leftarrow \mathbf{1}[n_{i,c}>0]/\sum_j\mathbf{1}[n_{j,c}>0]\).
-\item \textbf{Binary support only} replaces fine-grained support and prevalence counts with class-presence indicators, i.e., \(n_{i,c},m_{i,c}\leftarrow \mathbf{1}[n_{i,c}>0]\).
-\item \textbf{Global client-size weight} uses the total client support \(N_i=\sum_k n_{i,k}\) rather than class-specific support, i.e., \(e_{i,c}\leftarrow (N_i+1)^\gamma\mathbf{1}[n_{i,c}>0]\).
-\end{itemize}
-
-% 我们进一步对长尾患病率校准内部的先验项进行替换。该组消融只改变校准偏置中的类别先验，表中第二列给出对应公式。
-The long-tail prevalence substitutions vary only the class prior used by the calibration bias:
-\begin{itemize}
-\setlength{\itemsep}{0pt}
-\item \textbf{LAMP-Merge} estimates the empirical class prior as \(\pi_c=\sum_i m_{i,c}/\sum_k\sum_i m_{i,k}\).
-\item \textbf{No prevalence calibration} removes the calibration bias by setting \(b_c\leftarrow0\).
-\item \textbf{Uniform prevalence prior} removes long-tail prevalence by setting \(\pi_c\leftarrow 1/C\), where \(C\) is the number of diagnosis classes.
-\item \textbf{Smoothed prevalence prior} uses \(\pi_c\leftarrow\sum_i(m_{i,c}+1)/\sum_k\sum_i(m_{i,k}+1)\), preserving the same prior structure with additive smoothing.
-\end{itemize}
-
 \subsection{Metric Definitions and Geometry Details}
 \label{app:metric-geometry}
 
@@ -776,8 +773,5 @@ Let \(d(a,b)=1-\cos(a,b)\) denote cosine distance and let \(\mathcal{I}_c=\{i\mi
 \item \(D_{\mathrm{nn}}=\frac{1}{C}\sum_c \min_{d\ne c} d(p_c,p_d)\), the mean nearest-class distance and most vulnerable decision margin.
 \item \(A_{\mathrm{client}}=\frac{1}{C}\sum_c \mathrm{Avg}_{i<j,\,i,j\in\mathcal{I}_c}\cos(\mu_{i,c},\mu_{j,c})\), the within-class consistency among client prototypes; \(A_{\mathrm{proto}}=\frac{1}{C}\sum_c\sum_{i\in\mathcal{I}_c}\alpha_{i,c}\cos(p_c,\mu_{i,c})\), the alignment between the global prototype and contributing client prototypes.
 \end{itemize}
-
-\clearpage
-\bibliography{aaai2026}
 
 \end{document}
