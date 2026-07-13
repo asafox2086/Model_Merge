@@ -391,7 +391,7 @@ All experiments were run on a server with two Intel(R) Xeon(R) Silver 4210 CPUs,
 The main comparison uses client-average ACC: for each fixed dataset, model, and client number, we first average over the three $\beta$ skew levels and then compare merging methods. A cell is counted as successful when LAMP-Merge is greater than or equal to the strongest non-LAMP baseline in that cell.
 
 % 表 1 至表 4 给出了完整客户端平均结果。在 60 个客户端平均单元中，LAMP-Merge 在 57 个单元达到或并列超过最强非 LAMP 基线，对应 95.0%。该结果表明，LAMP-Merge 的收益不是由单一客户端数量、单一划分偏斜或单一模型族产生的偶然现象，而是在多种医学图像模态和多种骨干网络上稳定出现。
-Table~\ref{tab:client-avg-resnet} reports the ResNet client-average results, while Tables~\ref{tab:client-avg-convnext}--\ref{tab:client-avg-swin-tiny} provide the complete results for the other backbone families in the appendix. Across the 60 client-average cells, LAMP-Merge wins or ties the strongest non-LAMP baseline in 57 cells, corresponding to 95.0\%. This result indicates that the gain is not an accidental effect of one client number, one partition skew, or one model family; instead, it appears consistently across multiple medical image modalities and backbone architectures.
+Table~\ref{tab:client-avg-resnet} reports the ResNet client-average results; see the Appendix for complete ConvNeXt, ViT-Tiny, and Swin-Tiny tables. Across the 60 client-average cells, LAMP-Merge wins or ties the strongest non-LAMP baseline in 57 cells, corresponding to 95.0\%. This result indicates that the gain is not an accidental effect of one client number, one partition skew, or one model family; instead, it appears consistently across multiple medical image modalities and backbone architectures.
 
 
 \begin{table*}[!t]
@@ -437,7 +437,7 @@ Module-level ablations use exactly the same experimental setup as the main exper
 
 \subsubsection{1) Effectiveness of Diagnostic Prototype Reconstruction}
 % 为进一步定位诊断原型重建内部哪些信息是必要的，我们在完整范围上进行受控替换。所有设置均保留长尾患病率校准，只替换诊断原型重建中的原型语义或支持数权重。
-To further identify which information within diagnostic prototype reconstruction is necessary, we conduct controlled substitutions across the full setting. All configurations retain long-tail prevalence calibration and vary only the prototype semantics or support-count weighting; the exact substitutions are listed in the appendix.
+To further identify which information within diagnostic prototype reconstruction is necessary, we conduct controlled substitutions across the full setting. All configurations retain long-tail prevalence calibration and vary only the prototype semantics or support-count weighting; see the Appendix for the exact substitutions.
 
 
 \begin{table}[t]
@@ -464,11 +464,18 @@ Global client-size weight & 0.5944 & \dropdown{0.0266} \\
 \end{table}
 
 % 表中结果表明，诊断原型重建的性能并非来自任意附加分类头。删除类别条件信息、打乱诊断语义或使用非参考空间的本地分类头都会造成显著退化；将类别支持数替换为等权、二值出现或客户端总规模也会降低性能。这说明该模块的有效性同时依赖两个因素：共享参考空间中的类别原型提供诊断语义方向，类别级支持数提供每个客户端-类别对的可靠性权重。
-Fig.~\ref{fig:dataset-ablation-acc} and Table~\ref{tab:diagnostic-internal-ablation} show that neither an arbitrary head nor a class-agnostic statistic explains the gain. Replacing reference-space prototypes or class-specific support weights consistently reduces ACC, confirming that diagnostic semantics and class-level reliability are jointly necessary.
+Fig.~\ref{fig:dataset-ablation-acc}, Fig.~\ref{fig:internal-ablation-heatmap}, and Table~\ref{tab:diagnostic-internal-ablation} show that neither an arbitrary head nor a class-agnostic statistic explains the gain. Replacing reference-space prototypes or class-specific support weights consistently reduces ACC, confirming that diagnostic semantics and class-level reliability are jointly necessary.
+
+\begin{figure}[t]
+\centering
+\includegraphics[width=\columnwidth]{figures/full_scope_internal_ablation_accuracy_heatmap.png}
+\caption{Dataset-level client-average ACC for the controlled substitutions within diagnostic prototype reconstruction.}
+\label{fig:internal-ablation-heatmap}
+\end{figure}
 
 \subsubsection{2) Effectiveness of Long-tail Prevalence Calibration}
 % 我们进一步对长尾患病率校准内部的先验项进行替换。该组消融只改变校准偏置中的类别先验，表中第二列给出对应公式。
-We further replace the prior term inside long-tail prevalence calibration. This group changes only the class prior used by the calibration bias; the corresponding formulas are listed in the appendix.
+We further replace the prior term inside long-tail prevalence calibration. This group changes only the class prior used by the calibration bias; see the Appendix for the corresponding formulas.
 
 
 \begin{table}[t]
@@ -501,9 +508,16 @@ Fig.~\ref{fig:hparam-full} evaluates the prototype-head scale $s$ and calibratio
 % 结果说明，LAMP-Merge 在较宽的超参数范围内均保持稳定性能。原型头缩放因子 (s) 和长尾校准强度 (\lambda) 的变化只带来小幅波动，默认设置 (s=20,\lambda=5) 位于稳定高性能区间。因此我们的收益主要来自诊断原型重建与长尾患病率校准本身，而非依赖精细的超参数搜索。
 Both curves remain stable over broad intervals. Small $s$ is insufficient to scale prototype logits, whereas bounded $\lambda$ calibrates prevalence without inducing majority-class prediction. Thus, the gain arises from the two components rather than narrow hyperparameter tuning.
 
+\begin{figure*}[t]
+\centering
+\includegraphics[width=0.92\textwidth]{figures/full_scope_hyperparameter_sensitivity.png}
+\caption{Full-scope hyperparameter sensitivity. The default setting $s=20$ and $\lambda=5$ lies in the stable high-accuracy plateau.}
+\label{fig:hparam-full}
+\end{figure*}
+
 \subsection{New-metric Diagnostic Experiment}
 % 虽然主实验只用 ACC 进行横向比较，但医学长尾分布可能使单类或少数类预测器获得较高 ACC。因此，我们引入了新的指标。令 y_n 和 \hat y_n 分别表示第 n 个测试样本的真实标签和预测标签，令 q_c=N^{-1}\sum_n 1[\hat y_n=c] 表示预测类别分布，令 p_c=N^{-1}\sum_n 1[y_n=c] 表示真实类别分布，令 C_test 表示测试集中真实出现的类别集合。我们使用如下诊断指标。
-Although the main experiments use ACC for direct comparison, long-tailed medical distributions can allow single-class or few-class predictors to achieve high ACC\cite{BUDA2018249,5597285}. We therefore report balanced accuracy, macro-F1, collapse ratio, effective predicted classes, and predicted--true total variation; their formal definitions are given in the appendix.
+Although the main experiments use ACC for direct comparison, long-tailed medical distributions can allow single-class or few-class predictors to achieve high ACC\cite{BUDA2018249,5597285}. We therefore report balanced accuracy, macro-F1, collapse ratio, effective predicted classes, and predicted--true total variation; see the Appendix for their formal definitions.
 
 
 
@@ -545,13 +559,13 @@ To visualize the prediction-distribution changes measured by the new diagnostic 
 
 \subsection{t-SNE Visualization Experiment}
 % 我们仅将 t-SNE 用于分析，而不用于服务器端选择或融合。图中给出了 Blood 数据集上 ResNet、K=3、beta=0.01 设置下的联合 t-SNE 对比。每个点对应一个测试图像的模型输出概率向量，不同正式融合方法在同一二维空间中投影，用于比较预测表征的类别结构。
-We use t-SNE\cite{vanDerMaaten2008} only for analysis, not for server-side selection or fusion. Fig.~\ref{fig:tsne} shows a joint comparison on Blood with ResNet, $K=3$, and $\beta=0.01$. Each point is the output-probability representation of a test image, and formal merging methods are projected into the same two-dimensional space to compare the class structure of their predictive representations. LAMP-Merge retains separated predictive groups, whereas generic merges exhibit a substantially compressed output space.
+We use t-SNE\cite{vanDerMaaten2008} only for analysis, not for server-side selection or fusion. The joint comparison in Fig.~\ref{fig:tsne} (see Appendix) uses Blood with ResNet, $K=3$, and $\beta=0.01$. Each point is the output-probability representation of a test image, and formal merging methods are projected into the same two-dimensional space to compare the class structure of their predictive representations. LAMP-Merge retains separated predictive groups, whereas generic merges exhibit a substantially compressed output space.
 
 
 \subsection{In-depth Analysis Experiment}
 \subsubsection{1) analysis of the geometry}
 % 最后，我们对诊断原型重建产生的几何结构进行深入分析。该实验对应模块内消融中的原型替换设置，用于解释为什么共享参考空间类别原型与类别级支持数共同带来稳定收益。令 d(a,b)=1-cos(a,b) 表示余弦距离，令 I_c 表示具有类别 c 样本的客户端集合。所用几何量定义如下。
-Finally, we conduct an in-depth analysis of the geometry induced by diagnostic prototype reconstruction. This experiment corresponds to the prototype-replacement settings in the internal ablation and explains why reference-space class prototypes and class-level support counts jointly provide stable gains. We assess inter-class separation, nearest-class margin, within-class client consistency, and prototype--client alignment; their formal definitions are given in the appendix.
+Finally, we conduct an in-depth analysis of the geometry induced by diagnostic prototype reconstruction. This experiment corresponds to the prototype-replacement settings in the internal ablation and explains why reference-space class prototypes and class-level support counts jointly provide stable gains. We assess inter-class separation, nearest-class margin, within-class client consistency, and prototype--client alignment; see the Appendix for their formal definitions and the full geometry plot.
 
 
 Fig.~\ref{fig:prototype-geometry} reports these four quantities for the controlled prototype substitutions in the internal ablation. The full method jointly preserves nonzero inter-class separation and high cross-client consistency and prototype-client alignment, rather than maximizing a single geometric value. Together with the accuracy drops in Table~\ref{tab:diagnostic-internal-ablation}, this joint profile shows that the benefit arises from class-semantic reference-space prototypes weighted by class-specific support.
@@ -568,10 +582,12 @@ We studied one-shot asynchronous medical model merging, where independently trai
 LAMP-Merge addresses these two properties through a concise two-module design. Future work will extend its applicability in two directions: first, from medical image classification to segmentation, detection, and multimodal diagnostic tasks; and second, toward stronger privacy-preserving mechanisms, such as differential privacy and secure aggregation, to further reduce potential privacy risks associated with class-level statistics\cite{kaissis2020secure}. We will also explore deployment and validation in larger-scale real-world multicenter healthcare settings.
 
 
+\clearpage
 \bibliography{aaai2026}
 \appendix
 \section{Supplementary Results and Analysis}
 \subsection{Complete Client-Average Results}
+\label{app:complete-results}
 
 \begin{table*}[!t]
 \centering
@@ -670,6 +686,7 @@ LAMP-Merge addresses these two properties through a concise two-module design. F
 }
 \end{table*}
 \subsection{Detailed Ablation Configurations}
+\label{app:ablation-configurations}
 
 % 为进一步定位诊断原型重建内部哪些信息是必要的，我们在完整范围上进行受控替换。所有设置均保留长尾患病率校准，只替换诊断原型重建中的原型语义或支持数权重。
 All diagnostic-prototype substitutions retain long-tail prevalence calibration and vary only prototype semantics or support-count weighting:
@@ -694,6 +711,7 @@ The long-tail prevalence substitutions vary only the class prior used by the cal
 \end{itemize}
 
 \subsection{Metric Definitions and Geometry Details}
+\label{app:metric-geometry}
 
 % 虽然主实验只用 ACC 进行横向比较，但医学长尾分布可能使单类或少数类预测器获得较高 ACC。因此，我们引入了新的指标。令 y_n 和 \hat y_n 分别表示第 n 个测试样本的真实标签和预测标签，令 q_c=N^{-1}\sum_n 1[\hat y_n=c] 表示预测类别分布，令 p_c=N^{-1}\sum_n 1[y_n=c] 表示真实类别分布，令 C_test 表示测试集中真实出现的类别集合。我们使用如下诊断指标。
 Let \(y_n\) and \(\hat{y}_n\) denote the true and predicted labels of the \(n\)-th test sample. Let \(q_c=N^{-1}\sum_n\mathbf{1}[\hat{y}_n=c]\) be the predicted-class distribution, \(p_c=N^{-1}\sum_n\mathbf{1}[y_n=c]\) the true class distribution, and \(\mathcal{C}_{\mathrm{test}}=\{c\mid \sum_n\mathbf{1}[y_n=c]>0\}\) the set of classes observed in the test set. We use:
@@ -715,6 +733,7 @@ Let \(d(a,b)=1-\cos(a,b)\) denote cosine distance and let \(\mathcal{I}_c=\{i\mi
 \end{itemize}
 
 \subsection{Additional Theoretical Analysis}
+\label{app:theoretical-details}
 
 % 令 mu_c^star 表示共享参考空间中的真实类别均值。如果客户端类别特征具有有界二阶矩，则原型估计误差满足如下上界。
 Let $\mu_c^\star$ denote the true class mean in the shared reference space. If client class features have bounded second moments, the prototype estimation error satisfies
@@ -753,13 +772,7 @@ b_c=\lambda\left(\log\pi_c-\frac{1}{C}\sum_k\log\pi_k\right).
 As long as $\lambda$ is bounded, long-tail prevalence calibration does not replace the discriminative directions reconstructed by diagnostic prototype reconstruction; it only calibrates the output toward the real class prevalence. This explains why using long-tail prevalence calibration alone is insufficient, while full LAMP-Merge remains both non-collapsed and prevalence-aware.
 
 \subsection{Extended Visual Analyses}
-
-\begin{figure*}[t]
-\centering
-\includegraphics[width=0.92\textwidth]{figures/full_scope_hyperparameter_sensitivity.png}
-\caption{Full-scope hyperparameter sensitivity. The default setting $s=20$ and $\lambda=5$ lies in the stable high-accuracy plateau.}
-\label{fig:hparam-full}
-\end{figure*}
+\label{app:extended-visuals}
 \begin{figure*}[t]
 \centering
 \includegraphics[width=0.98\textwidth]{figures/tsne_joint_bloodmnist_224_resnet.png}
