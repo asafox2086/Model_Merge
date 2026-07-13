@@ -39,12 +39,12 @@
 }
 \definecolor{LAMPYellow}{RGB}{255,220,112}
 \definecolor{HeaderGray}{RGB}{235,235,235}
-\definecolor{AvgBlue}{RGB}{226,241,255}
 \definecolor{GainGreen}{RGB}{32,132,84}
 \definecolor{DropRed}{RGB}{190,54,54}
 \newcommand{\tblhead}[1]{\strut #1}
 \newcommand{\lampcell}[1]{\begingroup\setlength{\fboxsep}{0pt}\colorbox{LAMPYellow}{\makebox[6.7em][c]{\rule[-1.12ex]{0pt}{4.45ex}\bfseries\boldmath #1}}\endgroup}
-\newcommand{\avgcell}[1]{\begingroup\def\avgcontent{#1}\def\avgheader{Avg}\setlength{\fboxsep}{0pt}\ifx\avgcontent\avgheader\colorbox{AvgBlue}{\makebox[3.55em][c]{\rule{0pt}{2.25ex}\raisebox{0.12ex}{\smash{\bfseries #1}}}}\else\colorbox{AvgBlue}{\makebox[3.55em][c]{\strut #1}}\fi\endgroup}
+\newcommand{\avgcell}[1]{#1}
+\newcommand{\metriclampcell}[1]{\begingroup\setlength{\fboxsep}{0pt}\colorbox{LAMPYellow}{\makebox[7.05em][c]{\rule[-1.12ex]{0pt}{4.45ex}\bfseries\boldmath #1}}\endgroup}
 \newcommand{\lampband}{\noalign{\begingroup\color{LAMPYellow}\hrule height 3.35ex\endgroup\kern-3.35ex}}
 \newcommand{\headband}{\noalign{\begingroup\color{HeaderGray}\hrule height 6.15ex\endgroup\kern-6.15ex}}
 \newcommand{\gainup}[1]{\makebox[5.85em][l]{\textcolor{GainGreen}{\(\uparrow\)#1}}}
@@ -213,7 +213,7 @@ Medical artificial intelligence increasingly requires multicenter collaboration 
 
 \begin{figure*}[t]
     \centering
-    \includegraphics[width=0.92\textwidth]{figures/method.png}
+    \includegraphics[width=0.92\textwidth,height=0.34\textheight]{figures/method.png}
     \caption{Local models from multicenter hospitals typically contain only partial diagnostic knowledge, while raw medical images cannot be centrally shared. LAMP-Merge reconstructs a privacy-friendly global medical classifier through diagnostic prototype reconstruction and long-tail prevalence calibration, without accessing raw data or requiring multi-round federated optimization.}
     \label{fig_method}
 \end{figure*}
@@ -639,14 +639,14 @@ Although the main experiments use ACC for direct comparison, long-tailed medical
 \setlength{\tabcolsep}{3.2pt}
 \begin{tabular}{lrcc}
 \hline
-\tblhead{Metric} & \lampcell{LAMP-Merge} & \tblhead{Best reference} & \tblhead{\(\Delta\) vs. LAMP} \\
+\tblhead{Metric} & \metriclampcell{LAMP-Merge} & \tblhead{Best reference} & \tblhead{\(\Delta\) vs. LAMP} \\
 \hline
-Accuracy $\uparrow$ & \lampcell{0.5885} & 0.3156 & \gainup{+0.2729} \\
-BA / macro recall $\uparrow$ & \lampcell{0.5747} & 0.1810 & \gainup{+0.3937} \\
-Macro F1 $\uparrow$ & \lampcell{0.5352} & 0.1123 & \gainup{+0.4229} \\
-Collapse ratio $\downarrow$ & \lampcell{0.2294} & 0.7477 & \gaindown{-0.5184} \\
-Effective classes $\uparrow$ & \lampcell{8.0390} & 2.1360 & \gainup{+5.9030} \\
-Pred-true TV $\downarrow$ & \lampcell{0.1510} & 0.6168 & \gaindown{-0.4658} \\
+Accuracy $\uparrow$ & \metriclampcell{0.5885} & 0.3156 & \gainup{+0.2729} \\
+BA / macro recall $\uparrow$ & \metriclampcell{0.5747} & 0.1810 & \gainup{+0.3937} \\
+Macro F1 $\uparrow$ & \metriclampcell{0.5352} & 0.1123 & \gainup{+0.4229} \\
+Collapse ratio $\downarrow$ & \metriclampcell{0.2294} & 0.7477 & \gaindown{-0.5184} \\
+Effective classes $\uparrow$ & \metriclampcell{8.0390} & 2.1360 & \gainup{+5.9030} \\
+Pred-true TV $\downarrow$ & \metriclampcell{0.1510} & 0.6168 & \gaindown{-0.4658} \\
 \hline
 \end{tabular}
 \end{table}
