@@ -437,7 +437,7 @@ Module-level ablations use exactly the same experimental setup as the main exper
 
 \subsubsection{1) Effectiveness of Diagnostic Prototype Reconstruction}
 % 为进一步定位诊断原型重建内部哪些信息是必要的，我们在完整范围上进行受控替换。所有设置均保留长尾患病率校准，只替换诊断原型重建中的原型语义或支持数权重。
-To further identify which information within diagnostic prototype reconstruction is necessary, we conduct controlled substitutions across the full setting. All configurations retain long-tail prevalence calibration and vary only the prototype semantics or support-count weighting; see the Appendix for the exact substitutions.
+To further identify which information within diagnostic prototype reconstruction is necessary, we conduct controlled substitutions across the full setting. All configurations retain long-tail prevalence calibration and vary only the prototype semantics or support-count weighting.
 
 
 \begin{table}[t]
@@ -468,7 +468,7 @@ Fig.~\ref{fig:dataset-ablation-acc} and Table~\ref{tab:diagnostic-internal-ablat
 
 \subsubsection{2) Effectiveness of Long-tail Prevalence Calibration}
 % 我们进一步对长尾患病率校准内部的先验项进行替换。该组消融只改变校准偏置中的类别先验，表中第二列给出对应公式。
-We further replace the prior term inside long-tail prevalence calibration. This group changes only the class prior used by the calibration bias; see the Appendix for the corresponding formulas.
+We further replace the prior term inside long-tail prevalence calibration. This group changes only the class prior used by the calibration bias.
 
 
 \begin{table}[t]
@@ -510,7 +510,7 @@ Both curves remain stable over broad intervals. Small $s$ is insufficient to sca
 
 \subsection{New-metric Diagnostic Experiment}
 % 虽然主实验只用 ACC 进行横向比较，但医学长尾分布可能使单类或少数类预测器获得较高 ACC。因此，我们引入了新的指标。令 y_n 和 \hat y_n 分别表示第 n 个测试样本的真实标签和预测标签，令 q_c=N^{-1}\sum_n 1[\hat y_n=c] 表示预测类别分布，令 p_c=N^{-1}\sum_n 1[y_n=c] 表示真实类别分布，令 C_test 表示测试集中真实出现的类别集合。我们使用如下诊断指标。
-Although the main experiments use ACC for direct comparison, long-tailed medical distributions can allow single-class or few-class predictors to achieve high ACC\cite{BUDA2018249,5597285}. We therefore report balanced accuracy, macro-F1, collapse ratio, effective predicted classes, and predicted--true total variation; see the Appendix for their formal definitions.
+Although the main experiments use ACC for direct comparison, long-tailed medical distributions can allow single-class or few-class predictors to achieve high ACC\cite{BUDA2018249,5597285}. We therefore report balanced accuracy, macro-F1, collapse ratio, effective predicted classes, and predicted--true total variation.
 
 
 
@@ -541,20 +541,20 @@ Table \ref{tab:collapse-key} compares LAMP-Merge with the best-performing baseli
 \subsection{Visualization Experiment}
 
 % 为了直观展示新指标诊断所反映的预测分布变化，我们进一步给出预测坍缩恢复图和代表性数据集上的预测类别分布图。
-To visualize the prediction-distribution changes measured by the new diagnostic metrics, the representative Ultrasound predicted-class distribution in Fig.~\ref{fig:visual-chaosheng_predict} is provided in the Appendix. It shows that the generic merge concentrates predictions on one class, whereas LAMP-Merge recovers a broader class allocation aligned with the test distribution.
+To visualize the prediction-distribution changes measured by the new diagnostic metrics, we compare the predicted class allocation induced by LAMP-Merge with that of the strongest generic merge. The generic merge concentrates predictions on one class, whereas LAMP-Merge recovers a broader class allocation aligned with the test distribution.
 
 \subsection{t-SNE Visualization Experiment}
 % 我们仅将 t-SNE 用于分析，而不用于服务器端选择或融合。图中给出了 Blood 数据集上 ResNet、K=3、beta=0.01 设置下的联合 t-SNE 对比。每个点对应一个测试图像的模型输出概率向量，不同正式融合方法在同一二维空间中投影，用于比较预测表征的类别结构。
-We use t-SNE\cite{vanDerMaaten2008} only for analysis, not for server-side selection or fusion. The joint comparison in Fig.~\ref{fig:tsne} (see Appendix) uses Blood with ResNet, $K=3$, and $\beta=0.01$. Each point is the output-probability representation of a test image, and formal merging methods are projected into the same two-dimensional space to compare the class structure of their predictive representations. LAMP-Merge retains separated predictive groups, whereas generic merges exhibit a substantially compressed output space.
+We use t-SNE\cite{vanDerMaaten2008} only for analysis, not for server-side selection or fusion. The joint comparison uses Blood with ResNet, $K=3$, and $\beta=0.01$. Each point is the output-probability representation of a test image, and formal merging methods are projected into the same two-dimensional space to compare the class structure of their predictive representations. LAMP-Merge retains separated predictive groups, whereas generic merges exhibit a substantially compressed output space.
 
 
 \subsection{In-depth Analysis Experiment}
 \subsubsection{1) analysis of the geometry}
 % 最后，我们对诊断原型重建产生的几何结构进行深入分析。该实验对应模块内消融中的原型替换设置，用于解释为什么共享参考空间类别原型与类别级支持数共同带来稳定收益。令 d(a,b)=1-cos(a,b) 表示余弦距离，令 I_c 表示具有类别 c 样本的客户端集合。所用几何量定义如下。
-Finally, we conduct an in-depth analysis of the geometry induced by diagnostic prototype reconstruction. This experiment corresponds to the prototype-replacement settings in the internal ablation and explains why reference-space class prototypes and class-level support counts jointly provide stable gains. We assess inter-class separation, nearest-class margin, within-class client consistency, and prototype--client alignment; see the Appendix for their formal definitions and the full geometry plot.
+Finally, we conduct an in-depth analysis of the geometry induced by diagnostic prototype reconstruction. This experiment corresponds to the prototype-replacement settings in the internal ablation and explains why reference-space class prototypes and class-level support counts jointly provide stable gains. We assess inter-class separation, nearest-class margin, within-class client consistency, and prototype--client alignment.
 
 
-Fig.~\ref{fig:prototype-geometry} reports these four quantities for the controlled prototype substitutions in the internal ablation. The full method jointly preserves nonzero inter-class separation and high cross-client consistency and prototype-client alignment, rather than maximizing a single geometric value. Together with the accuracy drops in Table~\ref{tab:diagnostic-internal-ablation}, this joint profile shows that the benefit arises from class-semantic reference-space prototypes weighted by class-specific support.
+Across the controlled prototype substitutions, the full method jointly preserves nonzero inter-class separation and high cross-client consistency and prototype-client alignment, rather than maximizing a single geometric value. Together with the accuracy drops in Table~\ref{tab:diagnostic-internal-ablation}, this joint profile shows that the benefit arises from class-semantic reference-space prototypes weighted by class-specific support.
 
 
 The individual geometry values should therefore be interpreted as mechanism diagnostics, not standalone objectives: extreme separation or perfect alignment can be produced by class-agnostic or mismatched directions. LAMP-Merge is effective because its four quantities are simultaneously consistent with class semantics and the observed full-scope accuracy gains.
@@ -755,21 +755,29 @@ Let \(d(a,b)=1-\cos(a,b)\) denote cosine distance and let \(\mathcal{I}_c=\{i\mi
 \item \(A_{\mathrm{proto}}=\frac{1}{C}\sum_c\sum_{i\in\mathcal{I}_c}\alpha_{i,c}\cos(p_c,\mu_{i,c})\), the alignment between the global prototype and contributing client prototypes.
 \end{itemize}
 
-\subsection{Extended Visual Analyses}
-\label{app:extended-visuals}
 \begin{figure*}[t]
 \centering
+\textbf{Extended Visual Analyses.}\par\medskip
 \includegraphics[width=0.62\textwidth]{figures/full_scope_predicted_distribution_ultrasound_stacked.png}
 \caption{Predicted class distributions on Ultrasound, averaged over the four visual backbones, $K\in\{3,5,7\}$, and the three Dirichlet skew levels. The generic merge concentrates predictions on one class, while LAMP-Merge recovers a broader class allocation aligned with the test distribution.}
 \label{fig:visual-chaosheng_predict}
+\begin{minipage}{0.94\textwidth}
+\small\noindent\textbf{Prediction-distribution diagnosis.} The generic merge allocates most test images to one dominant class, whereas LAMP-Merge retains a multi-class allocation close to the empirical test prevalence. Its accuracy gain therefore does not arise from stronger prediction collapse.
+\end{minipage}
 \vspace{0.4em}
 \includegraphics[width=0.98\textwidth]{figures/tsne_joint_bloodmnist_224_resnet.png}
 \caption{Joint t-SNE visualization of output-probability representations on Blood. From left to right: LAMP-Merge, weight averaging, TIES-Merging, and DARE-Linear.}
 \label{fig:tsne}
+\begin{minipage}{0.94\textwidth}
+\small\noindent\textbf{Representation diagnostic.} LAMP-Merge forms separated output-probability groups. Weight averaging, TIES-Merging, and DARE-Linear show compressed or entangled groups, consistent with the prediction-collapse diagnostics.
+\end{minipage}
 \vspace{0.4em}
 \includegraphics[width=0.96\textwidth]{figures/full_scope_prototype_geometry_internal_ablation.png}
 % 完整基准上的原型几何比较。该图总结了两两距离、最近类别距离、原型一致性和原型-客户端对齐程度。
 \caption{Prototype-geometry comparison on the full benchmark. The figure summarizes pairwise distance, nearest-class distance, prototype consistency, and prototype-client alignment.}
 \label{fig:prototype-geometry}
+\begin{minipage}{0.94\textwidth}
+\small\noindent\textbf{Geometric summary.} The full method simultaneously preserves class separation, cross-client consistency, and prototype--client alignment. Controlled substitutions may increase one quantity, but do not preserve this joint profile or the corresponding full-scope accuracy.
+\end{minipage}
 \end{figure*}
 \end{document}
