@@ -617,14 +617,14 @@ LAMP-Merge addresses these two properties through a concise two-module design. F
 \caption{Predicted class distributions on Ultrasound, averaged over the four visual backbones, $K\in\{3,5,7\}$, and the three Dirichlet skew levels. The generic merge concentrates predictions on one class, while LAMP-Merge recovers a broader class allocation aligned with the test distribution.}
 \label{fig:visual-chaosheng_predict}
 \begin{minipage}{0.94\textwidth}
-\small\noindent\textbf{Prediction-distribution diagnosis.} The generic merge allocates most test images to one dominant class, whereas LAMP-Merge retains a multi-class allocation close to the empirical test prevalence. Its accuracy gain therefore does not arise from stronger prediction collapse.
+\noindent\textbf{Prediction-distribution diagnosis.} The generic merge allocates most test images to one dominant class, whereas LAMP-Merge retains a multi-class allocation close to the empirical test prevalence. Its accuracy gain therefore does not arise from stronger prediction collapse.
 \end{minipage}
 \vspace{0.4em}
 \includegraphics[width=0.98\textwidth]{figures/tsne_joint_bloodmnist_224_resnet.png}
 \caption{Joint t-SNE visualization of output-probability representations on Blood. From left to right: LAMP-Merge, weight averaging, TIES-Merging, and DARE-Linear.}
 \label{fig:tsne}
 \begin{minipage}{0.94\textwidth}
-\small\noindent\textbf{Representation diagnostic.} LAMP-Merge forms separated output-probability groups. Weight averaging, TIES-Merging, and DARE-Linear show compressed or entangled groups, consistent with the prediction-collapse diagnostics.
+\noindent\textbf{Representation diagnostic.} LAMP-Merge forms separated output-probability groups. Weight averaging, TIES-Merging, and DARE-Linear show compressed or entangled groups, consistent with the prediction-collapse diagnostics.
 \end{minipage}
 \vspace{0.4em}
 \includegraphics[width=0.96\textwidth]{figures/full_scope_prototype_geometry_internal_ablation.png}
@@ -632,7 +632,7 @@ LAMP-Merge addresses these two properties through a concise two-module design. F
 \caption{Prototype-geometry comparison on the full benchmark. The figure summarizes pairwise distance, nearest-class distance, prototype consistency, and prototype-client alignment.}
 \label{fig:prototype-geometry}
 \begin{minipage}{0.94\textwidth}
-\small\noindent\textbf{Geometric summary.} The full method simultaneously preserves class separation, cross-client consistency, and prototype--client alignment. Controlled substitutions may increase one quantity, but do not preserve this joint profile or the corresponding full-scope accuracy.
+\noindent\textbf{Geometric summary.} The full method simultaneously preserves class separation, cross-client consistency, and prototype--client alignment. Controlled substitutions may increase one quantity, but do not preserve this joint profile or the corresponding full-scope accuracy.
 \end{minipage}
 \end{figure*}
 
@@ -737,7 +737,6 @@ LAMP-Merge addresses these two properties through a concise two-module design. F
 \end{table*}
 \subsection{Detailed Ablation Configurations}
 \label{app:ablation-configurations}
-\begingroup\footnotesize
 
 % 为进一步定位诊断原型重建内部哪些信息是必要的，我们在完整范围上进行受控替换。所有设置均保留长尾患病率校准，只替换诊断原型重建中的原型语义或支持数权重。
 All diagnostic-prototype substitutions retain long-tail prevalence calibration and vary only prototype semantics or support-count weighting:
@@ -765,7 +764,6 @@ The long-tail prevalence substitutions vary only the class prior used by the cal
 
 \subsection{Metric Definitions and Geometry Details}
 \label{app:metric-geometry}
-\scriptsize
 
 % 虽然主实验只用 ACC 进行横向比较，但医学长尾分布可能使单类或少数类预测器获得较高 ACC。因此，我们引入了新的指标。令 y_n 和 \hat y_n 分别表示第 n 个测试样本的真实标签和预测标签，令 q_c=N^{-1}\sum_n 1[\hat y_n=c] 表示预测类别分布，令 p_c=N^{-1}\sum_n 1[y_n=c] 表示真实类别分布，令 C_test 表示测试集中真实出现的类别集合。我们使用如下诊断指标。
 Let \(y_n\) and \(\hat{y}_n\) denote the true and predicted labels of the \(n\)-th test sample. Let \(q_c=N^{-1}\sum_n\mathbf{1}[\hat{y}_n=c]\) be the predicted-class distribution, \(p_c=N^{-1}\sum_n\mathbf{1}[y_n=c]\) the true class distribution, and \(\mathcal{C}_{\mathrm{test}}=\{c\mid \sum_n\mathbf{1}[y_n=c]>0\}\) the set of classes observed in the test set. We use:
@@ -787,5 +785,4 @@ Let \(d(a,b)=1-\cos(a,b)\) denote cosine distance and let \(\mathcal{I}_c=\{i\mi
 \item \(A_{\mathrm{client}}=\frac{1}{C}\sum_c \mathrm{Avg}_{i<j,\,i,j\in\mathcal{I}_c}\cos(\mu_{i,c},\mu_{j,c})\), the within-class consistency among client prototypes; \(A_{\mathrm{proto}}=\frac{1}{C}\sum_c\sum_{i\in\mathcal{I}_c}\alpha_{i,c}\cos(p_c,\mu_{i,c})\), the alignment between the global prototype and contributing client prototypes.
 \end{itemize}
 
-\endgroup
 \end{document}
