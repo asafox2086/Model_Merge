@@ -757,20 +757,16 @@ Let \(d(a,b)=1-\cos(a,b)\) denote cosine distance and let \(\mathcal{I}_c=\{i\mi
 
 \subsection{Extended Visual Analyses}
 \label{app:extended-visuals}
-\begin{figure}[t]
-\centering
-\includegraphics[width=\columnwidth]{figures/full_scope_predicted_distribution_ultrasound_stacked.png}
-\caption{Predicted class distributions on Ultrasound, averaged over the four visual backbones, $K\in\{3,5,7\}$, and the three Dirichlet skew levels. The generic merge concentrates predictions on one class, while LAMP-Merge recovers a broader class allocation aligned with the test distribution.}
-\label{fig:visual-chaosheng_predict}
-\end{figure}
 \begin{figure*}[t]
 \centering
+\includegraphics[width=0.62\textwidth]{figures/full_scope_predicted_distribution_ultrasound_stacked.png}
+\caption{Predicted class distributions on Ultrasound, averaged over the four visual backbones, $K\in\{3,5,7\}$, and the three Dirichlet skew levels. The generic merge concentrates predictions on one class, while LAMP-Merge recovers a broader class allocation aligned with the test distribution.}
+\label{fig:visual-chaosheng_predict}
+\vspace{0.4em}
 \includegraphics[width=0.98\textwidth]{figures/tsne_joint_bloodmnist_224_resnet.png}
 \caption{Joint t-SNE visualization of output-probability representations on Blood. From left to right: LAMP-Merge, weight averaging, TIES-Merging, and DARE-Linear.}
 \label{fig:tsne}
-\end{figure*}
-\begin{figure*}[t]
-\centering
+\vspace{0.4em}
 \includegraphics[width=0.96\textwidth]{figures/full_scope_prototype_geometry_internal_ablation.png}
 % 完整基准上的原型几何比较。该图总结了两两距离、最近类别距离、原型一致性和原型-客户端对齐程度。
 \caption{Prototype-geometry comparison on the full benchmark. The figure summarizes pairwise distance, nearest-class distance, prototype consistency, and prototype-client alignment.}
