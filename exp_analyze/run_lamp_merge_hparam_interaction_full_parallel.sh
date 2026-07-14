@@ -151,8 +151,15 @@ if [[ "${status}" -ne 0 ]]; then
   exit "${status}"
 fi
 
+SUMMARY_ROOTS="${SUMMARY_ROOTS:-${BASE_OUTPUT_ROOT}}"
+summary_args=()
+for summary_root in ${SUMMARY_ROOTS}; do
+  summary_args+=(--root "${summary_root}")
+done
+
 "${PYTHON_BIN}" "${SCRIPT_DIR}/summarize_lamp_merge_hparam_interaction_full.py" \
-  --root "${BASE_OUTPUT_ROOT}" \
+  "${summary_args[@]}" \
+  --expected-points "${EXPECTED_POINTS:-${#RUN_ITEMS[@]}}" \
   --output-csv "${ROOT_DIR}/My_merge_ret/reports/lamp_merge_hparam_interaction_full.csv" \
   --client-average-csv "${ROOT_DIR}/My_merge_ret/reports/lamp_merge_hparam_interaction_full_client_average.csv" \
   --summary-md "${ROOT_DIR}/My_merge_ret/reports/lamp_merge_hparam_interaction_full_summary.md" \

@@ -43,7 +43,8 @@ SCAN_PATTERN = re.compile(
 
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser("Summarize full-scope LAMP-Merge interaction scans.")
-    parser.add_argument("--root", type=Path, required=True)
+    parser.add_argument("--root", type=Path, action="append", required=True)
+    parser.add_argument("--expected-points", type=int, default=None)
     parser.add_argument("--output-csv", type=Path, required=True)
     parser.add_argument("--client-average-csv", type=Path, required=True)
     parser.add_argument("--summary-md", type=Path, required=True)
@@ -123,50 +124,51 @@ def write_csv(path: Path, rows: list[dict[str, object]], fieldnames: list[str]) 
         writer.writerows(rows)
 
 
-def collect_rows(root: Path) -> tuple[list[dict[str, object]], list[dict[str, object]]]:
+def collect_rows(roots: list[Path]) -> tuple[list[dict[str, object]], list[dict[str, object]]]:
     summary_rows: list[dict[str, object]] = []
     client_rows: list[dict[str, object]] = []
     allowed = formal_keys()
-    for directory in sorted(root.iterdir()):
-        if not directory.is_dir():
-            continue
-        parsed = parse_scan_directory(directory)
-        if parsed is None:
-            continue
-        module, x_symbol, x_value, curve_symbol, curve_value = parsed
-        raw_lookup = read_eval_lookup(directory)
-        raw_accuracies = [raw_lookup[case] for case in allowed if case in raw_lookup]
-        client_averages = build_client_averages(raw_lookup)
-        summary_rows.append(
-            {
-                "module": module,
-                "x_symbol": x_symbol,
-                "x_value": x_value,
-                "curve_symbol": curve_symbol,
-                "curve_value": curve_value,
-                "root": str(directory),
-                "raw_cells": len(raw_accuracies),
-                "raw_mean_acc": mean(raw_accuracies) if raw_accuracies else "",
-                "client_average_cells": len(client_averages),
-                "client_average_mean_acc": mean(client_averages.values()) if client_averages else "",
-            }
-        )
-        for case, accuracy in sorted(client_averages.items()):
-            task_type, dataset, model, num_clients = case
-            client_rows.append(
+    for root in roots:
+        for directory in sorted(root.iterdir()):
+            if not directory.is_dir():
+                continue
+            parsed = parse_scan_directory(directory)
+            if parsed is None:
+                continue
+            module, x_symbol, x_value, curve_symbol, curve_value = parsed
+            raw_lookup = read_eval_lookup(directory)
+            raw_accuracies = [raw_lookup[case] for case in allowed if case in raw_lookup]
+            client_averages = build_client_averages(raw_lookup)
+            summary_rows.append(
                 {
                     "module": module,
                     "x_symbol": x_symbol,
                     "x_value": x_value,
                     "curve_symbol": curve_symbol,
                     "curve_value": curve_value,
-                    "task_type": task_type,
-                    "dataset": dataset,
-                    "model": model,
-                    "num_clients": num_clients,
-                    "client_average_acc": accuracy,
+                    "root": str(directory),
+                    "raw_cells": len(raw_accuracies),
+                    "raw_mean_acc": mean(raw_accuracies) if raw_accuracies else "",
+                    "client_average_cells": len(client_averages),
+                    "client_average_mean_acc": mean(client_averages.values()) if client_averages else "",
                 }
             )
+            for case, accuracy in sorted(client_averages.items()):
+                task_type, dataset, model, num_clients = case
+                client_rows.append(
+                    {
+                        "module": module,
+                        "x_symbol": x_symbol,
+                        "x_value": x_value,
+                        "curve_symbol": curve_symbol,
+                        "curve_value": curve_value,
+                        "task_type": task_type,
+                        "dataset": dataset,
+                        "model": model,
+                        "num_clients": num_clients,
+                        "client_average_acc": accuracy,
+                    }
+                )
     summary_rows.sort(key=lambda row: (str(row["module"]), float(row["curve_value"]), float(row["x_value"])))
     client_rows.sort(key=lambda row: (str(row["module"]), float(row["curve_value"]), float(row["x_value"]), str(row["dataset"]), str(row["model"]), int(row["num_clients"])))
     return summary_rows, client_rows
@@ -184,11 +186,11 @@ def format_value(value: object, digits: int = 4) -> str:
     return f"{numeric_value:.{digits}f}"
 
 
-def write_summary(path: Path, root: Path, rows: list[dict[str, object]]) -> None:
+def write_summary(path: Path, roots: list[Path], rows: list[dict[str, object]]) -> None:
     lines = [
         "# LAMP-Merge Full-Scope Interaction Hyperparameter Analysis",
         "",
-        f"Experiment root: `{root}`.",
+        "Experiment roots: " + ", ".join(f"`{root}`" for root in roots) + ".",
         "",
         "Every grid point evaluates the full formal medical benchmark: five datasets, four vision backbones, three client counts, and three Dirichlet skew levels. A complete point therefore contains 180 raw cells and 60 client-average cells.",
         "",
@@ -293,7 +295,7 @@ def main() -> None:
     )
     write_summary(args.summary_md, args.root, summary_rows)
     plot(summary_rows, args.figure_path)
-    expected_points = 50
+    expected_points = args.expected_points if args.expected_points is not None else len(summary_rows)
     completed_points = sum(1 for row in summary_rows if row["raw_cells"] == 180 and row["client_average_cells"] == 60)
     print(f"completed_points={completed_points}/{expected_points}")
     print(f"wrote {args.output_csv}")
