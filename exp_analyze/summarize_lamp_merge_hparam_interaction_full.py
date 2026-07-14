@@ -198,7 +198,8 @@ def write_summary(path: Path, root: Path, rows: list[dict[str, object]]) -> None
         "| --- | --- | ---: | ---: | ---: | ---: | ---: |",
     ]
     for row in rows:
-        curve = f"${row['curve_symbol']}={format_value(row['curve_value'], 2)}$"
+        curve_symbol = {"gamma": r"\gamma", "tau": r"\tau"}.get(str(row["curve_symbol"]), str(row["curve_symbol"]))
+        curve = f"${curve_symbol}={format_value(row['curve_value'], 2)}$"
         x_value = format_value(row["x_value"], 2)
         lines.append(
             f"| {row['module']} | {curve} | {x_value} | {row['raw_cells']} | {format_value(row['raw_mean_acc'])} | {row['client_average_cells']} | {format_value(row['client_average_mean_acc'])} |"
@@ -215,8 +216,8 @@ def plot(rows: list[dict[str, object]], figure_path: Path) -> None:
 
     module_order = ["diagnostic prototype reconstruction", "long-tail prevalence calibration"]
     module_labels = {
-        "diagnostic prototype reconstruction": (r"Diagnostic prototype reconstruction: scan $s$ at fixed $\gamma$", r"$s$", r"$\gamma$", 0.45),
-        "long-tail prevalence calibration": (r"Long-tail prevalence calibration: scan $\lambda$ at fixed $\tau$", r"$\lambda$", r"$\tau$", 2.5),
+        "diagnostic prototype reconstruction": (r"Diagnostic prototype reconstruction: scan $s$ at fixed $\gamma$", r"$s$", r"\gamma", 0.45),
+        "long-tail prevalence calibration": (r"Long-tail prevalence calibration: scan $\lambda$ at fixed $\tau$", r"$\lambda$", r"\tau", 2.5),
     }
     colors = ["#4E79A7", "#59A14F", "#F2CF5B", "#E15759", "#9C755F"]
     markers = ["o", "s", "D", "^", "P"]

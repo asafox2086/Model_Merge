@@ -266,6 +266,48 @@ def plot_dataset_accuracy_heatmap(rows: list[dict[str, str]], output_dir: Path) 
     plt.close(fig)
 
 
+def plot_module_ablation_by_dataset(rows: list[dict[str, str]], output_dir: Path) -> None:
+    plt = configure_matplotlib()
+    row_by_dataset = {row["dataset"]: row for row in rows}
+    methods = [
+        ("LAMP-Merge", "LAMP-Merge", "#F2C14E"),
+        ("M1 only", "Diagnostic prototype\nreconstruction", "#5E739B"),
+        ("avg", "Weight averaging", "#4B5563"),
+    ]
+    x_positions = np.arange(len(DATASETS))
+    width = 0.23
+    figure, axis = plt.subplots(figsize=(10.8, 3.9), constrained_layout=True)
+    highest_value = 0.0
+    for method_index, (column, label, color) in enumerate(methods):
+        values = [float(row_by_dataset[dataset][f"{column}_mean_acc"]) for dataset in DATASETS]
+        highest_value = max(highest_value, max(values))
+        bars = axis.bar(
+            x_positions + (method_index - 1) * width,
+            values,
+            width=width,
+            color=color,
+            label=label,
+        )
+        for bar, value in zip(bars, values):
+            axis.text(
+                bar.get_x() + bar.get_width() / 2,
+                value + 0.018,
+                f"{value:.3f}",
+                ha="center",
+                va="bottom",
+                fontsize=8.8,
+                color="#30343B",
+            )
+    axis.set_xticks(x_positions, [DATASET_LABELS[dataset] for dataset in DATASETS])
+    axis.set_ylabel("Client-average accuracy")
+    axis.set_ylim(0.0, max(0.9, highest_value * 1.14))
+    axis.grid(axis="y", color="#D8DCE3", linewidth=0.7, alpha=0.8)
+    axis.set_axisbelow(True)
+    axis.legend(ncol=3, loc="upper center", bbox_to_anchor=(0.5, 1.18), frameon=False)
+    save_figure(figure, output_dir, "module_ablation_dataset_accuracy")
+    plt.close(figure)
+
+
 def best_generic_by_dataset(rows: list[dict[str, str]]) -> dict[str, dict[str, str]]:
     output = {}
     for dataset in DATASETS:
@@ -477,6 +519,7 @@ def main() -> None:
     geometry_rows = read_csv(args.geometry_overall)
     plot_overall_metrics(internal_rows, diagnostic_rows, args.output_dir)
     plot_dataset_accuracy_heatmap(internal_dataset_rows, args.output_dir)
+    plot_module_ablation_by_dataset(internal_dataset_rows, args.output_dir)
     plot_collapse_recovery(diagnostic_rows, args.output_dir)
     plot_prediction_distributions(diagnostic_raw_rows, diagnostic_rows, args.output_dir)
     plot_prototype_geometry(geometry_rows, args.output_dir)
