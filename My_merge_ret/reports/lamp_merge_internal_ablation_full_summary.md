@@ -1,6 +1,6 @@
 # LAMP-Merge Full-Scale Internal Ablation Summary
 
-Experiment root: `/data2/liyapeng_grp/program/MedMNISTMerge/outputs/lamp_merge_internal_ablation_full_20260708_force_all_analysis_after_client_stats_internal_ablation`.
+Experiment root: `outputs/lamp_merge_internal_ablation_full_20260708_force_all_analysis_after_client_stats_internal_ablation`.
 
 Coverage: five medical image datasets, four small-model backbones, three client counts, and three Dirichlet beta values. Each ablation therefore contains 180 raw cells and 60 client-average cells when complete. The client-average metric first averages the three beta values for each fixed dataset, backbone, and client count.
 
