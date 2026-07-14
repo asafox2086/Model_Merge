@@ -80,7 +80,7 @@ DIAG_METHODS = {
 }
 
 METHOD_COLORS = {
-    "LAMP-Merge": "#B83A4B",
+    "LAMP-Merge": "#F2C14E",
     "Classifier-head aggregation": "#5E739B",
     "Global-feature mean": "#7687A5",
     "Support-only synthetic head": "#8F9DB7",
