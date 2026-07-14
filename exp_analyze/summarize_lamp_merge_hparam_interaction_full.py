@@ -215,8 +215,8 @@ def plot(rows: list[dict[str, object]], figure_path: Path) -> None:
 
     module_order = ["diagnostic prototype reconstruction", "long-tail prevalence calibration"]
     module_labels = {
-        "diagnostic prototype reconstruction": (r"Diagnostic prototype reconstruction: scan $s$ at fixed $\\gamma$", r"$s$", r"$\\gamma$", 0.45),
-        "long-tail prevalence calibration": (r"Long-tail prevalence calibration: scan $\\lambda$ at fixed $\\tau$", r"$\\lambda$", r"$\\tau$", 2.5),
+        "diagnostic prototype reconstruction": (r"Diagnostic prototype reconstruction: scan $s$ at fixed $\gamma$", r"$s$", r"$\gamma$", 0.45),
+        "long-tail prevalence calibration": (r"Long-tail prevalence calibration: scan $\lambda$ at fixed $\tau$", r"$\lambda$", r"$\tau$", 2.5),
     }
     colors = ["#4E79A7", "#59A14F", "#F2CF5B", "#E15759", "#9C755F"]
     markers = ["o", "s", "D", "^", "P"]
