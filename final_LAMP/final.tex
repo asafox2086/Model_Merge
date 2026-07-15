@@ -399,20 +399,13 @@ with default maximum calibration strength $\lambda=5.0$. The centering term prev
 
 \subsection{Optimization Objective and Algorithm}
 
-% LAMP-Merge 不在服务器端执行梯度优化。它的优化目标可以理解为构造一个同时满足两项要求的全局分类器：一方面，分类头 w_c 应来自类别支持的诊断原型；另一方面，输出 logits 应包含有界长尾先验。对于测试图像 x，最终类别得分为：
-LAMP-Merge does not perform gradient-based optimization on the server. Its objective is to construct a global classifier that satisfies two requirements: the classifier head $w_c$ should be induced by class-supported diagnostic prototypes, and the output logits should include a bounded long-tail prior when prevalence imbalance is present. For a test image $x$, the final class score is
+% LAMP-Merge 的最终分类函数整合了诊断原型重建项与长尾患病率校准项：
+The final scoring function of LAMP-Merge integrates the diagnostic prototype reconstruction term and the long-tail prevalence calibration term:
 \begin{equation}
 \ell_c(x)=w_c^\top\phi_0(T(x))+\mathbf{1}[r>\tau]\,b_c.
 \end{equation}
-
-% 最终预测由最大得分类别给出：
-The final prediction is given by
-\begin{equation}
-\hat{y}(x)=\arg\max_{c\in\{1,\ldots,C\}}\ell_c(x).
-\end{equation}
-
-% 因此，完整算法可以概括为：客户端本地计算并上传类别支持数、参考空间类别原型和患病率计数；服务器先通过诊断原型重建得到 w_c，再通过长尾患病率校准得到 b_c，最后用上述得分函数执行推理。整个过程只需要一次客户端上传，不依赖服务器端验证数据或多轮客户端通信。
-Thus, the complete algorithm proceeds as follows: clients locally compute and upload class-support counts, reference-space class prototypes, and prevalence counts; the server first obtains $w_c$ through diagnostic prototype reconstruction, then obtains $b_c$ through long-tail prevalence calibration, and finally performs inference using the score above. The whole procedure requires only one client upload and does not rely on server-side validation data or multi-round client communication.
+% 其中 tau 用于判断是否激活长尾校准，lambda 用于控制校准强度。LAMP-Merge 的单次融合流程由上述得分函数给出。
+where $\tau$ determines whether long-tail calibration is activated and $\lambda$ controls the calibration strength. The one-shot merging procedure of LAMP-Merge is summarized by the above scoring function.
 
 \section{Experiments}
 
