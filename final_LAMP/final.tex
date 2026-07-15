@@ -792,13 +792,12 @@ We further replace the prior term inside long-tail prevalence calibration. This 
 No prevalence calibration & 0.5879 & \compactdrop{0.0330} \\
 \rowcolor{gray!10}
 Uniform prevalence prior & 0.5879 & \compactdrop{0.0330} \\
-Smoothed prevalence prior & 0.6209 & \compactneutral{0.0000} \\
 \noalign{\hrule height 1.25pt}
 \end{tabular}
 \end{table}
 
-% 表*中结果说明，完全移除患病率校准或将真实先验替换为均匀先验都会降低平均准确率，说明长尾信息是完整方法的一部分。平滑先验与正式方法接近，说明 LAMP-Merge 不依赖单个精确计数的偶然波动；只要先验仍保留真实长尾结构，有界校准即可发挥作用。
-Table ~\ref{tab:prevalence-internal-ablation} shows that removing prevalence calibration or replacing the real prior with a uniform prior reduces mean ACC, confirming that long-tailed prevalence is part of the full method. The smoothed prior remains close to the official method, indicating that LAMP-Merge does not depend on accidental fluctuations of exact counts; bounded calibration remains effective as long as the prior preserves the real long-tailed structure.
+% 表*中结果说明，完全移除患病率校准或将真实先验替换为均匀先验都会降低平均准确率，说明长尾信息是完整方法的一部分。
+Table ~\ref{tab:prevalence-internal-ablation} shows that removing prevalence calibration or replacing the real prior with a uniform prior reduces mean ACC, confirming that long-tailed prevalence is part of the full method.
 
 \begin{figure*}[!t]
 \centering
@@ -933,7 +932,6 @@ The long-tail prevalence substitutions vary only the class prior used by the cal
 \item \textbf{LAMP-Merge} estimates the empirical class prior as \(\pi_c=\sum_i m_{i,c}/\sum_k\sum_i m_{i,k}\).
 \item \textbf{No prevalence calibration} removes the calibration bias by setting \(b_c\leftarrow0\).
 \item \textbf{Uniform prevalence prior} removes long-tail prevalence by setting \(\pi_c\leftarrow 1/C\), where \(C\) is the number of diagnosis classes.
-\item \textbf{Smoothed prevalence prior} uses \(\pi_c\leftarrow\sum_i(m_{i,c}+1)/\sum_k\sum_i(m_{i,k}+1)\), preserving the same prior structure with additive smoothing.
 \end{itemize}
 
 \subsubsection{2) Additional Theoretical Analysis}
