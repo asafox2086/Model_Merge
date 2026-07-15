@@ -288,13 +288,17 @@ However, our setting begins after local training has finished. Hospitals may not
 % 在本节中，我们首先正式描述单次异步医学模型融合的任务设定，并刻画通用模型融合应用于医学数据时暴露出的诊断结构病理现象，即局部诊断覆盖受限与聚合诱导预测坍缩。为校正这些内在失配，我们提出 LAMP-Merge，一个由诊断原型重建和长尾患病率校准两阶段组成的框架，如图所示。
 In this section, we first formulate the single-shot asynchronous medical model-merging problem and characterize the diagnostic-structure pathologies exposed when generic model merging is applied to medical data, namely limited local diagnostic coverage and aggregation-induced prediction collapse. To correct these intrinsic mismatches, we propose \textbf{LAMP-Merge}, a two-stage framework composed of diagnostic prototype reconstruction and long-tail prevalence calibration, as shown in Fig.~\ref{fig_method}.
 
-\subsection{Preliminaries and Problem Formulation}
+\subsection{Preliminaries}
 
-% 假设存在 K 个医学客户端。客户端 i 持有私有标注数据集 D_i={(x,y)}，其来自覆盖 C 个诊断类别的类别偏斜医学分布。令 D_i,c 表示客户端 i 中属于诊断类别 c 的样本子集。在医学划分中，D_i,c 对许多类别可能为空，因此客户端 i 只对其已见类别具有可靠监督。本文研究单次异步融合：每个客户端在本地训练后仅上传一次，服务器不能访问原始医学图像、逐样本特征、逐样本预测或服务器端验证集，也不向客户端发起多轮更新。目标是在这些约束下构建一个全局诊断模型。
-Assume $K$ medical clients. Client $i$ owns a private labeled dataset $D_i=\{(x,y)\}$ drawn from a class-skewed medical distribution over $C$ diagnosis classes. Let $D_{i,c}$ denote the subset of client $i$ belonging to diagnosis class $c$. In medical partitions, $D_{i,c}$ can be empty for many classes; therefore, client $i$ has reliable supervision only for its observed classes. We study single-shot asynchronous merging: after local training, each client uploads only once, while the server cannot access raw medical images, per-sample features, per-sample predictions, or a server-side validation set, and does not issue multi-round updates to clients. The goal is to construct a global diagnostic model under these constraints.
+\subsubsection{Problem Formulation.}
 
-% 客户端允许上传类别级统计量。具体而言，n_i,c 表示类别支持数，m_i,c 表示类别患病率计数，mu_i,c 表示在共享参考特征空间中计算得到的类别原型。服务器仅利用本地检查点接口和这些类别级统计执行一次融合。该问题不同于联邦学习，因为客户端不会根据服务器反馈继续优化；也不同于标准模型融合，因为类别证据是否存在本身成为融合变量。
-Clients are allowed to upload class-level statistics. Specifically, $n_{i,c}$ denotes the class-support count, $m_{i,c}$ denotes the class-prevalence count, and $\mu_{i,c}$ denotes the class prototype computed in a shared reference feature space. The server performs one merge using only the local checkpoint interfaces and these class-level statistics. This setting differs from federated learning because clients do not continue optimization from server feedback; it also differs from standard model merging because the presence of class-level diagnostic evidence becomes an explicit merging variable.
+% 假设存在 K 个医学客户端。客户端 i 持有私有标注数据集 D_i={(x,y)}，其来自覆盖 C 个诊断类别的类别偏斜医学分布。令 D_i,c 表示客户端 i 中属于诊断类别 c 的样本子集。在医学划分中，D_i,c 对许多类别可能为空，因此客户端 i 只对其已见类别具有可靠监督。目标是在这些条件下构建一个全局诊断模型。
+Assume $K$ medical clients. Client $i$ owns a private labeled dataset $D_i=\{(x,y)\}$ drawn from a class-skewed medical distribution over $C$ diagnosis classes. Let $D_{i,c}$ denote the subset of client $i$ belonging to diagnosis class $c$. In medical partitions, $D_{i,c}$ can be empty for many classes; therefore, client $i$ has reliable supervision only for its observed classes. The goal is to construct a global diagnostic model under this partial and heterogeneous diagnostic-label coverage.
+
+\subsubsection{Upload and Server Constraints.}
+
+% 本文研究单次异步融合：每个客户端在本地训练后仅上传一次，服务器不能访问原始医学图像、逐样本特征、逐样本预测或服务器端验证集，也不向客户端发起多轮更新。客户端允许上传类别级统计量。具体而言，n_i,c 表示类别支持数，m_i,c 表示类别患病率计数，mu_i,c 表示在共享参考特征空间中计算得到的类别原型。服务器仅利用本地检查点接口和这些类别级统计执行一次融合。该问题不同于联邦学习，因为客户端不会根据服务器反馈继续优化；也不同于标准模型融合，因为类别证据是否存在本身成为融合变量。
+We study single-shot asynchronous merging: after local training, each client uploads only once, while the server cannot access raw medical images, per-sample features, per-sample predictions, or a server-side validation set, and does not issue multi-round updates to clients. Clients are allowed to upload class-level statistics. Specifically, $n_{i,c}$ denotes the class-support count, $m_{i,c}$ denotes the class-prevalence count, and $\mu_{i,c}$ denotes the class prototype computed in a shared reference feature space. The server performs one merge using only the local checkpoint interfaces and these class-level statistics. This setting differs from federated learning because clients do not continue optimization from server feedback; it also differs from standard model merging because the presence of class-level diagnostic evidence becomes an explicit merging variable.
 
 \subsection{Motivation}
 
