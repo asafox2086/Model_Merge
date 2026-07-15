@@ -302,15 +302,15 @@ We study single-shot asynchronous merging: after local training, each client upl
 
 \subsection{Motivation}
 
-% 尽管通用模型融合具有训练成本低和参数效率高的优势，但我们发现其诊断结构在医学模型融合中会严重退化。我们通过预测分布诊断和类别支持分析揭示了两种关键异常现象。
-Although generic model merging is training-free and parameter-efficient, we find that its diagnostic structure can severely degenerate in medical model merging. Prediction-distribution diagnosis and class-support analysis reveal two key abnormalities:
+% 尽管通用模型融合具有训练成本低和参数效率高的优势，但我们发现其诊断结构在医学模型融合中会严重退化。我们通过预测分布诊断和患病率分析揭示了两种关键异常现象。
+Although generic model merging is training-free and parameter-efficient, we find that its diagnostic structure can severely degenerate in medical model merging. Prediction-distribution diagnosis and prevalence analysis reveal two key abnormalities:
 \begin{itemize}
-    \item \textbf{Limited local diagnostic coverage.} Each local checkpoint is a partial diagnostic expert: it can provide reliable evidence for classes present in $D_i$, but lacks supervised support for missing classes. Treating all local checkpoints as complete global-task replicas therefore introduces unsupported class directions into the merge.
-    \item \textbf{Aggregation-induced prediction collapse.} Under partial class coverage, parameter-level merging can turn several non-degenerate local predictors into a globally collapsed predictor. The merged model tends to allocate most test images to a few dominant classes; because medical prevalence is often long-tailed, this collapse can still appear competitive in raw accuracy.
+    \item \textbf{Aggregation-induced prediction collapse.} Under partial diagnostic coverage, parameter-level merging can turn several locally useful predictors into a globally collapsed predictor. The merged model tends to allocate most test images to a few dominant classes, indicating that global class-discriminative structure has not been reconstructed.
+    \item \textbf{Prevalence prior cannot be ignored.} Medical datasets often exhibit clinically meaningful long-tailed prevalence. Therefore, completely suppressing majority-class dominance is also inappropriate: a collapsed predictor is undesirable, but a merger should still preserve calibrated disease prevalence when the dominant class reflects the true clinical prior.
 \end{itemize}
 
-% 上述现象表明，医学模型融合的核心不应是寻找全局参数空间中的平均点，而应是恢复类别条件诊断证据，并在此基础上保留真实长尾患病率。LAMP-Merge 因此将融合目标从参数空间共识转向诊断空间证据重建。
-These observations suggest that medical model merging should not seek only an average point in the global parameter space. Instead, it should recover class-conditional diagnostic evidence and then preserve genuine long-tail prevalence. LAMP-Merge therefore shifts the merge target from parameter-space consensus to diagnosis-space evidence reconstruction.
+% 上述现象分别对应 LAMP-Merge 的两个设计目标：首先通过诊断原型重建恢复多类别判别结构，其次通过长尾患病率校准保留真实类别先验。LAMP-Merge 因此将融合目标从参数空间共识转向诊断空间证据重建。
+These observations correspond to the two design targets of LAMP-Merge: first, reconstructing multiclass discriminative structure through diagnostic prototypes; second, preserving the real class prior through long-tail prevalence calibration. LAMP-Merge therefore shifts the merge target from parameter-space consensus to diagnosis-space evidence reconstruction.
 
 \subsection{Overview}
 
