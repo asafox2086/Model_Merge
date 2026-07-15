@@ -222,8 +222,14 @@ Index Terms:medical model merging, asynchronous fusion, predictive collapse, lon
 
 \section{Introduction}
 
-% 医学人工智能越来越依赖多中心协作：单个医院通常难以覆盖稳健诊断部署所需的完整疾病谱、罕见病例和成像条件。然而，隐私法规、设备异质性和院内流程使原始影像集中化变得不现实。这推动了一种训练后协作范式：各医院在本地完成训练，并仅暴露有限信息以支持全局模型构建。
-Medical artificial intelligence increasingly depends on \textbf{multicenter collaboration}: a single hospital rarely covers the full disease spectrum, rare cases, and acquisition conditions required for robust diagnostic deployment \cite{sheller2020federated,rieke2020future,kairouz2021advances}. However, privacy regulations, device heterogeneity, and institutional workflows make \textbf{centralizing raw images impractical} \cite{kaissis2020secure,bonawitz2019towards,abadi2016deep}. This motivates a post-training collaboration paradigm in which hospitals train locally and expose only limited information for global model construction.
+% 联邦学习和模型融合为隐私敏感的多中心医学智能提供了两条重要协作路径。联邦学习允许医院在不共享原始数据的情况下进行协同训练，模型融合则进一步降低通信和训练成本，使已经独立训练完成的本地模型能够在训练后被整合为一个统一模型。这两类方法对于医学影像尤其有吸引力：一方面，单个医院通常难以覆盖完整疾病谱、罕见病例和多样化成像条件；另一方面，隐私法规、设备差异和院内流程使原始医学影像集中化难以实现。因此，若能在不暴露原始数据的前提下整合多中心知识，将为真实临床部署提供一种高效且可行的协作机制。
+Federated learning and model merging provide two important collaboration routes for privacy-sensitive multicenter medical intelligence. Federated learning enables hospitals to train collaboratively without sharing raw data, while model merging further reduces communication and optimization costs by integrating independently trained local models after training. These paradigms are particularly attractive for medical imaging: a single hospital rarely covers the full disease spectrum, rare cases, and diverse acquisition conditions, whereas privacy regulations, device heterogeneity, and institutional workflows make centralized raw-image collection impractical \cite{sheller2020federated,rieke2020future,kairouz2021advances,kaissis2020secure,bonawitz2019towards,abadi2016deep}. Therefore, integrating multicenter knowledge without exposing raw data is a practical and efficient route toward real clinical deployment.
+
+% 尽管模型融合和联邦学习相关范式在自然图像和通用视觉任务中取得了成功，将其迁移到医学数据仍然面临挑战。关键在于，通用模型融合通常隐含假设不同客户端检查点包含相对完整且可比较的全局判别结构，即各本地模型可以在参数空间、任务向量空间或更新方向上直接对齐。然而，该范式在医学场景中并不成立。医疗中心之间不仅存在设备域偏移，还存在诊断类别可及性差异：某些中心可能只覆盖常见病或特定检查类型，而缺乏罕见疾病样本。由此得到的本地模型不是全局任务的完整副本，而是由本地可见疾病支撑的局部诊断专家。
+Despite their success on natural images and general visual tasks, transferring these paradigms to medical data remains challenging. A key reason is that general-purpose model merging implicitly assumes that different client checkpoints contain relatively complete and comparable global discriminative structures; local models are expected to align through parameter space, task-vector space, or update directions. This assumption does not hold in medical scenarios. Medical centers differ not only in device domains but also in diagnostic-class availability: some centers may mainly cover common diseases or specific examination types, while having few rare-disease samples \cite{9557808,10.1371/journal.pmed.1002683,li2021fedbn}. The resulting local models are not complete replicas of the global task, but partial diagnostic experts supported by locally observed diseases.
+
+% 如图 1 所示，我们将这些挑战归纳为医学模型融合中的两种诊断结构异常特征：(1) 客户端内部：局部诊断覆盖受限。每个客户端只对其已见类别具有可靠监督，因此本地模型虽然可能具有较强的局部判别能力，却缺乏完整全局诊断空间中的判别证据。(2) 客户端间：聚合诱导预测坍缩。类别覆盖不一致和长尾患病率会使通用融合方法混合可靠、缺失和冲突的类别方向，导致融合后的全局模型把预测集中到少数主导类别。更隐蔽的是，医学长尾分布可能使这种坍缩在原始准确率上看似具有竞争力，从而掩盖其全局诊断能力不足。
+As illustrated in Fig.~\ref{fig:intro-collapse}, we summarize these challenges as two diagnostic-structure abnormalities in medical model merging: (1) \textbf{Intra-client: limited local diagnostic coverage}. Each client has reliable supervision only for observed classes; thus, a local model may be locally discriminative but still lack evidence for the full global diagnostic space. (2) \textbf{Inter-client: aggregation-induced prediction collapse}. Inconsistent class coverage and long-tailed prevalence can cause generic merging methods to mix reliable, absent, and conflicting class directions, making the merged global model concentrate predictions on a few dominant classes. More subtly, long-tailed medical distributions can make such collapse appear competitive under raw accuracy, thereby hiding insufficient global diagnostic discrimination \cite{BUDA2018249,5597285}.
 
 \begin{figure}[t]
     \centering
@@ -232,6 +238,9 @@ Medical artificial intelligence increasingly depends on \textbf{multicenter coll
     \label{fig:intro-collapse}
 \end{figure}
 
+% 为解决这些问题，我们提出 LAMP-Merge，一种面向单次异步医学图像模型融合的长尾感知医学原型融合方法。该方法将融合目标从全局参数插值转变为类别级诊断证据重建。其核心思想是使用客户端上传的类别级统计作为全局诊断空间的同步信号，在不访问原始医学图像、不使用服务器端验证集且不进行多轮联邦通信的条件下重建全局诊断分类器。具体而言，LAMP-Merge 包含两个关键机制：诊断原型重建利用共享参考特征空间中的类别原型聚合可靠的类别级证据；长尾患病率校准利用客户端上传的类别计数引入有界先验偏置，从而在缓解预测坍缩的同时保留具有临床意义的多数类患病率。
+To address these issues, we propose \textbf{LAMP-Merge}, a long-tail-aware medical prototype-merging method for single-shot asynchronous medical image model merging. LAMP-Merge shifts the merge target from global parameter interpolation to class-level diagnostic-evidence reconstruction. The key idea is to use client-uploaded class-level statistics as a synchronization signal for the global diagnostic space, allowing the server to reconstruct a global diagnostic classifier without accessing raw medical images, using a server-side validation set, or conducting multi-round federated communication. Specifically, LAMP-Merge consists of two mechanisms: diagnostic prototype reconstruction aggregates reliable class-level evidence through prototypes in a shared reference feature space, and long-tail prevalence calibration injects a bounded prior bias from client-uploaded class counts, thereby mitigating prediction collapse while preserving clinically meaningful majority-class prevalence.
+
 \begin{figure*}[t]
     \centering
     \includegraphics[width=0.92\textwidth,height=0.34\textheight]{figures/method.png}
@@ -239,21 +248,12 @@ Medical artificial intelligence increasingly depends on \textbf{multicenter coll
     \label{fig_method}
 \end{figure*}
 
-% 这一现实约束导向单次异步模型融合。不同医院可能在不同时间完成训练，也可能无法像传统联邦或去中心化协议那样持续参与全局更新。因此，服务器必须在不访问原始医学图像的前提下，仅依赖每个客户端的一次上传构建可部署的全局诊断模型。
-This practical constraint leads to \textbf{single-shot asynchronous model merging}. Hospitals may finish training at different times and may not remain available for repeated global updates, as required by conventional federated and decentralized protocols\cite{pmlr-v54-mcmahan17a,li2020fedprox,karimireddy2020scaffold,warnat-herresthal_swarm_2021}. The server must therefore construct one deployable diagnostic model from \textbf{exactly one upload per client}, without accessing raw medical images.
-
-% 医学图像使该协议与标准检查点融合存在本质差异。医院之间的差异不仅来自设备域偏移，还来自诊断类别可及性：一个中心可能拥有大量常见病样本，却几乎没有罕见疾病；另一个中心则可能覆盖不同的诊断子集。因此，本地模型并非全局任务的独立副本，而是只对已见类别具有可靠证据的局部诊断专家。此外，医学标签通常呈长尾分布，多数类占优可能是具有临床意义的真实患病率，而不是单纯噪声。有效的融合方法必须恢复分散的类别证据，同时避免抹除真实患病率。
-Medical imaging makes this protocol fundamentally different from standard checkpoint merging. Hospitals differ not only in device domains but also in \textbf{diagnostic-class availability} \cite{9557808,10.1371/journal.pmed.1002683,li2021fedbn}: one site may contain abundant common cases but few rare diseases, while another may cover a different subset. As a result, local models are not independent replicas of the global task; they are partial diagnostic experts with reliable evidence only for observed classes. In addition, medical labels are often \textbf{long-tailed}, so majority-class dominance may be clinically real rather than mere noise \cite{BUDA2018249,5597285}. A useful merge must therefore recover distributed class evidence without erasing meaningful prevalence.
-
-% 为解决上述错配，本文提出 LAMP-Merge，一种长尾感知医学原型融合框架。与将融合视为全局参数插值不同，LAMP-Merge 将其重构为类别级诊断证据重建。每个客户端使用共享参考特征提取器计算类别原型和患病率计数，服务器据此重建全局原型分类器，并施加有界患病率校准。整个流程仅需一次上传，且不暴露原始图像、逐样本特征、logits 或预测。
-To address this mismatch, we propose \textbf{LAMP-Merge}, a long-tail-aware medical prototype-merging framework. Instead of treating merging as global parameter interpolation, LAMP-Merge recasts it as \textbf{class-level diagnostic-evidence reconstruction}. Each client computes class prototypes and prevalence counts with a shared reference extractor, while the server reconstructs a global prototype classifier and applies bounded prevalence calibration. The procedure requires one upload and never exposes raw images, per-sample features, logits, or predictions.
-
-% 本文贡献概括如下。第一，问题重审：我们形式化单次异步医学图像模型融合，其中独立训练的客户端仅提供一次上传用于全局模型构建。第二，失效诊断：我们指出诊断类别可及性异质和疾病患病率长尾是使通用融合方法容易发生预测坍缩的关键结构。第三，医学原型融合：我们提出 LAMP-Merge，通过客户端侧类别原型和患病率统计重建全局诊断分类器，同时不暴露原始医学图像。
-Our contributions are summarized as follows:
+% 我们的主要贡献总结如下：
+Our main contributions are summarized as follows:
 \begin{itemize}
-    \item \textbf{Problem Revisit.} We formalize single-shot asynchronous medical image model merging, where independently trained clients provide one upload for global model construction.
-    \item \textbf{Failure Diagnosis.} We identify heterogeneous diagnostic-class availability and long-tailed disease prevalence as the structures that make general-purpose merging prone to prediction collapse.
-    \item \textbf{Medical Prototype Merging.} We propose LAMP-Merge, which reconstructs a global diagnostic classifier from client-side class prototypes and prevalence statistics without exposing raw images.
+    \item \textbf{Medical Merging Diagnosis.} We revisit model merging under single-shot asynchronous medical collaboration and identify limited local diagnostic coverage and aggregation-induced prediction collapse as two key abnormalities caused by medical class availability and long-tailed prevalence.
+    \item \textbf{LAMP-Merge.} We propose a long-tail-aware medical prototype-merging method that reconstructs a global diagnostic classifier from client-side class prototypes and prevalence statistics without exposing raw images or requiring multi-round federated optimization.
+    \item \textbf{Empirical Validation.} We conduct full-scope experiments on five medical image datasets, four vision-model families, three client-population sizes, and three non-IID skew levels, showing that LAMP-Merge consistently outperforms strong model-merging baselines and improves prediction-collapse diagnostics.
 \end{itemize}
 
 \section{Related Works}
