@@ -285,13 +285,28 @@ However, our setting begins after local training has finished. Hospitals may not
 
 \section{Method}
 
-\subsection{Motivation and Overall Idea}
+% 在本节中，我们首先正式描述单次异步医学模型融合的任务设定，并刻画通用模型融合应用于医学数据时暴露出的诊断结构病理现象，即局部诊断覆盖受限与聚合诱导预测坍缩。为校正这些内在失配，我们提出 LAMP-Merge，一个由诊断原型重建和长尾患病率校准两阶段组成的框架，如图所示。
+In this section, we first formulate the single-shot asynchronous medical model-merging problem and characterize the diagnostic-structure pathologies exposed when generic model merging is applied to medical data, namely limited local diagnostic coverage and aggregation-induced prediction collapse. To correct these intrinsic mismatches, we propose \textbf{LAMP-Merge}, a two-stage framework composed of diagnostic prototype reconstruction and long-tail prevalence calibration, as shown in Fig.~\ref{fig_method}.
 
-% 在局部类别覆盖不完整时，参数级融合会把多个未坍缩的局部预测器转化为全局坍缩预测器。我们将这一行为概括为诊断证据错配：本地检查点包含类别特异证据，而通用融合将所有参数方向都视为全局可比较。由于医学患病率通常呈长尾分布，坍缩预测器仍可能在原始准确率上表现得具有竞争力。因此，有效的融合方法必须恢复罕见类别判别能力，同时不丢弃真实患病率。
-Under partial local class coverage, parameter-level merging can turn several non-degenerate local predictors into a globally collapsed predictor. We summarize this behavior as a diagnostic-evidence mismatch: local checkpoints contain class-specific evidence, whereas generic merging treats all parameter directions as globally comparable. Because medical prevalence is often long-tailed, the collapsed predictor can still appear competitive in raw accuracy. A useful merger must therefore recover rare-class discrimination without discarding genuine prevalence.
+\subsection{Preliminaries and Problem Formulation}
 
-% 为解决这一问题，LAMP-Merge 将融合目标从参数空间共识转向诊断空间证据重建。诊断原型重建在共享参考空间中聚合具有类别支持的证据，以恢复全局多类别方向。长尾患病率校准随后根据客户端侧计数施加有界先验偏置，在不替代这些判别方向的前提下保留具有临床意义的多数类患病率。该设计将判别证据重建与患病率校准解耦，使模型能够在不进行额外联邦训练、不暴露原始数据的条件下完成稳健的单次融合。
-To address this issue, LAMP-Merge shifts the merge target from parameter-space consensus to diagnosis-space evidence reconstruction. Diagnostic prototype reconstruction aggregates class-supported evidence in a shared reference space to recover global multiclass directions. Long-tail prevalence calibration then applies a bounded prior bias estimated from client-side counts, preserving clinically meaningful majority prevalence without replacing those directions. This design separates \textbf{discriminative evidence reconstruction} from \textbf{prevalence calibration}, enabling robust one-shot merging without additional federated training or raw-data exposure.
+% 假设存在 K 个医学客户端。客户端 i 持有私有标注数据集 D_i={(x,y)}，其来自覆盖 C 个诊断类别的类别偏斜医学分布。令 D_i,c 表示客户端 i 中属于诊断类别 c 的样本子集。在医学划分中，D_i,c 对许多类别可能为空，因此客户端 i 只对其已见类别具有可靠监督。本文研究单次异步融合：每个客户端在本地训练后仅上传一次，服务器不能访问原始医学图像、逐样本特征、逐样本预测或服务器端验证集，也不向客户端发起多轮更新。目标是在这些约束下构建一个全局诊断模型。
+Assume $K$ medical clients. Client $i$ owns a private labeled dataset $D_i=\{(x,y)\}$ drawn from a class-skewed medical distribution over $C$ diagnosis classes. Let $D_{i,c}$ denote the subset of client $i$ belonging to diagnosis class $c$. In medical partitions, $D_{i,c}$ can be empty for many classes; therefore, client $i$ has reliable supervision only for its observed classes. We study single-shot asynchronous merging: after local training, each client uploads only once, while the server cannot access raw medical images, per-sample features, per-sample predictions, or a server-side validation set, and does not issue multi-round updates to clients. The goal is to construct a global diagnostic model under these constraints.
+
+% 客户端允许上传类别级统计量。具体而言，n_i,c 表示类别支持数，m_i,c 表示类别患病率计数，mu_i,c 表示在共享参考特征空间中计算得到的类别原型。服务器仅利用本地检查点接口和这些类别级统计执行一次融合。该问题不同于联邦学习，因为客户端不会根据服务器反馈继续优化；也不同于标准模型融合，因为类别证据是否存在本身成为融合变量。
+Clients are allowed to upload class-level statistics. Specifically, $n_{i,c}$ denotes the class-support count, $m_{i,c}$ denotes the class-prevalence count, and $\mu_{i,c}$ denotes the class prototype computed in a shared reference feature space. The server performs one merge using only the local checkpoint interfaces and these class-level statistics. This setting differs from federated learning because clients do not continue optimization from server feedback; it also differs from standard model merging because the presence of class-level diagnostic evidence becomes an explicit merging variable.
+
+\subsection{Motivation}
+
+% 尽管通用模型融合具有训练成本低和参数效率高的优势，但我们发现其诊断结构在医学模型融合中会严重退化。我们通过预测分布诊断和类别支持分析揭示了两种关键异常现象。
+Although generic model merging is training-free and parameter-efficient, we find that its diagnostic structure can severely degenerate in medical model merging. Prediction-distribution diagnosis and class-support analysis reveal two key abnormalities:
+\begin{itemize}
+    \item \textbf{Limited local diagnostic coverage.} Each local checkpoint is a partial diagnostic expert: it can provide reliable evidence for classes present in $D_i$, but lacks supervised support for missing classes. Treating all local checkpoints as complete global-task replicas therefore introduces unsupported class directions into the merge.
+    \item \textbf{Aggregation-induced prediction collapse.} Under partial class coverage, parameter-level merging can turn several non-degenerate local predictors into a globally collapsed predictor. The merged model tends to allocate most test images to a few dominant classes; because medical prevalence is often long-tailed, this collapse can still appear competitive in raw accuracy.
+\end{itemize}
+
+% 上述现象表明，医学模型融合的核心不应是寻找全局参数空间中的平均点，而应是恢复类别条件诊断证据，并在此基础上保留真实长尾患病率。LAMP-Merge 因此将融合目标从参数空间共识转向诊断空间证据重建。
+These observations suggest that medical model merging should not seek only an average point in the global parameter space. Instead, it should recover class-conditional diagnostic evidence and then preserve genuine long-tail prevalence. LAMP-Merge therefore shifts the merge target from parameter-space consensus to diagnosis-space evidence reconstruction.
 
 \subsection{Overview}
 
@@ -305,9 +320,6 @@ Notably, LAMP-Merge neither requires the server to access clients' raw images no
 The framework contains two components. The first reconstructs multiclass diagnostic directions from class-supported prototypes, counteracting aggregation-induced collapse. The second injects a bounded long-tail prior, preventing the reconstruction step from overcorrecting clinically meaningful majority prevalence.
 
 \subsection{Diagnostic Prototype Reconstruction Module}
-% 假设存在 K 个医学客户端。客户端 i 持有私有标注数据集 D_i={(x,y)}，其来自覆盖 C 个诊断类别的类别偏斜医学分布。令 D_i,c 表示客户端 i 中属于诊断类别 c 的样本子集。在医学划分中，D_i,c 对许多类别可能为空。因此，客户端对已见诊断类别可以提供可靠证据，但对未见类别不具备监督支撑。类别无关的参数融合无法显式保留这种局部可靠性结构。
-Assume $K$ medical clients. Client $i$ owns a private labeled dataset $D_i=\{(x,y)\}$ drawn from a class-skewed medical distribution over $C$ diagnosis classes. Let $D_{i,c}$ denote the subset of client $i$ belonging to diagnosis class $c$. In medical partitions, $D_{i,c}$ can be empty for many classes. Thus, a client can be reliable for a subset of diagnoses but unreliable for unseen classes. A class-agnostic parameter merge has no explicit mechanism to preserve this local reliability structure.
-
 
 % 因此，LAMP-Merge 首先在共享参考特征空间中重建逐类别诊断头。令 phi_0 表示本地训练前由共享模型配置实例化得到的冻结参考骨干网络，T(.) 表示评估变换。对于每个诊断类别 c，客户端 i 计算参考空间类别原型 mu_i,c，其中 n_i,c=|D_i,c| 是类别支持数。若 n_i,c=0，则客户端对该类别上传零支持数，并且不贡献原型证据。
 Therefore, LAMP-Merge first reconstructs a class-wise diagnostic head in the shared reference feature space. Let $\phi_0$ be the frozen reference backbone instantiated from the shared model configuration before local training, and let $T(\cdot)$ be the evaluation transform. For each diagnosis class $c$, client $i$ computes a reference-space class prototype
