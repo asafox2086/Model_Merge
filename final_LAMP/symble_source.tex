@@ -69,9 +69,6 @@
 \newcommand{\gaindown}[1]{\makebox[5.85em][l]{\textcolor{DropRed}{\(\downarrow\)#1}}}
 \newcommand{\dropdown}[1]{\makebox[5.85em][l]{\textcolor{DropRed}{\(\downarrow\)#1}}}
 \newcommand{\neutraldelta}[1]{\makebox[5.85em][l]{\textcolor{GainGreen}{#1}}}
-\newcommand{\compactdrop}[1]{\textcolor{DropRed}{\(\downarrow\)#1}}
-\newcommand{\compactgain}[1]{\textcolor{DropRed}{\(\uparrow\)#1}}
-\newcommand{\compactneutral}[1]{\textcolor{GainGreen}{#1}}
 
 % DISALLOWED PACKAGES
 % \usepackage{authblk} -- This package is specifically forbidden
@@ -240,10 +237,10 @@ Medical artificial intelligence increasingly requires \textbf{multicenter collab
 \end{figure*}
 
 % 这一现实背景产生了一个单次异步的模型融合需求。不同医院不一定同时在线，也不一定有条件在全局模型更新后反复重新训练；某些中心可能更早完成训练，某些中心可能只在固定窗口内上传模型。与此同时，服务器在部署阶段需要得到一个可供统一使用的全局诊断模型，而不是多个彼此独立、覆盖范围有限的本地模型。因此，本文研究一种模型融合场景：每个客户端只上传一次，服务器在不侵犯患者隐私(不读取客户端原始医学图像)的条件下合成一个共享检查点。
-This setting naturally leads to \textbf{single-shot asynchronous model merging}. Hospitals may finish training at different times and may be unable to participate in repeated global updates, as assumed by conventional federated and decentralized protocols\cite{pmlr-v54-mcmahan17a,li2020fedprox,karimireddy2020scaffold,warnat-herresthal_swarm_2021}. The server must therefore construct one deployable diagnostic model from \textbf{exactly one upload per client}, without accessing raw medical images.
+This setting requires \textbf{single-shot asynchronous model merging}. Hospitals may complete training at different times and cannot necessarily participate in repeated global updates, as assumed by conventional federated and decentralized training protocols\cite{pmlr-v54-mcmahan17a,li2020fedprox,karimireddy2020scaffold,warnat-herresthal_swarm_2021}. The server must therefore construct one deployable diagnostic model from \textbf{exactly one upload per client}, without accessing raw medical images.
 
 % 医学图像使这一问题具有特殊难度。医院之间的差异不仅表现为图像风格或设备域偏移，还表现为诊断类别可及性的差异：一个中心可能积累了某些常见病或常规检查的大量样本，却几乎没有某些罕见诊断；另一个中心可能具有相反的病例结构。由此得到的本地模型并不是完整全局任务的独立副本，而是带有局部诊断证据的部分专家。更重要的是，医学类别分布通常呈长尾结构，多数类诊断可能占据大量样本，而少数类诊断仍然具有临床意义。一个有效的融合方法必须同时保留分散在不同客户端中的类别证据，并避免把真实长尾患病率误解释为无意义噪声。
-Medical imaging makes the problem especially difficult because hospitals differ not only in device domains but also in \textbf{diagnostic-class availability} \cite{9557808,10.1371/journal.pmed.1002683,li2021fedbn}. We identify two coupled failure factors: local models behave as partial experts with reliable evidence only for observed diagnoses, while medical labels are often \textbf{long-tailed}. A useful merge must therefore recover distributed class-specific evidence while preserving clinically meaningful prevalence \cite{BUDA2018249,5597285}.
+Medical imaging makes the problem especially difficult because hospitals differ not only in device domain but also in \textbf{diagnostic-class availability} \cite{9557808,10.1371/journal.pmed.1002683,li2021fedbn}. Local models are partial experts: a client may provide strong evidence for common diagnoses while lacking rare ones. Moreover, medical labels are often \textbf{long-tailed}, so a useful merge must preserve distributed class-specific evidence while respecting genuine prevalence \cite{BUDA2018249,5597285}.
 
 % 本文提出 LAMP-Merge，即长尾感知医学原型融合框架。其核心思想是将医学模型融合从全局参数平均问题转化为类别级诊断证据重建问题。客户端在本地使用共享参考特征提取器计算每个诊断类别的聚合原型和类别计数，并仅上传这些类别级统计及本地检查点接口。服务器随后在共享参考空间中构建全局诊断原型分类器，并在类别患病率呈现强长尾结构时引入有界的先验校准。整个过程保持单次上传，不要求服务器访问原始图像、逐样本特征、逐样本 logits 或逐样本预测。
 We propose \textbf{LAMP-Merge}, a long-tail-aware medical prototype-merging framework. It recasts global parameter averaging as \textbf{class-level diagnostic-evidence reconstruction}: each client uploads class prototypes and counts computed with a shared reference extractor, and the server constructs a global prototype classifier with bounded prevalence calibration. The procedure requires one upload and never exposes raw images, per-sample features, logits, or predictions.
@@ -263,14 +260,14 @@ Our main contributions are as follows:
 % 模型融合方法通常从参数空间、任务向量空间或几何空间整合多个检查点。权重平均和 Model Soups 直接插值模型参数；Task Arithmetic、TIES-Merging 与 DARE 处理任务增量和符号冲突；Fisher、RegMean、Model Stock、Breadcrumbs、Iso-C、FreeMerge 与 RobustMerge 进一步引入曲率、统计均值、子空间或鲁棒方向假设。然而，这些方法的核心变量仍然是全局参数、任务向量或更新方向，并不显式表示医学任务中的诊断类别证据。因此，在客户端类别覆盖不完整且患病率长尾的多中心医学图像场景中，它们容易混合“见过某类的可靠方向”和“没见过某类的缺失方向”，从而产生预测坍缩。
 Model-merging methods commonly integrate checkpoints in parameter, task-vector, or geometric spaces. Weight averaging and Model Soups interpolate model parameters\cite{izmailov2018averaging,pmlr-v162-wortsman22a}; permutation-aware matching aligns hidden-unit symmetries before averaging\cite{entezari2022role,ainsworth2023gitrebasinmergingmodels}; ZipIt performs feature-level zipping across models\cite{stoica2024zipit}; Task Arithmetic, TIES-Merging, and DARE operate on task deltas and sign conflicts\cite{ilharco2023editingmodelstaskarithmetic,yadav2023tiesmergingresolvinginterferencemerging,yu2024languagemodelssupermario}; Fisher merging, RegMean, Model Stock, Breadcrumbs, Iso-C, FreeMerge, and RobustMerge further introduce curvature, mean-statistic, subspace, or robustness assumptions\cite{matena2022mergingmodelsfisherweightedaveraging,jin2025datalessknowledgefusionmerging,jang2025modelstockneedjust,davari2024modelbreadcrumbsscalingmultitask,marczak2025taskleftbehindisotropic,zheng2025freemergingfouriertransformefficient,zeng2025robustmergeparameterefficientmodelmerging}.
 
-However, these variables are still global parameters, task vectors, or update directions rather than class-level diagnostic evidence. \textbf{They do not encode whether a client has reliable supervision for a specific medical class.} Under incomplete local class coverage and long-tailed prevalence, reliable directions from clients that observed a class can be averaged with absent or conflicting directions from clients that did not, leading to aggregation-induced prediction collapse\cite{BUDA2018249,10.1371/journal.pmed.1002683}.
+However, these variables are still global parameters, task vectors, or update directions rather than class-level diagnostic evidence. \textbf{They do not ask whether a client has reliable supervision for a specific medical class.} Under incomplete local class coverage and long-tailed prevalence, reliable directions from clients that observed a class can be averaged with absent or conflicting directions from clients that did not, leading to aggregation-induced prediction collapse\cite{BUDA2018249,10.1371/journal.pmed.1002683}.
 
 \subsection{Medical Model Merging}
 
 % 医学融合研究通常利用医学数据的领域结构，例如非规则采样时间序列、临床传感器图结构以及影像-电子病历融合。mTAN、Raindrop 和 MedFuse 表明，医学任务需要利用临床采样机制、模态异质性和患者级时间关系。然而，这些方法通常融合患者级输入或临床表征，而不是融合已经独立训练完成的图像分类器检查点；同时，它们往往需要患者样本、时间戳、多模态记录、电子病历或服务器端验证反馈。MedMerge 等训练自由医学知识迁移方法也针对视觉语言跨模态适配，而非同一任务下的单次异步检查点融合。因此，现有医学融合路线在本文约束下的核心问题是隐私与协议不匹配。
 Medical fusion studies often exploit domain structures such as irregular clinical time series, physiological sensor graphs, and image-EHR fusion. mTAN, Raindrop, and MedFuse show that medical tasks benefit from modeling clinical sampling mechanisms, modality heterogeneity, and patient-level temporal relations\cite{shukla2021multitimeattentionnetworksirregularly,zhang2022graphguidednetworkirregularlysampled,hayat2023medfusemultimodalfusionclinical}.
 
-However, these methods usually fuse patient-level inputs or clinical representations rather than independently trained image-classifier checkpoints. They often require patient samples, timestamps, multimodal records, electronic health records, or server-side validation feedback, which conflicts with common medical privacy constraints\cite{kaissis2020secure,sheller2020federated,bonawitz2019towards}. MedMerge is a relevant training-free medical knowledge-transfer framework\cite{11382027}; however, it targets cross-modal adaptation for medical vision-language models rather than asynchronous checkpoint merging for the same classification task. \textbf{Thus, existing medical fusion routes are mismatched with our privacy and single-upload protocol constraints.} LAMP-Merge keeps the medical structure uploadable by using only class-level prototypes and prevalence counts computed locally by clients.
+However, these methods usually fuse patient-level inputs or clinical representations rather than independently trained image-classifier checkpoints, and they often require patient samples, timestamps, multimodal records, electronic health records, or server-side validation feedback, which conflicts with common medical privacy constraints\cite{kaissis2020secure,sheller2020federated,bonawitz2019towards}. MedMerge is a relevant training-free medical knowledge-transfer framework\cite{11382027}; however, it targets cross-modal adaptation for medical vision-language models rather than asynchronous checkpoint merging for the same classification task. \textbf{Thus, existing medical fusion routes are mismatched with our privacy and single-upload protocol constraints.} LAMP-Merge keeps the medical structure uploadable by using only class-level prototypes and prevalence counts computed locally by clients.
 
 \subsection{Federated Learning}
 
@@ -287,12 +284,12 @@ However, our problem is single-shot asynchronous model merging after local train
 Under partial local class coverage, parameter-level merging can turn several non-degenerate local predictors into a globally collapsed predictor. Because medical prevalence is often long-tailed, such collapse can still appear competitive in raw accuracy. A useful merger must therefore recover rare-class discrimination without discarding genuine prevalence.
 
 % 为应对这些挑战，我们提出了MedMerge——一个基于类别级诊断原型重建的长尾感知医学模型融合框架，恢复完整诊断空间中的多类别判别方向，从结构上缓解融合后的单类或少数类预测坍缩。然而，为克服去除类别先验可能损害整体准确率的问题，我们进一步设计了长尾患病率校准模块。利用客户端上传的类别患病率计数估计全局诊断先验。具体而言，LAMP-Merge 包含两个核心组件：（1）一种用于聚合多个本地医学客户端中可靠的类别级知识，并重建不易发生坍缩的全局诊断分类器；（2）一种用于在保持多类别判别能力的同时，保留具有临床意义的多数类先验的策略。该设计实现了更加均衡且有效的诊断知识整合，使模型能够在不进行额外联邦训练、不暴露原始医学数据的条件下完成稳健的单次医学模型融合。
-LAMP-Merge addresses this tension with two components. Diagnostic prototype reconstruction aggregates class-supported evidence in a shared reference space to recover global multiclass directions. Long-tail prevalence calibration then applies a bounded prior bias estimated from client-side counts, preserving clinically meaningful majority prevalence without replacing those directions. This design separates \textbf{discriminative evidence reconstruction} from \textbf{prevalence calibration}, enabling robust one-shot merging without additional federated training or raw-data exposure.
+LAMP-Merge addresses this tension with two components. Diagnostic prototype reconstruction aggregates only class-supported evidence in a shared reference space to recover global multiclass directions. Long-tail prevalence calibration then applies a bounded prior bias estimated from client-side counts, preserving clinically meaningful majority prevalence without replacing those directions. The resulting one-shot protocol requires neither additional federated training nor raw-data exposure.
 
 \subsection{Overview}
 
 % LAMP-Merge 的核心框架如图所示，其核心思想是将医学模型融合从全局参数平均问题转化为类别条件诊断证据重建问题，并加以类别先验辅佐。
-The core framework of LAMP-Merge is illustrated in Fig.~\ref{fig_method}. Its central idea is to recast medical model merging from global parameter averaging into the reconstruction of class-conditional diagnostic evidence, supplemented by class-prior information.
+The core framework of LAMP-Merge is illustrated in figure\ref{fig_method}. Its central idea is to recast medical model merging from global parameter averaging into the reconstruction of class-conditional diagnostic evidence, supplemented by class-prior information.
 
 % 值得注意的是，LAMP-Merge 并不要求服务器读取客户端原始图像，也不依赖服务器端验证集、逐样本特征或逐样本预测。客户端上传的信息仅为类别级统计量，因此该框架保持单次异步通信边界，区别于需要多轮模型下发与本地再训练的联邦学习流程。
 Notably, LAMP-Merge neither requires the server to access clients’ raw images nor relies on a server-side validation set, per-sample features, or per-sample predictions. Clients upload only class-level statistics; thus, the framework preserves a single-shot asynchronous communication boundary, distinguishing it from federated learning procedures that require repeated model broadcasts and local retraining.
@@ -368,7 +365,7 @@ We compare LAMP-Merge with twelve model-merging baselines covering the main tech
 \subsubsection{3) Merging Settings:}
 
 % 实验遵循单次异步模型融合流程。每个客户端先在自己的医学图像数据上独立训练本地模型，在本地计算 LAMP-Merge 所需的类别级统计，包括类别支持数、参考空间类别原型和类别患病率计数，并与本地检查点接口一起上传一次。随后服务器只根据上传的检查点和类别级统计执行一次模型融合，并在全局测试集上评估融合模型。
-Experiments follow a single-shot asynchronous model-merging protocol. Each client independently trains a local model on its own medical imaging data and then computes the class-level statistics required by LAMP-Merge locally, including class-support counts, reference-space class prototypes, and class-prevalence counts. These statistics are uploaded once together with an interface to the local checkpoint. The server performs a single model-merging step using only the uploaded checkpoints and class-level statistics, and evaluates the resulting merged model on a global test set.
+Experiments follow a single-shot asynchronous model-merging protocol. Each client first independently trains a local model on its own medical imaging data, then computes the class-level statistics required by LAMP-Merge locally, including class-support counts, reference-space class prototypes, and class-prevalence counts. These statistics are uploaded once together with an interface to the local checkpoint. The server subsequently performs a single model-merging step using only the uploaded checkpoints and class-level statistics, and evaluates the resulting merged model on a global test set.
 
 % 我们评估四类基础视觉模型：ResNet、ConvNeXt、ViT-Tiny 和 Swin-Tiny。对于每个数据集-模型组合，我们构造非独立同分布客户端划分，客户端数量 K 属于 {3,5,7}，Dirichlet 偏斜参数 beta 属于 {0,0.01,0.1}，随机种子固定为 42。客户端平均结果先固定数据集、模型和 K，再对三个 beta 值求平均。
 We evaluate four vision-model families: ResNet, ConvNeXt, ViT-Tiny, and Swin-Tiny\cite{he2016deep,liu2022convnet,dosovitskiy2021image,liu2021swin}. For each dataset-model pair, we construct non-IID client partitions with $K\in\{3,5,7\}$ clients and Dirichlet skew parameter $\beta\in\{0,0.01,0.1\}$, using seed 42\cite{hsu2019measuringeffectsnonidenticaldata}. A client-average result fixes the dataset, model, and $K$, and then averages over the three $\beta$ values.
@@ -744,26 +741,21 @@ To further identify which information within diagnostic prototype reconstruction
 \caption{Internal ablation of diagnostic prototype reconstruction. All settings cover 180 raw cells and 60 client-average cells.}
 \label{tab:diagnostic-internal-ablation}
 \scriptsize
-\renewcommand{\arraystretch}{1.35}
-\setlength{\tabcolsep}{3.5pt}
+\setlength{\tabcolsep}{2.5pt}
 \begin{tabular}{lrr}
-\noalign{\hrule height 1.25pt}
-\rowcolor[HTML]{F2F2F2}
-\textbf{Setting} & \textbf{Mean Acc} & \textbf{\(\Delta\) vs. LAMP} \\
-\hline \hline
-\rowcolor[HTML]{FFF9C4}
-\textbf{LAMP-Merge} & \textbf{0.6209} & -- \\
-Classifier-head aggregation & 0.2579 & \compactdrop{0.3630} \\
-\rowcolor{gray!10}
-Global-feature mean & 0.2645 & \compactdrop{0.3564} \\
-Support-only synthetic head & 0.1137 & \compactdrop{0.5073} \\
-\rowcolor{gray!10}
-Shuffled-label prototype & 0.2002 & \compactdrop{0.4207} \\
-Uniform client weight & 0.5839 & \compactdrop{0.0370} \\
-\rowcolor{gray!10}
-Binary support only & 0.5517 & \compactdrop{0.0692} \\
-Global client-size weight & 0.5944 & \compactdrop{0.0266} \\
-\noalign{\hrule height 1.25pt}
+\hline
+\tblhead{Setting} & \tblhead{Mean Acc} & \tblhead{\(\Delta\) vs. LAMP} \\
+\hline
+\lampband
+LAMP-Merge & 0.6209 & -- \\
+Classifier-head aggregation & 0.2579 & \dropdown{0.3630} \\
+Global-feature mean & 0.2645 & \dropdown{0.3564} \\
+Support-only synthetic head & 0.1137 & \dropdown{0.5073} \\
+Shuffled-label prototype & 0.2002 & \dropdown{0.4207} \\
+Uniform client weight & 0.5839 & \dropdown{0.0370} \\
+Binary support only & 0.5517 & \dropdown{0.0692} \\
+Global client-size weight & 0.5944 & \dropdown{0.0266} \\
+\hline
 \end{tabular}
 \end{table}
 
@@ -780,20 +772,17 @@ We further replace the prior term inside long-tail prevalence calibration. This 
 \caption{Internal ablation of long-tail prevalence calibration.}
 \label{tab:prevalence-internal-ablation}
 \scriptsize
-\renewcommand{\arraystretch}{1.35}
-\setlength{\tabcolsep}{3.5pt}
+\setlength{\tabcolsep}{2.8pt}
 \begin{tabular}{lrr}
-\noalign{\hrule height 1.25pt}
-\rowcolor[HTML]{F2F2F2}
-\textbf{Setting} & \textbf{Mean Acc} & \textbf{\(\Delta\) vs. LAMP} \\
-\hline \hline
-\rowcolor[HTML]{FFF9C4}
-\textbf{LAMP-Merge} & \textbf{0.6209} & -- \\
-No prevalence calibration & 0.5879 & \compactdrop{0.0330} \\
-\rowcolor{gray!10}
-Uniform prevalence prior & 0.5879 & \compactdrop{0.0330} \\
-Smoothed prevalence prior & 0.6209 & \compactneutral{0.0000} \\
-\noalign{\hrule height 1.25pt}
+\hline
+\tblhead{Setting} & \tblhead{Mean Acc} & \tblhead{\(\Delta\) vs. LAMP} \\
+\hline
+\lampband
+LAMP-Merge & 0.6209 & -- \\
+No prevalence calibration & 0.5879 & \dropdown{0.0330} \\
+Uniform prevalence prior & 0.5879 & \dropdown{0.0330} \\
+Smoothed prevalence prior & 0.6209 & \neutraldelta{0.0000} \\
+\hline
 \end{tabular}
 \end{table}
 
@@ -816,23 +805,19 @@ Although the main experiments use ACC for direct comparison, long-tailed medical
 \caption{Prediction-collapse diagnostics averaged over five medical datasets and four backbones per dataset.}
 \label{tab:collapse-key}
 \scriptsize
-\setlength{\tabcolsep}{3.5pt}
-\renewcommand{\arraystretch}{1.35}
+\setlength{\tabcolsep}{2.5pt}
+\renewcommand{\arraystretch}{0.92}
 \begin{tabular}{lrcc}
-\noalign{\hrule height 1.25pt}
-\rowcolor[HTML]{F2F2F2}
-\textbf{Metric} & \textbf{LAMP-Merge} & \textbf{Best reference} & \textbf{\(\Delta\) vs. reference} \\
-\hline \hline
-\rowcolor[HTML]{FFF9C4}
-\textbf{Accuracy} $\uparrow$ & \textbf{0.6211} & 0.2228 & \compactgain{+0.3983} \\
-BA / macro recall $\uparrow$ & 0.5370 & 0.1492 & \compactgain{+0.3878} \\
-\rowcolor{gray!10}
-Macro F1 $\uparrow$ & 0.5238 & 0.0757 & \compactgain{+0.4481} \\
-Collapse ratio $\downarrow$ & 0.3122 & 0.7902 & \compactdrop{-0.4780} \\
-\rowcolor{gray!10}
-Effective classes $\uparrow$ & 7.1322 & 2.0489 & \compactgain{+5.0833} \\
-Pred-true TV $\downarrow$ & 0.1262 & 0.7040 & \compactdrop{-0.5778} \\
-\noalign{\hrule height 1.25pt}
+\hline
+\tblhead{Metric} & \metriclampcell{LAMP-Merge} & \tblhead{Best reference} & \tblhead{\(\Delta\) vs. LAMP} \\
+\hline
+Accuracy $\uparrow$ & \metriclampcell{0.6211} & 0.2228 & \gainup{+0.3983} \\
+BA / macro recall $\uparrow$ & \metriclampcell{0.5370} & 0.1492 & \gainup{+0.3878} \\
+Macro F1 $\uparrow$ & \metriclampcell{0.5238} & 0.0757 & \gainup{+0.4481} \\
+Collapse ratio $\downarrow$ & \metriclampcell{0.3122} & 0.7902 & \gaindown{-0.4780} \\
+Effective classes $\uparrow$ & \metriclampcell{7.1322} & 2.0489 & \gainup{+5.0833} \\
+Pred-true TV $\downarrow$ & \metriclampcell{0.1262} & 0.7040 & \gaindown{-0.5778} \\
+\hline
 \end{tabular}
 \end{table}
 
