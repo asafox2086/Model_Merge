@@ -321,7 +321,7 @@ where $s=20$ is the default head scale. This module addresses a key limitation o
 \begin{figure*}[t]
 \centering
 \includegraphics[width=0.92\textwidth]{figures/full_scope_module_ablation_dataset_accuracy.png}
-\caption{Dataset-level client-average accuracy in the module ablation. Each dataset contains 12 cells from four vision-model families and three client counts; each cell is averaged over three Dirichlet skew levels.}
+\caption{Dataset-level client-average accuracy in the module ablation. Each bar averages 12 client-average cells from four vision-model families and three client counts; every client-average cell is computed over three Dirichlet skew levels.}
 \label{fig:dataset-ablation-acc}
 \end{figure*}
 
@@ -536,7 +536,7 @@ Tables~\ref{tab:client-avg-resnet}--\ref{tab:client-avg-swin-tiny} report the fu
 \subsection{Ablation Study}
 
 % 模块级消融采用与主实验完全相同的实验设置。再比较三种情景：完整 LAMP-Merge、仅使用诊断原型重建、在权重平均上仅加入长尾患病率校准。表中结果显示，这两个模块均对算法的性能有较为显著的提升
-Module-level ablations use exactly the same experimental setup as the main experiments. We compare three configurations: full LAMP-Merge, diagnostic prototype reconstruction only, and weight averaging augmented only with long-tail prevalence calibration. Fig.~\ref{fig:dataset-ablation-acc} shows that both modules provide substantial performance improvements.
+Module-level ablations use exactly the same experimental setup as the main experiments. Fig.~\ref{fig:dataset-ablation-acc} compares full LAMP-Merge, diagnostic prototype reconstruction only, and weight averaging. The following controlled prior substitutions isolate the contribution of long-tail prevalence calibration.
 
 \subsubsection{1) Effectiveness of Diagnostic Prototype Reconstruction}
 % 为进一步定位诊断原型重建内部哪些信息是必要的，我们在完整范围上进行受控替换。所有设置均保留长尾患病率校准，只替换诊断原型重建中的原型语义或支持数权重。
@@ -614,17 +614,17 @@ Table ~\ref{tab:prevalence-internal-ablation} shows that removing prevalence cal
 
 \subsection{Hyperparameter Analysis Experiment}
 % 中文对照：诊断原型重建有一个连续超参数，即原型头缩放因子 s。长尾患病率校准有一个连续超参数，即长尾校准强度 lambda。图中每个取值都在 180 个原始单元和 60 个客户端平均单元上评估，覆盖五个医学数据集、四种骨干网络、三种客户端数量和三种Dirichlet 非独立同分布划分参数。
-Fig.~\ref{fig:hparam-full} evaluates the prototype-head scale $s$ and calibration strength $\lambda$ over 180 raw cells and 60 client-average cells, spanning five datasets, four vision backbones, three client counts, and three Dirichlet skew levels. The default setting is $s=20$ and $\lambda=5$.
+Fig.~\ref{fig:hparam-full} evaluates both two-parameter modules over 180 raw cells and 60 client-average cells, spanning five datasets, four vision backbones, three client counts, and three Dirichlet skew levels. For diagnostic prototype reconstruction, it scans $s\in\{15,17.5,20,22.5,25\}$ at each $\gamma\in\{0.35,0.40,0.45,0.50,0.55\}$. For long-tail prevalence calibration, it scans $\lambda\in\{4.0,4.5,5.0,5.5,6.0\}$ at each $\tau\in\{1.5,2.0,2.5,3.0,3.5\}$. The dashed lines denote the formal settings $s=20$ and $\lambda=5$.
 
 \begin{figure*}[t]
 \centering
 \includegraphics[width=0.92\textwidth]{figures/full_scope_hyperparameter_sensitivity.png}
-\caption{Full-scope hyperparameter sensitivity. The default setting $s=20$ and $\lambda=5$ lies in the stable high-accuracy plateau.}
+\caption{Full-scope hyperparameter sensitivity with five fixed-value curves per module. The formal settings $s=20$ and $\lambda=5$ lie in stable high-accuracy regions.}
 \label{fig:hparam-full}
 \end{figure*}
 
 % 结果说明，LAMP-Merge 在较宽的超参数范围内均保持稳定性能。原型头缩放因子 (s) 和长尾校准强度 (\lambda) 的变化只带来小幅波动，默认设置 (s=20,\lambda=5) 位于稳定高性能区间。因此我们的收益主要来自诊断原型重建与长尾患病率校准本身，而非依赖精细的超参数搜索。
-Both curves remain stable over broad intervals. Small $s$ is insufficient to scale prototype logits, whereas bounded $\lambda$ calibrates prevalence without inducing majority-class prediction. Thus, the gain arises from the two components rather than narrow hyperparameter tuning.
+For every fixed $\gamma$, the diagnostic-prototype curves attain their local maximum at $s=17.5$ or $s=20$ and decline only mildly at $s=25$. The formal $(\gamma,s)=(0.45,20)$ setting is within $0.0002$ of the maximum on its curve. Likewise, the formal $(\tau,\lambda)=(2.5,5.0)$ setting is within $0.0002$ of the maximum on its curve. Thus, the gain arises from the two components rather than narrow hyperparameter tuning.
 
 \subsection{New-metric Diagnostic Experiment}
 % 虽然主实验只用 ACC 进行横向比较，但医学长尾分布可能使单类或少数类预测器获得较高 ACC。因此，我们引入了新的指标。令 y_n 和 \hat y_n 分别表示第 n 个测试样本的真实标签和预测标签，令 q_c=N^{-1}\sum_n 1[\hat y_n=c] 表示预测类别分布，令 p_c=N^{-1}\sum_n 1[y_n=c] 表示真实类别分布，令 C_test 表示测试集中真实出现的类别集合。我们使用如下诊断指标。
@@ -650,12 +650,12 @@ Although the main experiments use ACC for direct comparison, long-tailed medical
 \hline
 \tblhead{Metric} & \metriclampcell{LAMP-Merge} & \tblhead{Best reference} & \tblhead{\(\Delta\) vs. LAMP} \\
 \hline
-Accuracy $\uparrow$ & \metriclampcell{0.5885} & 0.3156 & \gainup{+0.2729} \\
-BA / macro recall $\uparrow$ & \metriclampcell{0.5747} & 0.1810 & \gainup{+0.3937} \\
-Macro F1 $\uparrow$ & \metriclampcell{0.5352} & 0.1123 & \gainup{+0.4229} \\
-Collapse ratio $\downarrow$ & \metriclampcell{0.2294} & 0.7477 & \gaindown{-0.5184} \\
-Effective classes $\uparrow$ & \metriclampcell{8.0390} & 2.1360 & \gainup{+5.9030} \\
-Pred-true TV $\downarrow$ & \metriclampcell{0.1510} & 0.6168 & \gaindown{-0.4658} \\
+Accuracy $\uparrow$ & \metriclampcell{0.6211} & 0.2228 & \gainup{+0.3983} \\
+BA / macro recall $\uparrow$ & \metriclampcell{0.5370} & 0.1492 & \gainup{+0.3878} \\
+Macro F1 $\uparrow$ & \metriclampcell{0.5238} & 0.0757 & \gainup{+0.4481} \\
+Collapse ratio $\downarrow$ & \metriclampcell{0.3122} & 0.7902 & \gaindown{-0.4780} \\
+Effective classes $\uparrow$ & \metriclampcell{7.1322} & 2.0489 & \gainup{+5.0833} \\
+Pred-true TV $\downarrow$ & \metriclampcell{0.1262} & 0.7040 & \gaindown{-0.5778} \\
 \hline
 \end{tabular}
 \end{table}
@@ -671,7 +671,7 @@ To visualize the prediction-distribution changes measured by the new diagnostic 
 \begin{figure}[t]
 \centering
 \includegraphics[width=\columnwidth]{figures/full_scope_predicted_distribution_ultrasound_stacked.png}
-\caption{Predicted class distributions on Ultrasound, averaged over the four visual backbones, $K\in\{3,5,7\}$, and the three Dirichlet skew levels. The generic merge concentrates predictions on one class, while LAMP-Merge recovers a broader class allocation aligned with the test distribution.}
+\caption{Predicted class distributions on Ultrasound, averaged over the four visual backbones, $K\in\{3,5,7\}$, and the three Dirichlet skew levels. The strongest generic reference (Fisher) concentrates predictions on a subset of classes, while LAMP-Merge recovers a broader allocation aligned with the test distribution.}
 \label{fig:visual-chaosheng_predict}
 \end{figure}
 
