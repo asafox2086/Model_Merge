@@ -1,0 +1,9 @@
+Setting,Mean Acc,Delta vs. LAMP
+LAMP-Merge,0.6209,--
+Classifier-head aggregation,0.2579,0.3630
+Global-feature mean,0.2645,0.3564
+Support-only synthetic head,0.1137,0.5073
+Shuffled-label prototype,0.2002,0.4207
+Uniform client weight,0.5839,0.0370
+Binary support only,0.5517,0.0692
+Global client-size weight,0.5944,0.0266

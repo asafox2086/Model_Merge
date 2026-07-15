@@ -1,0 +1,5 @@
+Setting,Mean Acc,Delta vs. LAMP
+LAMP-Merge,0.6209,--
+No prevalence calibration,0.5879,0.0330
+Uniform prevalence prior,0.5879,0.0330
+Smoothed prevalence prior,0.6209,0.0000

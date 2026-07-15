@@ -1,0 +1,7 @@
+Metric,LAMP-Merge,Best reference,Delta vs. LAMP
+Accuracy ↑,0.6211,0.2228,+0.3983
+BA / macro recall ↑,0.5370,0.1492,+0.3878
+Macro F1 ↑,0.5238,0.0757,+0.4481
+Collapse ratio ↓,0.3122,0.7902,-0.4780
+Effective classes ↑,7.1322,2.0489,+5.0833
+Pred-true TV ↓,0.1262,0.7040,-0.5778
