@@ -325,57 +325,73 @@ The framework contains two components. The first reconstructs multiclass diagnos
 
 \subsection{Diagnostic Prototype Reconstruction Module}
 
-% 为缓解由异构诊断覆盖和冲突类别证据带来的聚合后预测坍缩，LAMP-Merge 首先重建一个类别条件诊断头。该模块不直接平均分类器参数，而是把每个客户端对某个类别是否具有监督证据显式写入融合过程，并在共享参考特征空间中聚合这些证据。
-To mitigate the \textbf{post-aggregation prediction collapse} caused by heterogeneous diagnostic coverage and conflicting class evidence, LAMP-Merge first reconstructs a class-conditional diagnostic head. This module does not directly average classifier parameters; instead, it explicitly encodes whether each client has supervised evidence for a diagnosis class and aggregates such evidence in a shared reference feature space.
+% 为缓解由异构诊断覆盖和冲突类别证据带来的聚合后预测坍缩，诊断原型重建模块将融合目标从参数平均转化为类别条件证据重建。它不直接平均本地分类器，而是先在共享参考空间中收集每个客户端对每个诊断类别的可靠证据，再由服务器合成覆盖全局标签空间的诊断头。
+To mitigate the \textbf{post-aggregation prediction collapse} caused by heterogeneous diagnostic coverage and conflicting class evidence, the diagnostic prototype reconstruction module shifts the merging target from parameter averaging to class-conditional evidence reconstruction. Instead of directly averaging local classifiers, it first collects reliable evidence for each diagnosis class in a shared reference space and then synthesizes a global diagnostic head over the full label space.
 
-% 具体而言，令 phi_0 表示本地训练前由共享模型配置实例化得到的冻结参考骨干网络，T(.) 表示评估变换。对于每个诊断类别 c，客户端 i 计算参考空间类别原型 mu_i,c，其中 n_i,c=|D_i,c| 是类别支持数。若 n_i,c=0，则客户端对该类别上传零支持数，并且不贡献原型证据。
-Specifically, let $\phi_0$ be the frozen reference backbone instantiated from the shared model configuration before local training, and let $T(\cdot)$ be the evaluation transform. For each diagnosis class $c$, client $i$ computes a reference-space class prototype
+\subsubsection{1) Reference-space Class Prototype Extraction.}
+
+% 首先，所有客户端使用同一个冻结参考骨干网络提取类别原型。令 phi_0 表示本地训练前由共享模型配置实例化得到的参考骨干网络，T(.) 表示评估变换。对于每个诊断类别 c，客户端 i 在本地计算参考空间类别原型 mu_i,c，其中 n_i,c=|D_i,c| 是类别支持数。
+First, all clients extract class prototypes with the same frozen reference backbone. Let $\phi_0$ be the reference backbone instantiated from the shared model configuration before local training, and let $T(\cdot)$ be the evaluation transform. For each diagnosis class $c$, client $i$ locally computes a reference-space class prototype
 \begin{equation}
 \mu_{i,c}=\frac{1}{n_{i,c}}\sum_{(x,y)\in D_i}\mathbf{1}[y=c]\phi_0(T(x)),
 \end{equation}
 where $n_{i,c}=|D_{i,c}|$ is the class support count. If $n_{i,c}=0$, the client uploads zero support for that class and contributes no prototype evidence.
 
-% 服务器随后将类别支持数转换为证据权重，其中 gamma=0.45 为默认证据指数。该权重使具有更多同类监督样本的客户端对该类别贡献更大，同时完全排除未观察到该类别的客户端。
-The server converts support counts into evidence weights:
+\subsubsection{2) Support-aware Evidence Aggregation.}
+
+% 其次，服务器将类别支持数转换为证据权重，以刻画客户端对该类别的可靠程度。gamma=0.45 为默认证据指数。该权重使具有更多同类监督样本的客户端对类别 c 贡献更大，同时完全排除未观察到该类别的客户端。
+Second, the server converts class-support counts into evidence weights to characterize the reliability of each client for a given class:
 \begin{equation}
 e_{i,c}=(n_{i,c}+1)^\gamma \mathbf{1}[n_{i,c}>0],
 \end{equation}
-where $\gamma=0.45$ is the default evidence exponent. This weight gives larger class-specific contribution to clients with more supervised samples of class $c$, while excluding clients that never observe this class. The normalized reliability of client $i$ for class $c$ is
+where $\gamma=0.45$ is the default evidence exponent. This weight gives larger class-specific contribution to clients with more supervised samples of class $c$, while excluding clients that never observe this class. The normalized reliability is
 \begin{equation}
 \alpha_{i,c}=\frac{e_{i,c}}{\sum_{j=1}^{K} e_{j,c}}.
 \end{equation}
-% 全局诊断原型由各客户端原型按照类别可靠性加权得到。基于该原型，LAMP-Merge 合成余弦原型分类器，其中 s=20 为默认分类头缩放因子。由此，融合模型获得覆盖全局诊断空间的多类别判别方向。
-The global diagnosis prototype is then obtained by class-wise reliability-weighted aggregation:
+
+% 因此，全局诊断原型由各客户端原型按照类别可靠性加权得到。该步骤使服务器只聚合真正见过该类别的客户端证据，从而避免未见类别客户端的分类器方向稀释有效诊断信号。
+The global diagnosis prototype is obtained by class-wise reliability-weighted aggregation:
 \begin{equation}
 p_c=\sum_{i=1}^{K}\alpha_{i,c}\mu_{i,c}.
 \end{equation}
-Based on this prototype, LAMP-Merge synthesizes a cosine prototype classifier:
+This step aggregates evidence only from clients that have actually observed class $c$, preventing absent-class classifiers from diluting valid diagnostic signals.
+
+\subsubsection{3) Prototype-induced Diagnostic Head.}
+
+% 最后，LAMP-Merge 将全局诊断原型映射为余弦原型分类器，其中 s=20 为默认分类头缩放因子。由此得到的分类头不是本地 head 的参数平均，而是由共享参考空间中的类别证据诱导得到，因此能够恢复覆盖全局诊断空间的多类别判别方向。
+Finally, LAMP-Merge maps global diagnosis prototypes into a cosine prototype classifier:
 \begin{equation}
 w_c=s\frac{p_c}{\|p_c\|_2},
 \end{equation}
-where $s=20$ is the default head scale. The resulting head provides multiclass diagnostic directions over the global label space.
+where $s=20$ is the default head scale. The resulting head is not an average of local classifier parameters; it is induced by class evidence in the shared reference space, thereby restoring multiclass diagnostic directions over the global label space.
 
 \subsection{Long-tail Prevalence Calibration}
 
-% 为缓解医学数据中真实长尾患病率不可忽略的问题，LAMP-Merge 在原型重建之后加入一个有界先验校准项。该模块的目标不是鼓励模型坍缩到多数类，而是在已经恢复多类别判别方向的基础上，保留由客户端统计反映的临床患病率。
-To address the fact that the real long-tailed prevalence in medical data cannot be ignored, LAMP-Merge adds a bounded prior-calibration term after prototype reconstruction. The goal is not to encourage collapse toward majority classes; rather, it preserves the clinical prevalence reflected by client statistics after multiclass discriminative directions have been reconstructed.
+% 为处理真实医学任务中长尾患病率不可忽略的问题，长尾患病率校准模块在原型重建之后引入一个有界类别先验。该模块并不把模型重新推向单类坍缩，而是在多类别诊断方向已经恢复的前提下，校准由客户端统计反映的临床患病率。
+To address the fact that long-tailed prevalence cannot be ignored in real medical tasks, the long-tail prevalence calibration module introduces a bounded class prior after prototype reconstruction. This module does not push the model back to single-class collapse; instead, it calibrates the clinical prevalence reflected by client statistics after multiclass diagnostic directions have been restored.
 
-% 每个客户端上传类别患病率计数 m_i,c。服务器据此估计全局类别先验 pi_c。该先验只来自类别级计数，而不是原始图像、逐样本特征或逐样本预测。
-Each client uploads class-prevalence counts $m_{i,c}$. The server estimates the global class prior
+\subsubsection{1) Client-reported Prevalence Prior.}
+
+% 首先，每个客户端上传类别患病率计数 m_i,c。服务器据此估计全局类别先验 pi_c。该先验只来自类别级计数，而不是原始图像、逐样本特征或逐样本预测。
+First, each client uploads class-prevalence counts $m_{i,c}$. The server estimates the global class prior
 \begin{equation}
 \pi_c=\frac{\sum_{i=1}^{K}m_{i,c}}{\sum_{k=1}^{C}\sum_{i=1}^{K}m_{i,k}}.
 \end{equation}
 This prior is computed only from class-level counts, not from raw images, per-sample features, or per-sample predictions.
 
-% 为避免在非长尾场景中过度校准，服务器用 r=C max_c pi_c 度量主导类别不平衡。该模块仅在 r>tau 时激活，其中 tau=2.5 为默认值。
-To avoid unnecessary calibration in non-long-tailed cases, the server measures dominant-class imbalance by
+\subsubsection{2) Long-tail Activation Criterion.}
+
+% 其次，为避免在非长尾场景中过度校准，服务器用 r=C max_c pi_c 度量主导类别不平衡。该模块仅在 r>tau 时激活，其中 tau=2.5 为默认值。
+Second, to avoid unnecessary calibration in non-long-tailed cases, the server measures dominant-class imbalance by
 \begin{equation}
 r=C\max_c \pi_c.
 \end{equation}
 The calibration module is activated only when $r>\tau$, where $\tau=2.5$ by default.
 
-% 当该模块被激活时，LAMP-Merge 构造中心化对数先验偏置 b_c，其默认最大校准强度为 lambda=5.0。中心化操作避免所有类别 logits 被整体平移，使该项只改变类别相对先验。
-When activated, LAMP-Merge constructs a centered log-prior bias
+\subsubsection{3) Centered Log-prior Calibration.}
+
+% 最后，当该模块被激活时，LAMP-Merge 构造中心化对数先验偏置 b_c，其默认最大校准强度为 lambda=5.0。中心化操作避免所有类别 logits 被整体平移，使该项只改变类别相对先验。
+Finally, when the module is activated, LAMP-Merge constructs a centered log-prior bias
 \begin{equation}
 b_c=\lambda\left(\log\pi_c-\frac{1}{C}\sum_{k=1}^{C}\log\pi_k\right),
 \end{equation}
