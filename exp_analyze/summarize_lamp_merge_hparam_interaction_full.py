@@ -231,7 +231,16 @@ def plot(rows: list[dict[str, object]], figure_path: Path) -> None:
             grouped[float(row["curve_value"])].append(row)
         title, x_label, curve_label, selected_curve = module_labels[module]
         for index, curve_value in enumerate(sorted(grouped)):
-            curve_rows = sorted(grouped[curve_value], key=lambda row: float(row["x_value"]))
+            curve_rows = sorted(
+                [
+                    row
+                    for row in grouped[curve_value]
+                    if row["client_average_mean_acc"] not in {None, ""}
+                ],
+                key=lambda row: float(row["x_value"]),
+            )
+            if not curve_rows:
+                continue
             x_values = [float(row["x_value"]) for row in curve_rows]
             y_values = [float(row["client_average_mean_acc"]) for row in curve_rows]
             selected = math.isclose(curve_value, selected_curve, rel_tol=0.0, abs_tol=1e-9)
