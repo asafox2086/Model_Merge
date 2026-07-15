@@ -261,21 +261,21 @@ Our main contributions are as follows:
 \subsection{Model Merging}
 
 % 模型融合方法通常从参数空间、任务向量空间或几何空间整合多个检查点。权重平均和 Model Soups 直接插值模型参数；Task Arithmetic、TIES-Merging 与 DARE 处理任务增量和符号冲突；Fisher、RegMean、Model Stock、Breadcrumbs、Iso-C、FreeMerge 与 RobustMerge 进一步引入曲率、统计均值、子空间或鲁棒方向假设。然而，这些方法的核心变量仍然是全局参数、任务向量或更新方向，并不显式表示医学任务中的诊断类别证据。因此，在客户端类别覆盖不完整且患病率长尾的多中心医学图像场景中，它们容易混合“见过某类的可靠方向”和“没见过某类的缺失方向”，从而产生预测坍缩。
-Model-merging methods commonly integrate checkpoints in parameter, task-vector, or geometric spaces. Weight averaging and Model Soups interpolate model parameters\cite{izmailov2018averaging,pmlr-v162-wortsman22a}; permutation-aware matching aligns hidden-unit symmetries before averaging\cite{entezari2022role,ainsworth2023gitrebasinmergingmodels}; ZipIt performs feature-level zipping across models\cite{stoica2024zipit}; Task Arithmetic, TIES-Merging, and DARE operate on task deltas and sign conflicts\cite{ilharco2023editingmodelstaskarithmetic,yadav2023tiesmergingresolvinginterferencemerging,yu2024languagemodelssupermario}; Fisher merging, RegMean, Model Stock, Breadcrumbs, Iso-C, FreeMerge, and RobustMerge further introduce curvature, mean-statistic, subspace, or robustness assumptions\cite{matena2022mergingmodelsfisherweightedaveraging,jin2025datalessknowledgefusionmerging,jang2025modelstockneedjust,davari2024modelbreadcrumbsscalingmultitask,marczak2025taskleftbehindisotropic,zheng2025freemergingfouriertransformefficient,zeng2025robustmergeparameterefficientmodelmerging}.
+Model-merging methods commonly integrate checkpoints in parameter, task-vector, or geometric spaces. Weight averaging~\cite{izmailov2018averaging} and Model Soups~\cite{pmlr-v162-wortsman22a} interpolate model parameters; permutation-aware matching~\cite{entezari2022role,ainsworth2023gitrebasinmergingmodels} aligns hidden-unit symmetries before averaging; ZipIt~\cite{stoica2024zipit} performs feature-level zipping across models; Task Arithmetic~\cite{ilharco2023editingmodelstaskarithmetic}, TIES-Merging~\cite{yadav2023tiesmergingresolvinginterferencemerging}, and DARE~\cite{yu2024languagemodelssupermario} operate on task deltas and sign conflicts; Fisher merging~\cite{matena2022mergingmodelsfisherweightedaveraging}, RegMean~\cite{jin2025datalessknowledgefusionmerging}, Model Stock~\cite{jang2025modelstockneedjust}, Breadcrumbs~\cite{davari2024modelbreadcrumbsscalingmultitask}, Iso-C~\cite{marczak2025taskleftbehindisotropic}, FreeMerge~\cite{zheng2025freemergingfouriertransformefficient}, and RobustMerge~\cite{zeng2025robustmergeparameterefficientmodelmerging} further introduce curvature, mean-statistic, subspace, or robustness assumptions.
 
 However, these variables are still global parameters, task vectors, or update directions rather than class-level diagnostic evidence. \textbf{They do not encode whether a client has reliable supervision for a specific medical class.} Under incomplete local class coverage and long-tailed prevalence, reliable directions from clients that observed a class can be averaged with absent or conflicting directions from clients that did not, leading to aggregation-induced prediction collapse\cite{BUDA2018249,10.1371/journal.pmed.1002683}.
 
 \subsection{Medical Model Merging}
 
 % 医学融合研究通常利用医学数据的领域结构，例如非规则采样时间序列、临床传感器图结构以及影像-电子病历融合。mTAN、Raindrop 和 MedFuse 表明，医学任务需要利用临床采样机制、模态异质性和患者级时间关系。然而，这些方法通常融合患者级输入或临床表征，而不是融合已经独立训练完成的图像分类器检查点；同时，它们往往需要患者样本、时间戳、多模态记录、电子病历或服务器端验证反馈。MedMerge 等训练自由医学知识迁移方法也针对视觉语言跨模态适配，而非同一任务下的单次异步检查点融合。因此，现有医学融合路线在本文约束下的核心问题是隐私与协议不匹配。
-Medical fusion studies often exploit domain structures such as irregular clinical time series, physiological sensor graphs, and image-EHR fusion. mTAN, Raindrop, and MedFuse show that medical tasks benefit from modeling clinical sampling mechanisms, modality heterogeneity, and patient-level temporal relations\cite{shukla2021multitimeattentionnetworksirregularly,zhang2022graphguidednetworkirregularlysampled,hayat2023medfusemultimodalfusionclinical}.
+Medical fusion studies often exploit domain structures such as irregular clinical time series, physiological sensor graphs, and image-EHR fusion. mTAN~\cite{shukla2021multitimeattentionnetworksirregularly}, Raindrop~\cite{zhang2022graphguidednetworkirregularlysampled}, and MedFuse~\cite{hayat2023medfusemultimodalfusionclinical} show that medical tasks benefit from modeling clinical sampling mechanisms, modality heterogeneity, and patient-level temporal relations.
 
-However, these methods usually fuse patient-level inputs or clinical representations rather than independently trained image-classifier checkpoints. They often require patient samples, timestamps, multimodal records, electronic health records, or server-side validation feedback, which conflicts with common medical privacy constraints\cite{kaissis2020secure,sheller2020federated,bonawitz2019towards}. MedMerge is a relevant training-free medical knowledge-transfer framework\cite{11382027}; however, it targets cross-modal adaptation for medical vision-language models rather than asynchronous checkpoint merging for the same classification task. \textbf{Thus, existing medical fusion routes are mismatched with our privacy and single-upload protocol constraints.} LAMP-Merge keeps the medical structure uploadable by using only class-level prototypes and prevalence counts computed locally by clients.
+However, these methods usually fuse patient-level inputs or clinical representations rather than independently trained image-classifier checkpoints. They often require patient samples, timestamps, multimodal records, electronic health records, or server-side validation feedback, which conflicts with common medical privacy constraints~\cite{kaissis2020secure,sheller2020federated,bonawitz2019towards}. MedMerge is a relevant training-free medical knowledge-transfer framework~\cite{11382027}; however, it targets cross-modal adaptation for medical vision-language models rather than asynchronous checkpoint merging for the same classification task. \textbf{Thus, existing medical fusion routes are mismatched with our privacy and single-upload protocol constraints.} LAMP-Merge keeps the medical structure uploadable by using only class-level prototypes and prevalence counts computed locally by clients.
 
 \subsection{Federated Learning}
 
 % 联邦学习和去中心化学习通过通信协议完成协作训练。FedAvg 及其变体依赖多轮服务器-客户端更新；Swarm Learning 和 Gossip Learning 减弱中心化服务器角色，但仍要求参与者持续训练、交换模型并从中间模型继续优化。然而，本文研究的是训练完成后的单次异步模型融合，医院可能无法长期在线，也不能反复接收全局模型并重新训练。因此，联邦学习解决多轮协作训练问题，而 LAMP-Merge 解决单次上传后的统一模型构建问题。
-Federated and decentralized learning perform collaborative training through communication protocols. FedAvg and its medical deployments rely on repeated server-client updates\cite{pmlr-v54-mcmahan17a,li2020fedprox,karimireddy2020scaffold,li2021fedbn,kaissis_secure_2020,sheller2020federated,rieke2020future,kairouz2021advances}; Swarm Learning and Gossip Learning reduce centralization but still require participants to continue training, exchanging models, and optimizing from intermediate states\cite{warnat-herresthal_swarm_2021,hegedhus_gossip_2019}.
+Federated and decentralized learning perform collaborative training through communication protocols. FedAvg~\cite{pmlr-v54-mcmahan17a} and its variants or medical deployments~\cite{li2020fedprox,karimireddy2020scaffold,li2021fedbn,kaissis_secure_2020,sheller2020federated,rieke2020future,kairouz2021advances} rely on repeated server-client updates; Swarm Learning~\cite{warnat-herresthal_swarm_2021} and Gossip Learning~\cite{hegedhus_gossip_2019} reduce centralization but still require participants to continue training, exchanging models, and optimizing from intermediate states.
 
 However, our problem is single-shot asynchronous model merging after local training has finished: hospitals may not remain online, receive global checkpoints repeatedly, or run additional optimization rounds. \textbf{The limitation is therefore communication feasibility rather than only privacy.} LAMP-Merge requires one upload of a local model interface and class-level statistics, enabling the server to construct a unified diagnostic model without a multi-round feedback loop.
 
@@ -753,16 +753,16 @@ To further identify which information within diagnostic prototype reconstruction
 \hline \hline
 \rowcolor[HTML]{FFF9C4}
 \textbf{LAMP-Merge} & \textbf{0.6209} & -- \\
-Classifier-head aggregation & 0.2579 & \compactdrop{0.3630} \\
+Classifier-head aggregation & 0.2579 & \compactdrop{36.30\%} \\
 \rowcolor{gray!10}
-Global-feature mean & 0.2645 & \compactdrop{0.3564} \\
-Support-only synthetic head & 0.1137 & \compactdrop{0.5073} \\
+Global-feature mean & 0.2645 & \compactdrop{35.64\%} \\
+Support-only synthetic head & 0.1137 & \compactdrop{50.73\%} \\
 \rowcolor{gray!10}
-Shuffled-label prototype & 0.2002 & \compactdrop{0.4207} \\
-Uniform client weight & 0.5839 & \compactdrop{0.0370} \\
+Shuffled-label prototype & 0.2002 & \compactdrop{42.07\%} \\
+Uniform client weight & 0.5839 & \compactdrop{3.70\%} \\
 \rowcolor{gray!10}
-Binary support only & 0.5517 & \compactdrop{0.0692} \\
-Global client-size weight & 0.5944 & \compactdrop{0.0266} \\
+Binary support only & 0.5517 & \compactdrop{6.92\%} \\
+Global client-size weight & 0.5944 & \compactdrop{2.66\%} \\
 \noalign{\hrule height 1.25pt}
 \end{tabular}
 \end{table}
@@ -789,9 +789,9 @@ We further replace the prior term inside long-tail prevalence calibration. This 
 \hline \hline
 \rowcolor[HTML]{FFF9C4}
 \textbf{LAMP-Merge} & \textbf{0.6209} & -- \\
-No prevalence calibration & 0.5879 & \compactdrop{0.0330} \\
+No prevalence calibration & 0.5879 & \compactdrop{3.30\%} \\
 \rowcolor{gray!10}
-Uniform prevalence prior & 0.5879 & \compactdrop{0.0330} \\
+Uniform prevalence prior & 0.5879 & \compactdrop{3.30\%} \\
 \noalign{\hrule height 1.25pt}
 \end{tabular}
 \end{table}
@@ -823,14 +823,14 @@ Although the main experiments use ACC for direct comparison, long-tailed medical
 \textbf{Metric} & \textbf{LAMP-Merge} & \textbf{Best reference} & \textbf{\(\Delta\) vs. reference} \\
 \hline \hline
 \rowcolor[HTML]{FFF9C4}
-\textbf{Accuracy} $\uparrow$ & \textbf{0.6211} & 0.2228 & \compactgain{+0.3983} \\
-BA / macro recall $\uparrow$ & 0.5370 & 0.1492 & \compactgain{+0.3878} \\
+\textbf{Accuracy} $\uparrow$ & \textbf{0.6211} & 0.2228 & \compactgain{+39.83\%} \\
+BA / macro recall $\uparrow$ & 0.5370 & 0.1492 & \compactgain{+38.78\%} \\
 \rowcolor{gray!10}
-Macro F1 $\uparrow$ & 0.5238 & 0.0757 & \compactgain{+0.4481} \\
-Collapse ratio $\downarrow$ & 0.3122 & 0.7902 & \compactdrop{-0.4780} \\
+Macro F1 $\uparrow$ & 0.5238 & 0.0757 & \compactgain{+44.81\%} \\
+Collapse ratio $\downarrow$ & 0.3122 & 0.7902 & \compactdrop{-47.80\%} \\
 \rowcolor{gray!10}
 Effective classes $\uparrow$ & 7.1322 & 2.0489 & \compactgain{+5.0833} \\
-Pred-true TV $\downarrow$ & 0.1262 & 0.7040 & \compactdrop{-0.5778} \\
+Pred-true TV $\downarrow$ & 0.1262 & 0.7040 & \compactdrop{-57.78\%} \\
 \noalign{\hrule height 1.25pt}
 \end{tabular}
 \end{table}
