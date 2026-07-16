@@ -1,0 +1,2 @@
+paper_item,label,figure_file,data_type,raw_numeric_data,note
+Appendix Figure,fig:dataset-examples,final_LAMP/figures/dataset_examples.png,representative image montage,not applicable,Representative MedMNIST training images used only for qualitative illustration; no numeric plotting table is associated with this figure.

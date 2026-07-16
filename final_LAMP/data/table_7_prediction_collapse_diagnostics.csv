@@ -1,0 +1,7 @@
+Metric,Direction,LAMP-Merge,Best reference,Delta vs. reference (raw),Delta vs. reference (display)
+Accuracy,higher is better,0.6211,0.2228,0.3983,+39.83%
+BA / macro recall,higher is better,0.5370,0.1492,0.3878,+38.78%
+Macro F1,higher is better,0.5238,0.0757,0.4481,+44.81%
+Collapse ratio,lower is better,0.3122,0.7902,-0.4780,-47.80%
+Effective classes,higher is better,7.1322,2.0489,5.0833,+5.0833
+Pred-true TV,lower is better,0.1262,0.7040,-0.5778,-57.78%
