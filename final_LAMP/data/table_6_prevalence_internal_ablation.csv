@@ -1,4 +1,4 @@
-Setting,Mean Acc,Delta vs. LAMP (fraction),Delta vs. LAMP (display)
-LAMP-Merge,0.6209,--,--
-No prevalence calibration,0.5879,0.0330,3.30%
-Uniform prevalence prior,0.5879,0.0330,3.30%
+experiment_name,description,Setting,Mean Acc,Delta vs. LAMP (fraction),Delta vs. LAMP (display)
+Long-tail prevalence calibration internal ablation experiment,This table reports full-scope mean accuracy when removing or replacing the prevalence prior used by long-tail prevalence calibration.,LAMP-Merge,0.6209,--,--
+Long-tail prevalence calibration internal ablation experiment,This table reports full-scope mean accuracy when removing or replacing the prevalence prior used by long-tail prevalence calibration.,No prevalence calibration,0.5879,0.0330,3.30%
+Long-tail prevalence calibration internal ablation experiment,This table reports full-scope mean accuracy when removing or replacing the prevalence prior used by long-tail prevalence calibration.,Uniform prevalence prior,0.5879,0.0330,3.30%

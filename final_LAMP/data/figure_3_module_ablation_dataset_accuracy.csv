@@ -1,6 +1,6 @@
-dataset,client_average_cells,LAMP-Merge_mean_acc,M1 only_mean_acc,avg+M2_mean_acc,avg_mean_acc
-Blood,12,0.8189,0.8188,0.1713,0.1714
-Derma,12,0.6223,0.4620,0.4865,0.5042
-Organ-C,12,0.6248,0.6248,0.1286,0.1286
-Organ-S,12,0.5743,0.5743,0.1414,0.1414
-Ultrasound,12,0.4620,0.4620,0.1564,0.1564
+experiment_name,description,dataset,client_average_cells,LAMP-Merge_mean_acc,M1 only_mean_acc,avg+M2_mean_acc,avg_mean_acc
+Module-level ablation experiment,"This table gives dataset-level client-average accuracy for LAMP-Merge, diagnostic prototype reconstruction only, avg plus prevalence calibration, and avg.",Blood,12,0.8189,0.8188,0.1713,0.1714
+Module-level ablation experiment,"This table gives dataset-level client-average accuracy for LAMP-Merge, diagnostic prototype reconstruction only, avg plus prevalence calibration, and avg.",Derma,12,0.6223,0.4620,0.4865,0.5042
+Module-level ablation experiment,"This table gives dataset-level client-average accuracy for LAMP-Merge, diagnostic prototype reconstruction only, avg plus prevalence calibration, and avg.",Organ-C,12,0.6248,0.6248,0.1286,0.1286
+Module-level ablation experiment,"This table gives dataset-level client-average accuracy for LAMP-Merge, diagnostic prototype reconstruction only, avg plus prevalence calibration, and avg.",Organ-S,12,0.5743,0.5743,0.1414,0.1414
+Module-level ablation experiment,"This table gives dataset-level client-average accuracy for LAMP-Merge, diagnostic prototype reconstruction only, avg plus prevalence calibration, and avg.",Ultrasound,12,0.4620,0.4620,0.1564,0.1564

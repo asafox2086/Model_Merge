@@ -1,9 +1,9 @@
-Setting,Mean Acc,Delta vs. LAMP (fraction),Delta vs. LAMP (display)
-LAMP-Merge,0.6209,--,--
-Classifier-head aggregation,0.2579,0.3630,36.30%
-Global-feature mean,0.2645,0.3564,35.64%
-Support-only synthetic head,0.1137,0.5073,50.73%
-Shuffled-label prototype,0.2002,0.4207,42.07%
-Uniform client weight,0.5839,0.0370,3.70%
-Binary support only,0.5517,0.0692,6.92%
-Global client-size weight,0.5944,0.0266,2.66%
+experiment_name,description,Setting,Mean Acc,Delta vs. LAMP (fraction),Delta vs. LAMP (display)
+Diagnostic prototype reconstruction internal ablation experiment,This table reports full-scope mean accuracy when replacing prototype semantics or class-support weighting inside diagnostic prototype reconstruction.,LAMP-Merge,0.6209,--,--
+Diagnostic prototype reconstruction internal ablation experiment,This table reports full-scope mean accuracy when replacing prototype semantics or class-support weighting inside diagnostic prototype reconstruction.,Classifier-head aggregation,0.2579,0.3630,36.30%
+Diagnostic prototype reconstruction internal ablation experiment,This table reports full-scope mean accuracy when replacing prototype semantics or class-support weighting inside diagnostic prototype reconstruction.,Global-feature mean,0.2645,0.3564,35.64%
+Diagnostic prototype reconstruction internal ablation experiment,This table reports full-scope mean accuracy when replacing prototype semantics or class-support weighting inside diagnostic prototype reconstruction.,Support-only synthetic head,0.1137,0.5073,50.73%
+Diagnostic prototype reconstruction internal ablation experiment,This table reports full-scope mean accuracy when replacing prototype semantics or class-support weighting inside diagnostic prototype reconstruction.,Shuffled-label prototype,0.2002,0.4207,42.07%
+Diagnostic prototype reconstruction internal ablation experiment,This table reports full-scope mean accuracy when replacing prototype semantics or class-support weighting inside diagnostic prototype reconstruction.,Uniform client weight,0.5839,0.0370,3.70%
+Diagnostic prototype reconstruction internal ablation experiment,This table reports full-scope mean accuracy when replacing prototype semantics or class-support weighting inside diagnostic prototype reconstruction.,Binary support only,0.5517,0.0692,6.92%
+Diagnostic prototype reconstruction internal ablation experiment,This table reports full-scope mean accuracy when replacing prototype semantics or class-support weighting inside diagnostic prototype reconstruction.,Global client-size weight,0.5944,0.0266,2.66%

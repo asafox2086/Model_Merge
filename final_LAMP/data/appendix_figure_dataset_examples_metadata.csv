@@ -1,2 +1,2 @@
-paper_item,label,figure_file,data_type,raw_numeric_data,note
-Appendix Figure,fig:dataset-examples,final_LAMP/figures/dataset_examples.png,representative image montage,not applicable,Representative MedMNIST training images used only for qualitative illustration; no numeric plotting table is associated with this figure.
+experiment_name,description,paper_item,label,figure_file,data_type,raw_numeric_data,note
+Evaluation dataset visualization,This CSV describes the appendix figure that qualitatively shows representative examples from the five medical image datasets; the figure has no numeric plotting data.,Appendix Figure,fig:dataset-examples,final_LAMP/figures/dataset_examples.png,representative image montage,not applicable,Representative MedMNIST training images used only for qualitative illustration; no numeric plotting table is associated with this figure.
