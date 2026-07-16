@@ -1,0 +1,10 @@
+说明,本表对应诊断原型重建模块的内部消融实验，报告替换原型语义或类别支持权重后的完整范围平均准确率。
+Setting,Mean Acc,Delta vs. LAMP (fraction),Delta vs. LAMP (display)
+LAMP-Merge,0.6209,--,--
+Classifier-head aggregation,0.2579,0.3630,36.30%
+Global-feature mean,0.2645,0.3564,35.64%
+Support-only synthetic head,0.1137,0.5073,50.73%
+Shuffled-label prototype,0.2002,0.4207,42.07%
+Uniform client weight,0.5839,0.0370,3.70%
+Binary support only,0.5517,0.0692,6.92%
+Global client-size weight,0.5944,0.0266,2.66%

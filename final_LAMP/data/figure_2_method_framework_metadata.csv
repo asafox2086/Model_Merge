@@ -1,2 +1,0 @@
-experiment_name,description,paper_item,label,figure_file,data_type,raw_numeric_data,note
-Method framework visualization,This CSV describes the conceptual LAMP-Merge framework figure; the figure is illustrative and has no numeric plotting data.,Figure 2,fig_method,final_LAMP/figures/method.png,method schematic,not applicable,"Framework diagram describing client uploads, diagnostic prototype reconstruction, and long-tail prevalence calibration; it is not generated from numeric experimental data."

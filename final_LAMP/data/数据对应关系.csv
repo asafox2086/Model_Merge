@@ -1,0 +1,14 @@
+说明,本表说明论文中除主表以外的所有图表与原始数据 CSV 的对应关系。
+paper_item,label,manuscript_object,data_csv,source_file,included,note
+Figure 1,fig:intro-collapse,Intro motivation diagram,动机图说明.csv,final_LAMP/figures/intro.png,yes,Conceptual non-numeric diagram; metadata CSV records source and status.
+Figure 2,fig_method,LAMP-Merge method framework,方法流程图说明.csv,final_LAMP/figures/method.png,yes,Conceptual non-numeric framework diagram; metadata CSV records source and status.
+Table 1--4,tab:client-avg-*,Main client-average result tables,excluded by request,final_LAMP/final.tex / final_LAMP/paper_data/csv/main_client_average_*.csv,no,User requested all paper tables/figures except the main tables.
+Table 5,tab:diagnostic-internal-ablation,Internal ablation of diagnostic prototype reconstruction,诊断原型重建消融.csv,final_LAMP/paper_data/csv/table_diagnostic_internal_ablation.csv,yes,Rows match current final.tex table.
+Table 6,tab:prevalence-internal-ablation,Internal ablation of long-tail prevalence calibration,长尾患病率校准消融.csv,final_LAMP/final.tex curated from ablation report,yes,Smoothed prevalence prior is omitted because it is not in current final.tex.
+Figure 3,fig:dataset-ablation-acc,Dataset-level module ablation accuracy,模块级消融数据集准确率.csv,final_LAMP/paper_data/csv/figure_module_ablation_dataset_accuracy_4backbone.csv,yes,Five datasets; each dataset averages four backbones and three client counts.
+Table 7,tab:collapse-key,Prediction-collapse diagnostic metrics,预测坍缩诊断指标.csv,final_LAMP/paper_data/csv/table_prediction_collapse_diagnostics.csv,yes,Averaged over five medical datasets and four backbones per dataset.
+Figure 4,fig:visual-chaosheng_predict,Ultrasound predicted class distribution,超声预测类别分布.csv,final_LAMP/paper_data/csv/figure_predicted_distribution_ultrasound.csv,yes,Predicted/true distribution over eight ultrasound classes.
+Figure 5 top,fig:mechanism-analysis,Full-scope hyperparameter sensitivity,超参数分析_长表.csv; 超参数分析_诊断原型重建矩阵.csv; 超参数分析_长尾校准矩阵.csv,My_merge_ret/reports/lamp_merge_hparam_interaction_full.csv,yes,Latest completed 5x10 grids: five gamma/tau curves and ten s/lambda points.
+Figure 5 middle,fig:mechanism-analysis,Joint t-SNE of Blood/ResNet output-probability representations,tSNE输出概率坐标.csv,final_LAMP/paper_data/csv/figure_tsne_blood_resnet_output_probability_coordinates.csv,yes,Each row is one test image under one method with probabilities and shared t-SNE coordinates.
+Figure 5 bottom,fig:mechanism-analysis,Prototype geometry internal ablation,原型几何分析.csv,final_LAMP/paper_data/csv/figure_prototype_geometry_internal_ablation.csv,yes,"Contains D_pair, D_near, prototype consistency, and prototype-client alignment."
+Appendix Figure,fig:dataset-examples,Representative dataset examples,数据集样例图说明.csv,final_LAMP/figures/dataset_examples.png,yes,Qualitative image montage; metadata CSV records source and status.

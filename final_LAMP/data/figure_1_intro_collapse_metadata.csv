@@ -1,2 +1,0 @@
-experiment_name,description,paper_item,label,figure_file,data_type,raw_numeric_data,note
-Motivation visualization,This CSV describes the conceptual motivation figure for aggregation-induced prediction collapse; the figure is illustrative and has no numeric plotting data.,Figure 1,fig:intro-collapse,final_LAMP/figures/intro.png,conceptual diagram,not applicable,Motivation diagram drawn to illustrate aggregation-induced prediction collapse; it is not generated from numeric experimental data.
