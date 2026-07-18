@@ -165,21 +165,17 @@ def render_table(table):
 
 def build_output(base_intro, merged_tables):
     order = []
-    for section in ["Small", "VLM"]:
-        if section == "Small":
-            models = ["resnet", "convnext", "vit_t", "swin_tiny"]
-        else:
-            models = ["openai/clip-vit-base-patch32"]
-        for model in models:
-            for kind in ["Raw", "Client Average"]:
-                key = (section, model, kind)
-                if key in merged_tables:
-                    order.append(key)
+    for model in ["resnet", "convnext", "vit_t", "swin_tiny"]:
+        for kind in ["Raw", "Client Average"]:
+            key = ("Small", model, kind)
+            if key in merged_tables:
+                order.append(key)
 
     lines = [
         "# Experiment Master Tables",
         "",
         "- Combined from `result/all_results.md` and the generated LAMP-Merge result table.",
+        "- Formal scope: five medical image datasets and four vision backbones (ResNet, ConvNeXt, ViT-Tiny, and Swin-Tiny); VLM results are excluded.",
         "- Original baseline values are preserved; this file adds only the formal `LAMP-Merge` row.",
         "- Highlight rule: highest value in each column is `<strong>bold</strong>`, second-highest distinct value is `<ins>underlined</ins>`.",
         "",

@@ -1,33 +1,32 @@
 # LAMP-Merge 模块内补充消融汇报
 
-本文档给出 LAMP-Merge 的模块间消融、模块内消融、预测坍缩诊断、原型几何分析、联合 t-SNE 可视化与超参数敏感性结果。模块内消融、诊断、几何与超参数分析均采用 5 个医学图像数据集、4 个 backbone、3 个客户端数量和 3 个 Dirichlet $\beta$ 设置；因此每个方法包含 180 个 raw cells，并在固定 `(dataset, backbone, K)` 下对三个 $\beta$ 取均值得到 60 个 client-average cells。模块间消融与正式主表保持一致，额外纳入 CLIP-ViT backbone，因此包含 225 个 raw cells 和 75 个 client-average cells。本文档不引用任何单一数据集、单一 backbone 或单一 $\beta$ 的阶段性结果。
+本文档给出 LAMP-Merge 的模块间消融、模块内消融、预测坍缩诊断、原型几何分析、联合 t-SNE 可视化与超参数敏感性结果。所有正式全量分析均采用 5 个医学图像数据集、4 个 backbone（`resnet`、`convnext`、`vit_t`、`swin_tiny`）、3 个客户端数量和 3 个 Dirichlet $\beta$ 设置；因此每个方法包含 180 个 raw cells，并在固定 `(dataset, backbone, K)` 下对三个 $\beta$ 取均值得到 60 个 client-average cells。CLIP-ViT-B/32 不属于正式全量口径，本文档不引用任何单一数据集、单一 backbone 或单一 $\beta$ 的阶段性结果。
 
 ## 模块间消融核心结果
 
-模块间消融采用正式主表口径，覆盖 5 个数据集、5 个 backbone、3 个客户端数量与 3 个 Dirichlet $\beta$，共 225 个 raw cells 和 75 个 client-average cells。该表直接比较完整 LAMP-Merge、仅保留诊断原型重建的 M1 only、将 M2 附加到普通平均模型的 avg+M2，以及普通参数平均 avg。
+模块间消融采用正式主表口径，覆盖 5 个数据集、4 个 backbone、3 个客户端数量与 3 个 Dirichlet $\beta$，共 180 个 raw cells 和 60 个 client-average cells。该表比较完整 LAMP-Merge、仅保留诊断原型重建的 M1 only，以及普通参数平均 avg；完整方法相对 M1 only 的差异即长尾患病率校准的贡献。
 
 | 设置 | Client-average cells | Client-average mean Acc | Best/tied cells | >= avg cells | Mean margin vs avg |
 |---|---:|---:|---:|---:|---:|
-| LAMP-Merge | 75 | 0.5618 | 51/75 | 71/75 | +0.3345 |
-| M1 only | 75 | 0.5362 | 46/75 | 66/75 | +0.3089 |
-| avg+M2 | 75 | 0.2198 | 4/75 | 43/75 | -0.0075 |
-| avg | 75 | 0.2273 | 2/75 | 75/75 | 0.0000 |
+| LAMP-Merge | 60 | 0.6209 | 52/60 | 58/60 | +0.4005 |
+| M1 only | 60 | 0.5880 | 30/60 | 53/60 | +0.3676 |
+| avg | 60 | 0.2204 | 2/60 | 60/60 | 0.0000 |
 
 数据集级模块间消融如下：
 
-| Dataset | Cells | LAMP-Merge | M1 only | avg+M2 | avg | LAMP best/tied |
-|---|---:|---:|---:|---:|---:|---:|
-| bloodmnist_224 | 15 | 0.7156 | 0.7155 | 0.1726 | 0.1699 | 12/15 |
-| chaoshengmnist_224 | 15 | 0.4040 | 0.4040 | 0.1551 | 0.1516 | 15/15 |
-| dermamnist_224 | 15 | 0.6257 | 0.4975 | 0.4913 | 0.5304 | 12/15 |
-| organcmnist_224 | 15 | 0.5543 | 0.5543 | 0.1331 | 0.1358 | 6/15 |
-| organsmnist_224 | 15 | 0.5096 | 0.5096 | 0.1469 | 0.1488 | 6/15 |
+| Dataset | Cells | LAMP-Merge | M1 only | avg | LAMP best/tied |
+|---|---:|---:|---:|---:|---:|
+| bloodmnist_224 | 12 | 0.8174 | 0.8174 | 0.1714 | 12/12 |
+| chaoshengmnist_224 | 12 | 0.4574 | 0.4574 | 0.1564 | 12/12 |
+| dermamnist_224 | 12 | 0.6286 | 0.4666 | 0.5042 | 10/12 |
+| organcmnist_224 | 12 | 0.6270 | 0.6240 | 0.1286 | 9/12 |
+| organsmnist_224 | 12 | 0.5741 | 0.5745 | 0.1414 | 9/12 |
 
-该消融表明，M1 是主要有效成分；M2 在 Derma 这类强长尾诊断分布中提供额外收益，使 LAMP-Merge 相比 M1 only 的数据集均值提高 0.1282。avg+M2 的总体均值低于 avg，说明患病率校准不能独立修复已经坍缩或语义错配的平均模型；M2 必须作为诊断原型分类器上的有界先验项使用。
+该消融表明，M1 重建了主要的多类别判别结构，而 M2 在强长尾条件下提供额外的患病率校准。例如，Derma 的数据集均值从 M1 only 的 0.4666 提升至完整 LAMP-Merge 的 0.6286；该增益来自原型分类器上的有界先验校准，而非将校准项直接附加到已经坍缩的平均模型。
 
 ## 一、实验口径与符号
 
-正式 LAMP-Merge 结果来自 `outputs/lamp_merge_full_client_local_20260708_193654`，模块内消融来自 `outputs/lamp_merge_internal_ablation_full_20260708_force_all_analysis_after_client_stats_internal_ablation`。模块间消融表读取 `My_merge_ret/reports/lamp_merge_client_avg_ablation_*.csv`。所有分支均读取同一客户端统计目录 `outputs/lamp_merge_client_local_proto_stats`，并固定使用 $\gamma=0.45$、$s=20$、$\tau=2.5$ 与 $\lambda=5.0$。
+正式 LAMP-Merge 结果来自 `outputs/lamp_merge_full_client_local_20260708_193654`，模块内消融来自 `outputs/lamp_merge_internal_ablation_full_20260708_force_all_analysis_after_client_stats_internal_ablation`。模块间消融表读取 `My_merge_ret/reports/lamp_merge_internal_ablation_full_client_average.csv`。所有分支均读取同一客户端统计目录 `outputs/lamp_merge_client_local_proto_stats`，并固定使用 $\gamma=0.45$、$s=20$、$\tau=2.5$ 与 $\lambda=5.0$。
 
 | 符号 | 定义 |
 |---|---|
@@ -537,7 +536,7 @@ b_c-b_d
 \lambda|\log\pi_c-\log\pi_d|.
 ```
 
-有限的 $\lambda$ 保证 M2 是有界校准而非判别方向替代。模块间消融显示，在 Derma 这类强长尾条件下，加入 M2 后 LAMP-Merge 的 client-average Accuracy 从 0.4975 提升至 0.6257；预测诊断中，LAMP-Merge 同时保持低于通用基线的坍缩强度并取得最低 Pred-True TV。这与理论中的“原型负责判别、先验负责有限风险校准”一致。
+有限的 $\lambda$ 保证 M2 是有界校准而非判别方向替代。模块间消融显示，在 Derma 这类强长尾条件下，加入 M2 后 LAMP-Merge 的 client-average Accuracy 从 0.4666 提升至 0.6286；预测诊断中，LAMP-Merge 同时保持低于通用基线的坍缩强度并取得最低 Pred-True TV。这与理论中的“原型负责判别、先验负责有限风险校准”一致。
 
 ## 八、结论
 

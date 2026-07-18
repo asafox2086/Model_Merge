@@ -38,11 +38,6 @@ SMALL_MODELS = [
     "swin_tiny",
 ]
 
-VLM_MODELS = [
-    "openai/clip-vit-base-patch32",
-]
-
-
 METHOD_ROW_NAMES = {"lamp_merge"}
 FORMAL_LABEL = "LAMP-Merge"
 
@@ -206,6 +201,7 @@ def build_markdown(output_roots, extra_rows):
         "",
         "- Layout: aligned with `result/all_results.md`.",
         f"- Source output root: `{roots_label}`.",
+        "- Formal scope: five medical image datasets and four vision backbones (ResNet, ConvNeXt, ViT-Tiny, and Swin-Tiny).",
         "- Extra comparison rows: " + (extra_label if extra_label else "none") + ".",
         "- Values are filled from real `eval_summary.csv` results for `LAMP-Merge`; missing combinations are shown as `-`.",
         "",
@@ -221,21 +217,6 @@ def build_markdown(output_roots, extra_rows):
             lines,
             row_lookups,
             task_type="small",
-            model_name=model_name,
-            dataset_names=SMALL_DATASETS,
-            raw_headers=raw_headers,
-            avg_headers=avg_headers,
-        )
-
-    lines.extend([
-        "## VLM",
-        "",
-    ])
-    for model_name in VLM_MODELS:
-        build_model_section(
-            lines,
-            row_lookups,
-            task_type="vlm",
             model_name=model_name,
             dataset_names=SMALL_DATASETS,
             raw_headers=raw_headers,
