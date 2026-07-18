@@ -24,6 +24,9 @@ GAMMA_VALUES=( ${GAMMA_VALUES:-0.35 0.40 0.45 0.50 0.55} )
 S_VALUES=( ${S_VALUES:-15 17.5 20 22.5 25} )
 TAU_VALUES=( ${TAU_VALUES:-1.5 2.0 2.5 3.0 3.5} )
 LAMBDA_VALUES=( ${LAMBDA_VALUES:-4.0 4.5 5.0 5.5 6.0} )
+RUN_M1="${RUN_M1:-1}"
+RUN_M2="${RUN_M2:-1}"
+SKIP_SUMMARY="${SKIP_SUMMARY:-0}"
 
 mkdir -p "${BASE_OUTPUT_ROOT}" "${LOG_DIR}"
 if [[ ! -d "${PROTO_ROOT}" ]]; then
@@ -47,16 +50,25 @@ safe_value() {
 }
 
 RUN_ITEMS=()
-for gamma in "${GAMMA_VALUES[@]}"; do
-  for scale in "${S_VALUES[@]}"; do
-    RUN_ITEMS+=("m1:${gamma}:${scale}")
+if [[ "${RUN_M1}" == "1" ]]; then
+  for gamma in "${GAMMA_VALUES[@]}"; do
+    for scale in "${S_VALUES[@]}"; do
+      RUN_ITEMS+=("m1:${gamma}:${scale}")
+    done
   done
-done
-for threshold in "${TAU_VALUES[@]}"; do
-  for strength in "${LAMBDA_VALUES[@]}"; do
-    RUN_ITEMS+=("m2:${threshold}:${strength}")
+fi
+if [[ "${RUN_M2}" == "1" ]]; then
+  for threshold in "${TAU_VALUES[@]}"; do
+    for strength in "${LAMBDA_VALUES[@]}"; do
+      RUN_ITEMS+=("m2:${threshold}:${strength}")
+    done
   done
-done
+fi
+
+if [[ ${#RUN_ITEMS[@]} -eq 0 ]]; then
+  echo "No hyperparameter configurations selected." >&2
+  exit 2
+fi
 
 run_item() {
   local item="$1"
@@ -130,6 +142,8 @@ echo "gamma_values=${GAMMA_VALUES[*]}"
 echo "s_values=${S_VALUES[*]}"
 echo "tau_values=${TAU_VALUES[*]}"
 echo "lambda_values=${LAMBDA_VALUES[*]}"
+echo "run_m1=${RUN_M1}"
+echo "run_m2=${RUN_M2}"
 echo "total_grid_points=${#RUN_ITEMS[@]}"
 
 pids=()
@@ -149,6 +163,11 @@ done
 if [[ "${status}" -ne 0 ]]; then
   echo "[$(date '+%F %T')] at least one interaction scan failed; summary skipped" >&2
   exit "${status}"
+fi
+
+if [[ "${SKIP_SUMMARY}" == "1" ]]; then
+  echo "[$(date '+%F %T')] complete full interaction sensitivity scan (summary skipped)"
+  exit 0
 fi
 
 SUMMARY_ROOTS="${SUMMARY_ROOTS:-${BASE_OUTPUT_ROOT}}"

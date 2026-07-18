@@ -188,7 +188,7 @@ beta = 0, 0.01, 0.1
 seed = 42
 ```
 
-因此，每个消融设置应产生 180 个 raw cells；在论文主表口径下，先对相同 `(dataset, backbone, K)` 的三个 beta 取均值，得到 60 个 client-average cells。所有“模块是否有效”的结论必须同时报告 raw cell 与 client-average cell，并以最终 LAMP-Merge 为参照报告 mean margin、胜出或持平 cell 数；不允许只报告某一个 beta，也不允许用是否超过 `avg` 来判断内部模块是否有效。20 个 `clients=3 / beta=0.01` case 只作为预测分布、collapse ratio、t-SNE 等诊断可视化的代表子集，不能作为主消融结论。为了分析 M2，还可以额外强调 `dermamnist_224 / resnet / clients=3 / beta=0.1 / seed=42` 作为长尾压力点，但它同样只用于机制解释。
+因此，每个消融设置和每个非客户端预测诊断方法都应产生 180 个 raw cells；在论文主表口径下，先对相同 `(dataset, backbone, K)` 的三个 beta 取均值，得到 60 个 client-average cells。所有“模块是否有效”的结论必须同时报告 raw cell 与 client-average cell，并以最终 LAMP-Merge 为参照报告 mean margin、胜出或持平 cell 数；不允许只报告某一个 beta，也不允许用是否超过 `avg` 来判断内部模块是否有效。`clients=3 / beta=0.01` 的 20 个 case 仅可作为 t-SNE 等机制可视化的代表子集，预测坍缩、balanced accuracy、macro F1 和 Pred-True TV 的正式结论必须来自 180 个 full-scope cases。为了分析 M2，还可以额外强调 `dermamnist_224 / resnet / clients=3 / beta=0.1 / seed=42` 作为长尾压力点，但它同样只用于机制解释。
 
 后续执行中已将全量要求固化为独立脚本：
 

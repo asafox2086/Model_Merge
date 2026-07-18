@@ -134,21 +134,21 @@ def parse_args():
     p.add_argument('--regmean-max-batches', type=int, default=METHOD_DEFAULTS['regmean_max_batches'])
     p.add_argument('--regmean-max-dim', type=int, default=METHOD_DEFAULTS['regmean_max_dim'])
     p.add_argument('--lamp-merge-prototype-root', dest='lamp_merge_prototype_root', type=str, default='')
-    p.add_argument('--lamp-merge-proto-count-power', dest='lamp_merge_proto_count_power', type=float, default=0.45)
-    p.add_argument('--lamp-merge-reference-head-scale', dest='lamp_merge_reference_head_scale', type=float, default=20.0)
+    p.add_argument('--lamp-merge-proto-count-power', dest='lamp_merge_proto_count_power', type=float, default=METHOD_DEFAULTS['lamp_merge_proto_count_power'])
+    p.add_argument('--lamp-merge-reference-head-scale', dest='lamp_merge_reference_head_scale', type=float, default=METHOD_DEFAULTS['lamp_merge_reference_head_scale'])
     p.add_argument('--lamp-merge-prevalence-threshold', dest='lamp_merge_prevalence_threshold', type=float, default=0.5)
     p.add_argument(
         '--lamp-merge-reference-prior-threshold',
         dest='lamp_merge_reference_prior_threshold',
         type=float,
-        default=2.5,
+        default=METHOD_DEFAULTS['lamp_merge_reference_prior_threshold'],
         help='Dominant-class imbalance ratio threshold for M2 long-tail calibration.',
     )
     p.add_argument(
         '--lamp-merge-reference-prior-max-tau',
         dest='lamp_merge_reference_prior_max_tau',
         type=float,
-        default=5.0,
+        default=METHOD_DEFAULTS['lamp_merge_reference_prior_max_tau'],
         help='Maximum centered log-prior strength used by M2.',
     )
     p.add_argument(

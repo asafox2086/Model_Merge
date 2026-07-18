@@ -1,0 +1,7 @@
+说明,本表对应附录数据集统计表；Train、Validation、Test 规模来自本仓库实际使用的五个 NPZ 文件，Sample file 指向论文压缩包内示例图。
+Dataset,Classes,Train,Validation,Test,Total,Sample file
+Blood,8,11959,1712,3421,17092,figures/sample_blood.png
+Derma,7,7007,1003,2005,10015,figures/sample_derma.png
+Organ-C,11,12975,2392,8216,23583,figures/sample_organ_c.png
+Organ-S,11,13932,2452,8827,25211,figures/sample_organ_s.png
+Ultrasound,8,3869,549,1113,5531,figures/sample_ultrasound.png

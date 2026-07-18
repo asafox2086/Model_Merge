@@ -101,7 +101,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--betas", nargs="*", type=float, default=[0.0, 0.01, 0.1])
     parser.add_argument("--seed", type=int, default=42)
     parser.add_argument("--modes", nargs="*", default=PROTOTYPE_MODES)
-    parser.add_argument("--proto-count-power", type=float, default=0.45)
+    parser.add_argument("--proto-count-power", type=float, default=0.55)
     parser.add_argument("--ablation-seed", type=int, default=1701)
     parser.add_argument("--device", type=str, default="cuda:0")
     parser.add_argument("--batch-size", type=int, default=128)

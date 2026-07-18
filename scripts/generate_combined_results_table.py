@@ -17,6 +17,7 @@ def parse_args():
     p = argparse.ArgumentParser("Merge baseline and LAMP-Merge master tables with ranking highlights")
     p.add_argument("--base", required=True, help="Baseline markdown, e.g. result/all_results.md")
     p.add_argument("--mine", required=True, help="LAMP-Merge markdown table")
+    p.add_argument("--include-vlm", action=argparse.BooleanOptionalAction, default=False)
     p.add_argument("--dest", required=True, help="Destination markdown path")
     return p.parse_args()
 
@@ -163,9 +164,10 @@ def render_table(table):
     return lines
 
 
-def build_output(base_intro, merged_tables):
+def build_output(base_intro, merged_tables, *, include_vlm=False):
     order = []
-    for section in ["Small", "VLM"]:
+    sections = ["Small", "VLM"] if include_vlm else ["Small"]
+    for section in sections:
         if section == "Small":
             models = ["resnet", "convnext", "vit_t", "swin_tiny"]
         else:
@@ -180,6 +182,7 @@ def build_output(base_intro, merged_tables):
         "# Experiment Master Tables",
         "",
         "- Combined from `result/all_results.md` and the generated LAMP-Merge result table.",
+        "- Formal scope: five medical image datasets and four vision backbones (ResNet, ConvNeXt, ViT-Tiny, and Swin-Tiny); CLIP-ViT-B/32 and all VLM results are excluded.",
         "- Original baseline values are preserved; this file adds only the formal `LAMP-Merge` row.",
         "- Highlight rule: highest value in each column is `<strong>bold</strong>`, second-highest distinct value is `<ins>underlined</ins>`.",
         "",
@@ -209,7 +212,7 @@ def main():
     base_intro, base_tables = parse_tables(Path(args.base))
     _my_intro, my_tables = parse_tables(Path(args.mine))
     merged = merge_tables(base_tables, my_tables)
-    content = build_output(base_intro, merged)
+    content = build_output(base_intro, merged, include_vlm=args.include_vlm)
     dest = Path(args.dest)
     dest.parent.mkdir(parents=True, exist_ok=True)
     dest.write_text(content, encoding="utf-8")

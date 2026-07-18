@@ -62,7 +62,7 @@ n_{i,c}=|D_{i,c}|.
 e_{i,c}=(n_{i,c}+1)^\gamma\,\mathbf{1}[n_{i,c}>0].
 ```
 
-其中 $\gamma\in(0,1)$，当前实现默认 $\gamma=0.45$。这个幂次让样本更多的客户端拥有更高证据，但避免大客户端完全垄断某个诊断类别。
+其中 $\gamma\in(0,1)$，当前实现默认 $\gamma=0.55$。这个幂次让样本更多的客户端拥有更高证据，但避免大客户端完全垄断某个诊断类别。
 
 然后对每个类别单独归一化客户端权重：
 
@@ -82,7 +82,7 @@ p_c=\sum_{i=1}^{K}\alpha_{i,c}\mu_{i,c}.
 w_c=s\frac{p_c}{\|p_c\|_2}.
 ```
 
-其中 $s$ 是 prototype head scale，默认 $s=20$。该步骤显式保证每个诊断类别都有一条独立的判别方向，从结构上抑制融合后的单类预测坍缩。
+其中 $s$ 是 prototype head scale，默认 $s=18.75$。该步骤显式保证每个诊断类别都有一条独立的判别方向，从结构上抑制融合后的单类预测坍缩。
 
 ## M2：长尾患病率校准
 
@@ -108,7 +108,7 @@ r=C\max_c \pi_c.
 b_c=\lambda\left(\log \pi_c-\frac{1}{C}\sum_{k=1}^{C}\log \pi_k\right).
 ```
 
-当前默认 $\tau=2.5$，$\lambda=5.0$。中心化项只改变类别之间的相对偏置，不整体平移所有 logit。
+当前默认 $\tau=2.5$，$\lambda=4.25$。中心化项只改变类别之间的相对偏置，不整体平移所有 logit。
 
 最终测试时，对输入图像 $x$ 的分类分数为：
 
@@ -150,7 +150,7 @@ LAMP-Merge 的通信过程是一次性的：
 
 ## 当前结果摘要
 
-当前 `汇总表.md` 已由正式 LAMP-Merge 重新生成。实验覆盖 5 个医学图像数据集、4 个 backbone、3 个客户端数量和 3 个 Dirichlet beta 设置，共 180 个 raw cell；client-average 口径对相同数据集、backbone 和客户端数量下的 3 个 beta 取平均，共 60 个 cell。
+当前 `汇总表.md` 已由正式 LAMP-Merge 重新生成。实验覆盖 5 个医学图像数据集、4 个视觉 backbone、3 个客户端数量和 3 个 Dirichlet beta 设置，共 180 个 raw cell；client-average 口径对相同数据集、backbone 和客户端数量下的 3 个 beta 取平均，共 60 个 cell。CLIP-ViT-B/32 与其他 VLM backbone 不属于实验和论文范围。
 
 LAMP-Merge 不低于最强非 LAMP 基线的统计为：
 
@@ -164,7 +164,7 @@ LAMP-Merge 不低于最强非 LAMP 基线的统计为：
 
 | 统计范围 | Cell 数 | 平均 Acc |
 | --- | ---: | ---: |
-| Raw | 180 | 0.6210 |
-| Client Average | 60 | 0.6210 |
+| Raw | 180 | 0.6221 |
+| Client Average | 60 | 0.6221 |
 
-这些结果来自 `outputs/lamp_merge_full_client_local_20260708_193654/{resnet,convnext,vit_t,swin_tiny}`，其中正式实现只包含 M1 诊断原型重建和 M2 长尾患病率校准。模块内消融、预测分布诊断和非 Accuracy 指标在独立分析表中报告，不写入正式主结果表。
+这些结果来自 `outputs/lamp_merge_internal_ablation_full_20260718_formal_gamma055_s18p75_tau2p5_lambda4p25/full`，其中正式实现只包含 M1 诊断原型重建和 M2 长尾患病率校准。模块内消融、预测分布诊断和非 Accuracy 指标在独立分析表中报告，不写入正式主结果表。

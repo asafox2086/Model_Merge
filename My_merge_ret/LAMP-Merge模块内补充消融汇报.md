@@ -8,25 +8,26 @@
 
 | 设置 | Client-average cells | Client-average mean Acc | Best/tied cells | >= avg cells | Mean margin vs avg |
 |---|---:|---:|---:|---:|---:|
-| LAMP-Merge | 60 | 0.6209 | 52/60 | 58/60 | +0.4005 |
-| M1 only | 60 | 0.5880 | 30/60 | 53/60 | +0.3676 |
-| avg | 60 | 0.2204 | 2/60 | 60/60 | 0.0000 |
+| LAMP-Merge | 60 | 0.6221 | 45/60 | 58/60 | +0.4017 |
+| M1 only | 60 | 0.5891 | 30/60 | 53/60 | +0.3687 |
+| avg+M2 | 60 | 0.2918 | 9/60 | 47/60 | +0.0714 |
+| avg | 60 | 0.2204 | 0/60 | 60/60 | 0.0000 |
 
 数据集级模块间消融如下：
 
 | Dataset | Cells | LAMP-Merge | M1 only | avg | LAMP best/tied |
 |---|---:|---:|---:|---:|---:|
-| bloodmnist_224 | 12 | 0.8174 | 0.8174 | 0.1714 | 12/12 |
-| chaoshengmnist_224 | 12 | 0.4574 | 0.4574 | 0.1564 | 12/12 |
-| dermamnist_224 | 12 | 0.6286 | 0.4666 | 0.5042 | 10/12 |
-| organcmnist_224 | 12 | 0.6270 | 0.6240 | 0.1286 | 9/12 |
-| organsmnist_224 | 12 | 0.5741 | 0.5745 | 0.1414 | 9/12 |
+| bloodmnist_224 | 12 | 0.8181 | 0.8181 | 0.1714 | 12/12 |
+| chaoshengmnist_224 | 12 | 0.4611 | 0.4611 | 0.1564 | 12/12 |
+| dermamnist_224 | 12 | 0.6240 | 0.4658 | 0.5042 | 10/12 |
+| organcmnist_224 | 12 | 0.6305 | 0.6257 | 0.1286 | 9/12 |
+| organsmnist_224 | 12 | 0.5767 | 0.5750 | 0.1414 | 9/12 |
 
-该消融表明，M1 重建了主要的多类别判别结构，而 M2 在强长尾条件下提供额外的患病率校准。例如，Derma 的数据集均值从 M1 only 的 0.4666 提升至完整 LAMP-Merge 的 0.6286；该增益来自原型分类器上的有界先验校准，而非将校准项直接附加到已经坍缩的平均模型。
+该消融表明，M1 重建了主要的多类别判别结构，而 M2 在触发阈值的三个长尾数据集上均提供正向患病率校准：Derma、Organ-C 和 Organ-S 分别提升 0.1582、0.0048 和 0.0017。Blood 与 Ultrasound 未触发 M2，因此与 M1 only 保持一致。该增益来自原型分类器上的有界先验校准，而非将校准项直接附加到已经坍缩的平均模型。
 
 ## 一、实验口径与符号
 
-正式 LAMP-Merge 结果来自 `outputs/lamp_merge_full_client_local_20260708_193654`，模块内消融来自 `outputs/lamp_merge_internal_ablation_full_20260708_force_all_analysis_after_client_stats_internal_ablation`。模块间消融表读取 `My_merge_ret/reports/lamp_merge_internal_ablation_full_client_average.csv`。所有分支均读取同一客户端统计目录 `outputs/lamp_merge_client_local_proto_stats`，并固定使用 $\gamma=0.45$、$s=20$、$\tau=2.5$ 与 $\lambda=5.0$。
+正式 LAMP-Merge 与模块内消融均来自 `outputs/lamp_merge_internal_ablation_full_20260718_formal_gamma055_s18p75_tau2p5_lambda4p25`。模块间消融表读取 `My_merge_ret/reports/lamp_merge_internal_ablation_full_client_average.csv`。所有分支均读取同一客户端统计目录 `outputs/lamp_merge_client_local_proto_stats`，并固定使用 $\gamma=0.55$、$s=18.75$、$\tau=2.5$ 与 $\lambda=4.25$。
 
 | 符号 | 定义 |
 |---|---|
@@ -84,7 +85,7 @@ w_c
 s\frac{p_c}{\|p_c\|_2}.
 ```
 
-其中，$\gamma=0.45$ 抑制大客户端对单个类别的垄断，$s=20$ 将归一化原型映射到稳定的分类 logit 尺度。
+其中，$\gamma=0.55$ 抑制大客户端对单个类别的垄断，$s=18.75$ 将归一化原型映射到稳定的分类 logit 尺度。
 
 ### 1.2 M2：长尾患病率校准
 
@@ -210,23 +211,23 @@ N_i=\sum_{c=1}^{C}n_{i,c},
 
 ### 3.1 模块内总体结果
 
-模块内消融覆盖 5 个数据集、4 个 backbone、3 个客户端数量与 3 个 Dirichlet $\beta$，共 180 个 raw cells 和 60 个 client-average cells。该组实验不再展示 `M1 only`，因为它已在模块间消融中作为 M2 的直接对照。
+模块内消融覆盖 5 个数据集、4 个 backbone、3 个客户端数量与 3 个 Dirichlet $\beta$，共 180 个 raw cells 和 60 个 client-average cells。`M1 only` 与 `avg+M2` 已在模块间消融中报告，本节聚焦正式方法内部的原型信息和类别统计替代。
 
 | 设置 | Raw cells | Client-average mean Acc | Mean margin vs LAMP | Client-average >= LAMP |
 |---|---:|---:|---:|---:|
-| LAMP-Merge | 180 | 0.6209 | 0.0000 | 60/60 |
-| Classifier-head aggregation | 180 | 0.2579 | -0.3630 | 2/60 |
-| Global-feature mean | 180 | 0.2645 | -0.3564 | 9/60 |
-| Support-only synthetic head | 180 | 0.1137 | -0.5073 | 0/60 |
-| Shuffled-label prototype | 180 | 0.2002 | -0.4207 | 0/60 |
-| Uniform client weight | 180 | 0.5839 | -0.0370 | 3/60 |
-| Binary support only | 180 | 0.5517 | -0.0692 | 2/60 |
-| Global client-size weight | 180 | 0.5944 | -0.0266 | 5/60 |
-| No prevalence calibration | 180 | 0.5879 | -0.0330 | 24/60 |
-| Uniform prevalence prior | 180 | 0.5879 | -0.0330 | 24/60 |
-| Smoothed prevalence prior | 180 | 0.6209 | -0.0000 | 39/60 |
+| LAMP-Merge | 180 | 0.6221 | 0.0000 | 60/60 |
+| Classifier-head aggregation | 180 | 0.2563 | -0.3658 | 2/60 |
+| Global-feature mean | 180 | 0.2650 | -0.3570 | 9/60 |
+| Support-only synthetic head | 180 | 0.1089 | -0.5132 | 0/60 |
+| Shuffled-label prototype | 180 | 0.1957 | -0.4263 | 0/60 |
+| Uniform client weight | 180 | 0.5833 | -0.0388 | 3/60 |
+| Binary support only | 180 | 0.5518 | -0.0703 | 0/60 |
+| Global client-size weight | 180 | 0.5939 | -0.0281 | 4/60 |
+| No prevalence calibration | 180 | 0.5891 | -0.0329 | 30/60 |
+| Uniform prevalence prior | 180 | 0.5891 | -0.0329 | 30/60 |
+| Smoothed prevalence prior | 180 | 0.6220 | -0.0001 | 41/60 |
 
-诊断原型替代项均显著低于正式方法，说明性能收益不能由额外分类头、随机方向或类别计数本身解释。`No prevalence calibration` 与 `Uniform prevalence prior` 均移除了有效长尾先验项，二者之间小于 $5\times10^{-5}$ 的均值差异来自独立评估过程的浮点数值误差。加性平滑先验与正式方法仅相差 $7.8\times10^{-6}$，表明 M2 对轻微计数扰动稳定。
+诊断原型替代项均显著低于正式方法，说明性能收益不能由额外分类头、随机方向或类别计数本身解释。`No prevalence calibration` 与 `Uniform prevalence prior` 在当前实现中完全移除有效长尾先验，因此两者与 M1 only 的全量均值一致。加性平滑先验与正式方法仅相差约 $6.1\times10^{-5}$，表明 M2 对轻微计数扰动稳定。
 
 ### 3.2 模块内数据集级结果
 
@@ -234,25 +235,25 @@ N_i=\sum_{c=1}^{C}n_{i,c},
 
 | Dataset | LAMP-Merge | Head aggregation | Global mean | Support only | Shuffled prototype |
 |---|---:|---:|---:|---:|---:|
-| bloodmnist_224 | 0.8174 | 0.1897 | 0.0864 | 0.1162 | 0.2446 |
-| chaoshengmnist_224 | 0.4574 | 0.1642 | 0.1087 | 0.1069 | 0.1416 |
-| dermamnist_224 | 0.6286 | 0.5665 | 0.6688 | 0.1953 | 0.3015 |
-| organcmnist_224 | 0.6270 | 0.1791 | 0.2233 | 0.0715 | 0.1447 |
-| organsmnist_224 | 0.5741 | 0.1902 | 0.2354 | 0.0784 | 0.1685 |
+| bloodmnist_224 | 0.8181 | 0.1895 | 0.0888 | 0.1162 | 0.2446 |
+| chaoshengmnist_224 | 0.4611 | 0.1643 | 0.1087 | 0.1069 | 0.1425 |
+| dermamnist_224 | 0.6240 | 0.5614 | 0.6688 | 0.1729 | 0.2873 |
+| organcmnist_224 | 0.6305 | 0.1774 | 0.2233 | 0.0708 | 0.1418 |
+| organsmnist_224 | 0.5767 | 0.1888 | 0.2354 | 0.0774 | 0.1625 |
 
 类别统计信息消融如下：
 
 | Dataset | LAMP-Merge | Uniform-client | Binary support | Global-size | No prevalence | Uniform prior | Smoothed prior |
 |---|---:|---:|---:|---:|---:|---:|---:|
-| bloodmnist_224 | 0.8174 | 0.7803 | 0.7803 | 0.7845 | 0.8174 | 0.8174 | 0.8174 |
-| chaoshengmnist_224 | 0.4574 | 0.4174 | 0.4174 | 0.4313 | 0.4575 | 0.4575 | 0.4575 |
-| dermamnist_224 | 0.6286 | 0.6025 | 0.4499 | 0.6300 | 0.4664 | 0.4664 | 0.6283 |
-| organcmnist_224 | 0.6270 | 0.5825 | 0.5786 | 0.5899 | 0.6240 | 0.6240 | 0.6272 |
-| organsmnist_224 | 0.5741 | 0.5370 | 0.5325 | 0.5361 | 0.5744 | 0.5744 | 0.5742 |
+| bloodmnist_224 | 0.8181 | 0.7803 | 0.7803 | 0.7845 | 0.8181 | 0.8181 | 0.8181 |
+| chaoshengmnist_224 | 0.4611 | 0.4179 | 0.4179 | 0.4313 | 0.4611 | 0.4611 | 0.4611 |
+| dermamnist_224 | 0.6240 | 0.5961 | 0.4496 | 0.6248 | 0.4658 | 0.4658 | 0.6234 |
+| organcmnist_224 | 0.6305 | 0.5836 | 0.5786 | 0.5911 | 0.6257 | 0.6257 | 0.6305 |
+| organsmnist_224 | 0.5767 | 0.5386 | 0.5324 | 0.5379 | 0.5750 | 0.5750 | 0.5767 |
 
 ![Full-scope dataset-level internal ablation accuracy](figures/lamp_merge_internal_analysis/dataset_internal_ablation_accuracy.png)
 
-每个单元格均为 12 个 client-average cells 的均值，覆盖 4 个 backbone 与 3 个客户端数量。`Global-feature mean` 在 Derma 上取得 0.6688 的 Accuracy，但后续诊断显示其坍缩强度接近 1、Balanced Accuracy 仅约 0.14；该现象说明强长尾医学数据上的高 Accuracy 可能由单类预测产生，不能作为完整判别能力的唯一证据。
+每个单元格均为 12 个 client-average cells 的均值，覆盖 4 个 backbone 与 3 个客户端数量。`Global-feature mean` 与 `avg+M2` 在 Derma 上均取得 0.6688 的 Accuracy，但后续诊断需要检验该结果是否来自多数类预测；该现象说明强长尾医学数据上的高 Accuracy 不能作为完整判别能力的唯一证据。
 
 ## 四、预测坍缩与非 Accuracy 指标
 
@@ -306,19 +307,23 @@ $\rho$ 越接近 1，模型越接近单类预测器；$C_{\mathrm{eff}}$ 越大�
 
 | 设置 | BA $\uparrow$ | Macro-F1 $\uparrow$ | $\rho$ $\downarrow$ | $C_{\mathrm{eff}}$ $\uparrow$ | Pred-True TV $\downarrow$ |
 |---|---:|---:|---:|---:|---:|
-| LAMP-Merge | 0.5370 | 0.5238 | 0.3122 | 7.1322 | 0.1262 |
-| Classifier-head aggregation | 0.1420 | 0.0932 | 0.6679 | 2.7812 | 0.5386 |
-| Global-feature mean | 0.1149 | 0.0448 | 0.9996 | 1.0015 | 0.7381 |
-| Support-only synthetic head | 0.1147 | 0.0590 | 0.6099 | 3.3330 | 0.6287 |
-| Shuffled-label prototype | 0.1425 | 0.1316 | 0.2564 | 7.4060 | 0.2630 |
-| Uniform client weight | 0.5001 | 0.4821 | 0.3232 | 6.9106 | 0.1628 |
-| Binary support only | 0.5294 | 0.4901 | 0.2496 | 7.7057 | 0.1840 |
-| Global client-size weight | 0.5028 | 0.4852 | 0.3293 | 6.8625 | 0.1543 |
-| Smoothed prevalence prior | 0.5371 | 0.5238 | 0.3120 | 7.1357 | 0.1261 |
+| LAMP-Merge | 0.5422 | 0.5281 | 0.3063 | 7.2020 | 0.1242 |
+| M1 only | 0.5737 | 0.5352 | 0.2307 | 8.0288 | 0.1492 |
+| avg+M2 | 0.1255 | 0.0601 | 0.9551 | 1.1633 | 0.6938 |
+| Classifier-head aggregation | 0.1422 | 0.0934 | 0.6629 | 2.8054 | 0.5380 |
+| Global-feature mean | 0.1149 | 0.0447 | 1.0000 | 1.0000 | 0.7385 |
+| Support-only synthetic head | 0.1142 | 0.0577 | 0.6159 | 3.3296 | 0.6351 |
+| Shuffled-label prototype | 0.1418 | 0.1310 | 0.2512 | 7.4626 | 0.2666 |
+| Uniform client weight | 0.5029 | 0.4842 | 0.3180 | 6.9693 | 0.1616 |
+| Binary support only | 0.5294 | 0.4902 | 0.2497 | 7.7057 | 0.1840 |
+| Global client-size weight | 0.5056 | 0.4874 | 0.3242 | 6.9204 | 0.1524 |
+| No prevalence calibration | 0.5737 | 0.5352 | 0.2307 | 8.0288 | 0.1492 |
+| Uniform prevalence prior | 0.5737 | 0.5352 | 0.2307 | 8.0288 | 0.1492 |
+| Smoothed prevalence prior | 0.5423 | 0.5281 | 0.3060 | 7.2064 | 0.1243 |
 
 ![Full-scope performance and collapse diagnostics](figures/lamp_merge_internal_analysis/internal_ablation_metrics.png)
 
-LAMP-Merge 同时保持较高的 BA、Macro-F1 与 $C_{\mathrm{eff}}$，并取得最低的 Pred-True TV，说明正式方法并非通过单类预测获得 Accuracy，而是在保持多类别诊断覆盖的同时，使预测分布与医学长尾患病率更一致。`Global-feature mean` 与 `Support-only synthetic head` 等替代项在 $\rho$ 或 Pred-True TV 上显著退化，表明类别语义原型和患病率校准缺一不可。
+M1 only 取得更高的 BA、Macro-F1 与 $C_{\mathrm{eff}}$，说明诊断原型直接恢复类均衡判别；完整 LAMP-Merge 则将 Pred-True TV 从 0.1492 降至 0.1242，并提高总体 Accuracy，说明 M2 将预测风险校准到真实医学患病率。`avg+M2` 的坍缩率达到 0.9551、有效类别数仅 1.1633，证明患病率校准不能脱离 M1 单独使用。`Global-feature mean` 与 `Support-only synthetic head` 等替代项也显著退化，表明类别语义原型和有界患病率校准缺一不可。
 
 ### 4.3 数据集级坍缩诊断
 
@@ -327,25 +332,25 @@ LAMP-Merge 同时保持较高的 BA、Macro-F1 与 $C_{\mathrm{eff}}$，并取�
 | Dataset | Setting | BA | Macro-F1 | $\rho$ | $C_{\mathrm{eff}}$ | Pred-True TV |
 |---|---|---:|---:|---:|---:|---:|
 | bloodmnist_224 | Best generic (`iso_c`) | 0.1730 | 0.0860 | 0.8020 | 1.8145 | 0.7348 |
-| bloodmnist_224 | LAMP-Merge | 0.8058 | 0.8011 | 0.1958 | 7.4795 | 0.0394 |
+| bloodmnist_224 | LAMP-Merge | 0.8070 | 0.8022 | 0.1958 | 7.4828 | 0.0397 |
 | chaoshengmnist_224 | Best generic (`fisher`) | 0.1595 | 0.0753 | 0.8603 | 1.5414 | 0.7679 |
-| chaoshengmnist_224 | LAMP-Merge | 0.4481 | 0.4329 | 0.2042 | 7.4419 | 0.1538 |
+| chaoshengmnist_224 | LAMP-Merge | 0.4516 | 0.4360 | 0.2045 | 7.4379 | 0.1551 |
 | dermamnist_224 | Best generic (`free_merge`) | 0.1504 | 0.0997 | 0.9522 | 1.1641 | 0.4606 |
-| dermamnist_224 | LAMP-Merge | 0.3242 | 0.2773 | 0.6995 | 2.9585 | 0.1737 |
+| dermamnist_224 | LAMP-Merge | 0.3328 | 0.2825 | 0.6805 | 3.0983 | 0.1709 |
 | organcmnist_224 | Best generic (`robustmerge`) | 0.1194 | 0.0494 | 0.8174 | 1.7291 | 0.7870 |
-| organcmnist_224 | LAMP-Merge | 0.5951 | 0.5915 | 0.2115 | 9.4702 | 0.1250 |
+| organcmnist_224 | LAMP-Merge | 0.6014 | 0.5971 | 0.2072 | 9.5472 | 0.1238 |
 | organsmnist_224 | Best generic (`robustmerge`) | 0.1193 | 0.0538 | 0.7888 | 1.9973 | 0.7385 |
-| organsmnist_224 | LAMP-Merge | 0.5118 | 0.5162 | 0.2499 | 8.3109 | 0.1389 |
+| organsmnist_224 | LAMP-Merge | 0.5182 | 0.5228 | 0.2436 | 8.4437 | 0.1317 |
 
 ![Full-scope recovery of global diagnostic discrimination](figures/lamp_merge_internal_analysis/collapse_recovery_by_dataset.png)
 
-在五个医学数据集上，最强通用融合基线的 $\rho$ 通常处于 0.79--0.95 区间，说明其预测质量主要受单类坍缩支配。LAMP-Merge 将 Blood、Ultrasound、Organ-C 与 Organ-S 的 $\rho$ 降至约 0.18--0.25，并显著提高 $C_{\mathrm{eff}}$。Derma 具有最强的真实长尾分布，LAMP-Merge 的 $\rho=0.6995$，仍显著低于最强通用基线的 0.9522，同时取得更低的 Pred-True TV，说明其多数类偏置来自患病率校准而非无结构坍缩。
+在五个医学数据集上，最强通用融合基线的 $\rho$ 通常处于 0.79--0.95 区间，说明其预测质量主要受单类坍缩支配。LAMP-Merge 将 Blood、Ultrasound、Organ-C 与 Organ-S 的 $\rho$ 降至约 0.20--0.24，并显著提高 $C_{\mathrm{eff}}$。Derma 具有最强的真实长尾分布，LAMP-Merge 的 $\rho=0.6805$，仍显著低于最强通用基线的 0.9522，同时取得更低的 Pred-True TV，说明其多数类偏置来自患病率校准而非无结构坍缩。
 
 ### 4.4 预测分布可视化
 
-下图在 Derma 的 36 个 full-scope cases 上聚合预测类别比例。测试集类别 5 的真实比例为 0.67；LAMP-Merge 的预测比例为 0.70，而最强通用基线 `free_merge` 的逐 case 坍缩强度为 0.9522。由此可见，M2 不是无约束地追随多数类，而是将诊断原型分类器的输出校准到客户端上传计数所估计的真实长尾先验。
+下图在 Derma 的 36 个 full-scope cases 上聚合预测类别比例。测试集类别 5 的真实比例为 0.67；M1 only 的预测比例为 0.37，LAMP-Merge 经 M2 校准后为 0.68，而 `avg+M2` 直接达到 1.00。由此可见，M2 只有附着于已恢复多类别判别的 M1 原型分类器时，才能形成有界的长尾校准；直接附着于普通平均会退化为多数类预测器。
 
-图中每个单元格先对 36 个 case 的预测分布 $q(c)$ 取均值；表 4.3 的坍缩强度则先在每个 case 内计算 $\rho=\max_c q(c)$，再对 $\rho$ 取均值。由于最大值算子是非线性的，`free_merge` 在图中平均分布的最大分量为 0.70，而其逐 case 坍缩强度均值为 0.9522；后者刻画单次融合结果发生单类坍缩的频率与强度。
+图中每个单元格先对 36 个 case 的预测分布 $q(c)$ 取均值；表 4.3 的坍缩强度则先在每个 case 内计算 $\rho=\max_c q(c)$，再对 $\rho$ 取均值。由于最大值算子是非线性的，`free_merge` 在图中平均分布的最大分量为 0.70，而其逐 case 坍缩强度均值为 0.9522；`avg+M2` 的两种统计均为 1.00。逐 case 指标更直接刻画单次融合结果发生单类坍缩的频率与强度。
 
 ![Derma full-scope predicted class distribution](figures/lamp_merge_internal_analysis/dermamnist_224_prediction_distribution.png)
 
@@ -427,11 +432,11 @@ Accuracy 消融共有 11 个设置；本节只列出 8 个会改变原型几何�
 
 | 设置 | Cases | $D_{\mathrm{pair}}$ | $D_{\mathrm{nn}}$ | $A_{\mathrm{client}}$ | $A_{\mathrm{proto}}$ | $H_{\mathrm{evi}}$ |
 |---|---:|---:|---:|---:|---:|---:|
-| LAMP-Merge | 180 | 0.1122 | 0.0361 | 0.8751 | 0.9446 | 0.2505 |
-| Classifier-head aggregation | 180 | 0.9734 | 0.8041 | -0.0021 | 0.5079 | 0.2505 |
-| Global-feature mean | 180 | 0.0000 | 0.0000 | 1.0000 | 1.0000 | 0.2505 |
-| Support-only synthetic head | 180 | 0.9870 | 0.9141 | 1.0000 | 1.0000 | 0.2505 |
-| Shuffled-label prototype | 180 | 0.1122 | 0.0361 | 0.8751 | 0.8554 | 0.2505 |
+| LAMP-Merge | 180 | 0.1115 | 0.0355 | 0.8751 | 0.9419 | 0.2124 |
+| Classifier-head aggregation | 180 | 0.9733 | 0.8043 | -0.0021 | 0.4910 | 0.2124 |
+| Global-feature mean | 180 | 0.0000 | -0.0000 | 1.0000 | 1.0000 | 0.2124 |
+| Support-only synthetic head | 180 | 0.9870 | 0.9141 | 1.0000 | 1.0000 | 0.2124 |
+| Shuffled-label prototype | 180 | 0.1115 | 0.0355 | 0.8751 | 0.8553 | 0.2124 |
 | Uniform client weight | 180 | 0.1365 | 0.0557 | 0.8751 | 0.9571 | 0.4126 |
 | Binary support only | 180 | 0.1365 | 0.0557 | 0.8751 | 0.9571 | 0.4126 |
 | Global client-size weight | 180 | 0.1369 | 0.0551 | 0.8751 | 0.9502 | 0.3399 |
@@ -480,7 +485,7 @@ M1 的连续超参数是原型分类头尺度 $s$，M2 的连续超参数是长�
 
 ![Full-scope hyperparameter sensitivity](figures/lamp_merge_hparam_full_sensitivity.png)
 
-$s\in[12,22]$ 时，平均 Accuracy 保持在 0.6204--0.6209；$\lambda\in[4,8]$ 时，平均 Accuracy 保持在 0.6198--0.6209。正式取值 $s=20$、$\lambda=5$ 均位于稳定平台内部，说明结果不依赖窄范围单点调参。
+$s\in[12,22]$ 时，平均 Accuracy 保持在 0.6204--0.6209；$\lambda\in[4,8]$ 时，平均 Accuracy 保持在 0.6198--0.6209。该单因素敏感性扫描保留原实验数据，不因正式参数更新而重跑；扫描峰值分别位于 $s=20$ 和 $\lambda=5$。新的正式取值 $s=18.75$、$\lambda=4.25$ 均位于对应稳定平台内部，说明正式结果不依赖窄范围单点调参。
 
 ## 七、理论解释
 
@@ -536,7 +541,7 @@ b_c-b_d
 \lambda|\log\pi_c-\log\pi_d|.
 ```
 
-有限的 $\lambda$ 保证 M2 是有界校准而非判别方向替代。模块间消融显示，在 Derma 这类强长尾条件下，加入 M2 后 LAMP-Merge 的 client-average Accuracy 从 0.4666 提升至 0.6286；预测诊断中，LAMP-Merge 同时保持低于通用基线的坍缩强度并取得最低 Pred-True TV。这与理论中的“原型负责判别、先验负责有限风险校准”一致。
+有限的 $\lambda$ 保证 M2 是有界校准而非判别方向替代。模块间消融显示，在 Derma 这类强长尾条件下，加入 M2 后 LAMP-Merge 的 client-average Accuracy 从 0.4658 提升至 0.6240；预测诊断中，LAMP-Merge 同时保持低于通用基线的坍缩强度并取得较低的 Pred-True TV。这与理论中的“原型负责判别、先验负责有限风险校准”一致。
 
 ## 八、结论
 

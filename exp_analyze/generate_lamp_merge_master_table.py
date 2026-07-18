@@ -38,6 +38,10 @@ SMALL_MODELS = [
     "swin_tiny",
 ]
 
+VLM_MODELS = [
+    "openai/clip-vit-base-patch32",
+]
+
 METHOD_ROW_NAMES = {"lamp_merge"}
 FORMAL_LABEL = "LAMP-Merge"
 
@@ -60,6 +64,7 @@ def parse_args():
             "Example: --extra-row M1=outputs/ablation_m1_only"
         ),
     )
+    p.add_argument("--include-vlm", action=argparse.BooleanOptionalAction, default=False)
     p.add_argument("--dest", required=True, help="Destination markdown file")
     return p.parse_args()
 
@@ -187,7 +192,7 @@ def build_model_section(lines, row_lookups, *, task_type, model_name, dataset_na
     lines.append("")
 
 
-def build_markdown(output_roots, extra_rows):
+def build_markdown(output_roots, extra_rows, *, include_vlm=False):
     row_lookups = [(FORMAL_LABEL, build_lookup(load_eval_rows(output_roots)))]
     for label, roots in extra_rows:
         row_lookups.append((label, build_lookup(load_eval_rows(roots))))
@@ -201,7 +206,7 @@ def build_markdown(output_roots, extra_rows):
         "",
         "- Layout: aligned with `result/all_results.md`.",
         f"- Source output root: `{roots_label}`.",
-        "- Formal scope: five medical image datasets and four vision backbones (ResNet, ConvNeXt, ViT-Tiny, and Swin-Tiny).",
+        "- Formal scope: five medical image datasets and four vision backbones (ResNet, ConvNeXt, ViT-Tiny, and Swin-Tiny); CLIP-ViT-B/32 and all VLM results are excluded.",
         "- Extra comparison rows: " + (extra_label if extra_label else "none") + ".",
         "- Values are filled from real `eval_summary.csv` results for `LAMP-Merge`; missing combinations are shown as `-`.",
         "",
@@ -223,6 +228,22 @@ def build_markdown(output_roots, extra_rows):
             avg_headers=avg_headers,
         )
 
+    if include_vlm:
+        lines.extend([
+            "## VLM",
+            "",
+        ])
+        for model_name in VLM_MODELS:
+            build_model_section(
+                lines,
+                row_lookups,
+                task_type="vlm",
+                model_name=model_name,
+                dataset_names=SMALL_DATASETS,
+                raw_headers=raw_headers,
+                avg_headers=avg_headers,
+            )
+
     return "\n".join(lines).rstrip() + "\n"
 
 
@@ -231,7 +252,7 @@ def main():
     output_roots = [Path(item) for item in args.output_root]
     extra_rows = parse_extra_rows(args.extra_row)
     dest = Path(args.dest)
-    content = build_markdown(output_roots, extra_rows)
+    content = build_markdown(output_roots, extra_rows, include_vlm=args.include_vlm)
     dest.parent.mkdir(parents=True, exist_ok=True)
     dest.write_text(content, encoding="utf-8")
     print(f"wrote {dest}")

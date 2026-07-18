@@ -134,11 +134,11 @@ def parse_args() -> argparse.Namespace:
         type=Path,
         default=default_prototype_root(ROOT),
     )
-    parser.add_argument("--lamp-merge-proto-count-power", type=float, default=0.45)
-    parser.add_argument("--lamp-merge-reference-head-scale", type=float, default=20.0)
+    parser.add_argument("--lamp-merge-proto-count-power", type=float, default=0.55)
+    parser.add_argument("--lamp-merge-reference-head-scale", type=float, default=18.75)
     parser.add_argument("--lamp-merge-prevalence-threshold", type=float, default=0.5)
     parser.add_argument("--lamp-merge-reference-prior-threshold", type=float, default=2.5)
-    parser.add_argument("--lamp-merge-reference-prior-max-tau", type=float, default=5.0)
+    parser.add_argument("--lamp-merge-reference-prior-max-tau", type=float, default=4.25)
     parser.add_argument("--lamp-merge-reference-prior-tau", type=float, default=None)
     parser.add_argument("--lamp-merge-ablation-mode", choices=sorted(LAMP_MERGE_ABLATION_MODES), default="full")
     parser.add_argument("--lamp-merge-ablation-modes", nargs="*", choices=sorted(LAMP_MERGE_ABLATION_MODES), default=[])

@@ -1,0 +1,5 @@
+说明,本表对应预测坍缩诊断实验；Collapse ratio 和 Predicted-true TV 使用百分比，Effective predicted classes 使用类别数。Best generic reference 对每个指标分别选取最优通用模型合并基线。
+Metric,Direction,LAMP-Merge,Best generic reference,Reference method
+Collapse ratio,lower,30.63,79.02,Iso-C
+Effective predicted classes,higher,7.20,2.05,RegMean
+Predicted-true TV,lower,12.42,69.44,Iso-C

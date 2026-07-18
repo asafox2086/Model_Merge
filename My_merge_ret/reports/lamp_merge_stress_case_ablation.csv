@@ -1,4 +1,0 @@
-setting,root,task_type,dataset,model,num_clients,beta,rows,mean_acc,min_acc,max_acc,note
-M1+M2,/data2/liyapeng_grp/program/MedMNISTMerge/outputs/lamp_merge_current_prevalence_smoke_20260706,small,dermamnist_224,resnet,3,0.1,1,0.6723192019950125,0.6723192019950125,0.6723192019950125,formal LAMP-Merge with prototype reconstruction and uploaded-prevalence calibration
-M1 only,/data2/liyapeng_grp/program/MedMNISTMerge/outputs/lamp_merge_current_prevalence_m1_smoke_20260706,small,dermamnist_224,resnet,3,0.1,1,0.4314214463840399,0.4314214463840399,0.4314214463840399,prototype reconstruction with long-tail prevalence calibration disabled
-avg+M2,/data2/liyapeng_grp/program/MedMNISTMerge/outputs/lamp_merge_current_prevalence_avg_m2_smoke_20260706,small,dermamnist_224,resnet,3,0.1,1,0.6688279301745635,0.6688279301745635,0.6688279301745635,ordinary weight averaging with the same prevalence calibration but without prototype reconstruction

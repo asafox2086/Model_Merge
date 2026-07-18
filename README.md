@@ -100,7 +100,7 @@ model_hub/vlm/<dataset>/<clip_model>/clients_<n>/beta_<beta>/seed_<seed>/
 
 - 数据集：`bloodmnist_224`、`dermamnist_224`、`organcmnist_224`、`organsmnist_224`、`chaoshengmnist_224`
 - small backbone：`resnet`、`convnext`、`vit_t`、`swin_tiny`
-- vlm：`openai/clip-vit-base-patch32`
+- VLM 兼容资产：`openai/clip-vit-base-patch32`；不参与当前正式实验、结果表或论文
 - 组合：`clients=3/5/7`，`beta=0/0.01/0.1`
 
 ## 结果复现现在是怎么保证的

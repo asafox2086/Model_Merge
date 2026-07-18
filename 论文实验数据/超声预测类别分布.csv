@@ -1,0 +1,7 @@
+说明,本表对应 Ultrasound 预测类别分布图；每个方法对四个 backbone、K=3/5/7 和三个 beta 设置取平均，类别比例使用百分比。
+Series,TV,Class 0 proportion (%),Class 1 proportion (%),Class 2 proportion (%),Class 3 proportion (%),Class 4 proportion (%),Class 5 proportion (%),Class 6 proportion (%),Class 7 proportion (%)
+LAMP-Merge,0.1291,12.1044,16.7490,8.7352,17.5726,13.3847,8.6977,15.3489,7.4074
+Weight Averaging,0.2338,12.3914,3.6538,16.4820,14.6551,2.0091,13.7841,32.1154,4.9092
+TIES-Merging,0.2584,13.6243,4.8343,19.1774,10.9988,11.5603,7.7144,29.1854,2.9051
+DARE-Linear,0.2242,9.3791,3.2520,15.5885,20.8421,2.8427,8.5455,30.0165,9.5338
+True distribution,0.0000,10.8715,10.8715,10.5121,16.1725,8.9847,12.6685,17.3405,12.5786

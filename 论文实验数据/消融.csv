@@ -1,0 +1,6 @@
+说明,本表对应模块级消融实验；DPRM 表示 Diagnostic Prototype Reconstruction Module，LPC 表示 Long-tail Prevalence Calibration，单位为 client-average ACC 百分比。
+Setting,Paper label,Overall ACC (%),Blood ACC (%),Derma ACC (%),Organ-C ACC (%),Organ-S ACC (%),Ultrasound ACC (%)
+Weight-Averaging Baseline,Baseline,22.04,17.14,50.42,12.86,14.14,15.64
+Baseline + LPC,Baseline + LPC,29.18,17.13,66.88,22.34,23.89,15.64
+Baseline + DPRM,Baseline + DPRM,58.91,81.81,46.58,62.57,57.50,46.11
+LAMP-Merge (Baseline + DPRM + LPC),LAMP-Merge,62.21,81.81,62.40,63.05,57.67,46.11

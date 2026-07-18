@@ -1,6 +1,6 @@
 # LAMP-Merge Full-Scope Interaction Hyperparameter Analysis
 
-Experiment root: `outputs/lamp_merge_hparam_interaction_full_20260714_hparam_interaction_local5x5_rerun`.
+Experiment roots: `/data2/liyapeng_grp/program/MedMNISTMerge/outputs/lamp_merge_hparam_interaction_full_20260714_hparam_interaction_local5x5_rerun`, `outputs/lamp_merge_hparam_interaction_full_20260715_hparam_interaction_dense_additional5x5`.
 
 Every grid point evaluates the full formal medical benchmark: five datasets, four vision backbones, three client counts, and three Dirichlet skew levels. A complete point therefore contains 180 raw cells and 60 client-average cells.
 
@@ -8,53 +8,103 @@ The diagnostic-prototype grid fixes a value of $\gamma$ for each curve and scans
 
 | Module | Curve | X value | Raw cells | Raw mean Acc | Client-average cells | Client-average mean Acc |
 | --- | --- | ---: | ---: | ---: | ---: | ---: |
+| diagnostic prototype reconstruction | $\gamma=0.35$ | 13.75 | 180 | 0.6184 | 60 | 0.6184 |
 | diagnostic prototype reconstruction | $\gamma=0.35$ | 15.00 | 180 | 0.6181 | 60 | 0.6181 |
+| diagnostic prototype reconstruction | $\gamma=0.35$ | 16.25 | 180 | 0.6181 | 60 | 0.6181 |
 | diagnostic prototype reconstruction | $\gamma=0.35$ | 17.50 | 180 | 0.6186 | 60 | 0.6186 |
+| diagnostic prototype reconstruction | $\gamma=0.35$ | 18.75 | 180 | 0.6187 | 60 | 0.6187 |
 | diagnostic prototype reconstruction | $\gamma=0.35$ | 20.00 | 180 | 0.6184 | 60 | 0.6184 |
+| diagnostic prototype reconstruction | $\gamma=0.35$ | 21.25 | 180 | 0.6179 | 60 | 0.6179 |
 | diagnostic prototype reconstruction | $\gamma=0.35$ | 22.50 | 180 | 0.6180 | 60 | 0.6180 |
+| diagnostic prototype reconstruction | $\gamma=0.35$ | 23.75 | 180 | 0.6178 | 60 | 0.6178 |
 | diagnostic prototype reconstruction | $\gamma=0.35$ | 25.00 | 180 | 0.6172 | 60 | 0.6172 |
+| diagnostic prototype reconstruction | $\gamma=0.40$ | 13.75 | 180 | 0.6199 | 60 | 0.6199 |
 | diagnostic prototype reconstruction | $\gamma=0.40$ | 15.00 | 180 | 0.6196 | 60 | 0.6196 |
+| diagnostic prototype reconstruction | $\gamma=0.40$ | 16.25 | 180 | 0.6197 | 60 | 0.6197 |
 | diagnostic prototype reconstruction | $\gamma=0.40$ | 17.50 | 180 | 0.6201 | 60 | 0.6201 |
+| diagnostic prototype reconstruction | $\gamma=0.40$ | 18.75 | 180 | 0.6203 | 60 | 0.6203 |
 | diagnostic prototype reconstruction | $\gamma=0.40$ | 20.00 | 180 | 0.6199 | 60 | 0.6199 |
+| diagnostic prototype reconstruction | $\gamma=0.40$ | 21.25 | 180 | 0.6195 | 60 | 0.6195 |
 | diagnostic prototype reconstruction | $\gamma=0.40$ | 22.50 | 180 | 0.6195 | 60 | 0.6195 |
+| diagnostic prototype reconstruction | $\gamma=0.40$ | 23.75 | 180 | 0.6192 | 60 | 0.6192 |
 | diagnostic prototype reconstruction | $\gamma=0.40$ | 25.00 | 180 | 0.6187 | 60 | 0.6187 |
+| diagnostic prototype reconstruction | $\gamma=0.45$ | 13.75 | 180 | 0.6209 | 60 | 0.6209 |
 | diagnostic prototype reconstruction | $\gamma=0.45$ | 15.00 | 180 | 0.6206 | 60 | 0.6206 |
+| diagnostic prototype reconstruction | $\gamma=0.45$ | 16.25 | 180 | 0.6208 | 60 | 0.6208 |
 | diagnostic prototype reconstruction | $\gamma=0.45$ | 17.50 | 180 | 0.6211 | 60 | 0.6211 |
+| diagnostic prototype reconstruction | $\gamma=0.45$ | 18.75 | 180 | 0.6213 | 60 | 0.6213 |
 | diagnostic prototype reconstruction | $\gamma=0.45$ | 20.00 | 180 | 0.6209 | 60 | 0.6209 |
+| diagnostic prototype reconstruction | $\gamma=0.45$ | 21.25 | 180 | 0.6206 | 60 | 0.6206 |
 | diagnostic prototype reconstruction | $\gamma=0.45$ | 22.50 | 180 | 0.6205 | 60 | 0.6205 |
+| diagnostic prototype reconstruction | $\gamma=0.45$ | 23.75 | 180 | 0.6202 | 60 | 0.6202 |
 | diagnostic prototype reconstruction | $\gamma=0.45$ | 25.00 | 180 | 0.6197 | 60 | 0.6197 |
+| diagnostic prototype reconstruction | $\gamma=0.50$ | 13.75 | 180 | 0.6216 | 60 | 0.6216 |
 | diagnostic prototype reconstruction | $\gamma=0.50$ | 15.00 | 180 | 0.6214 | 60 | 0.6214 |
+| diagnostic prototype reconstruction | $\gamma=0.50$ | 16.25 | 180 | 0.6216 | 60 | 0.6216 |
 | diagnostic prototype reconstruction | $\gamma=0.50$ | 17.50 | 180 | 0.6219 | 60 | 0.6219 |
+| diagnostic prototype reconstruction | $\gamma=0.50$ | 18.75 | 180 | 0.6222 | 60 | 0.6222 |
 | diagnostic prototype reconstruction | $\gamma=0.50$ | 20.00 | 180 | 0.6219 | 60 | 0.6219 |
+| diagnostic prototype reconstruction | $\gamma=0.50$ | 21.25 | 180 | 0.6215 | 60 | 0.6215 |
 | diagnostic prototype reconstruction | $\gamma=0.50$ | 22.50 | 180 | 0.6213 | 60 | 0.6213 |
+| diagnostic prototype reconstruction | $\gamma=0.50$ | 23.75 | 180 | 0.6210 | 60 | 0.6210 |
 | diagnostic prototype reconstruction | $\gamma=0.50$ | 25.00 | 180 | 0.6205 | 60 | 0.6205 |
+| diagnostic prototype reconstruction | $\gamma=0.55$ | 13.75 | 180 | 0.6221 | 60 | 0.6221 |
 | diagnostic prototype reconstruction | $\gamma=0.55$ | 15.00 | 180 | 0.6219 | 60 | 0.6219 |
+| diagnostic prototype reconstruction | $\gamma=0.55$ | 16.25 | 180 | 0.6219 | 60 | 0.6219 |
 | diagnostic prototype reconstruction | $\gamma=0.55$ | 17.50 | 180 | 0.6223 | 60 | 0.6223 |
+| diagnostic prototype reconstruction | $\gamma=0.55$ | 18.75 | 180 | 0.6227 | 60 | 0.6227 |
 | diagnostic prototype reconstruction | $\gamma=0.55$ | 20.00 | 180 | 0.6224 | 60 | 0.6224 |
+| diagnostic prototype reconstruction | $\gamma=0.55$ | 21.25 | 180 | 0.6218 | 60 | 0.6218 |
 | diagnostic prototype reconstruction | $\gamma=0.55$ | 22.50 | 180 | 0.6218 | 60 | 0.6218 |
+| diagnostic prototype reconstruction | $\gamma=0.55$ | 23.75 | 180 | 0.6214 | 60 | 0.6214 |
 | diagnostic prototype reconstruction | $\gamma=0.55$ | 25.00 | 180 | 0.6209 | 60 | 0.6209 |
+| long-tail prevalence calibration | $\tau=1.50$ | 3.75 | 180 | 0.6181 | 60 | 0.6181 |
 | long-tail prevalence calibration | $\tau=1.50$ | 4.00 | 180 | 0.6182 | 60 | 0.6182 |
+| long-tail prevalence calibration | $\tau=1.50$ | 4.25 | 180 | 0.6182 | 60 | 0.6182 |
 | long-tail prevalence calibration | $\tau=1.50$ | 4.50 | 180 | 0.6181 | 60 | 0.6181 |
+| long-tail prevalence calibration | $\tau=1.50$ | 4.75 | 180 | 0.6181 | 60 | 0.6181 |
 | long-tail prevalence calibration | $\tau=1.50$ | 5.00 | 180 | 0.6178 | 60 | 0.6178 |
+| long-tail prevalence calibration | $\tau=1.50$ | 5.25 | 180 | 0.6177 | 60 | 0.6177 |
 | long-tail prevalence calibration | $\tau=1.50$ | 5.50 | 180 | 0.6170 | 60 | 0.6170 |
+| long-tail prevalence calibration | $\tau=1.50$ | 5.75 | 180 | 0.6163 | 60 | 0.6163 |
 | long-tail prevalence calibration | $\tau=1.50$ | 6.00 | 180 | 0.6154 | 60 | 0.6154 |
+| long-tail prevalence calibration | $\tau=2.00$ | 3.75 | 180 | 0.6193 | 60 | 0.6193 |
 | long-tail prevalence calibration | $\tau=2.00$ | 4.00 | 180 | 0.6198 | 60 | 0.6198 |
+| long-tail prevalence calibration | $\tau=2.00$ | 4.25 | 180 | 0.6202 | 60 | 0.6202 |
 | long-tail prevalence calibration | $\tau=2.00$ | 4.50 | 180 | 0.6205 | 60 | 0.6205 |
+| long-tail prevalence calibration | $\tau=2.00$ | 4.75 | 180 | 0.6209 | 60 | 0.6209 |
 | long-tail prevalence calibration | $\tau=2.00$ | 5.00 | 180 | 0.6209 | 60 | 0.6209 |
+| long-tail prevalence calibration | $\tau=2.00$ | 5.25 | 180 | 0.6213 | 60 | 0.6213 |
 | long-tail prevalence calibration | $\tau=2.00$ | 5.50 | 180 | 0.6211 | 60 | 0.6211 |
+| long-tail prevalence calibration | $\tau=2.00$ | 5.75 | 180 | 0.6211 | 60 | 0.6211 |
 | long-tail prevalence calibration | $\tau=2.00$ | 6.00 | 180 | 0.6207 | 60 | 0.6207 |
+| long-tail prevalence calibration | $\tau=2.50$ | 3.75 | 180 | 0.6193 | 60 | 0.6193 |
 | long-tail prevalence calibration | $\tau=2.50$ | 4.00 | 180 | 0.6198 | 60 | 0.6198 |
+| long-tail prevalence calibration | $\tau=2.50$ | 4.25 | 180 | 0.6202 | 60 | 0.6202 |
 | long-tail prevalence calibration | $\tau=2.50$ | 4.50 | 180 | 0.6205 | 60 | 0.6205 |
+| long-tail prevalence calibration | $\tau=2.50$ | 4.75 | 180 | 0.6209 | 60 | 0.6209 |
 | long-tail prevalence calibration | $\tau=2.50$ | 5.00 | 180 | 0.6209 | 60 | 0.6209 |
+| long-tail prevalence calibration | $\tau=2.50$ | 5.25 | 180 | 0.6213 | 60 | 0.6213 |
 | long-tail prevalence calibration | $\tau=2.50$ | 5.50 | 180 | 0.6211 | 60 | 0.6211 |
+| long-tail prevalence calibration | $\tau=2.50$ | 5.75 | 180 | 0.6211 | 60 | 0.6211 |
 | long-tail prevalence calibration | $\tau=2.50$ | 6.00 | 180 | 0.6207 | 60 | 0.6207 |
+| long-tail prevalence calibration | $\tau=3.00$ | 3.75 | 180 | 0.6172 | 60 | 0.6172 |
 | long-tail prevalence calibration | $\tau=3.00$ | 4.00 | 180 | 0.6180 | 60 | 0.6180 |
+| long-tail prevalence calibration | $\tau=3.00$ | 4.25 | 180 | 0.6188 | 60 | 0.6188 |
 | long-tail prevalence calibration | $\tau=3.00$ | 4.50 | 180 | 0.6193 | 60 | 0.6193 |
+| long-tail prevalence calibration | $\tau=3.00$ | 4.75 | 180 | 0.6201 | 60 | 0.6201 |
 | long-tail prevalence calibration | $\tau=3.00$ | 5.00 | 180 | 0.6204 | 60 | 0.6204 |
+| long-tail prevalence calibration | $\tau=3.00$ | 5.25 | 180 | 0.6212 | 60 | 0.6212 |
 | long-tail prevalence calibration | $\tau=3.00$ | 5.50 | 180 | 0.6215 | 60 | 0.6215 |
+| long-tail prevalence calibration | $\tau=3.00$ | 5.75 | 180 | 0.6219 | 60 | 0.6219 |
 | long-tail prevalence calibration | $\tau=3.00$ | 6.00 | 180 | 0.6220 | 60 | 0.6220 |
+| long-tail prevalence calibration | $\tau=3.50$ | 3.75 | 180 | 0.6172 | 60 | 0.6172 |
 | long-tail prevalence calibration | $\tau=3.50$ | 4.00 | 180 | 0.6181 | 60 | 0.6181 |
+| long-tail prevalence calibration | $\tau=3.50$ | 4.25 | 180 | 0.6188 | 60 | 0.6188 |
 | long-tail prevalence calibration | $\tau=3.50$ | 4.50 | 180 | 0.6193 | 60 | 0.6193 |
+| long-tail prevalence calibration | $\tau=3.50$ | 4.75 | 180 | 0.6201 | 60 | 0.6201 |
 | long-tail prevalence calibration | $\tau=3.50$ | 5.00 | 180 | 0.6204 | 60 | 0.6204 |
+| long-tail prevalence calibration | $\tau=3.50$ | 5.25 | 180 | 0.6212 | 60 | 0.6212 |
 | long-tail prevalence calibration | $\tau=3.50$ | 5.50 | 180 | 0.6215 | 60 | 0.6215 |
+| long-tail prevalence calibration | $\tau=3.50$ | 5.75 | 180 | 0.6219 | 60 | 0.6219 |
 | long-tail prevalence calibration | $\tau=3.50$ | 6.00 | 180 | 0.6220 | 60 | 0.6220 |

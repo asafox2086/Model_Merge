@@ -348,7 +348,7 @@ def _support_only_proxy(num_clients, num_classes, feature_dim, cfg):
 
 def _evidence_matrix(feature_counts, proto_stats, meta, cfg, evidence_mode):
     if evidence_mode == "support_power":
-        gamma = float(_cfg_value(cfg, "lamp_merge_proto_count_power", default=0.45))
+        gamma = float(_cfg_value(cfg, "lamp_merge_proto_count_power", default=0.55))
         evidence = (feature_counts + 1.0).pow(gamma)
         return evidence * (feature_counts > 0).to(evidence.dtype), gamma
     if evidence_mode in {"uniform_present_client", "binary_support"}:
@@ -528,7 +528,7 @@ def _prevalence_calibration_strength(class_prior, num_classes, cfg):
     max_tau = float(_cfg_value(
         cfg,
         "lamp_merge_reference_prior_max_tau",
-        default=5.0,
+        default=4.25,
     ))
     explicit = _cfg_value(cfg, "lamp_merge_reference_prior_tau")
     if explicit is not None:
@@ -563,7 +563,7 @@ def _synthesize_reference_prototype_model(base_state, proto_stats, meta, cfg, st
     scale = float(_cfg_value(
         cfg,
         "lamp_merge_reference_head_scale",
-        default=20.0,
+        default=18.75,
     ))
     class_counts = proto["class_counts"]
     class_prior = class_counts / class_counts.sum().clamp_min(EPS)
@@ -603,7 +603,7 @@ def _synthesize_reference_prototype_model(base_state, proto_stats, meta, cfg, st
         "reference_prior_max_tau": float(_cfg_value(
             cfg,
             "lamp_merge_reference_prior_max_tau",
-            default=5.0,
+            default=4.25,
         )),
         "imbalance_ratio": imbalance_ratio,
         "num_clients": int(proto["num_clients"]),
@@ -648,7 +648,7 @@ def _avg_plus_prevalence_model(state_dicts, weights, proto_stats, meta, cfg):
         "reference_prior_max_tau": float(_cfg_value(
             cfg,
             "lamp_merge_reference_prior_max_tau",
-            default=5.0,
+            default=4.25,
         )),
         "imbalance_ratio": imbalance_ratio,
         "class_counts": [float(x) for x in class_counts.tolist()],
