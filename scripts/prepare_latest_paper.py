@@ -53,8 +53,8 @@ MAIN_METHOD_NAMES = {
 
 MODE_COLUMNS = {
     "full": "LAMP-Merge",
-    "avg_m2": "avg+M2",
-    "m1_only": "M1 only",
+    "avg_m2": "Baseline + LPC",
+    "m1_only": "DPR only",
     "prototype_head_agg": "Classifier-head aggregation",
     "global_feature_mean": "Global-feature mean",
     "support_only": "Support-only synthetic head",
@@ -236,9 +236,8 @@ def build_main_csvs(csv_dir: Path, formal_values: dict[tuple[str, str, int], flo
 def aggregate_module_ablation(client_rows: list[dict[str, str]]) -> list[dict[str, object]]:
     configurations = [
         ("Weight-Averaging Baseline", "Baseline", "avg"),
-        ("Baseline + LPC", "Baseline + LPC", "avg+M2"),
-        ("Baseline + DPRM", "Baseline + DPRM", "M1 only"),
-        ("LAMP-Merge (Baseline + DPRM + LPC)", "LAMP-Merge", "LAMP-Merge"),
+        ("Baseline + DPR", "Baseline + DPR", "M1 only"),
+        ("LAMP-Merge (Baseline + DPR + LPC)", "LAMP-Merge", "LAMP-Merge"),
     ]
     by_dataset: dict[str, dict[str, list[float]]] = defaultdict(lambda: defaultdict(list))
     overall: dict[str, list[float]] = defaultdict(list)
@@ -263,43 +262,52 @@ def aggregate_module_ablation(client_rows: list[dict[str, str]]) -> list[dict[st
     return output_rows
 
 
-def internal_ablation_rows() -> tuple[list[dict[str, object]], list[dict[str, object]], dict[str, float]]:
-    rows = read_csv(REPORT_DIR / "lamp_merge_internal_ablation_full.csv")
-    values = {row["mode"]: float(row["client_average_mean_acc"]) for row in rows}
-    full = values["full"]
+def internal_ablation_rows(
+    client_rows: list[dict[str, str]],
+) -> tuple[list[dict[str, object]], list[dict[str, object]], dict[str, float]]:
     diagnostic_modes = [
-        ("LAMP-Merge", "full"),
-        ("Classifier-head aggregation", "prototype_head_agg"),
-        ("Global-feature mean", "global_feature_mean"),
-        ("Support-only synthetic head", "support_only"),
-        ("Shuffled-label prototype", "prototype_shuffle"),
-        ("Uniform client weight", "uniform_client_weight"),
-        ("Binary support only", "binary_support"),
-        ("Global client-size weight", "global_client_size_weight"),
+        ("Classifier-head aggregation", "prototype_head_agg", "Classifier-head aggregation"),
+        ("Global-feature mean", "global_feature_mean", "Global-feature mean"),
+        ("Support-only synthetic head", "support_only", "Support-only synthetic head"),
+        ("Shuffled-label prototype", "prototype_shuffle", "Shuffled-label prototype"),
+        ("Uniform client weight", "uniform_client_weight", "Uniform client weight"),
+        ("Binary support only", "binary_support", "Binary support only"),
+        ("Global client-size weight", "global_client_size_weight", "Global client-size weight"),
+        ("LAMP-Merge", "full", "LAMP-Merge"),
     ]
     prevalence_modes = [
-        ("LAMP-Merge", "full"),
-        ("No prevalence calibration", "no_prevalence"),
-        ("Uniform prevalence prior", "uniform_prevalence"),
+        ("No prevalence calibration", "no_prevalence", "No prevalence calibration"),
+        ("Uniform prevalence prior", "uniform_prevalence", "Uniform prevalence prior"),
+        ("LAMP-Merge", "full", "LAMP-Merge"),
     ]
 
-    def build(entries: list[tuple[str, str]]) -> list[dict[str, object]]:
+    def build(entries: list[tuple[str, str, str]]) -> tuple[list[dict[str, object]], dict[str, float]]:
         output = []
-        for label, mode in entries:
-            value = values[mode]
-            output.append(
-                {
-                    "Setting": label,
-                    "Mean ACC (%)": f"{100 * value:.2f}",
-                    "Drop vs. LAMP-Merge (pp)": "--" if mode == "full" else f"{100 * (full - value):.2f}",
-                }
-            )
-        return output
+        overall_values: dict[str, float] = {}
+        for label, mode, source_column in entries:
+            result: dict[str, object] = {"Setting": label, "Mode": mode}
+            all_values = []
+            for dataset_key, dataset_label in DATASETS:
+                values = [
+                    float(row[source_column]) for row in client_rows if row["dataset"] == dataset_key
+                ]
+                if len(values) != 12:
+                    raise RuntimeError(f"Expected 12 {mode} cells for {dataset_key}, got {len(values)}")
+                dataset_mean = sum(values) / len(values)
+                result[f"{dataset_label} ACC (%)"] = f"{100 * dataset_mean:.2f}"
+                all_values.extend(values)
+            overall = sum(all_values) / len(all_values)
+            result["Avg ACC (%)"] = f"{100 * overall:.2f}"
+            overall_values[mode] = overall
+            output.append(result)
+        return output, overall_values
 
-    return build(diagnostic_modes), build(prevalence_modes), values
+    diagnostic_rows, diagnostic_values = build(diagnostic_modes)
+    prevalence_rows, prevalence_values = build(prevalence_modes)
+    return diagnostic_rows, prevalence_rows, {**diagnostic_values, **prevalence_values}
 
 
-def build_diagnostic_table() -> tuple[list[dict[str, object]], dict[str, dict[str, float | str]]]:
+def build_diagnostic_table() -> tuple[list[dict[str, object]], dict[str, dict[str, object]]]:
     rows = read_csv(REPORT_DIR / "prediction_diagnostics_full.csv")
     by_method: dict[str, list[dict[str, str]]] = defaultdict(list)
     for row in rows:
@@ -308,8 +316,12 @@ def build_diagnostic_table() -> tuple[list[dict[str, object]], dict[str, dict[st
     if len(by_method["lamp_merge:full"]) != 180:
         raise RuntimeError("Formal LAMP diagnostic coverage is incomplete")
 
-    def mean(method: str, field: str) -> float:
-        values = [float(row[field]) for row in by_method[method] if row[field]]
+    def mean(method: str, field: str, dataset: str | None = None) -> float:
+        values = [
+            float(row[field])
+            for row in by_method[method]
+            if row[field] and (dataset is None or row["dataset"] == dataset)
+        ]
         return sum(values) / len(values)
 
     generic_methods = [method for method in by_method if not method.startswith("lamp_merge:")]
@@ -319,28 +331,58 @@ def build_diagnostic_table() -> tuple[list[dict[str, object]], dict[str, dict[st
         ("Predicted-true TV", "lower", "pred_true_tv", 100.0),
     ]
     output_rows = []
-    summary: dict[str, dict[str, float | str]] = {}
+    summary: dict[str, dict[str, object]] = {}
     for metric, direction, field, scale in metric_defs:
+        lamp_row: dict[str, object] = {"Metric": metric, "Direction": direction, "Series": "LAMP-Merge"}
+        reference_row: dict[str, object] = {
+            "Metric": metric,
+            "Direction": direction,
+            "Series": "Best generic reference",
+        }
+        dataset_summary: dict[str, object] = {}
+        reference_methods = []
+        for dataset_key, dataset_label in DATASETS:
+            lamp_value = mean("lamp_merge:full", field, dataset_key)
+            reference_values = {
+                method: mean(method, field, dataset_key) for method in generic_methods
+            }
+            chooser = min if direction == "lower" else max
+            reference_method = chooser(reference_values, key=reference_values.get)
+            reference_value = reference_values[reference_method]
+            lamp_row[f"{dataset_label} Avg"] = f"{scale * lamp_value:.2f}"
+            reference_row[f"{dataset_label} Avg"] = f"{scale * reference_value:.2f}"
+            reference_methods.append(
+                f"{dataset_label}: {MAIN_METHOD_NAMES.get(reference_method, reference_method)}"
+            )
+            dataset_summary[dataset_label] = {
+                "lamp": lamp_value,
+                "reference": reference_value,
+                "reference_method": reference_method,
+            }
+
         lamp_value = mean("lamp_merge:full", field)
         reference_values = {method: mean(method, field) for method in generic_methods}
-        if direction == "lower":
-            reference_method = min(reference_values, key=reference_values.get)
-        else:
-            reference_method = max(reference_values, key=reference_values.get)
+        chooser = min if direction == "lower" else max
+        reference_method = chooser(reference_values, key=reference_values.get)
         reference_value = reference_values[reference_method]
-        output_rows.append(
-            {
-                "Metric": metric,
-                "Direction": direction,
-                "LAMP-Merge": f"{scale * lamp_value:.2f}",
-                "Best generic reference": f"{scale * reference_value:.2f}",
-                "Reference method": MAIN_METHOD_NAMES.get(reference_method, reference_method),
-            }
+        lamp_row["Overall Avg"] = f"{scale * lamp_value:.2f}"
+        reference_row["Overall Avg"] = f"{scale * reference_value:.2f}"
+        lamp_row["Reference methods"] = "--"
+        reference_row["Reference methods"] = "; ".join(
+            reference_methods
+            + [f"Overall: {MAIN_METHOD_NAMES.get(reference_method, reference_method)}"]
         )
+        output_rows.extend([lamp_row, reference_row])
         summary[field] = {
-            "lamp": lamp_value,
-            "reference": reference_value,
-            "reference_method": reference_method,
+            "metric": metric,
+            "direction": direction,
+            "scale": scale,
+            "datasets": dataset_summary,
+            "overall": {
+                "lamp": lamp_value,
+                "reference": reference_value,
+                "reference_method": reference_method,
+            },
         }
     return output_rows, summary
 
@@ -429,10 +471,13 @@ def crop_dataset_samples(paper_dir: Path) -> None:
     if intro_source.exists() and not intro_target.exists():
         shutil.copy2(intro_source, intro_target)
 
+    names = ["blood", "ultrasound", "derma", "organ_c", "organ_s"]
+    sample_paths = [paper_dir / "figures" / f"sample_{name}.png" for name in names]
+    if all(path.exists() for path in sample_paths):
+        return
     source = Image.open(paper_dir / "figures" / "dataset_examples.png")
     width, height = source.size
     centers = [0.096, 0.298, 0.500, 0.701, 0.903]
-    names = ["blood", "ultrasound", "derma", "organ_c", "organ_s"]
     crop_width = int(width * 0.114)
     top = int(height * 0.205)
     bottom = int(height * 0.49)
@@ -451,6 +496,18 @@ def replace_table_block(tex: str, label: str, replacement: str) -> str:
     end = tex.index(end_marker, label_position)
     end = tex.index("}", end) + 1
     return tex[:start] + replacement + tex[end:]
+
+
+def replace_figure_block(tex: str, label: str, replacement: str) -> str:
+    label_position = tex.rindex(rf"\label{{{label}}}")
+    start = tex.rfind(r"\begin{figure", 0, label_position)
+    end = tex.index(r"\end{figure", label_position)
+    end = tex.index("}", end) + 1
+    return tex[:start] + replacement + tex[end:]
+
+
+def remove_figure_block(tex: str, label: str) -> str:
+    return replace_figure_block(tex, label, "")
 
 
 def replace_lamp_row(
@@ -483,24 +540,182 @@ def replace_lamp_row(
     return tex[:label_position] + updated_block + tex[table_end:]
 
 
+INTERNAL_SHORT_LABELS = {
+    "Classifier-head aggregation": "Cls-head agg.",
+    "Global-feature mean": "Global feat. mean",
+    "Support-only synthetic head": "Support-only",
+    "Shuffled-label prototype": "Shuffled proto.",
+    "Uniform client weight": "Uniform client",
+    "Binary support only": "Binary support",
+    "Global client-size weight": "Client-size weight",
+    "No prevalence calibration": "No LPC",
+    "Uniform prevalence prior": "Uniform prior",
+    "LAMP-Merge": "LAMP-Merge",
+}
+
+
+def build_internal_dataset_table(
+    rows: list[dict[str, object]],
+    caption: str,
+    label: str,
+    divider_mode: str | None = None,
+) -> str:
+    dataset_fields = [f"{dataset_label} ACC (%)" for _, dataset_label in DATASETS]
+    body = []
+    for index, row in enumerate(rows):
+        mode = str(row["Mode"])
+        if divider_mode and mode == divider_mode:
+            body.append(r"\hdashline")
+        setting = INTERNAL_SHORT_LABELS[str(row["Setting"])]
+        values = [str(row[field]) for field in dataset_fields] + [str(row["Avg ACC (%)"])]
+        if mode == "full":
+            body.extend([r"\hline \hline", r"\rowcolor[HTML]{FFF9C4}"])
+            setting = rf"\textbf{{{setting}}}"
+            values = [rf"\textbf{{{value}}}" for value in values]
+        elif index % 2:
+            body.append(r"\rowcolor{gray!10}")
+        body.append(setting + " & " + " & ".join(values) + " \\\\")
+
+    return "\n".join(
+        [
+            r"\begin{table}[t]",
+            r"\centering",
+            rf"\caption{{{caption}}}",
+            rf"\label{{{label}}}",
+            r"\scriptsize",
+            r"\renewcommand{\arraystretch}{1.20}",
+            r"\setlength{\tabcolsep}{2.4pt}",
+            r"\resizebox{\columnwidth}{!}{%",
+            r"\begin{tabular}{lccccc:c}",
+            r"\noalign{\hrule height 1.25pt}",
+            r"\rowcolor[HTML]{F2F2F2}",
+            r"\textbf{Setting} & \textbf{Blood} & \textbf{Derma} & \textbf{Organ-C} & \textbf{Organ-S} & \textbf{US} & \textbf{Avg} \\",
+            r"\hline \hline",
+            *body,
+            r"\noalign{\hrule height 1.25pt}",
+            r"\end{tabular}",
+            r"}",
+            r"\end{table}",
+        ]
+    )
+
+
+def build_collapse_dataset_table(diagnostic_summary: dict[str, dict[str, object]]) -> str:
+    metric_labels = {
+        "collapse_ratio": r"Collapse $\downarrow$",
+        "effective_predicted_classes": r"Eff. classes $\uparrow$",
+        "pred_true_tv": r"Pred-true TV $\downarrow$",
+    }
+    body = []
+    for metric_index, (field, metric_label) in enumerate(metric_labels.items()):
+        item = diagnostic_summary[field]
+        scale = float(item["scale"])
+        lamp_values = [
+            scale * float(item["datasets"][dataset_label]["lamp"])
+            for _, dataset_label in DATASETS
+        ] + [scale * float(item["overall"]["lamp"])]
+        reference_values = [
+            scale * float(item["datasets"][dataset_label]["reference"])
+            for _, dataset_label in DATASETS
+        ] + [scale * float(item["overall"]["reference"])]
+        if metric_index:
+            body.append(r"\hdashline")
+        body.extend(
+            [
+                r"\rowcolor[HTML]{FFF9C4}",
+                metric_label
+                + r" & \textbf{LAMP} & "
+                + " & ".join(rf"\textbf{{{value:.2f}}}" for value in lamp_values)
+                + " \\\\",
+                r"\rowcolor{gray!10}",
+                r" & Best ref. & "
+                + " & ".join(f"{value:.2f}" for value in reference_values)
+                + " \\\\",
+            ]
+        )
+
+    return "\n".join(
+        [
+            r"\begin{table}[t]",
+            r"\centering",
+            r"\caption{Prediction-collapse diagnostics by dataset. Best ref. is selected separately for each metric and dataset. Ratio metrics use percentage scale; Avg averages the five datasets.}",
+            r"\label{tab:collapse-key}",
+            r"\scriptsize",
+            r"\setlength{\tabcolsep}{2.2pt}",
+            r"\renewcommand{\arraystretch}{1.16}",
+            r"\resizebox{\columnwidth}{!}{%",
+            r"\begin{tabular}{llccccc:c}",
+            r"\noalign{\hrule height 1.25pt}",
+            r"\rowcolor[HTML]{F2F2F2}",
+            r"\textbf{Metric} & \textbf{Series} & \textbf{Blood} & \textbf{Derma} & \textbf{Organ-C} & \textbf{Organ-S} & \textbf{US} & \textbf{Avg} \\",
+            r"\hline \hline",
+            *body,
+            r"\noalign{\hrule height 1.25pt}",
+            r"\end{tabular}",
+            r"}",
+            r"\end{table}",
+        ]
+    )
+
+
+def build_dataset_statistics_table() -> str:
+    body = []
+    for index, item in enumerate(DATASET_STATS):
+        if index % 2:
+            body.append(r"\rowcolor{gray!10}")
+        sample = (
+            r"\makebox[1.05cm][c]{\raisebox{-0.16cm}{\includegraphics"
+            rf"[width=0.95cm,height=0.52cm,keepaspectratio]{{{item['sample']}}}}}}}"
+        )
+        body.append(
+            f"{item['dataset']} & {item['classes']} & {item['train']:,} & {item['validation']:,} & "
+            f"{item['test']:,} & {item['total']:,} & {sample} " + "\\\\"
+        )
+    return "\n".join(
+        [
+            r"\begin{table}[t]",
+            r"\centering",
+            r"\caption{Dataset statistics and representative samples for the five medical image benchmarks. Counts are taken from the exact NPZ files used in our experiments.}",
+            r"\label{tab:dataset-statistics}",
+            r"\scriptsize",
+            r"\renewcommand{\arraystretch}{1.25}",
+            r"\setlength{\tabcolsep}{2.2pt}",
+            r"\resizebox{\columnwidth}{!}{%",
+            r"\begin{tabular}{lrrrrr:c}",
+            r"\noalign{\hrule height 1.25pt}",
+            r"\rowcolor[HTML]{F2F2F2}",
+            r"\textbf{Dataset} & \textbf{Classes} & \textbf{Train} & \textbf{Val} & \textbf{Test} & \textbf{Total} & \textbf{Sample} \\",
+            r"\hline \hline",
+            *body,
+            r"\noalign{\hrule height 1.25pt}",
+            r"\end{tabular}",
+            r"}",
+            r"\end{table}",
+        ]
+    )
+
+
 def update_tex(
     paper_dir: Path,
     formal_values: dict[tuple[str, str, int], float],
-    internal_values: dict[str, float],
-    diagnostic_summary: dict[str, dict[str, float | str]],
+    diagnostic_rows: list[dict[str, object]],
+    prevalence_rows: list[dict[str, object]],
+    diagnostic_summary: dict[str, dict[str, object]],
 ) -> None:
     path = paper_dir / "v4_3.tex"
     tex = path.read_text(encoding="utf-8")
     tex = tex.replace(r"where $\gamma=0.45$ is the default evidence exponent", r"where $\gamma=0.55$ is the default evidence exponent")
     tex = tex.replace(r"where $s=20$ is the default head scale", r"where $s=18.75$ is the default head scale")
     tex = tex.replace(r"with default maximum calibration strength $\lambda=5.0$", r"with default maximum calibration strength $\lambda=4.25$")
-    tex = tex.replace(
-        "Module-level ablations use exactly the same experimental setup as the main experiments. We compare three configurations: full LAMP-Merge, diagnostic prototype reconstruction only, and weight averaging augmented only with long-tail prevalence calibration. Both components provide substantial performance improvements.",
-        "Module-level ablations use exactly the same experimental setup as the main experiments. We compare the Weight-Averaging Baseline, Baseline + LPC, Baseline + DPRM, and full LAMP-Merge (Baseline + DPRM + LPC).",
+    tex = re.sub(
+        r"Module-level ablations use exactly the same experimental setup as the main experiments\..*",
+        lambda _: r"Module-level ablations use exactly the same experimental setup as the main experiments. We report the Weight-Averaging Baseline, Baseline + DPR, and full LAMP-Merge (Baseline + DPR + LPC), forming the incremental comparison used in Fig.~\ref{fig:dataset-ablation-acc}.",
+        tex,
+        count=1,
     )
     tex = tex.replace(
-        "Module-level ablations use exactly the same experimental setup as the main experiments. We compare the Weight-Averaging Baseline, Baseline + LPC, Baseline + DPRM, and full LAMP-Merge (Baseline + DPRM + LPC). The paper names are used consistently instead of implementation labels such as M1, M2, or avg+M1.",
-        "Module-level ablations use exactly the same experimental setup as the main experiments. We compare the Weight-Averaging Baseline, Baseline + LPC, Baseline + DPRM, and full LAMP-Merge (Baseline + DPRM + LPC).",
+        r"Fig.~\ref{fig:hparam-analysis} evaluate",
+        r"Fig.~\ref{fig:hparam-analysis} evaluates",
     )
     tex = tex.replace(
         r"The default $s=20$ and $\lambda=5$ lie in broad stable regions, indicating that the gain is not produced by narrow hyperparameter tuning.",
@@ -525,113 +740,49 @@ def update_tex(
     tex = re.sub(r"(?m)^Avg\s*&", "Weight Avg. &", tex)
     tex = re.sub(r"(?ms)^% \\begin\{table\*\}\[!p\].*?^% \\end\{table\*\}\s*", "", tex)
 
-    diagnostic_table = rf"""\begin{{table}}[t]
-\centering
-\caption{{Internal ablation of diagnostic prototype reconstruction. \textbf{{All reported values are averaged over all backbones}}.}}
-\label{{tab:diagnostic-internal-ablation}}
-\scriptsize
-\renewcommand{{\arraystretch}}{{1.35}}
-\setlength{{\tabcolsep}}{{3.5pt}}
-\begin{{tabular}}{{llr}}
-\noalign{{\hrule height 1.25pt}}
-\rowcolor[HTML]{{F2F2F2}}
-\textbf{{Type}} & \textbf{{Setting}} & \textbf{{Avg}} \\
-\hline \hline
-Prototype & Cls-head agg. & {100 * internal_values['prototype_head_agg']:.2f} \\
-\rowcolor{{gray!10}}
-& Global feat. mean & {100 * internal_values['global_feature_mean']:.2f} \\
-& Support-only & {100 * internal_values['support_only']:.2f} \\
-\rowcolor{{gray!10}}
-& Shuffled proto. & {100 * internal_values['prototype_shuffle']:.2f} \\
-\hdashline
-Weight & Uniform client & {100 * internal_values['uniform_client_weight']:.2f} \\
-\rowcolor{{gray!10}}
-& Binary support & {100 * internal_values['binary_support']:.2f} \\
-& Client-size weight & {100 * internal_values['global_client_size_weight']:.2f} \\
-\hline \hline
-\rowcolor[HTML]{{FFF9C4}}
-\textbf{{Full}} & \textbf{{LAMP-Merge}} & \textbf{{{100 * internal_values['full']:.2f}}} \\
-\noalign{{\hrule height 1.25pt}}
-\end{{tabular}}
-\end{{table}}"""
+    diagnostic_table = build_internal_dataset_table(
+        diagnostic_rows,
+        "DPR internal ablation by dataset. Each entry averages all backbones, client counts, and Dirichlet settings; Avg averages the five datasets.",
+        "tab:diagnostic-internal-ablation",
+        divider_mode="uniform_client_weight",
+    )
     tex = replace_table_block(tex, "tab:diagnostic-internal-ablation", diagnostic_table)
 
-    prevalence_table = rf"""\begin{{table}}[t]
-\centering
-\caption{{Internal ablation of long-tail prevalence calibration. \textbf{{All reported values are averaged over all backbones}}.}}
-\label{{tab:prevalence-internal-ablation}}
-\scriptsize
-\renewcommand{{\arraystretch}}{{1.35}}
-\setlength{{\tabcolsep}}{{3.5pt}}
-\begin{{tabular}}{{lr}}
-\noalign{{\hrule height 1.25pt}}
-\rowcolor[HTML]{{F2F2F2}}
-\textbf{{Setting}} & \textbf{{Avg}} \\
-\hline \hline
-No LPC & {100 * internal_values['no_prevalence']:.2f} \\
-\rowcolor{{gray!10}}
-Uniform prior & {100 * internal_values['uniform_prevalence']:.2f} \\
-\hline \hline
-\rowcolor[HTML]{{FFF9C4}}
-\textbf{{LAMP-Merge}} & \textbf{{{100 * internal_values['full']:.2f}}} \\
-\noalign{{\hrule height 1.25pt}}
-\end{{tabular}}
-\end{{table}}"""
+    prevalence_table = build_internal_dataset_table(
+        prevalence_rows,
+        "LPC internal ablation by dataset. Each entry averages all backbones, client counts, and Dirichlet settings; Avg averages the five datasets.",
+        "tab:prevalence-internal-ablation",
+    )
     tex = replace_table_block(tex, "tab:prevalence-internal-ablation", prevalence_table)
 
-    collapse = diagnostic_summary["collapse_ratio"]
-    effective = diagnostic_summary["effective_predicted_classes"]
-    total_variation = diagnostic_summary["pred_true_tv"]
-    collapse_table = rf"""\begin{{table}}[t]
-\centering
-\caption{{Prediction-collapse diagnostics averaged over five medical datasets and four backbones per dataset. Ratio metrics are reported in percentage scale.}}
-\label{{tab:collapse-key}}
-\scriptsize
-\setlength{{\tabcolsep}}{{3.5pt}}
-\renewcommand{{\arraystretch}}{{1.35}}
-\begin{{tabular}}{{lcc}}
-\noalign{{\hrule height 1.25pt}}
-\rowcolor[HTML]{{F2F2F2}}
-\textbf{{Metric}} & \textbf{{LAMP-Merge}} & \textbf{{Best reference}} \\
-\hline \hline
-Collapse ratio $\downarrow$ & {100 * float(collapse['lamp']):.2f} & {100 * float(collapse['reference']):.2f} \\
-\rowcolor{{gray!10}}
-Effective classes $\uparrow$ & {float(effective['lamp']):.2f} & {float(effective['reference']):.2f} \\
-Pred-true TV $\downarrow$ & {100 * float(total_variation['lamp']):.2f} & {100 * float(total_variation['reference']):.2f} \\
-\noalign{{\hrule height 1.25pt}}
-\end{{tabular}}
-\end{{table}}"""
+    collapse_table = build_collapse_dataset_table(diagnostic_summary)
     tex = replace_table_block(tex, "tab:collapse-key", collapse_table)
 
-    dataset_rows = []
-    for item in DATASET_STATS:
-        dataset_rows.append(
-            f"{item['dataset']} & {item['classes']} & {item['train']:,} & {item['validation']:,} & "
-            f"{item['test']:,} & {item['total']:,} & "
-            rf"\includegraphics[width=1.28cm,height=0.66cm,keepaspectratio]{{{item['sample']}}} \\"
-        )
-    dataset_table = r"""\begin{table*}[t]
-\centering
-\caption{Dataset statistics and representative samples for the five medical image benchmarks. Counts are taken from the exact NPZ files used in our experiments.}
-\label{tab:dataset-statistics}
-\scriptsize
-\renewcommand{\arraystretch}{1.35}
-\setlength{\tabcolsep}{5pt}
-\begin{tabular}{lrrrrrc}
-\noalign{\hrule height 1.25pt}
-\rowcolor[HTML]{F2F2F2}
-\textbf{Dataset} & \textbf{Classes} & \textbf{Train} & \textbf{Val} & \textbf{Test} & \textbf{Total} & \textbf{Sample} \\
-\hline \hline
-""" + "\n".join(dataset_rows) + r"""
-\noalign{\hrule height 1.25pt}
-\end{tabular}
-\end{table*}"""
+    dataset_table = build_dataset_statistics_table()
     tex = replace_table_block(tex, "tab:dataset-statistics", dataset_table)
 
-    tex = tex.replace(
-        r"\caption{Internal ablation of both Module}",
-        r"\caption{Internal ablations of the Diagnostic Prototype Reconstruction Module (DPRM) and Long-tail Prevalence Calibration (LPC).}",
+    combined_hparam_figure = "\n".join(
+        [
+            r"\begin{figure*}[t]",
+            r"\centering",
+            r"\includegraphics[width=0.96\textwidth]{figures/05_hyperparameter_sensitivity.png}",
+            r"\caption{Full-scope hyperparameter sensitivity for DPR and LPC. The expanded vertical ranges emphasize that accuracy remains stable across broad parameter intervals.}",
+            r"\label{fig:hparam-analysis}",
+            r"\end{figure*}",
+        ]
     )
+    tex = replace_figure_block(tex, "fig:hparam-analysis-dpr", combined_hparam_figure)
+    tex = remove_figure_block(tex, "fig:hparam-analysis-lpc")
+    tex = remove_figure_block(tex, "fig:dataset-examples")
+    tex = tex.replace(
+        r"Fig.~\ref{fig:hparam-analysis-dpr} and Fig.~\ref{fig:hparam-analysis-lpc}",
+        r"Fig.~\ref{fig:hparam-analysis}",
+    )
+    tex = tex.replace(
+        r"Fig.~\ref{fig:hparam-analysis} evaluate",
+        r"Fig.~\ref{fig:hparam-analysis} evaluates",
+    )
+    tex = tex.replace("DPRM", "DPR")
     path.write_text(tex, encoding="utf-8")
 
 
@@ -639,11 +790,11 @@ def write_index(csv_dir: Path) -> None:
     rows = [
         ("Tables 1--4", "Main client-average ACC", "主实验_ResNet.csv; 主实验_ConvNeXt.csv; 主实验_ViT-Tiny.csv; 主实验_Swin-Tiny.csv"),
         ("Figure 3", "Module-level ablation", "消融.csv"),
-        ("Table 5 / Figure 4 left", "DPRM internal ablation", "诊断原型重建内部消融.csv"),
+        ("Table 5 / Figure 4 left", "DPR internal ablation", "诊断原型重建内部消融.csv"),
         ("Table 6 / Figure 4 right", "LPC internal ablation", "长尾患病率校准内部消融.csv"),
         ("Table 7", "Prediction-collapse diagnostics", "预测坍缩诊断.csv"),
         ("Figure 5", "Ultrasound predicted distribution", "超声预测类别分布.csv"),
-        ("Figures 6--7", "Hyperparameter sensitivity", "超参数分析_诊断原型重建.csv; 超参数分析_长尾患病率校准.csv"),
+        ("Hyperparameter figure", "Combined DPR/LPC sensitivity", "超参数分析_诊断原型重建.csv; 超参数分析_长尾患病率校准.csv"),
         ("Figure 8", "Blood/ResNet output-probability t-SNE", "tSNE输出概率坐标.csv"),
         ("Appendix Table", "Dataset statistics and samples", "数据集统计.csv"),
     ]
@@ -679,22 +830,24 @@ def main() -> None:
     ]
     write_annotated_csv(
         csv_dir / "消融.csv",
-        "本表对应模块级消融实验；DPRM 表示 Diagnostic Prototype Reconstruction Module，LPC 表示 Long-tail Prevalence Calibration，单位为 client-average ACC 百分比。",
+        "本表对应模块级消融实验；DPR 表示 Diagnostic Prototype Reconstruction，LPC 表示 Long-tail Prevalence Calibration，单位为 client-average ACC 百分比。图中仅报告 Baseline、Baseline + DPR 和 LAMP-Merge。",
         module_fields,
         module_rows,
     )
 
-    diagnostic_rows, prevalence_rows, internal_values = internal_ablation_rows()
-    internal_fields = ["Setting", "Mean ACC (%)", "Drop vs. LAMP-Merge (pp)"]
+    diagnostic_rows, prevalence_rows, _ = internal_ablation_rows(client_rows)
+    internal_fields = ["Setting", "Mode"] + [
+        f"{label} ACC (%)" for _, label in DATASETS
+    ] + ["Avg ACC (%)"]
     write_annotated_csv(
         csv_dir / "诊断原型重建内部消融.csv",
-        "本表对应 DPRM 内部消融；各设置保留 LPC，仅替换诊断原型语义或类别支持权重，数值为 180 个正式实验单元的平均 ACC 百分比。",
+        "本表对应 DPR 内部消融；各设置保留 LPC，仅替换诊断原型语义或类别支持权重。每个数据集数值对四个 backbone、K=3/5/7 和三个 beta 设置取平均，单位为 ACC 百分比。",
         internal_fields,
         diagnostic_rows,
     )
     write_annotated_csv(
         csv_dir / "长尾患病率校准内部消融.csv",
-        "本表对应 LPC 内部消融；各设置保留 DPRM，仅移除或替换患病率先验，数值为 180 个正式实验单元的平均 ACC 百分比。",
+        "本表对应 LPC 内部消融；各设置保留 DPR，仅移除或替换患病率先验。每个数据集数值对四个 backbone、K=3/5/7 和三个 beta 设置取平均，单位为 ACC 百分比。",
         internal_fields,
         prevalence_rows,
     )
@@ -702,8 +855,10 @@ def main() -> None:
     diagnostic_table, diagnostic_summary = build_diagnostic_table()
     write_annotated_csv(
         csv_dir / "预测坍缩诊断.csv",
-        "本表对应预测坍缩诊断实验；Collapse ratio 和 Predicted-true TV 使用百分比，Effective predicted classes 使用类别数。Best generic reference 对每个指标分别选取最优通用模型合并基线。",
-        ["Metric", "Direction", "LAMP-Merge", "Best generic reference", "Reference method"],
+        "本表对应预测坍缩诊断实验；每个数据集数值对四个 backbone、K=3/5/7 和三个 beta 设置取平均。Collapse ratio 和 Predicted-true TV 使用百分比，Effective predicted classes 使用类别数；Best generic reference 按数据集和指标分别选择最优通用模型合并基线。",
+        ["Metric", "Direction", "Series"]
+        + [f"{label} Avg" for _, label in DATASETS]
+        + ["Overall Avg", "Reference methods"],
         diagnostic_table,
     )
 
@@ -719,7 +874,7 @@ def main() -> None:
     diagnostic_hparams, prevalence_hparams = build_hparam_rows()
     write_annotated_csv(
         csv_dir / "超参数分析_诊断原型重建.csv",
-        "本表对应 DPRM 超参数分析，记录 evidence exponent gamma 与 prototype-head scale s 的 5x10 完整网格，ACC 使用百分比。",
+        "本表对应 DPR 超参数分析，记录 evidence exponent gamma 与 prototype-head scale s 的 5x10 完整网格，ACC 使用百分比。",
         ["Evidence exponent gamma", "Prototype-head scale s", "Raw cells", "Client-average cells", "Mean ACC (%)"],
         diagnostic_hparams,
     )
@@ -749,7 +904,7 @@ def main() -> None:
     )
 
     crop_dataset_samples(paper_dir)
-    update_tex(paper_dir, formal_values, internal_values, diagnostic_summary)
+    update_tex(paper_dir, formal_values, diagnostic_rows, prevalence_rows, diagnostic_summary)
     write_index(csv_dir)
     print(f"Prepared manuscript in {paper_dir}")
     print(f"Wrote CSV files to {csv_dir}")

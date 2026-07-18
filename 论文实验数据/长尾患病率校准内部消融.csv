@@ -1,5 +1,5 @@
-说明,本表对应 LPC 内部消融；各设置保留 DPRM，仅移除或替换患病率先验，数值为 180 个正式实验单元的平均 ACC 百分比。
-Setting,Mean ACC (%),Drop vs. LAMP-Merge (pp)
-LAMP-Merge,62.21,--
-No prevalence calibration,58.91,3.29
-Uniform prevalence prior,58.91,3.29
+说明,本表对应 LPC 内部消融；各设置保留 DPR，仅移除或替换患病率先验。每个数据集数值对四个 backbone、K=3/5/7 和三个 beta 设置取平均，单位为 ACC 百分比。
+Setting,Mode,Blood ACC (%),Derma ACC (%),Organ-C ACC (%),Organ-S ACC (%),Ultrasound ACC (%),Avg ACC (%)
+No prevalence calibration,no_prevalence,81.81,46.58,62.57,57.50,46.11,58.91
+Uniform prevalence prior,uniform_prevalence,81.81,46.58,62.57,57.50,46.11,58.91
+LAMP-Merge,full,81.81,62.40,63.05,57.67,46.11,62.21

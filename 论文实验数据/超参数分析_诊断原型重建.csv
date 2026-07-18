@@ -1,4 +1,4 @@
-说明,本表对应 DPRM 超参数分析，记录 evidence exponent gamma 与 prototype-head scale s 的 5x10 完整网格，ACC 使用百分比。
+说明,本表对应 DPR 超参数分析，记录 evidence exponent gamma 与 prototype-head scale s 的 5x10 完整网格，ACC 使用百分比。
 Evidence exponent gamma,Prototype-head scale s,Raw cells,Client-average cells,Mean ACC (%)
 0.35,13.75,180,60,61.8378
 0.35,15.0,180,60,61.8053

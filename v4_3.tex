@@ -786,7 +786,7 @@ FROM\pub{AAAI 2026} & 15.65 & 14.95 & 16.71 & 15.77 & 45.69 & 29.71 & 66.88 & 47
 
 \subsection{Ablation Study}
 
-Module-level ablations use exactly the same experimental setup as the main experiments. We compare the Weight-Averaging Baseline, Baseline + LPC, Baseline + DPRM, and full LAMP-Merge (Baseline + DPRM + LPC).
+Module-level ablations use exactly the same experimental setup as the main experiments. We report the Weight-Averaging Baseline, Baseline + DPR, and full LAMP-Merge (Baseline + DPR + LPC), forming the incremental comparison used in Fig.~\ref{fig:dataset-ablation-acc}.
 
 \subsubsection{1) Effectiveness of Diagnostic Prototype Reconstruction}
 To further identify which information within diagnostic prototype reconstruction is necessary, we conduct controlled substitutions across the full setting. All configurations retain long-tail prevalence calibration and vary only the prototype semantics or support-count weighting.
@@ -794,32 +794,34 @@ To further identify which information within diagnostic prototype reconstruction
 
 \begin{table}[t]
 \centering
-\caption{Internal ablation of diagnostic prototype reconstruction. \textbf{All reported values are averaged over all backbones}.}
+\caption{DPR internal ablation by dataset. Each entry averages all backbones, client counts, and Dirichlet settings; Avg averages the five datasets.}
 \label{tab:diagnostic-internal-ablation}
 \scriptsize
-\renewcommand{\arraystretch}{1.35}
-\setlength{\tabcolsep}{3.5pt}
-\begin{tabular}{llr}
+\renewcommand{\arraystretch}{1.20}
+\setlength{\tabcolsep}{2.4pt}
+\resizebox{\columnwidth}{!}{%
+\begin{tabular}{lccccc:c}
 \noalign{\hrule height 1.25pt}
 \rowcolor[HTML]{F2F2F2}
-\textbf{Type} & \textbf{Setting} & \textbf{Avg} \\
+\textbf{Setting} & \textbf{Blood} & \textbf{Derma} & \textbf{Organ-C} & \textbf{Organ-S} & \textbf{US} & \textbf{Avg} \\
 \hline \hline
-Prototype & Cls-head agg. & 25.63 \\
+Cls-head agg. & 18.95 & 56.14 & 17.74 & 18.88 & 16.43 & 25.63 \\
 \rowcolor{gray!10}
-& Global feat. mean & 26.50 \\
-& Support-only & 10.89 \\
+Global feat. mean & 8.88 & 66.88 & 22.33 & 23.54 & 10.87 & 26.50 \\
+Support-only & 11.62 & 17.29 & 7.08 & 7.74 & 10.69 & 10.89 \\
 \rowcolor{gray!10}
-& Shuffled proto. & 19.57 \\
+Shuffled proto. & 24.46 & 28.73 & 14.18 & 16.25 & 14.25 & 19.57 \\
 \hdashline
-Weight & Uniform client & 58.33 \\
+Uniform client & 78.03 & 59.61 & 58.36 & 53.86 & 41.79 & 58.33 \\
 \rowcolor{gray!10}
-& Binary support & 55.18 \\
-& Client-size weight & 59.39 \\
+Binary support & 78.03 & 44.96 & 57.86 & 53.24 & 41.79 & 55.18 \\
+Client-size weight & 78.45 & 62.48 & 59.11 & 53.79 & 43.13 & 59.39 \\
 \hline \hline
 \rowcolor[HTML]{FFF9C4}
-\textbf{Full} & \textbf{LAMP-Merge} & \textbf{62.21} \\
+\textbf{LAMP-Merge} & \textbf{81.81} & \textbf{62.40} & \textbf{63.05} & \textbf{57.67} & \textbf{46.11} & \textbf{62.21} \\
 \noalign{\hrule height 1.25pt}
 \end{tabular}
+}
 \end{table}
 
 
@@ -831,30 +833,32 @@ Fig.~\ref{fig:dataset-ablation-acc} and Table~\ref{tab:diagnostic-internal-ablat
 
 \begin{table}[t]
 \centering
-\caption{Internal ablation of long-tail prevalence calibration. \textbf{All reported values are averaged over all backbones}.}
+\caption{LPC internal ablation by dataset. Each entry averages all backbones, client counts, and Dirichlet settings; Avg averages the five datasets.}
 \label{tab:prevalence-internal-ablation}
 \scriptsize
-\renewcommand{\arraystretch}{1.35}
-\setlength{\tabcolsep}{3.5pt}
-\begin{tabular}{lr}
+\renewcommand{\arraystretch}{1.20}
+\setlength{\tabcolsep}{2.4pt}
+\resizebox{\columnwidth}{!}{%
+\begin{tabular}{lccccc:c}
 \noalign{\hrule height 1.25pt}
 \rowcolor[HTML]{F2F2F2}
-\textbf{Setting} & \textbf{Avg} \\
+\textbf{Setting} & \textbf{Blood} & \textbf{Derma} & \textbf{Organ-C} & \textbf{Organ-S} & \textbf{US} & \textbf{Avg} \\
 \hline \hline
-No LPC & 58.91 \\
+No LPC & 81.81 & 46.58 & 62.57 & 57.50 & 46.11 & 58.91 \\
 \rowcolor{gray!10}
-Uniform prior & 58.91 \\
+Uniform prior & 81.81 & 46.58 & 62.57 & 57.50 & 46.11 & 58.91 \\
 \hline \hline
 \rowcolor[HTML]{FFF9C4}
-\textbf{LAMP-Merge} & \textbf{62.21} \\
+\textbf{LAMP-Merge} & \textbf{81.81} & \textbf{62.40} & \textbf{63.05} & \textbf{57.67} & \textbf{46.11} & \textbf{62.21} \\
 \noalign{\hrule height 1.25pt}
 \end{tabular}
+}
 \end{table}
 
 \begin{figure}
     \centering
     \includegraphics[width=0.88\linewidth]{figures/02_internal_module_ablations.png}
-    \caption{Internal ablations of the Diagnostic Prototype Reconstruction Module (DPRM) and Long-tail Prevalence Calibration (LPC).}
+    \caption{Internal ablations of the Diagnostic Prototype Reconstruction Module (DPR) and Long-tail Prevalence Calibration (LPC).}
     \label{fig:internal_module_ablations}
 \end{figure}
 
@@ -872,22 +876,34 @@ Although the main experiments use ACC for direct comparison, long-tailed medical
 
 \begin{table}[t]
 \centering
-\caption{Prediction-collapse diagnostics averaged over five medical datasets and four backbones per dataset. Ratio metrics are reported in percentage scale.}
+\caption{Prediction-collapse diagnostics by dataset. Best ref. is selected separately for each metric and dataset. Ratio metrics use percentage scale; Avg averages the five datasets.}
 \label{tab:collapse-key}
 \scriptsize
-\setlength{\tabcolsep}{3.5pt}
-\renewcommand{\arraystretch}{1.35}
-\begin{tabular}{lcc}
+\setlength{\tabcolsep}{2.2pt}
+\renewcommand{\arraystretch}{1.16}
+\resizebox{\columnwidth}{!}{%
+\begin{tabular}{llccccc:c}
 \noalign{\hrule height 1.25pt}
 \rowcolor[HTML]{F2F2F2}
-\textbf{Metric} & \textbf{LAMP-Merge} & \textbf{Best reference} \\
+\textbf{Metric} & \textbf{Series} & \textbf{Blood} & \textbf{Derma} & \textbf{Organ-C} & \textbf{Organ-S} & \textbf{US} & \textbf{Avg} \\
 \hline \hline
-Collapse ratio $\downarrow$ & 30.63 & 79.02 \\
+\rowcolor[HTML]{FFF9C4}
+Collapse $\downarrow$ & \textbf{LAMP} & \textbf{19.58} & \textbf{68.05} & \textbf{20.72} & \textbf{24.36} & \textbf{20.45} & \textbf{30.63} \\
 \rowcolor{gray!10}
-Effective classes $\uparrow$ & 7.20 & 2.05 \\
-Pred-true TV $\downarrow$ & 12.42 & 69.44 \\
+ & Best ref. & 80.20 & 85.18 & 72.38 & 71.12 & 80.31 & 79.02 \\
+\hdashline
+\rowcolor[HTML]{FFF9C4}
+Eff. classes $\uparrow$ & \textbf{LAMP} & \textbf{7.48} & \textbf{3.10} & \textbf{9.55} & \textbf{8.44} & \textbf{7.44} & \textbf{7.20} \\
+\rowcolor{gray!10}
+ & Best ref. & 1.81 & 1.65 & 2.49 & 2.53 & 1.98 & 2.05 \\
+\hdashline
+\rowcolor[HTML]{FFF9C4}
+Pred-true TV $\downarrow$ & \textbf{LAMP} & \textbf{3.97} & \textbf{17.09} & \textbf{12.38} & \textbf{13.17} & \textbf{15.51} & \textbf{12.42} \\
+\rowcolor{gray!10}
+ & Best ref. & 73.48 & 46.03 & 75.42 & 73.85 & 72.73 & 69.44 \\
 \noalign{\hrule height 1.25pt}
 \end{tabular}
+}
 \end{table}
 
 Table \ref{tab:collapse-key} compares LAMP-Merge with the best-performing baseline for each metric. \textbf{LAMP-Merge consistently and substantially outperforms the existing methods}.
@@ -904,21 +920,16 @@ To visualize the prediction-distribution changes measured by the new diagnostic 
 \end{figure}
 
 \subsection{Hyperparameter Analysis Experiment}
-Fig.~\ref{fig:hparam-analysis-dpr} and Fig.~\ref{fig:hparam-analysis-lpc} evaluate the prototype-head scale $s$ and calibration strength $\lambda$ over 180 raw cells and 60 client-average cells. The fixed method uses $\gamma=0.55$, $s=18.75$, $\tau=2.5$, and $\lambda=4.25$; these values lie in broad stable regions, indicating that the gain is not produced by narrow hyperparameter tuning.
+Fig.~\ref{fig:hparam-analysis} evaluates the prototype-head scale $s$ and calibration strength $\lambda$ over 180 raw cells and 60 client-average cells. The fixed method uses $\gamma=0.55$, $s=18.75$, $\tau=2.5$, and $\lambda=4.25$; these values lie in broad stable regions, indicating that the gain is not produced by narrow hyperparameter tuning.
 
 \begin{figure*}[t]
 \centering
-\includegraphics[width=0.92\textwidth]{figures/05_diagnostic_reconstruction_hparams.png}
-\caption{Full-scope hyperparameter sensitivity for diagnostic prototype reconstruction.}
-\label{fig:hparam-analysis-dpr}
+\includegraphics[width=0.96\textwidth]{figures/05_hyperparameter_sensitivity.png}
+\caption{Full-scope hyperparameter sensitivity for DPR and LPC. The expanded vertical ranges emphasize that accuracy remains stable across broad parameter intervals.}
+\label{fig:hparam-analysis}
 \end{figure*}
 
-\begin{figure*}[t]
-\centering
-\includegraphics[width=0.92\textwidth]{figures/06_prevalence_calibration_hparams.png}
-\caption{Full-scope hyperparameter sensitivity for long-tail prevalence calibration.}
-\label{fig:hparam-analysis-lpc}
-\end{figure*}
+
 
 \subsection{t-SNE Visualization Experiment}
 Fig.~\ref{fig:tsne-analysis} uses t-SNE\cite{vanDerMaaten2008} only for analysis on Blood with ResNet, $K=3$, and $\beta=0.01$. LAMP-Merge retains separated output-probability groups, while generic merges exhibit compressed or entangled predictive representations.
@@ -956,33 +967,32 @@ The five MedMNIST v2 benchmarks\cite{yang2023medmnist} cover blood-cell microsco
 \end{itemize}
 Together, these benchmarks provide a systematic testbed for evaluating cross-modality robustness, class-discriminative capability, and task generalization under different medical image types and class-distribution conditions.
 
-\begin{table*}[t]
+\begin{table}[t]
 \centering
 \caption{Dataset statistics and representative samples for the five medical image benchmarks. Counts are taken from the exact NPZ files used in our experiments.}
 \label{tab:dataset-statistics}
 \scriptsize
-\renewcommand{\arraystretch}{1.35}
-\setlength{\tabcolsep}{5pt}
-\begin{tabular}{lrrrrrc}
+\renewcommand{\arraystretch}{1.25}
+\setlength{\tabcolsep}{2.2pt}
+\resizebox{\columnwidth}{!}{%
+\begin{tabular}{lrrrrr:c}
 \noalign{\hrule height 1.25pt}
 \rowcolor[HTML]{F2F2F2}
 \textbf{Dataset} & \textbf{Classes} & \textbf{Train} & \textbf{Val} & \textbf{Test} & \textbf{Total} & \textbf{Sample} \\
 \hline \hline
-Blood & 8 & 11,959 & 1,712 & 3,421 & 17,092 & \includegraphics[width=1.28cm,height=0.66cm,keepaspectratio]{figures/sample_blood.png} \\
-Derma & 7 & 7,007 & 1,003 & 2,005 & 10,015 & \includegraphics[width=1.28cm,height=0.66cm,keepaspectratio]{figures/sample_derma.png} \\
-Organ-C & 11 & 12,975 & 2,392 & 8,216 & 23,583 & \includegraphics[width=1.28cm,height=0.66cm,keepaspectratio]{figures/sample_organ_c.png} \\
-Organ-S & 11 & 13,932 & 2,452 & 8,827 & 25,211 & \includegraphics[width=1.28cm,height=0.66cm,keepaspectratio]{figures/sample_organ_s.png} \\
-Ultrasound & 8 & 3,869 & 549 & 1,113 & 5,531 & \includegraphics[width=1.28cm,height=0.66cm,keepaspectratio]{figures/sample_ultrasound.png} \\
+Blood & 8 & 11,959 & 1,712 & 3,421 & 17,092 & \makebox[1.05cm][c]{\raisebox{-0.16cm}{\includegraphics[width=0.95cm,height=0.52cm,keepaspectratio]{figures/sample_blood.png}}} \\
+\rowcolor{gray!10}
+Derma & 7 & 7,007 & 1,003 & 2,005 & 10,015 & \makebox[1.05cm][c]{\raisebox{-0.16cm}{\includegraphics[width=0.95cm,height=0.52cm,keepaspectratio]{figures/sample_derma.png}}} \\
+Organ-C & 11 & 12,975 & 2,392 & 8,216 & 23,583 & \makebox[1.05cm][c]{\raisebox{-0.16cm}{\includegraphics[width=0.95cm,height=0.52cm,keepaspectratio]{figures/sample_organ_c.png}}} \\
+\rowcolor{gray!10}
+Organ-S & 11 & 13,932 & 2,452 & 8,827 & 25,211 & \makebox[1.05cm][c]{\raisebox{-0.16cm}{\includegraphics[width=0.95cm,height=0.52cm,keepaspectratio]{figures/sample_organ_s.png}}} \\
+Ultrasound & 8 & 3,869 & 549 & 1,113 & 5,531 & \makebox[1.05cm][c]{\raisebox{-0.16cm}{\includegraphics[width=0.95cm,height=0.52cm,keepaspectratio]{figures/sample_ultrasound.png}}} \\
 \noalign{\hrule height 1.25pt}
 \end{tabular}
-\end{table*}
+}
+\end{table}
 
-\begin{figure*}[t]
-\centering
-\includegraphics[width=0.86\textwidth,height=0.58\textheight,keepaspectratio]{figures/dataset_examples.png}
-\caption{Representative training images from the five medical image datasets used in the experiments. The class IDs are shown only to illustrate category diversity within each dataset.}
-\label{fig:dataset-examples}
-\end{figure*}
+
 
 \subsection{Detailed Ablation Configurations}
 \label{app:ablation-configurations}
