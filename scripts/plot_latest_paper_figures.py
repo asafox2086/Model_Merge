@@ -18,7 +18,7 @@ TEMPLATE_DIR = ROOT / "scripts" / "plot_templates"
 if str(TEMPLATE_DIR) not in sys.path:
     sys.path.insert(0, str(TEMPLATE_DIR))
 
-from style import ABLATION_COLORS, darken_color, polish_axes, save_png_pdf, setup_style  # noqa: E402
+from style import ABLATION_COLORS, darken_color, polish_axes, save_png, setup_style  # noqa: E402
 
 
 PAPER_COLORS = {
@@ -119,7 +119,7 @@ def plot_module_ablation(csv_dir: Path, figure_dir: Path) -> None:
     ax.legend(loc="upper center", bbox_to_anchor=(0.5, 1.14), ncol=3, frameon=False)
     polish_axes(ax, y_grid=True, x_grid=False)
     fig.tight_layout()
-    save_png_pdf(fig, str(figure_dir / "01_module_ablation_accuracy"), dpi=350)
+    save_png(fig, str(figure_dir / "01_module_ablation_accuracy"), dpi=350)
     plt.close(fig)
 
 
@@ -202,7 +202,7 @@ def plot_baseline_2x2_ablation(csv_dir: Path, figure_dir: Path) -> None:
         handletextpad=0.45,
     )
     fig.subplots_adjust(left=0.17, right=0.985, top=0.93, bottom=0.16, hspace=0.38)
-    save_png_pdf(fig, str(figure_dir / "03_baseline_2x2_ablation"), dpi=350)
+    save_png(fig, str(figure_dir / "03_baseline_2x2_ablation"), dpi=350)
     plt.close(fig)
 
 
@@ -282,7 +282,7 @@ def plot_internal_ablations(csv_dir: Path, figure_dir: Path) -> None:
             spine.set_linewidth(0.7)
 
     fig.tight_layout(w_pad=0.7, pad=0.25)
-    save_png_pdf(fig, str(figure_dir / "02_internal_module_ablations"), dpi=350)
+    save_png(fig, str(figure_dir / "02_internal_module_ablations"), dpi=350)
     plt.close(fig)
 
 
@@ -332,7 +332,7 @@ def plot_ultrasound_distribution(csv_dir: Path, figure_dir: Path) -> None:
     ax.legend(loc="upper center", bbox_to_anchor=(0.5, 1.02), ncol=2, frameon=False)
     polish_axes(ax, y_grid=True, x_grid=False)
     fig.tight_layout()
-    save_png_pdf(fig, str(figure_dir / "04_ultrasound_class_distribution"), dpi=350)
+    save_png(fig, str(figure_dir / "04_ultrasound_class_distribution"), dpi=350)
     plt.close(fig)
 
 
@@ -500,7 +500,7 @@ def plot_hparams(csv_dir: Path, figure_dir: Path) -> None:
         for spine in axis.spines.values():
             spine.set_linewidth(0.8)
     fig.tight_layout(h_pad=0.55, pad=0.25)
-    save_png_pdf(fig, str(figure_dir / "05_hyperparameter_sensitivity"), dpi=350)
+    save_png(fig, str(figure_dir / "05_hyperparameter_sensitivity"), dpi=350)
     plt.close(fig)
 
 
@@ -549,7 +549,7 @@ def plot_tsne(csv_dir: Path, figure_dir: Path) -> None:
     handles, labels = axes[0].get_legend_handles_labels()
     fig.legend(handles, labels, loc="lower center", bbox_to_anchor=(0.5, -0.04), ncol=8, frameon=False)
     fig.tight_layout(rect=(0, 0.08, 1, 1))
-    save_png_pdf(fig, str(figure_dir / "07_tsne_output_probability"), dpi=350)
+    save_png(fig, str(figure_dir / "07_tsne_output_probability"), dpi=350)
     plt.close(fig)
 
 
@@ -558,7 +558,7 @@ def main() -> None:
     parser.add_argument("--paper-dir", type=Path, required=True)
     parser.add_argument("--csv-dir", type=Path, default=ROOT / "论文实验数据")
     args = parser.parse_args()
-    figure_dir = args.paper_dir.resolve() / "figures" / "new"
+    figure_dir = args.paper_dir.resolve() / "figures"
     csv_dir = args.csv_dir.resolve()
     figure_dir.mkdir(parents=True, exist_ok=True)
 

@@ -1006,7 +1006,7 @@ def update_tex(
         [
             r"\begin{figure}[!t]",
             r"\centering",
-            r"\includegraphics[width=\columnwidth]{figures/03_baseline_2x2_ablation.pdf}",
+            r"\includegraphics[width=\columnwidth]{figures/03_baseline_2x2_ablation.png}",
             r"\caption{Strict $2\times2$ DPR/LPC ablations for TIES-Merging and DARE-Linear. \textbf{All experimental datasets are included.}}",
             r"\label{fig:baseline-2x2-ablation}",
             r"\end{figure}",
@@ -1072,7 +1072,7 @@ def update_tex(
         [
             r"\begin{figure}[!t]",
             r"\centering",
-            r"\includegraphics[width=\columnwidth]{figures/05_hyperparameter_sensitivity.pdf}",
+            r"\includegraphics[width=\columnwidth]{figures/05_hyperparameter_sensitivity.png}",
             rf"\caption{{{hparam_caption}}}",
             r"\label{fig:hparam-analysis}",
             r"\end{figure}",
@@ -1099,14 +1099,14 @@ def update_tex(
         "05_hyperparameter_sensitivity",
         "07_tsne_output_probability",
     ]:
-        tex = tex.replace(f"figures/{figure_name}", f"figures/new/{figure_name}")
+        tex = tex.replace(f"figures/new/{figure_name}", f"figures/{figure_name}")
     tex = tex.replace(
         r"\begin{figure}[t]"
         "\n\\centering"
-        "\n\\includegraphics[width=\\linewidth]{figures/new/04_ultrasound_class_distribution.pdf}",
+        "\n\\includegraphics[width=\\linewidth]{figures/04_ultrasound_class_distribution.png}",
         r"\begin{figure}[!t]"
         "\n\\centering"
-        "\n\\includegraphics[width=\\linewidth]{figures/new/04_ultrasound_class_distribution.pdf}",
+        "\n\\includegraphics[width=\\linewidth]{figures/04_ultrasound_class_distribution.png}",
     )
     if r"\label{fig:dataset-examples}" in tex:
         tex = remove_figure_block(tex, "fig:dataset-examples")

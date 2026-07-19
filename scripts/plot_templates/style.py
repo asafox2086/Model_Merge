@@ -65,7 +65,6 @@ def polish_axes(ax, y_grid=True, x_grid=False):
         spine.set_linewidth(1.6)
 
 
-def save_png_pdf(fig, out_base, dpi=300):
+def save_png(fig, out_base, dpi=300):
     os.makedirs(os.path.dirname(out_base) or ".", exist_ok=True)
     fig.savefig(out_base + ".png", dpi=dpi, bbox_inches="tight")
-    fig.savefig(out_base + ".pdf", bbox_inches="tight")
