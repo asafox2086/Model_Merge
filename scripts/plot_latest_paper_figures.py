@@ -567,17 +567,19 @@ def plot_hparams(csv_dir: Path, figure_dir: Path) -> None:
         r"Calibration strength $\lambda$",
         r"\tau",
         [
+            ("Full configuration grid", 1.5),
             ("Full configuration grid", 2.0),
             ("Full configuration grid", 2.5),
             ("Full configuration grid", 3.0),
+            ("Full configuration grid", 3.5),
         ],
-        (61.3, 62.7),
+        (60.6, 63.4),
         (3.75, 5.25),
         legend_location="lower center",
         legend_anchor=(0.5, 0.05),
     )
     for axis in axes:
-        axis.set_yticks(np.arange(61.5, 62.6, 0.5))
+        axis.set_yticks(np.arange(61.0, 63.1, 1.0))
         for spine in axis.spines.values():
             spine.set_linewidth(0.8)
     fig.tight_layout(w_pad=0.65, pad=0.35)

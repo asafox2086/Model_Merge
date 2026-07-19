@@ -293,7 +293,7 @@ The collapse ratio \(\rho\) measures the largest predicted-class share, \(C_{\ma
 
 \subsection{Hyperparameter-Sweep Reproducibility}
 
-Every point in Fig.~\ref{fig:hparam-analysis} is a completed \textbf{full-scope experiment} covering five datasets, four backbones, three client counts, and three Dirichlet settings. The plotted curves retain measured points in ascending parameter order; no smoothing, interpolation, or best-run selection is applied. The LPC grid records \(\tau\in\{2.0,2.5,3.0\}\) and calibration strengths \(\lambda\in\{3.00,3.25,\ldots,5.25\}\), with \(\gamma=0.55\) and \(s=18.75\) fixed. DPR completion records are plotted only after the full grid point has succeeded. The selected operating point is \(\gamma=0.55\), \(s=18.75\), \(\tau=2.5\), and \(\lambda=4.25\), making its reported value traceable to the same completed grid as its neighboring points.
+Every point in Fig.~\ref{fig:hparam-analysis} is a completed \textbf{full-scope experiment} covering five datasets, four backbones, three client counts, and three Dirichlet settings. The plotted curves retain measured points in ascending parameter order; no smoothing, interpolation, or best-run selection is applied. The LPC curves combine the completed \(\tau\in\{2.0,2.5,3.0\}\) grid with newly completed \(\tau\in\{1.5,3.5\}\) sweeps; the calibration strengths span \(\lambda\in\{3.00,3.25,\ldots,5.25\}\), with \(\gamma=0.55\) and \(s=18.75\) fixed. DPR completion records are plotted only after the full grid point has succeeded. The selected operating point is \(\gamma=0.55\), \(s=18.75\), \(\tau=2.5\), and \(\lambda=4.25\), making its reported value traceable to the same completed grid as its neighboring points.
 
 \ifdefined\appendixinmain
 \else
