@@ -720,7 +720,7 @@ def build_internal_dataset_table(
 
     return "\n".join(
         [
-            r"\begin{table}[t]",
+            r"\begin{table}[!b]",
             r"\centering",
             rf"\caption{{{caption}}}",
             rf"\label{{{label}}}",
@@ -776,7 +776,7 @@ def build_collapse_dataset_table(diagnostic_summary: dict[str, dict[str, object]
 
     return "\n".join(
         [
-            r"\begin{table}[t]",
+            r"\begin{table}[!b]",
             r"\centering",
             r"\caption{Prediction-collapse diagnostics by dataset. Best ref. is selected separately for each metric and dataset. Ratio metrics use percentage scale; Avg averages the five datasets.}",
             r"\label{tab:collapse-key}",
@@ -813,7 +813,7 @@ def build_dataset_statistics_table() -> str:
         )
     return "\n".join(
         [
-            r"\begin{table}[t]",
+            r"\begin{table}[!htbp]",
             r"\centering",
             r"\caption{Dataset statistics and representative samples for the five medical image benchmarks. Counts are taken from the exact NPZ files used in our experiments.}",
             r"\label{tab:dataset-statistics}",
@@ -977,7 +977,7 @@ def update_tex(
         "gap indicates that always applying the empirical prior is close but still inferior, whereas "
         "UPP and CBP show that both the empirical long-tail prior and its client-size-aware aggregation "
         "are needed. The strict controls in "
-        "Fig.~\\ref{fig:baseline-2x2-ablation} average all 60 client-average cells and cross DPR "
+        "Fig.~\\ref{fig:baseline-2x2-ablation} cross DPR "
         "and LPC for each classifier-head baseline. Without DPR, LPC raises TIES from "
         f"{ties_baseline:.2f}\\% to {ties_with_lpc:.2f}\\% and DARE from "
         f"{dare_baseline:.2f}\\% to {dare_with_lpc:.2f}\\%. DPR raises the two baselines to "
@@ -992,12 +992,12 @@ def update_tex(
     )
     baseline_2x2_figure = "\n".join(
         [
-            r"\begin{figure*}[t]",
+            r"\begin{figure}[!b]",
             r"\centering",
-            r"\includegraphics[width=0.96\textwidth]{figures/03_baseline_2x2_ablation.pdf}",
-            r"\caption{Strict $2\times2$ DPR/LPC ablations for TIES-Merging and DARE-Linear. Values are overall ACC across 60 client-average cells (five datasets, four backbones, and three client counts).}",
+            r"\includegraphics[width=\columnwidth]{figures/03_baseline_2x2_ablation.pdf}",
+            r"\caption{Strict $2\times2$ DPR/LPC ablations for TIES-Merging and DARE-Linear. \textbf{All experimental datasets are included.}}",
             r"\label{fig:baseline-2x2-ablation}",
-            r"\end{figure*}",
+            r"\end{figure}",
         ]
     )
     if r"\label{fig:dataset-ablation-acc}" in tex:
@@ -1045,7 +1045,7 @@ def update_tex(
             r"averaging the three skew levels for each dataset--backbone--client-count combination."
         )
     tex = re.sub(
-        r"Fig\.~\\ref\{fig:hparam-analysis\}.*?(?=\n\n\\begin\{figure\}\[H\])",
+        r"Fig\.~\\ref\{fig:hparam-analysis\}.*?(?=\n\n\\begin\{figure\}(?:\[[^\]]+\])?)",
         lambda _: hparam_intro,
         tex,
         count=1,
@@ -1058,7 +1058,7 @@ def update_tex(
     )
     combined_hparam_figure = "\n".join(
         [
-            r"\begin{figure}[H]",
+            r"\begin{figure}[!htbp]",
             r"\centering",
             r"\includegraphics[width=\columnwidth]{figures/05_hyperparameter_sensitivity.pdf}",
             rf"\caption{{{hparam_caption}}}",
@@ -1092,7 +1092,7 @@ def update_tex(
         r"\begin{figure}[t]"
         "\n\\centering"
         "\n\\includegraphics[width=\\linewidth]{figures/new/04_ultrasound_class_distribution.pdf}",
-        r"\begin{figure}[H]"
+        r"\begin{figure}[!htbp]"
         "\n\\centering"
         "\n\\includegraphics[width=\\linewidth]{figures/new/04_ultrasound_class_distribution.pdf}",
     )
@@ -1108,11 +1108,7 @@ def update_tex(
         tex,
     )
     tex = tex.replace("DPRM", "DPR")
-    if "\\FloatBarrier\n\\section{Conclusion}" not in tex:
-        tex = tex.replace(
-            r"\section{Conclusion}",
-            "\\FloatBarrier\n\\section{Conclusion}",
-        )
+    tex = tex.replace("\\FloatBarrier\n\\section{Conclusion}", r"\section{Conclusion}")
     path.write_text(tex, encoding="utf-8")
 
 

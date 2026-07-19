@@ -376,7 +376,7 @@ The final scoring function of LAMP-Merge integrates the diagnostic prototype rec
 
 We evaluate the merged models on five representative MedMNIST v2 benchmarks\cite{yang2023medmnist}: Blood, Derma, Organ-C, Organ-S, and Ultrasound. They cover blood-cell microscopy, dermoscopy, abdominal CT, and ultrasound image classification (detailed dataset descriptions are provided in the Appendix).
 
-\begin{table}[t]
+\begin{table}[!htbp]
 \centering
 \caption{Dataset statistics and representative samples for the five medical image benchmarks. Counts are taken from the exact NPZ files used in our experiments.}
 \label{tab:dataset-statistics}
@@ -817,7 +817,7 @@ Module-level ablations use exactly the same experimental setup as the main exper
 To further identify which information within diagnostic prototype reconstruction is necessary, we conduct controlled substitutions across the full setting. All configurations retain long-tail prevalence calibration and vary only the prototype semantics or support-count weighting.
 
 
-\begin{table}[t]
+\begin{table}[!b]
 \centering
 \caption{DPR internal ablation by dataset. Each entry averages all backbones, client counts, and Dirichlet settings; Avg averages the five datasets.}
 \label{tab:diagnostic-internal-ablation}
@@ -856,7 +856,7 @@ Table~\ref{tab:diagnostic-internal-ablation} shows that neither an arbitrary hea
 
 
 
-\begin{table}[t]
+\begin{table}[!b]
 \centering
 \caption{LPC internal ablation by dataset. UPP uses a uniform prior, AOC removes the activation gate, and CBP averages client-normalized priors. Each entry averages all backbones, client counts, and Dirichlet settings; Avg averages the five datasets.}
 \label{tab:prevalence-internal-ablation}
@@ -880,26 +880,26 @@ CBP & 81.25 & 49.61 & 62.10 & 57.12 & 44.76 & 58.97 \\
 }
 \end{table}
 
-\begin{figure}
+\begin{figure}[!b]
     \centering
     \includegraphics[width=\columnwidth]{figures/new/02_internal_module_ablations.pdf}
     \caption{Internal ablations of the Diagnostic Prototype Reconstruction (DPR) and Long-tail Prevalence Calibration (LPC) modules. Full names and configurations of the plotted abbreviations are provided in the supplementary ablation configurations.}
     \label{fig:internal_module_ablations}
 \end{figure}
 
-We further conduct three full-scope LPC internal controls while retaining DPR. Uniform prevalence prior (UPP) sets \(\pi_c=1/C\), removing empirical long-tail prevalence. Always-on calibration (AOC) replaces the thresholded activation \(\mathbf{1}[r>\tau]\) with 1 while retaining the empirical prior. Client-balanced prior (CBP) first normalizes each client's prevalence counts and then averages clients, rather than weighting the global prior by raw client counts. Table~\ref{tab:prevalence-internal-ablation} reports overall mean ACC values of 58.91\% (UPP), 61.90\% (AOC), and 58.97\% (CBP), compared with 62.21\% for LAMP-Merge. Thus, UPP, AOC, and CBP are lower by 3.30, 0.31, and 3.24 percentage points, respectively. The small AOC gap indicates that always applying the empirical prior is close but still inferior, whereas UPP and CBP show that both the empirical long-tail prior and its client-size-aware aggregation are needed. The strict controls in Fig.~\ref{fig:baseline-2x2-ablation} average all 60 client-average cells and cross DPR and LPC for each classifier-head baseline. Without DPR, LPC raises TIES from 19.52\% to 28.21\% and DARE from 19.33\% to 28.79\%. DPR raises the two baselines to 58.91\%, and adding LPC reaches 62.21\%. Thus, DPR provides the dominant improvement, while LPC supplies a complementary gain in the complete method.
+We further conduct three full-scope LPC internal controls while retaining DPR. Uniform prevalence prior (UPP) sets \(\pi_c=1/C\), removing empirical long-tail prevalence. Always-on calibration (AOC) replaces the thresholded activation \(\mathbf{1}[r>\tau]\) with 1 while retaining the empirical prior. Client-balanced prior (CBP) first normalizes each client's prevalence counts and then averages clients, rather than weighting the global prior by raw client counts. Table~\ref{tab:prevalence-internal-ablation} reports overall mean ACC values of 58.91\% (UPP), 61.90\% (AOC), and 58.97\% (CBP), compared with 62.21\% for LAMP-Merge. Thus, UPP, AOC, and CBP are lower by 3.30, 0.31, and 3.24 percentage points, respectively. The small AOC gap indicates that always applying the empirical prior is close but still inferior, whereas UPP and CBP show that both the empirical long-tail prior and its client-size-aware aggregation are needed. The strict controls in Fig.~\ref{fig:baseline-2x2-ablation} cross DPR and LPC for each classifier-head baseline. Without DPR, LPC raises TIES from 19.52\% to 28.21\% and DARE from 19.33\% to 28.79\%. DPR raises the two baselines to 58.91\%, and adding LPC reaches 62.21\%. Thus, DPR provides the dominant improvement, while LPC supplies a complementary gain in the complete method.
 
-\begin{figure*}[t]
+\begin{figure}[!b]
 \centering
-\includegraphics[width=0.96\textwidth]{figures/new/03_baseline_2x2_ablation.pdf}
-\caption{Strict $2\times2$ DPR/LPC ablations for TIES-Merging and DARE-Linear. Values are overall ACC across 60 client-average cells (five datasets, four backbones, and three client counts).}
+\includegraphics[width=\columnwidth]{figures/new/03_baseline_2x2_ablation.pdf}
+\caption{Strict $2\times2$ DPR/LPC ablations for TIES-Merging and DARE-Linear. \textbf{All experimental datasets are included.}}
 \label{fig:baseline-2x2-ablation}
-\end{figure*}
+\end{figure}
 
 \subsection{Prediction-collapse Diagnostics}
 Although the main experiments use ACC for direct comparison, long-tailed medical distributions can allow single-class or few-class predictors to achieve high ACC\cite{BUDA2018249,5597285}. We therefore report collapse ratio, effective predicted classes, and predicted--true total variation.
 
-\begin{table}[t]
+\begin{table}[!b]
 \centering
 \caption{Prediction-collapse diagnostics by dataset. Best ref. is selected separately for each metric and dataset. Ratio metrics use percentage scale; Avg averages the five datasets.}
 \label{tab:collapse-key}
@@ -931,7 +931,7 @@ Table \ref{tab:collapse-key} compares LAMP-Merge with the best-performing baseli
 
 To visualize the prediction-distribution changes measured by the diagnostic metrics, we plot the absolute per-class gap between each method's predicted allocation and the true test distribution. Values closer to zero indicate better prevalence alignment. LAMP-Merge exhibits smaller deviations than representative generic merges across most classes.
 
-\begin{figure}[!t]
+\begin{figure}[!htbp]
 \centering
 \includegraphics[width=\linewidth]{figures/new/04_ultrasound_class_distribution.pdf}
 \caption{Absolute per-class prediction gaps on Ultrasound, averaged over the four visual backbones, $K\in\{3,5,7\}$, and the three Dirichlet skew levels. Values are absolute predicted--true class-proportion differences in percentage points; zero denotes exact distributional agreement.}
@@ -941,7 +941,7 @@ To visualize the prediction-distribution changes measured by the diagnostic metr
 \subsection{Hyperparameter Analysis Experiment}
 Fig.~\ref{fig:hparam-analysis} evaluates LPC sensitivity under the full LAMP-Merge configuration. Each curve point uses 180 raw cells and 60 client-average cells. The sweep fixes DPR at $\gamma=0.55$ and $s=18.75$ while varying $\tau$ and $\lambda$ around the selected operating point.
 
-\begin{figure}[H]
+\begin{figure}[!htbp]
 \centering
 \includegraphics[width=\columnwidth]{figures/new/05_hyperparameter_sensitivity.pdf}
 \caption{DPR and LPC sensitivity under the full LAMP-Merge configuration. Completed curve points average 60 client-average cells.}
@@ -950,7 +950,6 @@ Fig.~\ref{fig:hparam-analysis} evaluates LPC sensitivity under the full LAMP-Mer
 
 
 
-\FloatBarrier
 \section{Conclusion}
 
 We studied \textbf{one-shot asynchronous medical model merging}, where independently trained hospital models must be fused without federated optimization rounds and without exposing raw medical images to the server. Our empirical analysis shows that generic model-merging methods suffer from \textbf{aggregation-induced predictive collapse} under incomplete local diagnostic coverage. We further show that, on long-tailed medical datasets, such collapse can be masked by raw accuracy. We therefore introduce the Long-tail Prevalence Calibration module and evaluate prediction-collapse diagnostics alongside accuracy\cite{BUDA2018249,5597285}.

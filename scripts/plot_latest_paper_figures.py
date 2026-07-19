@@ -159,7 +159,7 @@ def plot_baseline_2x2_ablation(csv_dir: Path, figure_dir: Path) -> None:
             "axes.linewidth": 0.7,
         }
     )
-    fig, axes = plt.subplots(1, 2, figsize=(7.1, 2.25), dpi=300, sharey=True)
+    fig, axes = plt.subplots(2, 1, figsize=(3.45, 3.15), dpi=300, sharey=True)
     x = np.arange(len(settings))
     for axis, baseline in zip(axes, baselines):
         bars = axis.bar(
@@ -201,7 +201,7 @@ def plot_baseline_2x2_ablation(csv_dir: Path, figure_dir: Path) -> None:
         columnspacing=1.0,
         handletextpad=0.45,
     )
-    fig.subplots_adjust(left=0.09, right=0.995, top=0.88, bottom=0.22, wspace=0.22)
+    fig.subplots_adjust(left=0.17, right=0.985, top=0.93, bottom=0.16, hspace=0.38)
     save_png_pdf(fig, str(figure_dir / "03_baseline_2x2_ablation"), dpi=350)
     plt.close(fig)
 
