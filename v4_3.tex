@@ -914,12 +914,12 @@ To visualize the prediction-distribution changes measured by the diagnostic metr
 \end{figure}
 
 \subsection{Hyperparameter Analysis Experiment}
-Fig.~\ref{fig:hparam-analysis} evaluates DPR and LPC sensitivities under the full LAMP-Merge configuration. Each curve point uses 180 raw cells and 60 client-average cells. The fixed operating point uses $\gamma=0.55$, $s=18.75$, $\tau=2.5$, and $\lambda=4.25$; the sweeps assess deviations around these values while holding the other module fixed.
+Fig.~\ref{fig:hparam-analysis} evaluates LPC sensitivity under the full LAMP-Merge configuration. Each curve point uses 180 raw cells and 60 client-average cells. The sweep fixes DPR at $\gamma=0.55$ and $s=18.75$ while varying $\tau$ and $\lambda$ around the selected operating point.
 
 \begin{figure}[H]
 \centering
 \includegraphics[width=\columnwidth]{figures/new/05_hyperparameter_sensitivity.pdf}
-\caption{DPR and LPC sensitivity under the full LAMP-Merge configuration. Each line varies one module while fixing the other at its selected operating point. Each point averages 60 client-average cells.}
+\caption{LPC sensitivity under the full LAMP-Merge configuration, with DPR fixed at its selected operating point. Each point averages 60 client-average cells.}
 \label{fig:hparam-analysis}
 \end{figure}
 
@@ -1047,7 +1047,7 @@ Let \(y_n\) and \(\hat{y}_n\) denote the true and predicted labels of the \(n\)-
 \end{itemize}
 
 \subsection{Hyperparameter-sweep Reproducibility}
-The sensitivity figure uses full-configuration sweeps only. The DPR grid uses \(\gamma\in\{0.50,0.55,0.60\}\) and ten prototype-head scales \(s\in\{13.75,15.00,\ldots,25.00\}\), while holding \(\tau=2.5\) and \(\lambda=4.25\) fixed. The LPC grid uses \(\tau\in\{2.0,2.5,3.0\}\) and ten calibration strengths \(\lambda\in\{3.00,3.25,\ldots,5.25\}\), while holding \(\gamma=0.55\) and \(s=18.75\) fixed. At every grid point, we evaluate the five datasets, four backbone families, three client counts, and three Dirichlet skew levels, yielding 180 raw result cells and 60 client-average cells after averaging the three skew levels for each dataset--backbone--client-count combination.
+The sensitivity figure uses the completed full-configuration LPC sweep only. It uses \(\tau\in\{2.0,2.5,3.0\}\) and ten calibration strengths \(\lambda\in\{3.00,3.25,\ldots,5.25\}\), while holding \(\gamma=0.55\) and \(s=18.75\) fixed. At every grid point, we evaluate the five datasets, four backbone families, three client counts, and three Dirichlet skew levels, yielding 180 raw result cells and 60 client-average cells after averaging the three skew levels for each dataset--backbone--client-count combination.
 
 For reuse, the paper package records one row per grid point in the DPR and LPC hyperparameter CSV files. Each row includes both the raw-cell and client-average-cell counts together with the mean ACC used in Fig.~\ref{fig:hparam-analysis}. The curves retain every measured point in ascending parameter order and do not apply smoothing, interpolation, or best-run selection. The marked operating point is fixed before comparison at \(\gamma=0.55\), \(s=18.75\), \(\tau=2.5\), and \(\lambda=4.25\); it is therefore directly traceable to the same recorded grid as the surrounding sensitivity values.
 

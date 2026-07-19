@@ -24,7 +24,7 @@ from style import ABLATION_COLORS, darken_color, polish_axes, save_png_pdf, setu
 PAPER_COLORS = {
     "Weight-Averaging Baseline": "#7F7F7F",
     "Baseline + DPR": "#9BBB59",
-    "LAMP-Merge": "#C0504D",
+    "LAMP-Merge": "#FFC000",
     "Weight Averaging": "#7F7F7F",
     "TIES-Merging": "#9BBB59",
     "DARE-Linear": "#4F81BD",
@@ -166,7 +166,7 @@ def plot_baseline_2x2_ablation(csv_dir: Path, figure_dir: Path) -> None:
             x,
             values[baseline],
             width=0.64,
-            color=ABLATION_COLORS,
+            color=[*ABLATION_COLORS[:-1], PAPER_COLORS["LAMP-Merge"]],
             edgecolor="black",
             linewidth=0.8,
             zorder=3,
@@ -306,7 +306,7 @@ def plot_ultrasound_distribution(csv_dir: Path, figure_dir: Path) -> None:
         plotted_values.append(values)
         marker, linestyle = LINE_STYLES[index]
         label = method
-        color = "#FFC000" if method == "LAMP-Merge" else PAPER_COLORS[method]
+        color = PAPER_COLORS[method]
         linewidth = 3.8 if method == "LAMP-Merge" else 2.5
         marker_edge_color = "#7F6000" if method == "LAMP-Merge" else darken_color(color, 0.65)
         ax.plot(
@@ -401,8 +401,8 @@ def plot_hparam_curves(
         [float(selected_row["Mean ACC (%)"])],
         marker="*",
         s=180,
-        color="#FFD966",
-        edgecolor="black",
+        color=PAPER_COLORS["LAMP-Merge"],
+        edgecolor="#7F6000",
         linewidth=1.0,
         zorder=5,
         label="_nolegend_",
@@ -446,28 +446,33 @@ def plot_hparams(csv_dir: Path, figure_dir: Path) -> None:
             "lines.markersize": 4.8,
         }
     )
-    fig, axes = plt.subplots(2, 1, figsize=(3.35, 3.45), dpi=300)
+    if diagnostic:
+        fig, axes = plt.subplots(2, 1, figsize=(3.35, 3.45), dpi=300)
+        plot_hparam_curves(
+            axes[0],
+            diagnostic,
+            "Evidence exponent gamma",
+            "Prototype-head scale s",
+            0.55,
+            18.75,
+            "DPR",
+            r"Prototype-head scale $s$",
+            r"\gamma",
+            [
+                ("Full configuration grid", 0.5),
+                ("Full configuration grid", 0.55),
+                ("Full configuration grid", 0.6),
+            ],
+            legend_location="center",
+            legend_anchor=(0.57, 0.48),
+            x_limits=(16.25, 21.25),
+        )
+        lpc_axis = axes[1]
+    else:
+        fig, lpc_axis = plt.subplots(figsize=(3.35, 1.85), dpi=300)
+        axes = [lpc_axis]
     plot_hparam_curves(
-        axes[0],
-        diagnostic,
-        "Evidence exponent gamma",
-        "Prototype-head scale s",
-        0.55,
-        18.75,
-        "DPR",
-        r"Prototype-head scale $s$",
-        r"\gamma",
-        [
-            ("Full configuration grid", 0.5),
-            ("Full configuration grid", 0.55),
-            ("Full configuration grid", 0.6),
-        ],
-        legend_location="center",
-        legend_anchor=(0.57, 0.48),
-        x_limits=(16.25, 21.25),
-    )
-    plot_hparam_curves(
-        axes[1],
+        lpc_axis,
         prevalence,
         "Activation threshold tau",
         "Calibration strength lambda",

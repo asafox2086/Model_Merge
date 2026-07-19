@@ -1,62 +1,32 @@
-说明,本表记录 LPC 超参数曲线的 2026-07-19 完整 3x10 网格及早期交互网格；每点覆盖五个数据集、四个 backbone、K=3/5/7 和三个 beta，ACC 使用百分比。
+说明,本表记录完整 LAMP-Merge 配置下的 LPC 3x10 网格；每点覆盖五个数据集、四个 backbone、K=3/5/7 和三个 beta，ACC 使用百分比。
 Source,Activation threshold tau,Calibration strength lambda,Raw cells,Client-average cells,Mean ACC (%)
-2026-07-19 grid,2.0,3.0,180,60,61.9041
-2026-07-19 grid,2.0,3.25,180,60,61.9890
-2026-07-19 grid,2.0,3.5,180,60,62.0557
-2026-07-19 grid,2.0,3.75,180,60,62.1055
-2026-07-19 grid,2.0,4.0,180,60,62.1589
-2026-07-19 grid,2.0,4.25,180,60,62.2065
-2026-07-19 grid,2.0,4.5,180,60,62.2173
-2026-07-19 grid,2.0,4.75,180,60,62.2540
-2026-07-19 grid,2.0,5.0,180,60,62.2734
-2026-07-19 grid,2.0,5.25,180,60,62.2657
-2026-07-19 grid,2.5,3.0,180,60,61.9041
-2026-07-19 grid,2.5,3.25,180,60,61.9890
-2026-07-19 grid,2.5,3.5,180,60,62.0557
-2026-07-19 grid,2.5,3.75,180,60,62.1055
-2026-07-19 grid,2.5,4.0,180,60,62.1589
-2026-07-19 grid,2.5,4.25,180,60,62.2065
-2026-07-19 grid,2.5,4.5,180,60,62.2173
-2026-07-19 grid,2.5,4.75,180,60,62.2540
-2026-07-19 grid,2.5,5.0,180,60,62.2734
-2026-07-19 grid,2.5,5.25,180,60,62.2657
-2026-07-19 grid,3.0,3.0,180,60,61.6468
-2026-07-19 grid,3.0,3.25,180,60,61.7476
-2026-07-19 grid,3.0,3.5,180,60,61.8488
-2026-07-19 grid,3.0,3.75,180,60,61.9230
-2026-07-19 grid,3.0,4.0,180,60,62.0051
-2026-07-19 grid,3.0,4.25,180,60,62.0765
-2026-07-19 grid,3.0,4.5,180,60,62.1356
-2026-07-19 grid,3.0,4.75,180,60,62.1996
-2026-07-19 grid,3.0,5.0,180,60,62.2553
-2026-07-19 grid,3.0,5.25,180,60,62.2971
-Earlier interaction grid,1.5,3.75,180,60,61.8107
-Earlier interaction grid,1.5,4.0,180,60,61.8205
-Earlier interaction grid,1.5,4.25,180,60,61.8170
-Earlier interaction grid,1.5,4.5,180,60,61.8081
-Earlier interaction grid,1.5,4.75,180,60,61.8131
-Earlier interaction grid,1.5,5.0,180,60,61.7795
-Earlier interaction grid,1.5,5.25,180,60,61.7687
-Earlier interaction grid,1.5,5.5,180,60,61.6965
-Earlier interaction grid,1.5,5.75,180,60,61.6308
-Earlier interaction grid,1.5,6.0,180,60,61.5421
-Earlier interaction grid,2.0,3.75,180,60,61.9307
-Earlier interaction grid,2.0,4.0,180,60,61.9805
-Earlier interaction grid,2.0,4.25,180,60,62.0213
-Earlier interaction grid,2.0,4.5,180,60,62.0509
-Earlier interaction grid,2.0,4.75,180,60,62.0865
-Earlier interaction grid,2.0,5.0,180,60,62.0930
-Earlier interaction grid,2.0,5.25,180,60,62.1321
-Earlier interaction grid,2.0,5.5,180,60,62.1119
-Earlier interaction grid,2.0,5.75,180,60,62.1084
-Earlier interaction grid,2.0,6.0,180,60,62.0733
-Earlier interaction grid,3.5,3.75,180,60,61.7230
-Earlier interaction grid,3.5,4.0,180,60,61.8056
-Earlier interaction grid,3.5,4.25,180,60,61.8806
-Earlier interaction grid,3.5,4.5,180,60,61.9271
-Earlier interaction grid,3.5,4.75,180,60,62.0059
-Earlier interaction grid,3.5,5.0,180,60,62.0412
-Earlier interaction grid,3.5,5.25,180,60,62.1153
-Earlier interaction grid,3.5,5.5,180,60,62.1469
-Earlier interaction grid,3.5,5.75,180,60,62.1929
-Earlier interaction grid,3.5,6.0,180,60,62.2006
+Full configuration grid,2.0,3.0,180,60,61.9041
+Full configuration grid,2.0,3.25,180,60,61.9890
+Full configuration grid,2.0,3.5,180,60,62.0557
+Full configuration grid,2.0,3.75,180,60,62.1055
+Full configuration grid,2.0,4.0,180,60,62.1589
+Full configuration grid,2.0,4.25,180,60,62.2065
+Full configuration grid,2.0,4.5,180,60,62.2173
+Full configuration grid,2.0,4.75,180,60,62.2540
+Full configuration grid,2.0,5.0,180,60,62.2734
+Full configuration grid,2.0,5.25,180,60,62.2657
+Full configuration grid,2.5,3.0,180,60,61.9041
+Full configuration grid,2.5,3.25,180,60,61.9890
+Full configuration grid,2.5,3.5,180,60,62.0557
+Full configuration grid,2.5,3.75,180,60,62.1055
+Full configuration grid,2.5,4.0,180,60,62.1589
+Full configuration grid,2.5,4.25,180,60,62.2065
+Full configuration grid,2.5,4.5,180,60,62.2173
+Full configuration grid,2.5,4.75,180,60,62.2540
+Full configuration grid,2.5,5.0,180,60,62.2734
+Full configuration grid,2.5,5.25,180,60,62.2657
+Full configuration grid,3.0,3.0,180,60,61.6468
+Full configuration grid,3.0,3.25,180,60,61.7476
+Full configuration grid,3.0,3.5,180,60,61.8488
+Full configuration grid,3.0,3.75,180,60,61.9230
+Full configuration grid,3.0,4.0,180,60,62.0051
+Full configuration grid,3.0,4.25,180,60,62.0765
+Full configuration grid,3.0,4.5,180,60,62.1356
+Full configuration grid,3.0,4.75,180,60,62.1996
+Full configuration grid,3.0,5.0,180,60,62.2553
+Full configuration grid,3.0,5.25,180,60,62.2971

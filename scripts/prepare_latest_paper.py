@@ -561,11 +561,18 @@ def build_hparam_rows() -> tuple[list[dict[str, object]], list[dict[str, object]
             "Mean ACC (%)": f"{100 * sum(client_values) / len(client_values):.4f}",
         }
 
+    def is_complete_batch(path: Path) -> bool:
+        status_path = path / "reports" / "batch_status.csv"
+        if not status_path.exists():
+            return False
+        rows = read_csv(status_path)
+        return len(rows) == 180 and all(row["status"] == "OK" for row in rows)
+
     for child in sorted(DPR_HPARAM_3X10_ROOT.iterdir()):
         if not child.is_dir():
             continue
         match = dpr_pattern.match(child.name)
-        if match is None:
+        if match is None or not is_complete_batch(child):
             continue
         diagnostic.append(
             {
@@ -579,7 +586,7 @@ def build_hparam_rows() -> tuple[list[dict[str, object]], list[dict[str, object]
         if not child.is_dir():
             continue
         match = lpc_pattern.match(child.name)
-        if match is None:
+        if match is None or not is_complete_batch(child):
             continue
         prevalence.append(
             {
@@ -589,8 +596,10 @@ def build_hparam_rows() -> tuple[list[dict[str, object]], list[dict[str, object]
                 **summarize_batch_status(child),
             }
         )
-    if len(diagnostic) != 30 or len(prevalence) != 30:
-        raise RuntimeError("Expected complete full-configuration 3x10 DPR and LPC grids")
+    if diagnostic and len(diagnostic) != 30:
+        raise RuntimeError("Expected a complete full-configuration 3x10 DPR grid")
+    if len(prevalence) != 30:
+        raise RuntimeError("Expected a complete full-configuration 3x10 LPC grid")
     return diagnostic, prevalence
 
 
@@ -833,6 +842,7 @@ def update_tex(
     diagnostic_rows: list[dict[str, object]],
     prevalence_rows: list[dict[str, object]],
     diagnostic_summary: dict[str, dict[str, object]],
+    has_dpr_sensitivity: bool,
 ) -> None:
     path = paper_dir / "v4_3.tex"
     tex = path.read_text(encoding="utf-8")
@@ -995,12 +1005,63 @@ def update_tex(
     else:
         tex = replace_figure_block(tex, "fig:baseline-2x2-ablation", baseline_2x2_figure)
 
+    if has_dpr_sensitivity:
+        hparam_intro = (
+            r"Fig.~\ref{fig:hparam-analysis} evaluates DPR and LPC sensitivities under the full "
+            r"LAMP-Merge configuration. Each curve point uses 180 raw cells and 60 client-average cells. "
+            r"The fixed operating point uses $\gamma=0.55$, $s=18.75$, $\tau=2.5$, and $\lambda=4.25$; "
+            r"the sweeps assess deviations around these values while holding the other module fixed."
+        )
+        hparam_caption = (
+            r"DPR and LPC sensitivity under the full LAMP-Merge configuration. Each line varies one module "
+            r"while fixing the other at its selected operating point. Each point averages 60 client-average cells."
+        )
+        hparam_reproducibility = (
+            r"The sensitivity figure uses full-configuration sweeps only. The DPR grid uses "
+            r"\(\gamma\in\{0.50,0.55,0.60\}\) and ten prototype-head scales "
+            r"\(s\in\{13.75,15.00,\ldots,25.00\}\), while holding \(\tau=2.5\) and \(\lambda=4.25\) fixed. "
+            r"The LPC grid uses \(\tau\in\{2.0,2.5,3.0\}\) and ten calibration strengths "
+            r"\(\lambda\in\{3.00,3.25,\ldots,5.25\}\), while holding \(\gamma=0.55\) and \(s=18.75\) fixed. "
+            r"At every grid point, we evaluate the five datasets, four backbone families, three client counts, "
+            r"and three Dirichlet skew levels, yielding 180 raw result cells and 60 client-average cells after "
+            r"averaging the three skew levels for each dataset--backbone--client-count combination."
+        )
+    else:
+        hparam_intro = (
+            r"Fig.~\ref{fig:hparam-analysis} evaluates LPC sensitivity under the full LAMP-Merge configuration. "
+            r"Each curve point uses 180 raw cells and 60 client-average cells. The sweep fixes DPR at "
+            r"$\gamma=0.55$ and $s=18.75$ while varying $\tau$ and $\lambda$ around the selected operating point."
+        )
+        hparam_caption = (
+            r"LPC sensitivity under the full LAMP-Merge configuration, with DPR fixed at its selected operating point. "
+            r"Each point averages 60 client-average cells."
+        )
+        hparam_reproducibility = (
+            r"The sensitivity figure uses the completed full-configuration LPC sweep only. It uses "
+            r"\(\tau\in\{2.0,2.5,3.0\}\) and ten calibration strengths "
+            r"\(\lambda\in\{3.00,3.25,\ldots,5.25\}\), while holding \(\gamma=0.55\) and \(s=18.75\) fixed. "
+            r"At every grid point, we evaluate the five datasets, four backbone families, three client counts, "
+            r"and three Dirichlet skew levels, yielding 180 raw result cells and 60 client-average cells after "
+            r"averaging the three skew levels for each dataset--backbone--client-count combination."
+        )
+    tex = re.sub(
+        r"Fig\.~\\ref\{fig:hparam-analysis\}.*?(?=\n\n\\begin\{figure\}\[H\])",
+        lambda _: hparam_intro,
+        tex,
+        count=1,
+    )
+    tex = re.sub(
+        r"The sensitivity figure uses full-configuration sweeps only\..*?(?=\n\nFor reuse,)",
+        lambda _: hparam_reproducibility,
+        tex,
+        count=1,
+    )
     combined_hparam_figure = "\n".join(
         [
             r"\begin{figure}[H]",
             r"\centering",
             r"\includegraphics[width=\columnwidth]{figures/05_hyperparameter_sensitivity.pdf}",
-            r"\caption{DPR and LPC sensitivity under the full LAMP-Merge configuration. Each line varies one module while fixing the other at its selected operating point. Each point averages 60 client-average cells.}",
+            rf"\caption{{{hparam_caption}}}",
             r"\label{fig:hparam-analysis}",
             r"\end{figure}",
         ]
@@ -1196,6 +1257,7 @@ def main() -> None:
         diagnostic_rows,
         prevalence_rows,
         diagnostic_summary,
+        bool(diagnostic_hparams),
     )
     write_index(csv_dir)
     print(f"Prepared manuscript in {paper_dir}")
