@@ -1,16 +1,17 @@
-\begin{table*}[!t]
+\begin{table}[!t]
 \centering
 \caption{Class-wise statistics and representative samples for Blood. The layout expands the corresponding row in Table~\ref{tab:dataset-statistics}: the class-count field is replaced by individual class names. Samples are taken directly from the training split.}
 \label{tab:appendix-blood-classes}
 \scriptsize
 \renewcommand{\arraystretch}{1.25}
 \setlength{\tabcolsep}{3.8pt}
-\begin{tabular}{>{\datasetlabel{Blood}}clrrrr:c}
+\resizebox{\columnwidth}{!}{%
+\begin{tabular}{clrrrr:c}
 \noalign{\hrule height 1.25pt}
 \rowcolor[HTML]{F2F2F2}
 \multicolumn{1}{c}{\textbf{Dataset}} & \textbf{Class} & \textbf{Train} & \textbf{Val} & \textbf{Test} & \textbf{Total} & \textbf{Sample} \\
 \hline \hline
- & Basophil & 852 & 122 & 244 & 1,218 & \classsample{blood}{0} \\
+\multirow{8}{*}{\datasetlabel{Blood}} & Basophil & 852 & 122 & 244 & 1,218 & \classsample{blood}{0} \\
 \rowcolor{gray!10} & Eosinophil & 2,181 & 312 & 624 & 3,117 & \classsample{blood}{1} \\
  & Erythroblast & 1,085 & 155 & 311 & 1,551 & \classsample{blood}{2} \\
 \rowcolor{gray!10} & Immature granulocytes & 2,026 & 290 & 579 & 2,895 & \classsample{blood}{3} \\
@@ -20,21 +21,23 @@
 \rowcolor{gray!10} & Platelet & 1,643 & 235 & 470 & 2,348 & \classsample{blood}{7} \\
 \noalign{\hrule height 1.25pt}
 \end{tabular}
-\end{table*}
+}
+\end{table}
 
-\begin{table*}[!t]
+\begin{table}[!t]
 \centering
 \caption{Class-wise statistics and representative samples for Derma, using the same format as Table~\ref{tab:appendix-blood-classes}.}
 \label{tab:appendix-derma-classes}
 \scriptsize
 \renewcommand{\arraystretch}{1.25}
 \setlength{\tabcolsep}{3.8pt}
-\begin{tabular}{>{\datasetlabel{Derma}}clrrrr:c}
+\resizebox{\columnwidth}{!}{%
+\begin{tabular}{clrrrr:c}
 \noalign{\hrule height 1.25pt}
 \rowcolor[HTML]{F2F2F2}
 \multicolumn{1}{c}{\textbf{Dataset}} & \textbf{Class} & \textbf{Train} & \textbf{Val} & \textbf{Test} & \textbf{Total} & \textbf{Sample} \\
 \hline \hline
- & Actinic keratosis / carcinoma & 228 & 33 & 66 & 327 & \classsample{derma}{0} \\
+\multirow{7}{*}{\datasetlabel{Derma}} & Actinic keratosis / carcinoma & 228 & 33 & 66 & 327 & \classsample{derma}{0} \\
 \rowcolor{gray!10} & Basal cell carcinoma & 359 & 52 & 103 & 514 & \classsample{derma}{1} \\
  & Benign keratosis-like lesion & 769 & 110 & 220 & 1,099 & \classsample{derma}{2} \\
 \rowcolor{gray!10} & Dermatofibroma & 80 & 12 & 23 & 115 & \classsample{derma}{3} \\
@@ -43,21 +46,23 @@
  & Vascular lesion & 99 & 14 & 29 & 142 & \classsample{derma}{6} \\
 \noalign{\hrule height 1.25pt}
 \end{tabular}
-\end{table*}
+}
+\end{table}
 
-\begin{table*}[!t]
+\begin{table}[!t]
 \centering
 \caption{Class-wise statistics and representative samples for Organ-C.}
 \label{tab:appendix-organ-c-classes}
 \scriptsize
 \renewcommand{\arraystretch}{1.25}
 \setlength{\tabcolsep}{3.8pt}
-\begin{tabular}{>{\datasetlabel{Organ-C}}clrrrr:c}
+\resizebox{\columnwidth}{!}{%
+\begin{tabular}{clrrrr:c}
 \noalign{\hrule height 1.25pt}
 \rowcolor[HTML]{F2F2F2}
 \multicolumn{1}{c}{\textbf{Dataset}} & \textbf{Class} & \textbf{Train} & \textbf{Val} & \textbf{Test} & \textbf{Total} & \textbf{Sample} \\
 \hline \hline
- & Bladder & 1,148 & 191 & 828 & 2,167 & \classsample{organ_c}{0} \\
+\multirow{11}{*}{\datasetlabel{Organ-C}} & Bladder & 1,148 & 191 & 828 & 2,167 & \classsample{organ_c}{0} \\
 \rowcolor{gray!10} & Femur--left & 619 & 102 & 431 & 1,152 & \classsample{organ_c}{1} \\
  & Femur--right & 595 & 96 & 421 & 1,112 & \classsample{organ_c}{2} \\
 \rowcolor{gray!10} & Heart & 600 & 202 & 421 & 1,223 & \classsample{organ_c}{3} \\
@@ -70,21 +75,23 @@
  & Spleen & 1,572 & 205 & 962 & 2,739 & \classsample{organ_c}{10} \\
 \noalign{\hrule height 1.25pt}
 \end{tabular}
-\end{table*}
+}
+\end{table}
 
-\begin{table*}[!t]
+\begin{table}[!t]
 \centering
 \caption{Class-wise statistics and representative samples for Organ-S.}
 \label{tab:appendix-organ-s-classes}
 \scriptsize
 \renewcommand{\arraystretch}{1.25}
 \setlength{\tabcolsep}{3.8pt}
-\begin{tabular}{>{\datasetlabel{Organ-S}}clrrrr:c}
+\resizebox{\columnwidth}{!}{%
+\begin{tabular}{clrrrr:c}
 \noalign{\hrule height 1.25pt}
 \rowcolor[HTML]{F2F2F2}
 \multicolumn{1}{c}{\textbf{Dataset}} & \textbf{Class} & \textbf{Train} & \textbf{Val} & \textbf{Test} & \textbf{Total} & \textbf{Sample} \\
 \hline \hline
- & Bladder & 1,148 & 188 & 811 & 2,147 & \classsample{organ_s}{0} \\
+\multirow{11}{*}{\datasetlabel{Organ-S}} & Bladder & 1,148 & 188 & 811 & 2,147 & \classsample{organ_s}{0} \\
 \rowcolor{gray!10} & Femur--left & 630 & 104 & 439 & 1,173 & \classsample{organ_s}{1} \\
  & Femur--right & 614 & 95 & 445 & 1,154 & \classsample{organ_s}{2} \\
 \rowcolor{gray!10} & Heart & 721 & 246 & 510 & 1,477 & \classsample{organ_s}{3} \\
@@ -97,21 +104,23 @@
  & Spleen & 1,556 & 213 & 968 & 2,737 & \classsample{organ_s}{10} \\
 \noalign{\hrule height 1.25pt}
 \end{tabular}
-\end{table*}
+}
+\end{table}
 
-\begin{table*}[!t]
+\begin{table}[!t]
 \centering
 \caption{Class-wise statistics and representative samples for Ultrasound. The source benchmark retains anonymized class identifiers, which are reported without assigning unverified clinical names.}
 \label{tab:appendix-ultrasound-classes}
 \scriptsize
 \renewcommand{\arraystretch}{1.25}
 \setlength{\tabcolsep}{3.8pt}
-\begin{tabular}{>{\datasetlabel{Ultrasound}}clrrrr:c}
+\resizebox{\columnwidth}{!}{%
+\begin{tabular}{clrrrr:c}
 \noalign{\hrule height 1.25pt}
 \rowcolor[HTML]{F2F2F2}
 \multicolumn{1}{c}{\textbf{Dataset}} & \textbf{Class} & \textbf{Train} & \textbf{Val} & \textbf{Test} & \textbf{Total} & \textbf{Sample} \\
 \hline \hline
- & Class 0 & 420 & 60 & 121 & 601 & \classsample{ultrasound}{0} \\
+\multirow{8}{*}{\datasetlabel{Ultrasound}} & Class 0 & 420 & 60 & 121 & 601 & \classsample{ultrasound}{0} \\
 \rowcolor{gray!10} & Class 1 & 419 & 59 & 121 & 599 & \classsample{ultrasound}{1} \\
  & Class 2 & 408 & 58 & 117 & 583 & \classsample{ultrasound}{2} \\
 \rowcolor{gray!10} & Class 3 & 630 & 90 & 180 & 900 & \classsample{ultrasound}{3} \\
@@ -121,4 +130,5 @@
 \rowcolor{gray!10} & Class 7 & 487 & 69 & 140 & 696 & \classsample{ultrasound}{7} \\
 \noalign{\hrule height 1.25pt}
 \end{tabular}
-\end{table*}
+}
+\end{table}

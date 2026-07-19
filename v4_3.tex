@@ -957,11 +957,11 @@ Fig.~\ref{fig:hparam-analysis} evaluates DPR/LPC sensitivity on \textbf{the full
 \begin{figure}[!t]
 \centering
 \includegraphics[width=\columnwidth]{figures/05_hyperparameter_sensitivity.png}
-\caption{DPR/LPC sensitivity on \textbf{the full setting}.}
+\caption{Single-factor DPR/LPC ablation on \textbf{the full setting}; each curve varies one module parameter while all others remain fixed.}
 \label{fig:hparam-analysis}
 \end{figure}
 
-The DPR curves are stable around moderate prototype-head scales, and the selected \(s=18.75\) lies in this broad high-performing region for all displayed \(\gamma\) values. LPC changes gradually with \(\lambda\), while the threshold curves remain close around the selected \(\tau=2.5\). These trends show that the selected operating point is representative rather than an isolated peak.
+This single-factor ablation varies DPR's prototype-head scale \(s\) under several \(\gamma\) values and LPC's calibration strength \(\lambda\) under several \(\tau\) values, while holding all remaining settings fixed. The selected \(s=18.75\) lies in a broad high-performing DPR region, and the closely spaced LPC curves around \(\tau=2.5\) show gradual sensitivity rather than an isolated peak.
 
 
 \section{Conclusion}

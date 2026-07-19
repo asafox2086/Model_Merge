@@ -529,7 +529,7 @@ def plot_hparams(csv_dir: Path, figure_dir: Path) -> None:
             "lines.markersize": 4.8,
         }
     )
-    fig, axes = plt.subplots(1, 2, figsize=(4.45, 2.55), dpi=300)
+    fig, axes = plt.subplots(1, 2, figsize=(4.45, 2.15), dpi=300)
     if diagnostic:
         plot_hparam_curves(
             axes[0],
@@ -545,7 +545,7 @@ def plot_hparams(csv_dir: Path, figure_dir: Path) -> None:
             legend_location="lower left",
             legend_anchor=(0.01, 0.02),
             x_limits=(13.25, 24.25),
-            y_limits=(61.0, 63.0),
+            y_limits=(61.3, 62.7),
         )
     else:
         dpr_axis = axes[0]
@@ -571,13 +571,13 @@ def plot_hparams(csv_dir: Path, figure_dir: Path) -> None:
             ("Full configuration grid", 2.5),
             ("Full configuration grid", 3.0),
         ],
-        (61.0, 63.0),
+        (61.3, 62.7),
         (3.75, 5.25),
         legend_location="lower center",
         legend_anchor=(0.5, 0.05),
     )
     for axis in axes:
-        axis.set_yticks(np.arange(61.0, 63.1, 0.5))
+        axis.set_yticks(np.arange(61.5, 62.6, 0.5))
         for spine in axis.spines.values():
             spine.set_linewidth(0.8)
     fig.tight_layout(w_pad=0.65, pad=0.35)
