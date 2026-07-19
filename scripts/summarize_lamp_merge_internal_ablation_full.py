@@ -40,6 +40,8 @@ MODE_LABELS = {
     "no_prevalence": "No prevalence calibration",
     "uniform_prevalence": "Uniform prevalence prior",
     "smoothed_prevalence": "Smoothed prevalence prior",
+    "always_on_calibration": "Always-on calibration",
+    "client_balanced_prevalence": "Client-balanced prior",
 }
 
 MODE_GROUPS = {
@@ -56,6 +58,8 @@ MODE_GROUPS = {
     "no_prevalence": "Statistical information",
     "uniform_prevalence": "Statistical information",
     "smoothed_prevalence": "Statistical information",
+    "always_on_calibration": "M2 internal",
+    "client_balanced_prevalence": "M2 internal",
 }
 
 TAG_RE = re.compile(r"<.*?>")
@@ -69,6 +73,8 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--client-average-csv", type=Path, default=ROOT / "My_merge_ret" / "reports" / "lamp_merge_internal_ablation_full_client_average.csv")
     parser.add_argument("--dataset-csv", type=Path, default=ROOT / "My_merge_ret" / "reports" / "lamp_merge_internal_ablation_full_by_dataset.csv")
     parser.add_argument("--summary-md", type=Path, default=ROOT / "My_merge_ret" / "reports" / "lamp_merge_internal_ablation_full_summary.md")
+    parser.add_argument("--raw-csv", type=Path, default=None)
+    parser.add_argument("--require-modes", nargs="*", default=[])
     return parser.parse_args()
 
 
@@ -274,6 +280,25 @@ def build_dataset_rows(client_rows):
     return out
 
 
+def build_raw_rows(mode_lookups):
+    rows = []
+    for mode, lookup in sorted(mode_lookups.items()):
+        for key, value in sorted(lookup.items()):
+            task_type, dataset, model, num_clients, beta = key
+            rows.append({
+                "mode": mode,
+                "label": MODE_LABELS.get(mode, mode),
+                "task_type": task_type,
+                "dataset": dataset,
+                "model": model,
+                "num_clients": num_clients,
+                "beta": beta,
+                "seed": 42,
+                "test_acc": value,
+            })
+    return rows
+
+
 def render_summary(root: Path, summary_rows, client_rows, dataset_rows) -> str:
     lines = [
         "# LAMP-Merge Full-Scale Internal Ablation Summary",
@@ -326,6 +351,8 @@ def render_summary(root: Path, summary_rows, client_rows, dataset_rows) -> str:
         "Global client-size weight",
         "No prevalence calibration",
         "Uniform prevalence prior",
+        "Always-on calibration",
+        "Client-balanced prior",
     ]
     for row in dataset_rows:
         item = {"Dataset": row["dataset"], "Cells": row["client_average_cells"]}
@@ -353,6 +380,8 @@ def render_summary(root: Path, summary_rows, client_rows, dataset_rows) -> str:
         "Global client-size weight margin",
         "No prevalence calibration margin",
         "Uniform prevalence prior margin",
+        "Always-on calibration margin",
+        "Client-balanced prior margin",
     ]
     lines.append(markdown_table(dataset_headers, dataset_md))
     lines.extend([
@@ -375,6 +404,10 @@ def main() -> None:
     }
     if "full" not in mode_lookups:
         raise SystemExit(f"Missing full mode under {args.root}")
+    for mode in ["full", *args.require_modes]:
+        count = len(mode_lookups.get(mode, {}))
+        if count != 180:
+            raise SystemExit(f"Expected 180 formal cells for {mode}, got {count}")
     formal_lookup = mode_lookups["full"]
     summary_rows = [summarize_mode(mode, lookup, avg_lookup, formal_lookup) for mode, lookup in sorted(mode_lookups.items())]
     summary_rows.sort(key=lambda row: (row["group"], row["mode"]))
@@ -417,11 +450,25 @@ def main() -> None:
     ])
     dataset_fields = sorted({key for row in dataset_rows for key in row.keys()})
     write_csv(args.dataset_csv, dataset_rows, dataset_fields)
+    if args.raw_csv is not None:
+        write_csv(args.raw_csv, build_raw_rows(mode_lookups), [
+            "mode",
+            "label",
+            "task_type",
+            "dataset",
+            "model",
+            "num_clients",
+            "beta",
+            "seed",
+            "test_acc",
+        ])
     args.summary_md.parent.mkdir(parents=True, exist_ok=True)
     args.summary_md.write_text(render_summary(args.root, summary_rows, client_rows, dataset_rows), encoding="utf-8")
     print(f"wrote {args.output_csv}")
     print(f"wrote {args.client_average_csv}")
     print(f"wrote {args.dataset_csv}")
+    if args.raw_csv is not None:
+        print(f"wrote {args.raw_csv}")
     print(f"wrote {args.summary_md}")
 
 

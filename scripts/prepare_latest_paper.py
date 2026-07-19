@@ -15,6 +15,7 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 REPORT_DIR = ROOT / "My_merge_ret" / "reports"
+M2_CLIENT_AVERAGE_REPORT = REPORT_DIR / "lamp_merge_m2_internal_ablation_full_client_average.csv"
 FORMAL_ROOT = (
     ROOT
     / "outputs"
@@ -69,6 +70,8 @@ MODE_COLUMNS = {
     "global_client_size_weight": "Global client-size weight",
     "no_prevalence": "No prevalence calibration",
     "uniform_prevalence": "Uniform prevalence prior",
+    "always_on_calibration": "Always-on calibration",
+    "client_balanced_prevalence": "Client-balanced prior",
 }
 
 BASELINE_2X2_CONFIGURATIONS = [
@@ -191,7 +194,22 @@ def extract_master_client_average(backbone: str) -> list[list[str]]:
 
 
 def load_client_average_rows() -> list[dict[str, str]]:
-    return read_csv(REPORT_DIR / "lamp_merge_internal_ablation_full_client_average.csv")
+    rows = read_csv(REPORT_DIR / "lamp_merge_internal_ablation_full_client_average.csv")
+    m2_rows = read_csv(M2_CLIENT_AVERAGE_REPORT)
+    m2_by_key = {
+        (row["task_type"], row["dataset"], row["model"], int(row["num_clients"])): row
+        for row in m2_rows
+    }
+    for row in rows:
+        key = (row["task_type"], row["dataset"], row["model"], int(row["num_clients"]))
+        if key not in m2_by_key:
+            raise RuntimeError(f"Missing M2 internal-ablation cell: {key}")
+        source = m2_by_key[key]
+        for field in ("Always-on calibration", "Client-balanced prior"):
+            row[field] = source[field]
+    if len(m2_by_key) != 60:
+        raise RuntimeError(f"Expected 60 M2 client-average cells, got {len(m2_by_key)}")
+    return rows
 
 
 def load_formal_lamp_values(client_rows: list[dict[str, str]]) -> dict[tuple[str, str, int], float]:
@@ -345,8 +363,9 @@ def internal_ablation_rows(
         ("LAMP-Merge", "full", "LAMP-Merge"),
     ]
     prevalence_modes = [
-        ("No prevalence calibration", "no_prevalence", "No prevalence calibration"),
         ("Uniform prevalence prior", "uniform_prevalence", "Uniform prevalence prior"),
+        ("Always-on calibration", "always_on_calibration", "Always-on calibration"),
+        ("Client-balanced prior", "client_balanced_prevalence", "Client-balanced prior"),
         ("LAMP-Merge", "full", "LAMP-Merge"),
     ]
 
@@ -496,12 +515,9 @@ def build_ultrasound_distribution() -> list[dict[str, object]]:
         total_variation = 0.5 * sum(abs(a - b) for a, b in zip(distribution, true_distribution))
         row: dict[str, object] = {"Series": label, "TV": f"{total_variation:.4f}"}
         for index, value in enumerate(distribution):
-            row[f"Class {index} proportion (%)"] = f"{100 * value:.4f}"
+            difference = 100 * (value - true_distribution[index])
+            row[f"Class {index} difference vs. true (pp)"] = f"{difference:.4f}"
         output_rows.append(row)
-    true_row: dict[str, object] = {"Series": "True distribution", "TV": "0.0000"}
-    for index, value in enumerate(true_distribution):
-        true_row[f"Class {index} proportion (%)"] = f"{100 * value:.4f}"
-    output_rows.append(true_row)
     return output_rows
 
 
@@ -618,7 +634,9 @@ INTERNAL_SHORT_LABELS = {
     "Binary support only": "Binary support",
     "Global client-size weight": "Client-size weight",
     "No prevalence calibration": "No LPC",
-    "Uniform prevalence prior": "Uniform prior",
+    "Uniform prevalence prior": "UPP",
+    "Always-on calibration": "AOC",
+    "Client-balanced prior": "CBP",
     "LAMP-Merge": "LAMP-Merge",
 }
 
@@ -691,18 +709,17 @@ def build_collapse_dataset_table(diagnostic_summary: dict[str, dict[str, object]
             body.append(r"\hdashline")
         body.extend(
             [
-                r"\rowcolor[HTML]{FFF9C4}",
-                metric_label
-                + r" & \textbf{LAMP} & "
-                + " & ".join(rf"\textbf{{{value:.2f}}}" for value in lamp_values)
-                + " \\\\",
                 r"\rowcolor{gray!10}",
                 r" & Best ref. & "
                 + " & ".join(f"{value:.2f}" for value in reference_values)
                 + " \\\\",
+                r"\rowcolor[HTML]{FFF9C4}",
+                rf"\multirow{{-2}}{{*}}{{{metric_label}}}"
+                + r" & \textbf{LAMP} & "
+                + " & ".join(rf"\textbf{{{value:.2f}}}" for value in lamp_values)
+                + " \\\\",
             ]
         )
-        body[-4:] = body[-2:] + body[-4:-2]
 
     return "\n".join(
         [
@@ -714,7 +731,7 @@ def build_collapse_dataset_table(diagnostic_summary: dict[str, dict[str, object]
             r"\setlength{\tabcolsep}{2.2pt}",
             r"\renewcommand{\arraystretch}{1.16}",
             r"\resizebox{\columnwidth}{!}{%",
-            r"\begin{tabular}{llccccc:c}",
+            r"\begin{tabular}{clccccc:c}",
             r"\noalign{\hrule height 1.25pt}",
             r"\rowcolor[HTML]{F2F2F2}",
             r"\textbf{Metric} & \textbf{Series} & \textbf{Blood} & \textbf{Derma} & \textbf{Organ-C} & \textbf{Organ-S} & \textbf{US} & \textbf{Avg} \\",
@@ -775,6 +792,11 @@ def update_tex(
 ) -> None:
     path = paper_dir / "v4_3.tex"
     tex = path.read_text(encoding="utf-8")
+    if r"\usepackage{placeins}" not in tex:
+        tex = tex.replace(
+            r"\usepackage{arydshln}",
+            "\\usepackage{arydshln}\n\\usepackage{placeins}",
+        )
     tex = tex.replace(r"where $\gamma=0.45$ is the default evidence exponent", r"where $\gamma=0.55$ is the default evidence exponent")
     tex = tex.replace(r"where $s=20$ is the default head scale", r"where $s=18.75$ is the default head scale")
     tex = tex.replace(r"with default maximum calibration strength $\lambda=5.0$", r"with default maximum calibration strength $\lambda=4.25$")
@@ -799,6 +821,14 @@ def update_tex(
     dpr_with_lpc = float(
         baseline_by_configuration[("TIES-Merging", "Baseline + DPR + LPC")]["Overall ACC (%)"]
     )
+    prevalence_by_setting = {
+        str(row["Setting"]): float(row["Avg ACC (%)"])
+        for row in prevalence_rows
+    }
+    uniform_prior = prevalence_by_setting["Uniform prevalence prior"]
+    always_on = prevalence_by_setting["Always-on calibration"]
+    client_balanced = prevalence_by_setting["Client-balanced prior"]
+    full_prevalence = prevalence_by_setting["LAMP-Merge"]
     module_ablation_intro = (
         "Module-level ablations use exactly the same experimental setup as the main experiments. "
         "The Weight-Averaging Baseline, Baseline + DPR, and full LAMP-Merge achieve overall "
@@ -851,7 +881,7 @@ def update_tex(
 
     prevalence_table = build_internal_dataset_table(
         prevalence_rows,
-        "LPC internal ablation by dataset. Each entry averages all backbones, client counts, and Dirichlet settings; Avg averages the five datasets.",
+        "LPC internal ablation by dataset. UPP uses a uniform prior, AOC removes the activation gate, and CBP averages client-normalized priors. Each entry averages all backbones, client counts, and Dirichlet settings; Avg averages the five datasets.",
         "tab:prevalence-internal-ablation",
     )
     tex = replace_table_block(tex, "tab:prevalence-internal-ablation", prevalence_table)
@@ -867,10 +897,20 @@ def update_tex(
         r"Table~\ref{tab:diagnostic-internal-ablation} shows that neither an arbitrary head nor a class-agnostic statistic explains the gain.",
     )
     baseline_2x2_text = (
-        "We further replace the prior term inside long-tail prevalence calibration. "
-        "Table~\\ref{tab:prevalence-internal-ablation} shows that removing prevalence calibration "
-        "or replacing the real prior with a uniform prior reduces mean ACC, confirming that "
-        "long-tailed prevalence is part of the full method. The strict controls in "
+        "We further conduct three full-scope LPC internal controls while retaining DPR. "
+        "Uniform prevalence prior (UPP) sets \\(\\pi_c=1/C\\), removing empirical long-tail "
+        "prevalence. Always-on calibration (AOC) replaces the thresholded activation "
+        "\\(\\mathbf{1}[r>\\tau]\\) with 1 while retaining the empirical prior. Client-balanced "
+        "prior (CBP) first normalizes each client's prevalence counts and then averages clients, "
+        "rather than weighting the global prior by raw client counts. "
+        "Table~\\ref{tab:prevalence-internal-ablation} reports overall mean ACC values of "
+        f"{uniform_prior:.2f}\\% (UPP), {always_on:.2f}\\% (AOC), and {client_balanced:.2f}\\% (CBP), "
+        f"compared with {full_prevalence:.2f}\\% for LAMP-Merge. Thus, UPP, AOC, and CBP are lower "
+        f"by {full_prevalence - uniform_prior:.2f}, {full_prevalence - always_on:.2f}, and "
+        f"{full_prevalence - client_balanced:.2f} percentage points, respectively. The small AOC "
+        "gap indicates that always applying the empirical prior is close but still inferior, whereas "
+        "UPP and CBP show that both the empirical long-tail prior and its client-size-aware aggregation "
+        "are needed. The strict controls in "
         "Fig.~\\ref{fig:baseline-2x2-ablation} average all 60 client-average cells and cross DPR "
         "and LPC for each classifier-head baseline. Without DPR, LPC raises TIES from "
         f"{ties_baseline:.2f}\\% to {ties_with_lpc:.2f}\\% and DARE from "
@@ -886,12 +926,12 @@ def update_tex(
     )
     baseline_2x2_figure = "\n".join(
         [
-            r"\begin{figure*}[t]",
+            r"\begin{figure}[t]",
             r"\centering",
-            r"\includegraphics[width=0.88\textwidth]{figures/03_baseline_2x2_ablation.pdf}",
-            r"\caption{Strict $2\times2$ DPR/LPC ablation for TIES-Merging and DARE-Linear baselines. Each bar reports overall ACC averaged over all five datasets, four backbones, and three client counts (60 client-average cells); no per-dataset results are shown.}",
+            r"\includegraphics[width=\columnwidth]{figures/03_baseline_2x2_ablation.pdf}",
+            r"\caption{Strict $2\times2$ DPR/LPC ablations for TIES-Merging and DARE-Linear. Values are overall ACC across 60 client-average cells (five datasets, four backbones, and three client counts).}",
             r"\label{fig:baseline-2x2-ablation}",
-            r"\end{figure*}",
+            r"\end{figure}",
         ]
     )
     if r"\label{fig:dataset-ablation-acc}" in tex:
@@ -903,8 +943,8 @@ def update_tex(
         [
             r"\begin{figure*}[t]",
             r"\centering",
-            r"\includegraphics[width=0.96\textwidth]{figures/05_hyperparameter_sensitivity.png}",
-            r"\caption{Full-scope hyperparameter sensitivity for DPR and LPC. The expanded vertical ranges emphasize that accuracy remains stable across broad parameter intervals.}",
+            r"\includegraphics[width=0.96\textwidth]{figures/05_hyperparameter_sensitivity.pdf}",
+            r"\caption{Full-scope hyperparameter sensitivity of DPR and LPC. Expanded vertical ranges show stable accuracy across broad intervals.}",
             r"\label{fig:hparam-analysis}",
             r"\end{figure*}",
         ]
@@ -915,6 +955,15 @@ def update_tex(
         tex = replace_figure_block(tex, "fig:hparam-analysis", combined_hparam_figure)
     if r"\label{fig:hparam-analysis-lpc}" in tex:
         tex = remove_figure_block(tex, "fig:hparam-analysis-lpc")
+    for figure_name in [
+        "01_module_ablation_accuracy",
+        "02_internal_module_ablations",
+        "03_baseline_2x2_ablation",
+        "04_ultrasound_class_distribution",
+        "05_hyperparameter_sensitivity",
+        "07_tsne_output_probability",
+    ]:
+        tex = tex.replace(f"figures/{figure_name}", f"figures/new/{figure_name}")
     if r"\label{fig:dataset-examples}" in tex:
         tex = remove_figure_block(tex, "fig:dataset-examples")
     tex = tex.replace(
@@ -927,6 +976,11 @@ def update_tex(
         tex,
     )
     tex = tex.replace("DPRM", "DPR")
+    if "\\FloatBarrier\n\\section{Conclusion}" not in tex:
+        tex = tex.replace(
+            r"\section{Conclusion}",
+            "\\FloatBarrier\n\\section{Conclusion}",
+        )
     path.write_text(tex, encoding="utf-8")
 
 
@@ -1006,7 +1060,7 @@ def main() -> None:
     )
     write_annotated_csv(
         csv_dir / "长尾患病率校准内部消融.csv",
-        "本表对应 LPC 内部消融；各设置保留 DPR，仅移除或替换患病率先验。每个数据集数值对四个 backbone、K=3/5/7 和三个 beta 设置取平均，单位为 ACC 百分比。",
+        "本表对应 LPC 内部消融；各设置保留 DPR，仅替换患病率先验估计或长尾激活门控。每个数据集数值对四个 backbone、K=3/5/7 和三个 beta 设置取平均，单位为 ACC 百分比。",
         internal_fields,
         prevalence_rows,
     )
@@ -1022,10 +1076,12 @@ def main() -> None:
     )
 
     distribution_rows = build_ultrasound_distribution()
-    distribution_fields = ["Series", "TV"] + [f"Class {index} proportion (%)" for index in range(8)]
+    distribution_fields = ["Series", "TV"] + [
+        f"Class {index} difference vs. true (pp)" for index in range(8)
+    ]
     write_annotated_csv(
         csv_dir / "超声预测类别分布.csv",
-        "本表对应 Ultrasound 预测类别分布图；每个方法对四个 backbone、K=3/5/7 和三个 beta 设置取平均，类别比例使用百分比。",
+        "本表对应 Ultrasound 预测分布相对真实分布的逐类差值图；每个方法对四个 backbone、K=3/5/7 和三个 beta 设置取平均，差值为预测比例减真实比例，单位为百分点。",
         distribution_fields,
         distribution_rows,
     )

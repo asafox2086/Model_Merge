@@ -1,7 +1,6 @@
-说明,本表对应 Ultrasound 预测类别分布图；每个方法对四个 backbone、K=3/5/7 和三个 beta 设置取平均，类别比例使用百分比。
-Series,TV,Class 0 proportion (%),Class 1 proportion (%),Class 2 proportion (%),Class 3 proportion (%),Class 4 proportion (%),Class 5 proportion (%),Class 6 proportion (%),Class 7 proportion (%)
-LAMP-Merge,0.1291,12.1044,16.7490,8.7352,17.5726,13.3847,8.6977,15.3489,7.4074
-Weight Averaging,0.2338,12.3914,3.6538,16.4820,14.6551,2.0091,13.7841,32.1154,4.9092
-TIES-Merging,0.2584,13.6243,4.8343,19.1774,10.9988,11.5603,7.7144,29.1854,2.9051
-DARE-Linear,0.2242,9.3791,3.2520,15.5885,20.8421,2.8427,8.5455,30.0165,9.5338
-True distribution,0.0000,10.8715,10.8715,10.5121,16.1725,8.9847,12.6685,17.3405,12.5786
+说明,本表对应 Ultrasound 预测分布相对真实分布的逐类差值图；每个方法对四个 backbone、K=3/5/7 和三个 beta 设置取平均，差值为预测比例减真实比例，单位为百分点。
+Series,TV,Class 0 difference vs. true (pp),Class 1 difference vs. true (pp),Class 2 difference vs. true (pp),Class 3 difference vs. true (pp),Class 4 difference vs. true (pp),Class 5 difference vs. true (pp),Class 6 difference vs. true (pp),Class 7 difference vs. true (pp)
+LAMP-Merge,0.1291,1.2329,5.8775,-1.7770,1.4001,4.4000,-3.9707,-1.9916,-5.1712
+Weight Averaging,0.2338,1.5199,-7.2177,5.9699,-1.5174,-6.9756,1.1156,14.7749,-7.6695
+TIES-Merging,0.2584,2.7528,-6.0372,8.6653,-5.1737,2.5756,-4.9541,11.8449,-9.6736
+DARE-Linear,0.2242,-1.4925,-7.6195,5.0764,4.6696,-6.1421,-4.1230,12.6760,-3.0448

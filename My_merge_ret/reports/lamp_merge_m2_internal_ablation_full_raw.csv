@@ -1,0 +1,541 @@
+mode,label,task_type,dataset,model,num_clients,beta,seed,test_acc
+always_on_calibration,Always-on calibration,small,bloodmnist_224,convnext,3,0.0,42,0.8465361005553932
+always_on_calibration,Always-on calibration,small,bloodmnist_224,convnext,3,0.01,42,0.8471207249342297
+always_on_calibration,Always-on calibration,small,bloodmnist_224,convnext,3,0.1,42,0.8471207249342297
+always_on_calibration,Always-on calibration,small,bloodmnist_224,convnext,5,0.0,42,0.8465361005553932
+always_on_calibration,Always-on calibration,small,bloodmnist_224,convnext,5,0.01,42,0.8465361005553932
+always_on_calibration,Always-on calibration,small,bloodmnist_224,convnext,5,0.1,42,0.8471207249342297
+always_on_calibration,Always-on calibration,small,bloodmnist_224,convnext,7,0.0,42,0.8465361005553932
+always_on_calibration,Always-on calibration,small,bloodmnist_224,convnext,7,0.01,42,0.8459514761765565
+always_on_calibration,Always-on calibration,small,bloodmnist_224,convnext,7,0.1,42,0.84536685179772
+always_on_calibration,Always-on calibration,small,bloodmnist_224,resnet,3,0.0,42,0.7717041800643086
+always_on_calibration,Always-on calibration,small,bloodmnist_224,resnet,3,0.01,42,0.7717041800643086
+always_on_calibration,Always-on calibration,small,bloodmnist_224,resnet,3,0.1,42,0.7728734288219818
+always_on_calibration,Always-on calibration,small,bloodmnist_224,resnet,5,0.0,42,0.7717041800643086
+always_on_calibration,Always-on calibration,small,bloodmnist_224,resnet,5,0.01,42,0.771996492253727
+always_on_calibration,Always-on calibration,small,bloodmnist_224,resnet,5,0.1,42,0.7725811166325636
+always_on_calibration,Always-on calibration,small,bloodmnist_224,resnet,7,0.0,42,0.7717041800643086
+always_on_calibration,Always-on calibration,small,bloodmnist_224,resnet,7,0.01,42,0.7722888044431453
+always_on_calibration,Always-on calibration,small,bloodmnist_224,resnet,7,0.1,42,0.7714118678748904
+always_on_calibration,Always-on calibration,small,bloodmnist_224,swin_tiny,3,0.0,42,0.7512423268050278
+always_on_calibration,Always-on calibration,small,bloodmnist_224,swin_tiny,3,0.01,42,0.7521192633732827
+always_on_calibration,Always-on calibration,small,bloodmnist_224,swin_tiny,3,0.1,42,0.7471499561531716
+always_on_calibration,Always-on calibration,small,bloodmnist_224,swin_tiny,5,0.0,42,0.7512423268050278
+always_on_calibration,Always-on calibration,small,bloodmnist_224,swin_tiny,5,0.01,42,0.7497807658579363
+always_on_calibration,Always-on calibration,small,bloodmnist_224,swin_tiny,5,0.1,42,0.7480268927214265
+always_on_calibration,Always-on calibration,small,bloodmnist_224,swin_tiny,7,0.0,42,0.7512423268050278
+always_on_calibration,Always-on calibration,small,bloodmnist_224,swin_tiny,7,0.01,42,0.7503653902367728
+always_on_calibration,Always-on calibration,small,bloodmnist_224,swin_tiny,7,0.1,42,0.7459807073954984
+always_on_calibration,Always-on calibration,small,bloodmnist_224,vit_t,3,0.0,42,0.8553054662379421
+always_on_calibration,Always-on calibration,small,bloodmnist_224,vit_t,3,0.01,42,0.8550131540485238
+always_on_calibration,Always-on calibration,small,bloodmnist_224,vit_t,3,0.1,42,0.8544285296696872
+always_on_calibration,Always-on calibration,small,bloodmnist_224,vit_t,5,0.0,42,0.8553054662379421
+always_on_calibration,Always-on calibration,small,bloodmnist_224,vit_t,5,0.01,42,0.8555977784273604
+always_on_calibration,Always-on calibration,small,bloodmnist_224,vit_t,5,0.1,42,0.8570593393744519
+always_on_calibration,Always-on calibration,small,bloodmnist_224,vit_t,7,0.0,42,0.8553054662379421
+always_on_calibration,Always-on calibration,small,bloodmnist_224,vit_t,7,0.01,42,0.8547208418591056
+always_on_calibration,Always-on calibration,small,bloodmnist_224,vit_t,7,0.1,42,0.8471207249342297
+always_on_calibration,Always-on calibration,small,chaoshengmnist_224,convnext,3,0.0,42,0.4339622641509434
+always_on_calibration,Always-on calibration,small,chaoshengmnist_224,convnext,3,0.01,42,0.435759209344115
+always_on_calibration,Always-on calibration,small,chaoshengmnist_224,convnext,3,0.1,42,0.43755615453728663
+always_on_calibration,Always-on calibration,small,chaoshengmnist_224,convnext,5,0.0,42,0.4339622641509434
+always_on_calibration,Always-on calibration,small,chaoshengmnist_224,convnext,5,0.01,42,0.4348607367475292
+always_on_calibration,Always-on calibration,small,chaoshengmnist_224,convnext,5,0.1,42,0.435759209344115
+always_on_calibration,Always-on calibration,small,chaoshengmnist_224,convnext,7,0.0,42,0.4339622641509434
+always_on_calibration,Always-on calibration,small,chaoshengmnist_224,convnext,7,0.01,42,0.4303683737646002
+always_on_calibration,Always-on calibration,small,chaoshengmnist_224,convnext,7,0.1,42,0.42946990116801437
+always_on_calibration,Always-on calibration,small,chaoshengmnist_224,resnet,3,0.0,42,0.4474393530997305
+always_on_calibration,Always-on calibration,small,chaoshengmnist_224,resnet,3,0.01,42,0.44654088050314467
+always_on_calibration,Always-on calibration,small,chaoshengmnist_224,resnet,3,0.1,42,0.4501347708894879
+always_on_calibration,Always-on calibration,small,chaoshengmnist_224,resnet,5,0.0,42,0.4474393530997305
+always_on_calibration,Always-on calibration,small,chaoshengmnist_224,resnet,5,0.01,42,0.44923629829290207
+always_on_calibration,Always-on calibration,small,chaoshengmnist_224,resnet,5,0.1,42,0.444743935309973
+always_on_calibration,Always-on calibration,small,chaoshengmnist_224,resnet,7,0.0,42,0.4474393530997305
+always_on_calibration,Always-on calibration,small,chaoshengmnist_224,resnet,7,0.01,42,0.44564240790655885
+always_on_calibration,Always-on calibration,small,chaoshengmnist_224,resnet,7,0.1,42,0.44384546271338726
+always_on_calibration,Always-on calibration,small,chaoshengmnist_224,swin_tiny,3,0.0,42,0.48697214734950584
+always_on_calibration,Always-on calibration,small,chaoshengmnist_224,swin_tiny,3,0.01,42,0.48607367475292
+always_on_calibration,Always-on calibration,small,chaoshengmnist_224,swin_tiny,3,0.1,42,0.46810422282120395
+always_on_calibration,Always-on calibration,small,chaoshengmnist_224,swin_tiny,5,0.0,42,0.48697214734950584
+always_on_calibration,Always-on calibration,small,chaoshengmnist_224,swin_tiny,5,0.01,42,0.48966756513926324
+always_on_calibration,Always-on calibration,small,chaoshengmnist_224,swin_tiny,5,0.1,42,0.49236298292902064
+always_on_calibration,Always-on calibration,small,chaoshengmnist_224,swin_tiny,7,0.0,42,0.48697214734950584
+always_on_calibration,Always-on calibration,small,chaoshengmnist_224,swin_tiny,7,0.01,42,0.49056603773584906
+always_on_calibration,Always-on calibration,small,chaoshengmnist_224,swin_tiny,7,0.1,42,0.472596585804133
+always_on_calibration,Always-on calibration,small,chaoshengmnist_224,vit_t,3,0.0,42,0.46990116801437554
+always_on_calibration,Always-on calibration,small,chaoshengmnist_224,vit_t,3,0.01,42,0.47079964061096136
+always_on_calibration,Always-on calibration,small,chaoshengmnist_224,vit_t,3,0.1,42,0.46540880503144655
+always_on_calibration,Always-on calibration,small,chaoshengmnist_224,vit_t,5,0.0,42,0.46990116801437554
+always_on_calibration,Always-on calibration,small,chaoshengmnist_224,vit_t,5,0.01,42,0.4743935309973046
+always_on_calibration,Always-on calibration,small,chaoshengmnist_224,vit_t,5,0.1,42,0.4555256064690027
+always_on_calibration,Always-on calibration,small,chaoshengmnist_224,vit_t,7,0.0,42,0.46990116801437554
+always_on_calibration,Always-on calibration,small,chaoshengmnist_224,vit_t,7,0.01,42,0.4743935309973046
+always_on_calibration,Always-on calibration,small,chaoshengmnist_224,vit_t,7,0.1,42,0.44833782569631625
+always_on_calibration,Always-on calibration,small,dermamnist_224,convnext,3,0.0,42,0.598004987531172
+always_on_calibration,Always-on calibration,small,dermamnist_224,convnext,3,0.01,42,0.5965087281795511
+always_on_calibration,Always-on calibration,small,dermamnist_224,convnext,3,0.1,42,0.5960099750623441
+always_on_calibration,Always-on calibration,small,dermamnist_224,convnext,5,0.0,42,0.598004987531172
+always_on_calibration,Always-on calibration,small,dermamnist_224,convnext,5,0.01,42,0.5945137157107232
+always_on_calibration,Always-on calibration,small,dermamnist_224,convnext,5,0.1,42,0.570573566084788
+always_on_calibration,Always-on calibration,small,dermamnist_224,convnext,7,0.0,42,0.598004987531172
+always_on_calibration,Always-on calibration,small,dermamnist_224,convnext,7,0.01,42,0.5930174563591022
+always_on_calibration,Always-on calibration,small,dermamnist_224,convnext,7,0.1,42,0.5915211970074813
+always_on_calibration,Always-on calibration,small,dermamnist_224,resnet,3,0.0,42,0.6758104738154613
+always_on_calibration,Always-on calibration,small,dermamnist_224,resnet,3,0.01,42,0.6758104738154613
+always_on_calibration,Always-on calibration,small,dermamnist_224,resnet,3,0.1,42,0.6748129675810474
+always_on_calibration,Always-on calibration,small,dermamnist_224,resnet,5,0.0,42,0.6758104738154613
+always_on_calibration,Always-on calibration,small,dermamnist_224,resnet,5,0.01,42,0.6763092269326684
+always_on_calibration,Always-on calibration,small,dermamnist_224,resnet,5,0.1,42,0.6768079800498753
+always_on_calibration,Always-on calibration,small,dermamnist_224,resnet,7,0.0,42,0.6758104738154613
+always_on_calibration,Always-on calibration,small,dermamnist_224,resnet,7,0.01,42,0.6768079800498753
+always_on_calibration,Always-on calibration,small,dermamnist_224,resnet,7,0.1,42,0.6763092269326684
+always_on_calibration,Always-on calibration,small,dermamnist_224,swin_tiny,3,0.0,42,0.6334164588528678
+always_on_calibration,Always-on calibration,small,dermamnist_224,swin_tiny,3,0.01,42,0.6334164588528678
+always_on_calibration,Always-on calibration,small,dermamnist_224,swin_tiny,3,0.1,42,0.6304239401496259
+always_on_calibration,Always-on calibration,small,dermamnist_224,swin_tiny,5,0.0,42,0.6334164588528678
+always_on_calibration,Always-on calibration,small,dermamnist_224,swin_tiny,5,0.01,42,0.628927680798005
+always_on_calibration,Always-on calibration,small,dermamnist_224,swin_tiny,5,0.1,42,0.6329177057356609
+always_on_calibration,Always-on calibration,small,dermamnist_224,swin_tiny,7,0.0,42,0.6334164588528678
+always_on_calibration,Always-on calibration,small,dermamnist_224,swin_tiny,7,0.01,42,0.6309226932668329
+always_on_calibration,Always-on calibration,small,dermamnist_224,swin_tiny,7,0.1,42,0.628428927680798
+always_on_calibration,Always-on calibration,small,dermamnist_224,vit_t,3,0.0,42,0.5950124688279301
+always_on_calibration,Always-on calibration,small,dermamnist_224,vit_t,3,0.01,42,0.5945137157107232
+always_on_calibration,Always-on calibration,small,dermamnist_224,vit_t,3,0.1,42,0.5940149625935162
+always_on_calibration,Always-on calibration,small,dermamnist_224,vit_t,5,0.0,42,0.5950124688279301
+always_on_calibration,Always-on calibration,small,dermamnist_224,vit_t,5,0.01,42,0.5925187032418953
+always_on_calibration,Always-on calibration,small,dermamnist_224,vit_t,5,0.1,42,0.5920199501246883
+always_on_calibration,Always-on calibration,small,dermamnist_224,vit_t,7,0.0,42,0.5950124688279301
+always_on_calibration,Always-on calibration,small,dermamnist_224,vit_t,7,0.01,42,0.5895261845386534
+always_on_calibration,Always-on calibration,small,dermamnist_224,vit_t,7,0.1,42,0.6104738154613466
+always_on_calibration,Always-on calibration,small,organcmnist_224,convnext,3,0.0,42,0.6562804284323271
+always_on_calibration,Always-on calibration,small,organcmnist_224,convnext,3,0.01,42,0.6550632911392406
+always_on_calibration,Always-on calibration,small,organcmnist_224,convnext,3,0.1,42,0.6509250243427459
+always_on_calibration,Always-on calibration,small,organcmnist_224,convnext,5,0.0,42,0.6562804284323271
+always_on_calibration,Always-on calibration,small,organcmnist_224,convnext,5,0.01,42,0.6585929892891919
+always_on_calibration,Always-on calibration,small,organcmnist_224,convnext,5,0.1,42,0.6450827653359299
+always_on_calibration,Always-on calibration,small,organcmnist_224,convnext,7,0.0,42,0.6562804284323271
+always_on_calibration,Always-on calibration,small,organcmnist_224,convnext,7,0.01,42,0.6544547224926972
+always_on_calibration,Always-on calibration,small,organcmnist_224,convnext,7,0.1,42,0.6545764362220059
+always_on_calibration,Always-on calibration,small,organcmnist_224,resnet,3,0.0,42,0.6005355404089582
+always_on_calibration,Always-on calibration,small,organcmnist_224,resnet,3,0.01,42,0.6009006815968841
+always_on_calibration,Always-on calibration,small,organcmnist_224,resnet,3,0.1,42,0.6000486854917235
+always_on_calibration,Always-on calibration,small,organcmnist_224,resnet,5,0.0,42,0.6005355404089582
+always_on_calibration,Always-on calibration,small,organcmnist_224,resnet,5,0.01,42,0.6002921129503408
+always_on_calibration,Always-on calibration,small,organcmnist_224,resnet,5,0.1,42,0.5972492697176242
+always_on_calibration,Always-on calibration,small,organcmnist_224,resnet,7,0.0,42,0.6005355404089582
+always_on_calibration,Always-on calibration,small,organcmnist_224,resnet,7,0.01,42,0.6026046738072055
+always_on_calibration,Always-on calibration,small,organcmnist_224,resnet,7,0.1,42,0.5990749756572541
+always_on_calibration,Always-on calibration,small,organcmnist_224,swin_tiny,3,0.0,42,0.6841528724440117
+always_on_calibration,Always-on calibration,small,organcmnist_224,swin_tiny,3,0.01,42,0.685126582278481
+always_on_calibration,Always-on calibration,small,organcmnist_224,swin_tiny,3,0.1,42,0.6853700097370984
+always_on_calibration,Always-on calibration,small,organcmnist_224,swin_tiny,5,0.0,42,0.6841528724440117
+always_on_calibration,Always-on calibration,small,organcmnist_224,swin_tiny,5,0.01,42,0.6853700097370984
+always_on_calibration,Always-on calibration,small,organcmnist_224,swin_tiny,5,0.1,42,0.6755111976630964
+always_on_calibration,Always-on calibration,small,organcmnist_224,swin_tiny,7,0.0,42,0.6841528724440117
+always_on_calibration,Always-on calibration,small,organcmnist_224,swin_tiny,7,0.01,42,0.680014605647517
+always_on_calibration,Always-on calibration,small,organcmnist_224,swin_tiny,7,0.1,42,0.6795277507302824
+always_on_calibration,Always-on calibration,small,organcmnist_224,vit_t,3,0.0,42,0.5864167478091529
+always_on_calibration,Always-on calibration,small,organcmnist_224,vit_t,3,0.01,42,0.5856864654333008
+always_on_calibration,Always-on calibration,small,organcmnist_224,vit_t,3,0.1,42,0.5914070107108081
+always_on_calibration,Always-on calibration,small,organcmnist_224,vit_t,5,0.0,42,0.5864167478091529
+always_on_calibration,Always-on calibration,small,organcmnist_224,vit_t,5,0.01,42,0.5828870496592016
+always_on_calibration,Always-on calibration,small,organcmnist_224,vit_t,5,0.1,42,0.5827653359298929
+always_on_calibration,Always-on calibration,small,organcmnist_224,vit_t,7,0.0,42,0.5864167478091529
+always_on_calibration,Always-on calibration,small,organcmnist_224,vit_t,7,0.01,42,0.5797224926971762
+always_on_calibration,Always-on calibration,small,organcmnist_224,vit_t,7,0.1,42,0.5826436222005842
+always_on_calibration,Always-on calibration,small,organsmnist_224,convnext,3,0.0,42,0.6057550696725954
+always_on_calibration,Always-on calibration,small,organsmnist_224,convnext,3,0.01,42,0.6043956043956044
+always_on_calibration,Always-on calibration,small,organsmnist_224,convnext,3,0.1,42,0.6063215135380083
+always_on_calibration,Always-on calibration,small,organsmnist_224,convnext,5,0.0,42,0.6057550696725954
+always_on_calibration,Always-on calibration,small,organsmnist_224,convnext,5,0.01,42,0.6050753370340999
+always_on_calibration,Always-on calibration,small,organsmnist_224,convnext,5,0.1,42,0.6041690268494392
+always_on_calibration,Always-on calibration,small,organsmnist_224,convnext,7,0.0,42,0.6057550696725954
+always_on_calibration,Always-on calibration,small,organsmnist_224,convnext,7,0.01,42,0.6064348023110909
+always_on_calibration,Always-on calibration,small,organsmnist_224,convnext,7,0.1,42,0.6075676900419168
+always_on_calibration,Always-on calibration,small,organsmnist_224,resnet,3,0.0,42,0.5274725274725275
+always_on_calibration,Always-on calibration,small,organsmnist_224,resnet,3,0.01,42,0.5276991050186927
+always_on_calibration,Always-on calibration,small,organsmnist_224,resnet,3,0.1,42,0.5341565650844001
+always_on_calibration,Always-on calibration,small,organsmnist_224,resnet,5,0.0,42,0.5274725274725275
+always_on_calibration,Always-on calibration,small,organsmnist_224,resnet,5,0.01,42,0.5269060836071146
+always_on_calibration,Always-on calibration,small,organsmnist_224,resnet,5,0.1,42,0.5292851478418489
+always_on_calibration,Always-on calibration,small,organsmnist_224,resnet,7,0.0,42,0.5274725274725275
+always_on_calibration,Always-on calibration,small,organsmnist_224,resnet,7,0.01,42,0.5283788376571882
+always_on_calibration,Always-on calibration,small,organsmnist_224,resnet,7,0.1,42,0.5284921264302708
+always_on_calibration,Always-on calibration,small,organsmnist_224,swin_tiny,3,0.0,42,0.6277330916506174
+always_on_calibration,Always-on calibration,small,organsmnist_224,swin_tiny,3,0.01,42,0.6260337600543786
+always_on_calibration,Always-on calibration,small,organsmnist_224,swin_tiny,3,0.1,42,0.6235414070465617
+always_on_calibration,Always-on calibration,small,organsmnist_224,swin_tiny,5,0.0,42,0.6277330916506174
+always_on_calibration,Always-on calibration,small,organsmnist_224,swin_tiny,5,0.01,42,0.6277330916506174
+always_on_calibration,Always-on calibration,small,organsmnist_224,swin_tiny,5,0.1,42,0.6284128242891129
+always_on_calibration,Always-on calibration,small,organsmnist_224,swin_tiny,7,0.0,42,0.6277330916506174
+always_on_calibration,Always-on calibration,small,organsmnist_224,swin_tiny,7,0.01,42,0.6288659793814433
+always_on_calibration,Always-on calibration,small,organsmnist_224,swin_tiny,7,0.1,42,0.6285261130621955
+always_on_calibration,Always-on calibration,small,organsmnist_224,vit_t,3,0.0,42,0.5445791322079981
+always_on_calibration,Always-on calibration,small,organsmnist_224,vit_t,3,0.01,42,0.5423133567463464
+always_on_calibration,Always-on calibration,small,organsmnist_224,vit_t,3,0.1,42,0.5448057097541633
+always_on_calibration,Always-on calibration,small,organsmnist_224,vit_t,5,0.0,42,0.5445791322079981
+always_on_calibration,Always-on calibration,small,organsmnist_224,vit_t,5,0.01,42,0.5432196669310071
+always_on_calibration,Always-on calibration,small,organsmnist_224,vit_t,5,0.1,42,0.5475246403081455
+always_on_calibration,Always-on calibration,small,organsmnist_224,vit_t,7,0.0,42,0.5445791322079981
+always_on_calibration,Always-on calibration,small,organsmnist_224,vit_t,7,0.01,42,0.5461651750311544
+always_on_calibration,Always-on calibration,small,organsmnist_224,vit_t,7,0.1,42,0.5486575280389714
+client_balanced_prevalence,Client-balanced prior,small,bloodmnist_224,convnext,3,0.0,42,0.848289973691903
+client_balanced_prevalence,Client-balanced prior,small,bloodmnist_224,convnext,3,0.01,42,0.8497515346389944
+client_balanced_prevalence,Client-balanced prior,small,bloodmnist_224,convnext,3,0.1,42,0.8351359251680796
+client_balanced_prevalence,Client-balanced prior,small,bloodmnist_224,convnext,5,0.0,42,0.848289973691903
+client_balanced_prevalence,Client-balanced prior,small,bloodmnist_224,convnext,5,0.01,42,0.848289973691903
+client_balanced_prevalence,Client-balanced prior,small,bloodmnist_224,convnext,5,0.1,42,0.8494592224495762
+client_balanced_prevalence,Client-balanced prior,small,bloodmnist_224,convnext,7,0.0,42,0.848289973691903
+client_balanced_prevalence,Client-balanced prior,small,bloodmnist_224,convnext,7,0.01,42,0.8512130955860859
+client_balanced_prevalence,Client-balanced prior,small,bloodmnist_224,convnext,7,0.1,42,0.8497515346389944
+client_balanced_prevalence,Client-balanced prior,small,bloodmnist_224,resnet,3,0.0,42,0.800350774627302
+client_balanced_prevalence,Client-balanced prior,small,bloodmnist_224,resnet,3,0.01,42,0.8000584624378837
+client_balanced_prevalence,Client-balanced prior,small,bloodmnist_224,resnet,3,0.1,42,0.686933645133002
+client_balanced_prevalence,Client-balanced prior,small,bloodmnist_224,resnet,5,0.0,42,0.800350774627302
+client_balanced_prevalence,Client-balanced prior,small,bloodmnist_224,resnet,5,0.01,42,0.8000584624378837
+client_balanced_prevalence,Client-balanced prior,small,bloodmnist_224,resnet,5,0.1,42,0.7977199649225373
+client_balanced_prevalence,Client-balanced prior,small,bloodmnist_224,resnet,7,0.0,42,0.800350774627302
+client_balanced_prevalence,Client-balanced prior,small,bloodmnist_224,resnet,7,0.01,42,0.7988892136802105
+client_balanced_prevalence,Client-balanced prior,small,bloodmnist_224,resnet,7,0.1,42,0.7983045893013738
+client_balanced_prevalence,Client-balanced prior,small,bloodmnist_224,swin_tiny,3,0.0,42,0.7740426775796551
+client_balanced_prevalence,Client-balanced prior,small,bloodmnist_224,swin_tiny,3,0.01,42,0.7737503653902368
+client_balanced_prevalence,Client-balanced prior,small,bloodmnist_224,swin_tiny,3,0.1,42,0.692779888921368
+client_balanced_prevalence,Client-balanced prior,small,bloodmnist_224,swin_tiny,5,0.0,42,0.7740426775796551
+client_balanced_prevalence,Client-balanced prior,small,bloodmnist_224,swin_tiny,5,0.01,42,0.7743349897690733
+client_balanced_prevalence,Client-balanced prior,small,bloodmnist_224,swin_tiny,5,0.1,42,0.7717041800643086
+client_balanced_prevalence,Client-balanced prior,small,bloodmnist_224,swin_tiny,7,0.0,42,0.7740426775796551
+client_balanced_prevalence,Client-balanced prior,small,bloodmnist_224,swin_tiny,7,0.01,42,0.7731657410114001
+client_balanced_prevalence,Client-balanced prior,small,bloodmnist_224,swin_tiny,7,0.1,42,0.7679041216018708
+client_balanced_prevalence,Client-balanced prior,small,bloodmnist_224,vit_t,3,0.0,42,0.8515054077755042
+client_balanced_prevalence,Client-balanced prior,small,bloodmnist_224,vit_t,3,0.01,42,0.8517977199649225
+client_balanced_prevalence,Client-balanced prior,small,bloodmnist_224,vit_t,3,0.1,42,0.8564747149956153
+client_balanced_prevalence,Client-balanced prior,small,bloodmnist_224,vit_t,5,0.0,42,0.8515054077755042
+client_balanced_prevalence,Client-balanced prior,small,bloodmnist_224,vit_t,5,0.01,42,0.8509207833966677
+client_balanced_prevalence,Client-balanced prior,small,bloodmnist_224,vit_t,5,0.1,42,0.8494592224495762
+client_balanced_prevalence,Client-balanced prior,small,bloodmnist_224,vit_t,7,0.0,42,0.8515054077755042
+client_balanced_prevalence,Client-balanced prior,small,bloodmnist_224,vit_t,7,0.01,42,0.8506284712072494
+client_balanced_prevalence,Client-balanced prior,small,bloodmnist_224,vit_t,7,0.1,42,0.847413037123648
+client_balanced_prevalence,Client-balanced prior,small,chaoshengmnist_224,convnext,3,0.0,42,0.4303683737646002
+client_balanced_prevalence,Client-balanced prior,small,chaoshengmnist_224,convnext,3,0.01,42,0.431266846361186
+client_balanced_prevalence,Client-balanced prior,small,chaoshengmnist_224,convnext,3,0.1,42,0.42048517520215634
+client_balanced_prevalence,Client-balanced prior,small,chaoshengmnist_224,convnext,5,0.0,42,0.4303683737646002
+client_balanced_prevalence,Client-balanced prior,small,chaoshengmnist_224,convnext,5,0.01,42,0.42407906558849956
+client_balanced_prevalence,Client-balanced prior,small,chaoshengmnist_224,convnext,5,0.1,42,0.42318059299191374
+client_balanced_prevalence,Client-balanced prior,small,chaoshengmnist_224,convnext,7,0.0,42,0.4303683737646002
+client_balanced_prevalence,Client-balanced prior,small,chaoshengmnist_224,convnext,7,0.01,42,0.42587601078167114
+client_balanced_prevalence,Client-balanced prior,small,chaoshengmnist_224,convnext,7,0.1,42,0.4159928122192273
+client_balanced_prevalence,Client-balanced prior,small,chaoshengmnist_224,resnet,3,0.0,42,0.4752920035938904
+client_balanced_prevalence,Client-balanced prior,small,chaoshengmnist_224,resnet,3,0.01,42,0.4752920035938904
+client_balanced_prevalence,Client-balanced prior,small,chaoshengmnist_224,resnet,3,0.1,42,0.3000898472596586
+client_balanced_prevalence,Client-balanced prior,small,chaoshengmnist_224,resnet,5,0.0,42,0.4752920035938904
+client_balanced_prevalence,Client-balanced prior,small,chaoshengmnist_224,resnet,5,0.01,42,0.3000898472596586
+client_balanced_prevalence,Client-balanced prior,small,chaoshengmnist_224,resnet,5,0.1,42,0.4582210242587601
+client_balanced_prevalence,Client-balanced prior,small,chaoshengmnist_224,resnet,7,0.0,42,0.4752920035938904
+client_balanced_prevalence,Client-balanced prior,small,chaoshengmnist_224,resnet,7,0.01,42,0.4743935309973046
+client_balanced_prevalence,Client-balanced prior,small,chaoshengmnist_224,resnet,7,0.1,42,0.47079964061096136
+client_balanced_prevalence,Client-balanced prior,small,chaoshengmnist_224,swin_tiny,3,0.0,42,0.4833782569631626
+client_balanced_prevalence,Client-balanced prior,small,chaoshengmnist_224,swin_tiny,3,0.01,42,0.48247978436657685
+client_balanced_prevalence,Client-balanced prior,small,chaoshengmnist_224,swin_tiny,3,0.1,42,0.3998203054806828
+client_balanced_prevalence,Client-balanced prior,small,chaoshengmnist_224,swin_tiny,5,0.0,42,0.4833782569631626
+client_balanced_prevalence,Client-balanced prior,small,chaoshengmnist_224,swin_tiny,5,0.01,42,0.444743935309973
+client_balanced_prevalence,Client-balanced prior,small,chaoshengmnist_224,swin_tiny,5,0.1,42,0.4914645103324349
+client_balanced_prevalence,Client-balanced prior,small,chaoshengmnist_224,swin_tiny,7,0.0,42,0.4833782569631626
+client_balanced_prevalence,Client-balanced prior,small,chaoshengmnist_224,swin_tiny,7,0.01,42,0.48517520215633425
+client_balanced_prevalence,Client-balanced prior,small,chaoshengmnist_224,swin_tiny,7,0.1,42,0.4833782569631626
+client_balanced_prevalence,Client-balanced prior,small,chaoshengmnist_224,vit_t,3,0.0,42,0.46271338724168914
+client_balanced_prevalence,Client-balanced prior,small,chaoshengmnist_224,vit_t,3,0.01,42,0.4618149146451033
+client_balanced_prevalence,Client-balanced prior,small,chaoshengmnist_224,vit_t,3,0.1,42,0.4555256064690027
+client_balanced_prevalence,Client-balanced prior,small,chaoshengmnist_224,vit_t,5,0.0,42,0.46271338724168914
+client_balanced_prevalence,Client-balanced prior,small,chaoshengmnist_224,vit_t,5,0.01,42,0.46990116801437554
+client_balanced_prevalence,Client-balanced prior,small,chaoshengmnist_224,vit_t,5,0.1,42,0.4501347708894879
+client_balanced_prevalence,Client-balanced prior,small,chaoshengmnist_224,vit_t,7,0.0,42,0.46271338724168914
+client_balanced_prevalence,Client-balanced prior,small,chaoshengmnist_224,vit_t,7,0.01,42,0.46540880503144655
+client_balanced_prevalence,Client-balanced prior,small,chaoshengmnist_224,vit_t,7,0.1,42,0.4501347708894879
+client_balanced_prevalence,Client-balanced prior,small,dermamnist_224,convnext,3,0.0,42,0.43640897755610975
+client_balanced_prevalence,Client-balanced prior,small,dermamnist_224,convnext,3,0.01,42,0.43591022443890276
+client_balanced_prevalence,Client-balanced prior,small,dermamnist_224,convnext,3,0.1,42,0.5600997506234414
+client_balanced_prevalence,Client-balanced prior,small,dermamnist_224,convnext,5,0.0,42,0.43640897755610975
+client_balanced_prevalence,Client-balanced prior,small,dermamnist_224,convnext,5,0.01,42,0.4423940149625935
+client_balanced_prevalence,Client-balanced prior,small,dermamnist_224,convnext,5,0.1,42,0.5251870324189526
+client_balanced_prevalence,Client-balanced prior,small,dermamnist_224,convnext,7,0.0,42,0.43640897755610975
+client_balanced_prevalence,Client-balanced prior,small,dermamnist_224,convnext,7,0.01,42,0.4339152119700748
+client_balanced_prevalence,Client-balanced prior,small,dermamnist_224,convnext,7,0.1,42,0.5586034912718204
+client_balanced_prevalence,Client-balanced prior,small,dermamnist_224,resnet,3,0.0,42,0.4349127182044888
+client_balanced_prevalence,Client-balanced prior,small,dermamnist_224,resnet,3,0.01,42,0.44089775561097255
+client_balanced_prevalence,Client-balanced prior,small,dermamnist_224,resnet,3,0.1,42,0.6538653366583541
+client_balanced_prevalence,Client-balanced prior,small,dermamnist_224,resnet,5,0.0,42,0.4349127182044888
+client_balanced_prevalence,Client-balanced prior,small,dermamnist_224,resnet,5,0.01,42,0.4349127182044888
+client_balanced_prevalence,Client-balanced prior,small,dermamnist_224,resnet,5,0.1,42,0.3630922693266833
+client_balanced_prevalence,Client-balanced prior,small,dermamnist_224,resnet,7,0.0,42,0.4349127182044888
+client_balanced_prevalence,Client-balanced prior,small,dermamnist_224,resnet,7,0.01,42,0.44089775561097255
+client_balanced_prevalence,Client-balanced prior,small,dermamnist_224,resnet,7,0.1,42,0.6423940149625935
+client_balanced_prevalence,Client-balanced prior,small,dermamnist_224,swin_tiny,3,0.0,42,0.4693266832917706
+client_balanced_prevalence,Client-balanced prior,small,dermamnist_224,swin_tiny,3,0.01,42,0.4693266832917706
+client_balanced_prevalence,Client-balanced prior,small,dermamnist_224,swin_tiny,3,0.1,42,0.5840399002493766
+client_balanced_prevalence,Client-balanced prior,small,dermamnist_224,swin_tiny,5,0.0,42,0.4693266832917706
+client_balanced_prevalence,Client-balanced prior,small,dermamnist_224,swin_tiny,5,0.01,42,0.46733167082294264
+client_balanced_prevalence,Client-balanced prior,small,dermamnist_224,swin_tiny,5,0.1,42,0.5331670822942643
+client_balanced_prevalence,Client-balanced prior,small,dermamnist_224,swin_tiny,7,0.0,42,0.4693266832917706
+client_balanced_prevalence,Client-balanced prior,small,dermamnist_224,swin_tiny,7,0.01,42,0.4768079800498753
+client_balanced_prevalence,Client-balanced prior,small,dermamnist_224,swin_tiny,7,0.1,42,0.570573566084788
+client_balanced_prevalence,Client-balanced prior,small,dermamnist_224,vit_t,3,0.0,42,0.514713216957606
+client_balanced_prevalence,Client-balanced prior,small,dermamnist_224,vit_t,3,0.01,42,0.5167082294264339
+client_balanced_prevalence,Client-balanced prior,small,dermamnist_224,vit_t,3,0.1,42,0.569077306733167
+client_balanced_prevalence,Client-balanced prior,small,dermamnist_224,vit_t,5,0.0,42,0.514713216957606
+client_balanced_prevalence,Client-balanced prior,small,dermamnist_224,vit_t,5,0.01,42,0.5097256857855361
+client_balanced_prevalence,Client-balanced prior,small,dermamnist_224,vit_t,5,0.1,42,0.5625935162094763
+client_balanced_prevalence,Client-balanced prior,small,dermamnist_224,vit_t,7,0.0,42,0.514713216957606
+client_balanced_prevalence,Client-balanced prior,small,dermamnist_224,vit_t,7,0.01,42,0.513715710723192
+client_balanced_prevalence,Client-balanced prior,small,dermamnist_224,vit_t,7,0.1,42,0.5885286783042394
+client_balanced_prevalence,Client-balanced prior,small,organcmnist_224,convnext,3,0.0,42,0.6508033106134372
+client_balanced_prevalence,Client-balanced prior,small,organcmnist_224,convnext,3,0.01,42,0.6494644595910418
+client_balanced_prevalence,Client-balanced prior,small,organcmnist_224,convnext,3,0.1,42,0.6447176241480039
+client_balanced_prevalence,Client-balanced prior,small,organcmnist_224,convnext,5,0.0,42,0.6508033106134372
+client_balanced_prevalence,Client-balanced prior,small,organcmnist_224,convnext,5,0.01,42,0.6539678675754625
+client_balanced_prevalence,Client-balanced prior,small,organcmnist_224,convnext,5,0.1,42,0.6438656280428432
+client_balanced_prevalence,Client-balanced prior,small,organcmnist_224,convnext,7,0.0,42,0.6508033106134372
+client_balanced_prevalence,Client-balanced prior,small,organcmnist_224,convnext,7,0.01,42,0.6525073028237586
+client_balanced_prevalence,Client-balanced prior,small,organcmnist_224,convnext,7,0.1,42,0.6554284323271665
+client_balanced_prevalence,Client-balanced prior,small,organcmnist_224,resnet,3,0.0,42,0.6096640701071081
+client_balanced_prevalence,Client-balanced prior,small,organcmnist_224,resnet,3,0.01,42,0.6091772151898734
+client_balanced_prevalence,Client-balanced prior,small,organcmnist_224,resnet,3,0.1,42,0.6055258033106135
+client_balanced_prevalence,Client-balanced prior,small,organcmnist_224,resnet,5,0.0,42,0.6096640701071081
+client_balanced_prevalence,Client-balanced prior,small,organcmnist_224,resnet,5,0.01,42,0.6106377799415774
+client_balanced_prevalence,Client-balanced prior,small,organcmnist_224,resnet,5,0.1,42,0.5514849074975657
+client_balanced_prevalence,Client-balanced prior,small,organcmnist_224,resnet,7,0.0,42,0.6096640701071081
+client_balanced_prevalence,Client-balanced prior,small,organcmnist_224,resnet,7,0.01,42,0.47297955209347614
+client_balanced_prevalence,Client-balanced prior,small,organcmnist_224,resnet,7,0.1,42,0.5859298928919182
+client_balanced_prevalence,Client-balanced prior,small,organcmnist_224,swin_tiny,3,0.0,42,0.6652872444011685
+client_balanced_prevalence,Client-balanced prior,small,organcmnist_224,swin_tiny,3,0.01,42,0.6667478091528725
+client_balanced_prevalence,Client-balanced prior,small,organcmnist_224,swin_tiny,3,0.1,42,0.6660175267770204
+client_balanced_prevalence,Client-balanced prior,small,organcmnist_224,swin_tiny,5,0.0,42,0.6652872444011685
+client_balanced_prevalence,Client-balanced prior,small,organcmnist_224,swin_tiny,5,0.01,42,0.6662609542356378
+client_balanced_prevalence,Client-balanced prior,small,organcmnist_224,swin_tiny,5,0.1,42,0.6742940603700097
+client_balanced_prevalence,Client-balanced prior,small,organcmnist_224,swin_tiny,7,0.0,42,0.6652872444011685
+client_balanced_prevalence,Client-balanced prior,small,organcmnist_224,swin_tiny,7,0.01,42,0.6592015579357352
+client_balanced_prevalence,Client-balanced prior,small,organcmnist_224,swin_tiny,7,0.1,42,0.6796494644595911
+client_balanced_prevalence,Client-balanced prior,small,organcmnist_224,vit_t,3,0.0,42,0.5814264849074976
+client_balanced_prevalence,Client-balanced prior,small,organcmnist_224,vit_t,3,0.01,42,0.5815481986368062
+client_balanced_prevalence,Client-balanced prior,small,organcmnist_224,vit_t,3,0.1,42,0.5851996105160662
+client_balanced_prevalence,Client-balanced prior,small,organcmnist_224,vit_t,5,0.0,42,0.5814264849074976
+client_balanced_prevalence,Client-balanced prior,small,organcmnist_224,vit_t,5,0.01,42,0.5780185004868549
+client_balanced_prevalence,Client-balanced prior,small,organcmnist_224,vit_t,5,0.1,42,0.5824001947419669
+client_balanced_prevalence,Client-balanced prior,small,organcmnist_224,vit_t,7,0.0,42,0.5814264849074976
+client_balanced_prevalence,Client-balanced prior,small,organcmnist_224,vit_t,7,0.01,42,0.577288218111003
+client_balanced_prevalence,Client-balanced prior,small,organcmnist_224,vit_t,7,0.1,42,0.5831304771178188
+client_balanced_prevalence,Client-balanced prior,small,organsmnist_224,convnext,3,0.0,42,0.5988444545145576
+client_balanced_prevalence,Client-balanced prior,small,organsmnist_224,convnext,3,0.01,42,0.6046221819417695
+client_balanced_prevalence,Client-balanced prior,small,organsmnist_224,convnext,3,0.1,42,0.6063215135380083
+client_balanced_prevalence,Client-balanced prior,small,organsmnist_224,convnext,5,0.0,42,0.5988444545145576
+client_balanced_prevalence,Client-balanced prior,small,organsmnist_224,convnext,5,0.01,42,0.6070012461765039
+client_balanced_prevalence,Client-balanced prior,small,organsmnist_224,convnext,5,0.1,42,0.5975982780106491
+client_balanced_prevalence,Client-balanced prior,small,organsmnist_224,convnext,7,0.0,42,0.5988444545145576
+client_balanced_prevalence,Client-balanced prior,small,organsmnist_224,convnext,7,0.01,42,0.5998640534723009
+client_balanced_prevalence,Client-balanced prior,small,organsmnist_224,convnext,7,0.1,42,0.6088138665458253
+client_balanced_prevalence,Client-balanced prior,small,organsmnist_224,resnet,3,0.0,42,0.5512631698198709
+client_balanced_prevalence,Client-balanced prior,small,organsmnist_224,resnet,3,0.01,42,0.5395944261923643
+client_balanced_prevalence,Client-balanced prior,small,organsmnist_224,resnet,3,0.1,42,0.5340432763113175
+client_balanced_prevalence,Client-balanced prior,small,organsmnist_224,resnet,5,0.0,42,0.5512631698198709
+client_balanced_prevalence,Client-balanced prior,small,organsmnist_224,resnet,5,0.01,42,0.4098787810128016
+client_balanced_prevalence,Client-balanced prior,small,organsmnist_224,resnet,5,0.1,42,0.5489973943582191
+client_balanced_prevalence,Client-balanced prior,small,organsmnist_224,resnet,7,0.0,42,0.5512631698198709
+client_balanced_prevalence,Client-balanced prior,small,organsmnist_224,resnet,7,0.01,42,0.5519429024583664
+client_balanced_prevalence,Client-balanced prior,small,organsmnist_224,resnet,7,0.1,42,0.4838563498357313
+client_balanced_prevalence,Client-balanced prior,small,organsmnist_224,swin_tiny,3,0.0,42,0.6089271553189078
+client_balanced_prevalence,Client-balanced prior,small,organsmnist_224,swin_tiny,3,0.01,42,0.626486915146709
+client_balanced_prevalence,Client-balanced prior,small,organsmnist_224,swin_tiny,3,0.1,42,0.624561006004305
+client_balanced_prevalence,Client-balanced prior,small,organsmnist_224,swin_tiny,5,0.0,42,0.6089271553189078
+client_balanced_prevalence,Client-balanced prior,small,organsmnist_224,swin_tiny,5,0.01,42,0.6065480910841735
+client_balanced_prevalence,Client-balanced prior,small,organsmnist_224,swin_tiny,5,0.1,42,0.61164608587289
+client_balanced_prevalence,Client-balanced prior,small,organsmnist_224,swin_tiny,7,0.0,42,0.6089271553189078
+client_balanced_prevalence,Client-balanced prior,small,organsmnist_224,swin_tiny,7,0.01,42,0.6092670216381556
+client_balanced_prevalence,Client-balanced prior,small,organsmnist_224,swin_tiny,7,0.1,42,0.6249008723235527
+client_balanced_prevalence,Client-balanced prior,small,organsmnist_224,vit_t,3,0.0,42,0.5410671802424379
+client_balanced_prevalence,Client-balanced prior,small,organsmnist_224,vit_t,3,0.01,42,0.5414070465616857
+client_balanced_prevalence,Client-balanced prior,small,organsmnist_224,vit_t,3,0.1,42,0.5453721536195762
+client_balanced_prevalence,Client-balanced prior,small,organsmnist_224,vit_t,5,0.0,42,0.5410671802424379
+client_balanced_prevalence,Client-balanced prior,small,organsmnist_224,vit_t,5,0.01,42,0.546278463804237
+client_balanced_prevalence,Client-balanced prior,small,organsmnist_224,vit_t,5,0.1,42,0.5411804690155205
+client_balanced_prevalence,Client-balanced prior,small,organsmnist_224,vit_t,7,0.0,42,0.5410671802424379
+client_balanced_prevalence,Client-balanced prior,small,organsmnist_224,vit_t,7,0.01,42,0.5412937577886031
+client_balanced_prevalence,Client-balanced prior,small,organsmnist_224,vit_t,7,0.1,42,0.5513764585929535
+full,LAMP-Merge,small,bloodmnist_224,convnext,3,0.0,42,0.848289973691903
+full,LAMP-Merge,small,bloodmnist_224,convnext,3,0.01,42,0.8497515346389944
+full,LAMP-Merge,small,bloodmnist_224,convnext,3,0.1,42,0.847413037123648
+full,LAMP-Merge,small,bloodmnist_224,convnext,5,0.0,42,0.848289973691903
+full,LAMP-Merge,small,bloodmnist_224,convnext,5,0.01,42,0.848289973691903
+full,LAMP-Merge,small,bloodmnist_224,convnext,5,0.1,42,0.8494592224495762
+full,LAMP-Merge,small,bloodmnist_224,convnext,7,0.0,42,0.848289973691903
+full,LAMP-Merge,small,bloodmnist_224,convnext,7,0.01,42,0.8512130955860859
+full,LAMP-Merge,small,bloodmnist_224,convnext,7,0.1,42,0.8497515346389944
+full,LAMP-Merge,small,bloodmnist_224,resnet,3,0.0,42,0.800350774627302
+full,LAMP-Merge,small,bloodmnist_224,resnet,3,0.01,42,0.8000584624378837
+full,LAMP-Merge,small,bloodmnist_224,resnet,3,0.1,42,0.7997661502484653
+full,LAMP-Merge,small,bloodmnist_224,resnet,5,0.0,42,0.800350774627302
+full,LAMP-Merge,small,bloodmnist_224,resnet,5,0.01,42,0.8000584624378837
+full,LAMP-Merge,small,bloodmnist_224,resnet,5,0.1,42,0.7977199649225373
+full,LAMP-Merge,small,bloodmnist_224,resnet,7,0.0,42,0.800350774627302
+full,LAMP-Merge,small,bloodmnist_224,resnet,7,0.01,42,0.7988892136802105
+full,LAMP-Merge,small,bloodmnist_224,resnet,7,0.1,42,0.7983045893013738
+full,LAMP-Merge,small,bloodmnist_224,swin_tiny,3,0.0,42,0.7740426775796551
+full,LAMP-Merge,small,bloodmnist_224,swin_tiny,3,0.01,42,0.7737503653902368
+full,LAMP-Merge,small,bloodmnist_224,swin_tiny,3,0.1,42,0.7737503653902368
+full,LAMP-Merge,small,bloodmnist_224,swin_tiny,5,0.0,42,0.7740426775796551
+full,LAMP-Merge,small,bloodmnist_224,swin_tiny,5,0.01,42,0.7743349897690733
+full,LAMP-Merge,small,bloodmnist_224,swin_tiny,5,0.1,42,0.7717041800643086
+full,LAMP-Merge,small,bloodmnist_224,swin_tiny,7,0.0,42,0.7740426775796551
+full,LAMP-Merge,small,bloodmnist_224,swin_tiny,7,0.01,42,0.7731657410114001
+full,LAMP-Merge,small,bloodmnist_224,swin_tiny,7,0.1,42,0.7679041216018708
+full,LAMP-Merge,small,bloodmnist_224,vit_t,3,0.0,42,0.8515054077755042
+full,LAMP-Merge,small,bloodmnist_224,vit_t,3,0.01,42,0.8517977199649225
+full,LAMP-Merge,small,bloodmnist_224,vit_t,3,0.1,42,0.8529669687225957
+full,LAMP-Merge,small,bloodmnist_224,vit_t,5,0.0,42,0.8515054077755042
+full,LAMP-Merge,small,bloodmnist_224,vit_t,5,0.01,42,0.8509207833966677
+full,LAMP-Merge,small,bloodmnist_224,vit_t,5,0.1,42,0.8494592224495762
+full,LAMP-Merge,small,bloodmnist_224,vit_t,7,0.0,42,0.8515054077755042
+full,LAMP-Merge,small,bloodmnist_224,vit_t,7,0.01,42,0.8506284712072494
+full,LAMP-Merge,small,bloodmnist_224,vit_t,7,0.1,42,0.847413037123648
+full,LAMP-Merge,small,chaoshengmnist_224,convnext,3,0.0,42,0.4303683737646002
+full,LAMP-Merge,small,chaoshengmnist_224,convnext,3,0.01,42,0.431266846361186
+full,LAMP-Merge,small,chaoshengmnist_224,convnext,3,0.1,42,0.4303683737646002
+full,LAMP-Merge,small,chaoshengmnist_224,convnext,5,0.0,42,0.4303683737646002
+full,LAMP-Merge,small,chaoshengmnist_224,convnext,5,0.01,42,0.4303683737646002
+full,LAMP-Merge,small,chaoshengmnist_224,convnext,5,0.1,42,0.42318059299191374
+full,LAMP-Merge,small,chaoshengmnist_224,convnext,7,0.0,42,0.4303683737646002
+full,LAMP-Merge,small,chaoshengmnist_224,convnext,7,0.01,42,0.42587601078167114
+full,LAMP-Merge,small,chaoshengmnist_224,convnext,7,0.1,42,0.4159928122192273
+full,LAMP-Merge,small,chaoshengmnist_224,resnet,3,0.0,42,0.4752920035938904
+full,LAMP-Merge,small,chaoshengmnist_224,resnet,3,0.01,42,0.4752920035938904
+full,LAMP-Merge,small,chaoshengmnist_224,resnet,3,0.1,42,0.4914645103324349
+full,LAMP-Merge,small,chaoshengmnist_224,resnet,5,0.0,42,0.4752920035938904
+full,LAMP-Merge,small,chaoshengmnist_224,resnet,5,0.01,42,0.46900269541778977
+full,LAMP-Merge,small,chaoshengmnist_224,resnet,5,0.1,42,0.4582210242587601
+full,LAMP-Merge,small,chaoshengmnist_224,resnet,7,0.0,42,0.4752920035938904
+full,LAMP-Merge,small,chaoshengmnist_224,resnet,7,0.01,42,0.4743935309973046
+full,LAMP-Merge,small,chaoshengmnist_224,resnet,7,0.1,42,0.47079964061096136
+full,LAMP-Merge,small,chaoshengmnist_224,swin_tiny,3,0.0,42,0.4833782569631626
+full,LAMP-Merge,small,chaoshengmnist_224,swin_tiny,3,0.01,42,0.48247978436657685
+full,LAMP-Merge,small,chaoshengmnist_224,swin_tiny,3,0.1,42,0.46540880503144655
+full,LAMP-Merge,small,chaoshengmnist_224,swin_tiny,5,0.0,42,0.4833782569631626
+full,LAMP-Merge,small,chaoshengmnist_224,swin_tiny,5,0.01,42,0.48607367475292
+full,LAMP-Merge,small,chaoshengmnist_224,swin_tiny,5,0.1,42,0.4914645103324349
+full,LAMP-Merge,small,chaoshengmnist_224,swin_tiny,7,0.0,42,0.4833782569631626
+full,LAMP-Merge,small,chaoshengmnist_224,swin_tiny,7,0.01,42,0.48517520215633425
+full,LAMP-Merge,small,chaoshengmnist_224,swin_tiny,7,0.1,42,0.4833782569631626
+full,LAMP-Merge,small,chaoshengmnist_224,vit_t,3,0.0,42,0.46271338724168914
+full,LAMP-Merge,small,chaoshengmnist_224,vit_t,3,0.01,42,0.4618149146451033
+full,LAMP-Merge,small,chaoshengmnist_224,vit_t,3,0.1,42,0.4591194968553459
+full,LAMP-Merge,small,chaoshengmnist_224,vit_t,5,0.0,42,0.46271338724168914
+full,LAMP-Merge,small,chaoshengmnist_224,vit_t,5,0.01,42,0.46630727762803237
+full,LAMP-Merge,small,chaoshengmnist_224,vit_t,5,0.1,42,0.4501347708894879
+full,LAMP-Merge,small,chaoshengmnist_224,vit_t,7,0.0,42,0.46271338724168914
+full,LAMP-Merge,small,chaoshengmnist_224,vit_t,7,0.01,42,0.46540880503144655
+full,LAMP-Merge,small,chaoshengmnist_224,vit_t,7,0.1,42,0.4501347708894879
+full,LAMP-Merge,small,dermamnist_224,convnext,3,0.0,42,0.598004987531172
+full,LAMP-Merge,small,dermamnist_224,convnext,3,0.01,42,0.5965087281795511
+full,LAMP-Merge,small,dermamnist_224,convnext,3,0.1,42,0.5960099750623441
+full,LAMP-Merge,small,dermamnist_224,convnext,5,0.0,42,0.598004987531172
+full,LAMP-Merge,small,dermamnist_224,convnext,5,0.01,42,0.5945137157107232
+full,LAMP-Merge,small,dermamnist_224,convnext,5,0.1,42,0.570573566084788
+full,LAMP-Merge,small,dermamnist_224,convnext,7,0.0,42,0.598004987531172
+full,LAMP-Merge,small,dermamnist_224,convnext,7,0.01,42,0.5930174563591022
+full,LAMP-Merge,small,dermamnist_224,convnext,7,0.1,42,0.5915211970074813
+full,LAMP-Merge,small,dermamnist_224,resnet,3,0.0,42,0.6758104738154613
+full,LAMP-Merge,small,dermamnist_224,resnet,3,0.01,42,0.6758104738154613
+full,LAMP-Merge,small,dermamnist_224,resnet,3,0.1,42,0.6748129675810474
+full,LAMP-Merge,small,dermamnist_224,resnet,5,0.0,42,0.6758104738154613
+full,LAMP-Merge,small,dermamnist_224,resnet,5,0.01,42,0.6763092269326684
+full,LAMP-Merge,small,dermamnist_224,resnet,5,0.1,42,0.6768079800498753
+full,LAMP-Merge,small,dermamnist_224,resnet,7,0.0,42,0.6758104738154613
+full,LAMP-Merge,small,dermamnist_224,resnet,7,0.01,42,0.6768079800498753
+full,LAMP-Merge,small,dermamnist_224,resnet,7,0.1,42,0.6763092269326684
+full,LAMP-Merge,small,dermamnist_224,swin_tiny,3,0.0,42,0.6334164588528678
+full,LAMP-Merge,small,dermamnist_224,swin_tiny,3,0.01,42,0.6334164588528678
+full,LAMP-Merge,small,dermamnist_224,swin_tiny,3,0.1,42,0.6304239401496259
+full,LAMP-Merge,small,dermamnist_224,swin_tiny,5,0.0,42,0.6334164588528678
+full,LAMP-Merge,small,dermamnist_224,swin_tiny,5,0.01,42,0.628927680798005
+full,LAMP-Merge,small,dermamnist_224,swin_tiny,5,0.1,42,0.6329177057356609
+full,LAMP-Merge,small,dermamnist_224,swin_tiny,7,0.0,42,0.6334164588528678
+full,LAMP-Merge,small,dermamnist_224,swin_tiny,7,0.01,42,0.6309226932668329
+full,LAMP-Merge,small,dermamnist_224,swin_tiny,7,0.1,42,0.628428927680798
+full,LAMP-Merge,small,dermamnist_224,vit_t,3,0.0,42,0.5950124688279301
+full,LAMP-Merge,small,dermamnist_224,vit_t,3,0.01,42,0.5945137157107232
+full,LAMP-Merge,small,dermamnist_224,vit_t,3,0.1,42,0.5940149625935162
+full,LAMP-Merge,small,dermamnist_224,vit_t,5,0.0,42,0.5950124688279301
+full,LAMP-Merge,small,dermamnist_224,vit_t,5,0.01,42,0.5925187032418953
+full,LAMP-Merge,small,dermamnist_224,vit_t,5,0.1,42,0.5920199501246883
+full,LAMP-Merge,small,dermamnist_224,vit_t,7,0.0,42,0.5950124688279301
+full,LAMP-Merge,small,dermamnist_224,vit_t,7,0.01,42,0.5895261845386534
+full,LAMP-Merge,small,dermamnist_224,vit_t,7,0.1,42,0.6104738154613466
+full,LAMP-Merge,small,organcmnist_224,convnext,3,0.0,42,0.6562804284323271
+full,LAMP-Merge,small,organcmnist_224,convnext,3,0.01,42,0.6550632911392406
+full,LAMP-Merge,small,organcmnist_224,convnext,3,0.1,42,0.6509250243427459
+full,LAMP-Merge,small,organcmnist_224,convnext,5,0.0,42,0.6562804284323271
+full,LAMP-Merge,small,organcmnist_224,convnext,5,0.01,42,0.6585929892891919
+full,LAMP-Merge,small,organcmnist_224,convnext,5,0.1,42,0.6450827653359299
+full,LAMP-Merge,small,organcmnist_224,convnext,7,0.0,42,0.6562804284323271
+full,LAMP-Merge,small,organcmnist_224,convnext,7,0.01,42,0.6544547224926972
+full,LAMP-Merge,small,organcmnist_224,convnext,7,0.1,42,0.6545764362220059
+full,LAMP-Merge,small,organcmnist_224,resnet,3,0.0,42,0.6005355404089582
+full,LAMP-Merge,small,organcmnist_224,resnet,3,0.01,42,0.6009006815968841
+full,LAMP-Merge,small,organcmnist_224,resnet,3,0.1,42,0.6000486854917235
+full,LAMP-Merge,small,organcmnist_224,resnet,5,0.0,42,0.6005355404089582
+full,LAMP-Merge,small,organcmnist_224,resnet,5,0.01,42,0.6002921129503408
+full,LAMP-Merge,small,organcmnist_224,resnet,5,0.1,42,0.5972492697176242
+full,LAMP-Merge,small,organcmnist_224,resnet,7,0.0,42,0.6005355404089582
+full,LAMP-Merge,small,organcmnist_224,resnet,7,0.01,42,0.6026046738072055
+full,LAMP-Merge,small,organcmnist_224,resnet,7,0.1,42,0.5990749756572541
+full,LAMP-Merge,small,organcmnist_224,swin_tiny,3,0.0,42,0.6841528724440117
+full,LAMP-Merge,small,organcmnist_224,swin_tiny,3,0.01,42,0.685126582278481
+full,LAMP-Merge,small,organcmnist_224,swin_tiny,3,0.1,42,0.6853700097370984
+full,LAMP-Merge,small,organcmnist_224,swin_tiny,5,0.0,42,0.6841528724440117
+full,LAMP-Merge,small,organcmnist_224,swin_tiny,5,0.01,42,0.6853700097370984
+full,LAMP-Merge,small,organcmnist_224,swin_tiny,5,0.1,42,0.6755111976630964
+full,LAMP-Merge,small,organcmnist_224,swin_tiny,7,0.0,42,0.6841528724440117
+full,LAMP-Merge,small,organcmnist_224,swin_tiny,7,0.01,42,0.680014605647517
+full,LAMP-Merge,small,organcmnist_224,swin_tiny,7,0.1,42,0.6795277507302824
+full,LAMP-Merge,small,organcmnist_224,vit_t,3,0.0,42,0.5864167478091529
+full,LAMP-Merge,small,organcmnist_224,vit_t,3,0.01,42,0.5856864654333008
+full,LAMP-Merge,small,organcmnist_224,vit_t,3,0.1,42,0.5914070107108081
+full,LAMP-Merge,small,organcmnist_224,vit_t,5,0.0,42,0.5864167478091529
+full,LAMP-Merge,small,organcmnist_224,vit_t,5,0.01,42,0.5828870496592016
+full,LAMP-Merge,small,organcmnist_224,vit_t,5,0.1,42,0.5827653359298929
+full,LAMP-Merge,small,organcmnist_224,vit_t,7,0.0,42,0.5864167478091529
+full,LAMP-Merge,small,organcmnist_224,vit_t,7,0.01,42,0.5797224926971762
+full,LAMP-Merge,small,organcmnist_224,vit_t,7,0.1,42,0.5826436222005842
+full,LAMP-Merge,small,organsmnist_224,convnext,3,0.0,42,0.6057550696725954
+full,LAMP-Merge,small,organsmnist_224,convnext,3,0.01,42,0.6043956043956044
+full,LAMP-Merge,small,organsmnist_224,convnext,3,0.1,42,0.6063215135380083
+full,LAMP-Merge,small,organsmnist_224,convnext,5,0.0,42,0.6057550696725954
+full,LAMP-Merge,small,organsmnist_224,convnext,5,0.01,42,0.6050753370340999
+full,LAMP-Merge,small,organsmnist_224,convnext,5,0.1,42,0.6041690268494392
+full,LAMP-Merge,small,organsmnist_224,convnext,7,0.0,42,0.6057550696725954
+full,LAMP-Merge,small,organsmnist_224,convnext,7,0.01,42,0.6064348023110909
+full,LAMP-Merge,small,organsmnist_224,convnext,7,0.1,42,0.6075676900419168
+full,LAMP-Merge,small,organsmnist_224,resnet,3,0.0,42,0.5274725274725275
+full,LAMP-Merge,small,organsmnist_224,resnet,3,0.01,42,0.5276991050186927
+full,LAMP-Merge,small,organsmnist_224,resnet,3,0.1,42,0.5341565650844001
+full,LAMP-Merge,small,organsmnist_224,resnet,5,0.0,42,0.5274725274725275
+full,LAMP-Merge,small,organsmnist_224,resnet,5,0.01,42,0.5269060836071146
+full,LAMP-Merge,small,organsmnist_224,resnet,5,0.1,42,0.5292851478418489
+full,LAMP-Merge,small,organsmnist_224,resnet,7,0.0,42,0.5274725274725275
+full,LAMP-Merge,small,organsmnist_224,resnet,7,0.01,42,0.5283788376571882
+full,LAMP-Merge,small,organsmnist_224,resnet,7,0.1,42,0.5284921264302708
+full,LAMP-Merge,small,organsmnist_224,swin_tiny,3,0.0,42,0.6277330916506174
+full,LAMP-Merge,small,organsmnist_224,swin_tiny,3,0.01,42,0.6260337600543786
+full,LAMP-Merge,small,organsmnist_224,swin_tiny,3,0.1,42,0.6235414070465617
+full,LAMP-Merge,small,organsmnist_224,swin_tiny,5,0.0,42,0.6277330916506174
+full,LAMP-Merge,small,organsmnist_224,swin_tiny,5,0.01,42,0.6277330916506174
+full,LAMP-Merge,small,organsmnist_224,swin_tiny,5,0.1,42,0.6284128242891129
+full,LAMP-Merge,small,organsmnist_224,swin_tiny,7,0.0,42,0.6277330916506174
+full,LAMP-Merge,small,organsmnist_224,swin_tiny,7,0.01,42,0.6288659793814433
+full,LAMP-Merge,small,organsmnist_224,swin_tiny,7,0.1,42,0.6285261130621955
+full,LAMP-Merge,small,organsmnist_224,vit_t,3,0.0,42,0.5445791322079981
+full,LAMP-Merge,small,organsmnist_224,vit_t,3,0.01,42,0.5423133567463464
+full,LAMP-Merge,small,organsmnist_224,vit_t,3,0.1,42,0.5448057097541633
+full,LAMP-Merge,small,organsmnist_224,vit_t,5,0.0,42,0.5445791322079981
+full,LAMP-Merge,small,organsmnist_224,vit_t,5,0.01,42,0.5432196669310071
+full,LAMP-Merge,small,organsmnist_224,vit_t,5,0.1,42,0.5475246403081455
+full,LAMP-Merge,small,organsmnist_224,vit_t,7,0.0,42,0.5445791322079981
+full,LAMP-Merge,small,organsmnist_224,vit_t,7,0.01,42,0.5461651750311544
+full,LAMP-Merge,small,organsmnist_224,vit_t,7,0.1,42,0.5486575280389714

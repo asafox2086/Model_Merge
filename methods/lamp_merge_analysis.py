@@ -35,6 +35,8 @@ LAMP_MERGE_ABLATION_MODES = {
     "global_client_size_weight",
     "uniform_prevalence",
     "smoothed_prevalence",
+    "always_on_calibration",
+    "client_balanced_prevalence",
 }
 
 MEDICAL_IMAGE_DATASETS = {
@@ -191,6 +193,20 @@ def _ablation_components(mode):
             "prototype_mode": "reference_prototype",
             "evidence_mode": "support_power",
             "prevalence_mode": "smoothed",
+            "shuffle_prototypes": False,
+        }
+    if mode == "always_on_calibration":
+        return {
+            "prototype_mode": "reference_prototype",
+            "evidence_mode": "support_power",
+            "prevalence_mode": "uploaded",
+            "shuffle_prototypes": False,
+        }
+    if mode == "client_balanced_prevalence":
+        return {
+            "prototype_mode": "reference_prototype",
+            "evidence_mode": "support_power",
+            "prevalence_mode": "client_balanced",
             "shuffle_prototypes": False,
         }
     if mode == "full":
@@ -397,7 +413,7 @@ def _prevalence_counts(proto_stats, feature_counts, meta, cfg, prevalence_mode):
     if prevalence_mode == "binary_support":
         return (feature_counts > 0).to(torch.float32), "binary_support_control"
 
-    if prevalence_mode in {"uploaded", "smoothed"}:
+    if prevalence_mode in {"uploaded", "smoothed", "client_balanced"}:
         _validate_prevalence_provenance(proto_stats)
 
     counts = _client_stat_matrix(
@@ -417,6 +433,9 @@ def _prevalence_counts(proto_stats, feature_counts, meta, cfg, prevalence_mode):
         ))
         counts = counts + smoothing
         prevalence_source = f"uploaded_prevalence_counts_plus_{smoothing:g}"
+    elif prevalence_mode == "client_balanced":
+        counts = counts / counts.sum(dim=1, keepdim=True).clamp_min(EPS)
+        prevalence_source = "equal_client_average_of_local_prevalence"
     elif prevalence_mode != "uploaded":
         raise ValueError(f"Unsupported LAMP-Merge prevalence mode: {prevalence_mode}")
 
@@ -532,7 +551,12 @@ def _prevalence_calibration_strength(class_prior, num_classes, cfg):
         return 0.0
     threshold = _dominant_prior_threshold(cfg, num_classes)
     dominant_prior = float(class_prior.max().item())
-    if dominant_prior <= threshold:
+    force_calibration = bool(_cfg_value(
+        cfg,
+        "lamp_merge_force_prevalence_calibration",
+        default=False,
+    ))
+    if not force_calibration and dominant_prior <= threshold:
         return 0.0
     max_tau = float(_cfg_value(
         cfg,
@@ -604,6 +628,11 @@ def _synthesize_reference_prototype_model(base_state, proto_stats, meta, cfg, st
         "head_scale": scale,
         "prevalence_bias_scale": prevalence_strength,
         "prevalence_threshold": _dominant_prior_threshold(cfg, num_classes),
+        "prevalence_gate_mode": (
+            "always_on"
+            if bool(_cfg_value(cfg, "lamp_merge_force_prevalence_calibration", default=False))
+            else "dominant_class_threshold"
+        ),
         "reference_prior_threshold": float(_cfg_value(
             cfg,
             "lamp_merge_reference_prior_threshold",
@@ -828,6 +857,8 @@ def merge_lamp_merge(state_dicts, weights, meta=None, checkpoints=None, cfg=None
         local_cfg["lamp_merge_ablation_mode"] = ablation_mode
         if ablation_mode in {"m1_only", "no_prevalence"}:
             local_cfg["lamp_merge_disable_prevalence_calibration"] = True
+        if ablation_mode == "always_on_calibration":
+            local_cfg["lamp_merge_force_prevalence_calibration"] = True
         merged, trace = _synthesize_reference_prototype_model(
             base_state,
             client_stats,
@@ -840,6 +871,9 @@ def merge_lamp_merge(state_dicts, weights, meta=None, checkpoints=None, cfg=None
             "prevalence_bias_scale": float(trace.get("prevalence_bias_scale", 0.0)),
             "imbalance_ratio": float(trace.get("imbalance_ratio", 0.0)),
             "class_prior": trace.get("class_prior", []),
+            "prevalence_mode": trace.get("prevalence_mode", ""),
+            "prevalence_gate_mode": trace.get("prevalence_gate_mode", ""),
+            "class_prevalence_source": trace.get("class_prevalence_source", ""),
         }
     trace["client_stats_path"] = client_stats_path
 

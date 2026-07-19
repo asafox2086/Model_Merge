@@ -79,11 +79,11 @@ w_c=s\frac{p_c}{\|p_c\|_2}.
 | Uniform client weight | 不使用类别支持数；每个出现该类别的客户端等权参与原型聚合 | 样本数可靠性是否必要 |
 | Binary support only | 仅使用类别是否出现，不使用具体样本数 | 细粒度支持数是否优于类别存在性 |
 | Global client-size weight | 使用客户端总样本数作为所有类别共享权重 | 类别级统计是否优于客户端级统计 |
-| No prevalence calibration | 保留原型支持数，关闭 M2 患病率校准 | 患病率统计对长尾 accuracy 的作用 |
 | Uniform prevalence prior | 保留 M2 形式，但将类别先验替换为均匀分布 | M2 的收益是否来自真实长尾统计 |
-| Smoothed prevalence prior | 使用加性平滑后的患病率计数 | M2 是否依赖极端计数，平滑后是否稳定 |
+| Always-on calibration | 保留真实患病率先验与中心化 log-prior，但移除 $r>\tau$ 激活门控 | 长尾激活条件是否能避免不必要的校准 |
+| Client-balanced prior | 先在每个客户端内归一化患病率，再对客户端等权平均 | 按真实样本量汇总先验是否优于医院等权先验 |
 
-预期主要比较 `Full statistics`、`Uniform client weight`、`Global client-size weight`、`No prevalence calibration` 和 `Uniform prevalence prior`。若 Full statistics 在 balanced accuracy、macro F1 和 collapse ratio 上优于 uniform/global 权重，说明支持数刻画了类别级可靠性；若在 Derma 等长尾压力点上 Full statistics 高于 no-prevalence 和 uniform-prior，说明 M2 使用的是医学长尾先验而不是任意 bias。
+预期主要比较 `Full statistics`、`Uniform client weight`、`Global client-size weight`、`Uniform prevalence prior`、`Always-on calibration` 和 `Client-balanced prior`。若 Full statistics 在 balanced accuracy、macro F1 和 collapse ratio 上优于 uniform/global 权重，说明支持数刻画了类别级可靠性；若正式 M2 优于 uniform、always-on 和 client-balanced 控制，说明真实样本量汇总的医学长尾先验及其激活门控均具有作用。
 
 ### 3.3 消融公式书写规范
 
@@ -194,6 +194,7 @@ seed = 42
 
 ```text
 scripts/run_lamp_merge_internal_ablation_full_parallel.sh
+scripts/run_lamp_merge_m2_internal_ablation_full_parallel.sh
 scripts/run_lamp_merge_prediction_diagnostics_full_parallel.sh
 scripts/run_lamp_merge_hparam_full_parallel.sh
 scripts/run_lamp_merge_full_evidence_queue.sh
@@ -217,8 +218,9 @@ Full prototype
 Classifier-head aggregation
 Prototype shuffled-label control
 Uniform client weight
-No prevalence calibration
 Uniform prevalence prior
+Always-on calibration
+Client-balanced prior
 ```
 
 该图用于说明 Full prototype 能把预测分布从少数类坍缩恢复到多类别诊断空间；统计信息替代项若失败，应表现为预测分布重新集中或偏离真实类别先验。若为了版面只展示若干代表图，caption 必须说明对应图来自全量数据集级聚合，而不是单一 beta。
@@ -240,10 +242,9 @@ Full prototype
 Classifier-head aggregation
 Prototype shuffled-label control
 Uniform client weight
-No prevalence calibration
 ```
 
-可视化解释口径为：若原型有效，则全局类别原型应落在对应类别测试样本簇附近；若使用本地分类头或打乱原型标签，原型点会偏离真实类别簇，导致分类边界与医学类别结构不一致。
+可视化解释口径为：若原型有效，则全局类别原型应落在对应类别测试样本簇附近；若使用本地分类头或打乱原型标签，原型点会偏离真实类别簇，导致分类边界与医学类别结构不一致。AOC、CBP 和 UPP 只改变 M2 类别偏置而不改变全局原型，因此不重复绘制原型几何或参考特征 t-SNE。
 
 ## 六、理论分析框架
 

@@ -39,6 +39,21 @@ LINE_STYLES = [
     ("v", "--"),
 ]
 
+INTERNAL_ABLATION_ABBREVIATIONS = {
+    "Classifier-head aggregation": "CHA",
+    "Global-feature mean": "GFM",
+    "Support-only synthetic head": "SSH",
+    "Shuffled-label prototype": "SLP",
+    "Uniform client weight": "UCW",
+    "Binary support only": "BSO",
+    "Global client-size weight": "GCSW",
+    "No prevalence calibration": "NPC",
+    "Uniform prevalence prior": "UPP",
+    "Always-on calibration": "AOC",
+    "Client-balanced prior": "CBP",
+    "LAMP-Merge": "LAMP",
+}
+
 
 def read_annotated_csv(path: Path) -> list[dict[str, str]]:
     with path.open(newline="", encoding="utf-8") as handle:
@@ -135,15 +150,15 @@ def plot_baseline_2x2_ablation(csv_dir: Path, figure_dir: Path) -> None:
         {
             "font.family": "serif",
             "font.serif": ["Times New Roman", "Times", "DejaVu Serif"],
-            "font.size": 9.5,
-            "axes.titlesize": 13.5,
-            "axes.labelsize": 11.5,
-            "ytick.labelsize": 9.5,
-            "legend.fontsize": 9.5,
-            "axes.linewidth": 0.8,
+            "font.size": 7.4,
+            "axes.titlesize": 8.6,
+            "axes.labelsize": 7.8,
+            "ytick.labelsize": 7.2,
+            "legend.fontsize": 7.0,
+            "axes.linewidth": 0.7,
         }
     )
-    fig, axes = plt.subplots(1, 2, figsize=(7.15, 3.45), dpi=300, sharey=True)
+    fig, axes = plt.subplots(2, 1, figsize=(3.35, 3.65), dpi=300, sharey=True)
     x = np.arange(len(settings))
     for axis, baseline in zip(axes, baselines):
         bars = axis.bar(
@@ -162,30 +177,30 @@ def plot_baseline_2x2_ablation(csv_dir: Path, figure_dir: Path) -> None:
                 f"{value:.2f}",
                 ha="center",
                 va="bottom",
-                fontsize=9.5,
+                fontsize=7.2,
             )
-        axis.set_title(f"{baseline} Baseline", pad=6)
+        axis.set_title(baseline, pad=3)
         axis.set_xticks([])
         axis.set_ylim(0, 70)
         axis.set_yticks(np.arange(0, 71, 10))
-        axis.tick_params(direction="in", top=True, right=True, width=0.8, length=3.5)
+        axis.tick_params(direction="in", top=True, right=True, width=0.7, length=2.5)
         polish_axes(axis, y_grid=True, x_grid=False)
         for spine in axis.spines.values():
-            spine.set_linewidth(0.8)
+            spine.set_linewidth(0.7)
 
-    axes[0].set_ylabel("Overall client-average ACC (%)")
+    fig.text(0.025, 0.56, "Overall client-average ACC (%)", va="center", rotation="vertical", fontsize=7.8)
     fig.legend(
         bars,
         settings,
         loc="lower center",
-        bbox_to_anchor=(0.5, 0.015),
+        bbox_to_anchor=(0.53, 0.01),
         ncol=2,
         frameon=False,
-        handlelength=2.6,
-        columnspacing=2.2,
-        handletextpad=0.65,
+        handlelength=1.8,
+        columnspacing=1.0,
+        handletextpad=0.45,
     )
-    fig.subplots_adjust(left=0.105, right=0.985, top=0.84, bottom=0.265, wspace=0.12)
+    fig.subplots_adjust(left=0.18, right=0.985, top=0.96, bottom=0.18, hspace=0.34)
     save_png_pdf(fig, str(figure_dir / "03_baseline_2x2_ablation"), dpi=350)
     plt.close(fig)
 
@@ -199,19 +214,37 @@ def plot_internal_ablations(csv_dir: Path, figure_dir: Path) -> None:
             raise ValueError(f"{name} accuracy is outside [0, 100]")
 
     setup_style("dashboard")
-    fig, axes = plt.subplots(1, 2, figsize=(13.8, 5.7), dpi=300, gridspec_kw={"width_ratios": [1.55, 1.0]})
+    plt.rcParams.update(
+        {
+            "font.size": 7.0,
+            "axes.titlesize": 8.5,
+            "axes.labelsize": 7.5,
+            "xtick.labelsize": 6.8,
+            "ytick.labelsize": 7.0,
+            "axes.linewidth": 0.7,
+            "grid.linewidth": 0.55,
+        }
+    )
+    fig, axes = plt.subplots(
+        1,
+        2,
+        figsize=(3.35, 2.55),
+        dpi=300,
+        gridspec_kw={"width_ratios": [1.35, 1.0]},
+    )
     panels = [
-        (axes[0], diagnostic, "Diagnostic Prototype Reconstruction\n(DPR)"),
-        (axes[1], prevalence, "Long-tail Prevalence Calibration\n(LPC)"),
+        (axes[0], diagnostic, "DPR"),
+        (axes[1], prevalence, "LPC"),
     ]
     for axis, rows, title in panels:
-        labels = [row["Setting"] for row in rows]
+        settings = [row["Setting"] for row in rows]
+        labels = [INTERNAL_ABLATION_ABBREVIATIONS.get(setting, setting) for setting in settings]
         values = np.asarray([float(row["Avg ACC (%)"]) for row in rows])
         colors = []
-        for index, label in enumerate(labels):
-            if label == "LAMP-Merge":
+        for index, setting in enumerate(settings):
+            if setting == "LAMP-Merge":
                 colors.append(PAPER_COLORS["LAMP-Merge"])
-            elif "prevalence" in label.lower():
+            elif "prevalence" in setting.lower():
                 colors.append("#4F81BD" if index % 2 else "#9BBB59")
             elif index <= 4:
                 colors.append(["#4F81BD", "#5B9BD5", "#8FAADC", "#4472C4"][max(0, index - 1) % 4])
@@ -223,7 +256,7 @@ def plot_internal_ablations(csv_dir: Path, figure_dir: Path) -> None:
             values,
             color=colors,
             edgecolor=[darken_color(color, 0.65) for color in colors],
-            linewidth=1.2,
+            linewidth=0.7,
             zorder=3,
         )
         axis.set_yticks(y)
@@ -231,32 +264,44 @@ def plot_internal_ablations(csv_dir: Path, figure_dir: Path) -> None:
         axis.invert_yaxis()
         axis.set_xlim(0, 70)
         axis.set_xlabel("Mean ACC (%)")
-        axis.set_title(title, fontweight="bold", pad=10, fontsize=16)
+        axis.set_title(title, fontweight="bold", pad=3)
         for bar, value in zip(bars, values):
-            axis.text(value + 0.8, bar.get_y() + bar.get_height() / 2, f"{value:.2f}", va="center", fontsize=10)
+            axis.text(
+                value + 0.7,
+                bar.get_y() + bar.get_height() / 2,
+                f"{value:.2f}",
+                va="center",
+                fontsize=6.3,
+            )
         polish_axes(axis, y_grid=False, x_grid=True)
+        for spine in axis.spines.values():
+            spine.set_linewidth(0.7)
 
-    fig.tight_layout(w_pad=3.0)
+    fig.tight_layout(w_pad=0.7, pad=0.25)
     save_png_pdf(fig, str(figure_dir / "02_internal_module_ablations"), dpi=350)
     plt.close(fig)
 
 
 def plot_ultrasound_distribution(csv_dir: Path, figure_dir: Path) -> None:
     rows = read_annotated_csv(csv_dir / "超声预测类别分布.csv")
-    methods = ["LAMP-Merge", "Weight Averaging", "TIES-Merging", "DARE-Linear", "True distribution"]
+    methods = ["LAMP-Merge", "Weight Averaging", "TIES-Merging", "DARE-Linear"]
     by_series = {row["Series"]: row for row in rows}
     x = np.arange(8)
     setup_style("line")
     fig, ax = plt.subplots(figsize=(10.4, 5.6), dpi=300)
+    plotted_values = []
     for index, method in enumerate(methods):
         row = by_series[method]
         values = finite_array(
-            [float(row[f"Class {class_index} proportion (%)"]) for class_index in range(8)],
+            [float(row[f"Class {class_index} difference vs. true (pp)"]) for class_index in range(8)],
             (8,),
             method,
         )
+        if abs(float(values.sum())) > 0.1:
+            raise ValueError(f"{method} prediction-truth differences do not sum to zero")
+        plotted_values.append(values)
         marker, linestyle = LINE_STYLES[index]
-        label = method if method == "True distribution" else f"{method} (TV={float(row['TV']):.3f})"
+        label = method
         color = PAPER_COLORS[method]
         ax.plot(
             x,
@@ -274,9 +319,11 @@ def plot_ultrasound_distribution(csv_dir: Path, figure_dir: Path) -> None:
     ax.set_xticks(x)
     ax.set_xticklabels([f"Class {index}" for index in x])
     ax.set_xlabel("Ultrasound class")
-    ax.set_ylabel("Class proportion (%)")
-    ax.set_ylim(0, 35)
-    ax.set_title("Predicted Class Distribution on Ultrasound", fontweight="bold", pad=10)
+    ax.set_ylabel("Predicted $-$ true proportion (pp)")
+    limit = max(10.0, 5.0 * np.ceil(max(float(np.abs(values).max()) for values in plotted_values) / 5.0))
+    ax.set_ylim(-limit, limit)
+    ax.axhline(0.0, color="black", linewidth=1.2, alpha=0.75, zorder=2)
+    ax.set_title("Prediction Minus Truth on Ultrasound", fontweight="bold", pad=10)
     ax.legend(loc="upper center", bbox_to_anchor=(0.5, 1.02), ncol=2, frameon=False)
     polish_axes(ax, y_grid=True, x_grid=False)
     fig.tight_layout()
@@ -346,7 +393,7 @@ def plot_hparam_curves(
     axis.set_ylim(center - expanded_span / 2, center + expanded_span / 2)
     axis.set_xlabel(x_label)
     axis.set_ylabel("Client-average ACC (%)")
-    axis.set_title(title, fontweight="bold", pad=10)
+    axis.set_title(title, fontweight="bold", pad=4)
     axis.legend(loc="best", frameon=False, ncol=2)
     polish_axes(axis, y_grid=True, x_grid=False)
 
@@ -355,7 +402,21 @@ def plot_hparams(csv_dir: Path, figure_dir: Path) -> None:
     diagnostic = read_annotated_csv(csv_dir / "超参数分析_诊断原型重建.csv")
     prevalence = read_annotated_csv(csv_dir / "超参数分析_长尾患病率校准.csv")
     setup_style("line")
-    fig, axes = plt.subplots(1, 2, figsize=(13.2, 4.9), dpi=300)
+    plt.rcParams.update(
+        {
+            "font.size": 7.5,
+            "axes.titlesize": 9.5,
+            "axes.labelsize": 8.5,
+            "xtick.labelsize": 7.2,
+            "ytick.labelsize": 7.2,
+            "legend.fontsize": 7.0,
+            "axes.linewidth": 0.8,
+            "grid.linewidth": 0.6,
+            "lines.linewidth": 1.35,
+            "lines.markersize": 4.8,
+        }
+    )
+    fig, axes = plt.subplots(1, 2, figsize=(7.1, 2.25), dpi=300)
     plot_hparam_curves(
         axes[0],
         diagnostic,
@@ -378,7 +439,10 @@ def plot_hparams(csv_dir: Path, figure_dir: Path) -> None:
         "Calibration strength lambda",
         r"\tau",
     )
-    fig.tight_layout(w_pad=2.8)
+    for axis in axes:
+        for spine in axis.spines.values():
+            spine.set_linewidth(0.8)
+    fig.tight_layout(w_pad=1.0, pad=0.35)
     save_png_pdf(fig, str(figure_dir / "05_hyperparameter_sensitivity"), dpi=350)
     plt.close(fig)
 
@@ -437,7 +501,7 @@ def main() -> None:
     parser.add_argument("--paper-dir", type=Path, required=True)
     parser.add_argument("--csv-dir", type=Path, default=ROOT / "论文实验数据")
     args = parser.parse_args()
-    figure_dir = args.paper_dir.resolve() / "figures"
+    figure_dir = args.paper_dir.resolve() / "figures" / "new"
     csv_dir = args.csv_dir.resolve()
     figure_dir.mkdir(parents=True, exist_ok=True)
 

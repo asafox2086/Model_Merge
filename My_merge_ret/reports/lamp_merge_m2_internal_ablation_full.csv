@@ -1,0 +1,4 @@
+mode,label,group,raw_cells,raw_mean_acc,raw_min_acc,raw_max_acc,raw_ge_avg,raw_ge_avg_total,raw_ge_lamp,raw_ge_lamp_total,client_average_cells,client_average_mean_acc,client_average_ge_avg,client_average_ge_avg_total,client_average_ge_lamp,client_average_ge_lamp_total,mean_margin_vs_avg,mean_margin_vs_lamp
+full,LAMP-Merge,Formal method,180,0.6220645329970377,0.4159928122192273,0.8529669687225957,163,180,180,180,60,0.6220645329970378,58,60,60,60,0.40167953299703774,0.0
+always_on_calibration,Always-on calibration,M2 internal,180,0.6189609315982231,0.42946990116801437,0.8570593393744519,163,180,141,180,60,0.6189609315982231,58,60,47,60,0.3985759315982231,-0.003103601398814647
+client_balanced_prevalence,Client-balanced prior,M2 internal,180,0.5896859171471625,0.3000898472596586,0.8564747149956153,155,180,86,180,60,0.5896859171471625,54,60,17,60,0.3693009171471624,-0.03237861584987533
