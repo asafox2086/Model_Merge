@@ -64,6 +64,43 @@ def read_annotated_csv(path: Path) -> list[dict[str, str]]:
         return [dict(zip(header, row)) for row in reader if row]
 
 
+def load_completed_dpr_points() -> list[dict[str, str]]:
+    roots = [
+        ROOT / "outputs" / "lamp_merge_hparam_5x5_20260719_full",
+        ROOT / "outputs" / "lamp_merge_hparam_3x10_20260719_full_dpr",
+    ]
+    rows: list[dict[str, str]] = []
+    for root in roots:
+        if not root.exists():
+            continue
+        for run_dir in sorted(root.glob("dpr_gamma_*_s_*")):
+            status_path = run_dir / "reports" / "batch_status.csv"
+            if not status_path.exists():
+                continue
+            with status_path.open(newline="", encoding="utf-8") as handle:
+                status_rows = list(csv.DictReader(handle))
+            if len(status_rows) != 180 or any(item["status"] != "OK" for item in status_rows):
+                continue
+            grouped: dict[tuple[str, str, str], list[float]] = defaultdict(list)
+            for item in status_rows:
+                grouped[(item["dataset"], item["model"], item["num_clients"])].append(float(item["test_acc"]))
+            if len(grouped) != 60 or any(len(values) != 3 for values in grouped.values()):
+                raise ValueError(f"Unexpected DPR coverage in {run_dir}")
+            parts = run_dir.name.removeprefix("dpr_gamma_").split("_s_")
+            gamma = float(parts[0].replace("p", "."))
+            scale = float(parts[1].replace("p", "."))
+            rows.append(
+                {
+                    "Source": "Full configuration grid",
+                    "Evidence exponent gamma": f"{gamma:.2f}",
+                    "Prototype-head scale s": f"{scale:.2f}",
+                    "Mean ACC (%)": f"{100 * np.mean([np.mean(values) for values in grouped.values()]):.4f}",
+                }
+            )
+    unique = {(row["Evidence exponent gamma"], row["Prototype-head scale s"]): row for row in rows}
+    return list(unique.values())
+
+
 def finite_array(values: list[float], shape: tuple[int, ...], name: str) -> np.ndarray:
     array = np.asarray(values, dtype=float)
     if array.shape != shape:
@@ -159,7 +196,7 @@ def plot_baseline_2x2_ablation(csv_dir: Path, figure_dir: Path) -> None:
             "axes.linewidth": 0.7,
         }
     )
-    fig, axes = plt.subplots(2, 1, figsize=(3.45, 3.15), dpi=300, sharey=True)
+    fig, axes = plt.subplots(1, 2, figsize=(3.45, 1.78), dpi=300, sharey=True)
     x = np.arange(len(settings))
     for axis, baseline in zip(axes, baselines):
         bars = axis.bar(
@@ -189,19 +226,20 @@ def plot_baseline_2x2_ablation(csv_dir: Path, figure_dir: Path) -> None:
         for spine in axis.spines.values():
             spine.set_linewidth(0.7)
 
-    fig.text(0.015, 0.55, "Overall client-average ACC (%)", va="center", rotation="vertical", fontsize=7.8)
+    fig.text(0.012, 0.56, "Overall client-average ACC (%)", va="center", rotation="vertical", fontsize=7.8)
     fig.legend(
         bars,
         settings,
         loc="lower center",
-        bbox_to_anchor=(0.5, 0.005),
+        bbox_to_anchor=(0.5, 0.015),
         ncol=4,
         frameon=False,
-        handlelength=1.8,
-        columnspacing=1.0,
-        handletextpad=0.45,
+        fontsize=5.3,
+        handlelength=1.25,
+        columnspacing=0.45,
+        handletextpad=0.25,
     )
-    fig.subplots_adjust(left=0.17, right=0.985, top=0.93, bottom=0.16, hspace=0.38)
+    fig.subplots_adjust(left=0.16, right=0.99, top=0.84, bottom=0.28, wspace=0.24)
     save_png(fig, str(figure_dir / "03_baseline_2x2_ablation"), dpi=350)
     plt.close(fig)
 
@@ -229,7 +267,7 @@ def plot_internal_ablations(csv_dir: Path, figure_dir: Path) -> None:
     fig, axes = plt.subplots(
         1,
         2,
-        figsize=(4.15, 2.72),
+        figsize=(4.15, 1.95),
         dpi=300,
         gridspec_kw={"width_ratios": [1.2, 1.45]},
     )
@@ -373,7 +411,7 @@ def plot_hparam_curves(
         linestyle = source_styles[source]
         x_values = np.asarray(sorted(grouped[(source, curve)]), dtype=float)
         values = np.asarray([grouped[(source, curve)][value] for value in x_values], dtype=float)
-        if len(x_values) != 10 or not np.isfinite(values).all():
+        if len(x_values) < 3 or not np.isfinite(values).all():
             raise ValueError(f"Incomplete hyperparameter curve: {(source, curve)}")
         plotted_values.extend(values)
         axis.plot(
@@ -430,6 +468,8 @@ def plot_hparam_curves(
 
 def plot_hparams(csv_dir: Path, figure_dir: Path) -> None:
     diagnostic = read_annotated_csv(csv_dir / "超参数分析_诊断原型重建.csv")
+    if not diagnostic:
+        diagnostic = load_completed_dpr_points()
     prevalence = read_annotated_csv(csv_dir / "超参数分析_长尾患病率校准.csv")
     setup_style("line")
     plt.rcParams.update(
@@ -446,7 +486,7 @@ def plot_hparams(csv_dir: Path, figure_dir: Path) -> None:
             "lines.markersize": 4.8,
         }
     )
-    fig, axes = plt.subplots(2, 1, figsize=(3.35, 2.10), dpi=300)
+    fig, axes = plt.subplots(1, 2, figsize=(4.45, 2.85), dpi=300)
     if diagnostic:
         plot_hparam_curves(
             axes[0],
@@ -458,14 +498,10 @@ def plot_hparams(csv_dir: Path, figure_dir: Path) -> None:
             "DPR",
             r"Prototype-head scale $s$",
             r"\gamma",
-            [
-                ("Full configuration grid", 0.5),
-                ("Full configuration grid", 0.55),
-                ("Full configuration grid", 0.6),
-            ],
-            legend_location="center",
-            legend_anchor=(0.57, 0.48),
-            x_limits=(16.25, 21.25),
+            [("Full configuration grid", value) for value in (0.45, 0.5, 0.55, 0.6, 0.65)],
+            legend_location="lower left",
+            legend_anchor=(0.01, 0.02),
+            x_limits=(13.25, 24.25),
         )
     else:
         dpr_axis = axes[0]
@@ -499,7 +535,7 @@ def plot_hparams(csv_dir: Path, figure_dir: Path) -> None:
     for axis in axes:
         for spine in axis.spines.values():
             spine.set_linewidth(0.8)
-    fig.tight_layout(h_pad=0.55, pad=0.25)
+    fig.tight_layout(w_pad=0.65, pad=0.35)
     save_png(fig, str(figure_dir / "05_hyperparameter_sensitivity"), dpi=350)
     plt.close(fig)
 
