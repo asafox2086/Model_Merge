@@ -947,17 +947,17 @@ We visualize the absolute per-class predicted--true gap; values closer to zero i
 \begin{figure}[!t]
 \centering
 \includegraphics[width=\linewidth]{figures/04_ultrasound_class_distribution.png}
-\caption{Absolute per-class prediction gaps on Ultrasound, averaged over the four visual backbones, $K\in\{3,5,7\}$, and the three Dirichlet skew levels. Values are absolute predicted--true class-proportion differences in percentage points; zero denotes exact distributional agreement.}
+\caption{Absolute predicted--true class gaps on Ultrasound, averaged over all backbones, client counts, and Dirichlet settings. Values are percentage points; zero denotes exact agreement.}
 \label{fig:visual-chaosheng_predict}
 \end{figure}
 
 \subsection{Hyperparameter Analysis Experiment}
-Fig.~\ref{fig:hparam-analysis} evaluates DPR/LPC sensitivity under the full LAMP-Merge configuration. Each marker averages 180 raw cells and 60 client-average cells.
+Fig.~\ref{fig:hparam-analysis} evaluates full-configuration DPR/LPC sensitivity; each marker averages 180 raw and 60 client-average cells.
 
 \begin{figure}[!t]
 \centering
 \includegraphics[width=\columnwidth]{figures/05_hyperparameter_sensitivity.png}
-\caption{DPR and LPC sensitivity under the full LAMP-Merge configuration. Completed curve points average 60 client-average cells.}
+\caption{Full-configuration DPR/LPC sensitivity. Each point averages 60 client-average cells.}
 \label{fig:hparam-analysis}
 \end{figure}
 
@@ -965,7 +965,7 @@ Fig.~\ref{fig:hparam-analysis} evaluates DPR/LPC sensitivity under the full LAMP
 
 \section{Conclusion}
 
-We study one-shot asynchronous medical model merging without raw-image sharing or federated rounds. Generic merges can suffer aggregation-induced prediction collapse under incomplete local diagnostic coverage, while raw ACC may conceal this failure on long-tailed medical data. Across full-scope comparisons, ablations, and prediction-distribution diagnostics, DPR restores class-level diagnostic directions and LPC retains clinically meaningful prevalence without reintroducing collapse.
+We study one-shot asynchronous medical model merging without raw-image sharing or federated rounds. Generic merges can suffer aggregation-induced prediction collapse under incomplete local diagnostic coverage, while raw ACC may conceal this failure on long-tailed medical data. Across full-scope comparisons, ablations, and prediction-distribution diagnostics, DPR restores class-level diagnostic directions and LPC retains clinically meaningful prevalence without reintroducing collapse. These results establish a concise mechanism: support-weighted reconstruction recovers discriminative directions for locally absent classes, while bounded calibration preserves meaningful imbalance. By using only uploadable class-level statistics, LAMP-Merge offers a practical and interpretable foundation for broader multicenter medical imaging tasks.
 
 \bibliography{aaai2026}
 \appendix

@@ -14,30 +14,38 @@ The experiments use five MedMNIST v2 benchmarks~\cite{yang2023medmnist}. They we
 
 \paragraph{Ultrasound.} UltrasoundMNIST is an eight-class ultrasound-structure benchmark. Speckle noise, low contrast, and view-dependent boundaries make it particularly suitable for the prediction-collapse diagnostics and the per-class gap visualization in Fig.~\ref{fig:visual-chaosheng_predict}.
 
-\begin{center}
-\captionof{table}{BloodMNIST label space used in the experiments. The class IDs agree with the labels in the benchmark NPZ file.}
-\label{tab:blood-labels}
+\begin{table*}[!t]
+\centering
+\caption{Class-wise BloodMNIST split statistics and representative samples. This expands the Blood row in Table~\ref{tab:dataset-statistics}: the class-count field is replaced by the class name, and each row gives one real training example from that class.}
+\label{tab:blood-class-statistics}
 \small
 \renewcommand{\arraystretch}{1.12}
-\begin{tabular}{clcl}
+\setlength{\tabcolsep}{4.2pt}
+\begin{tabular}{llrrrrc}
 \noalign{\hrule height 1.25pt}
 \rowcolor[HTML]{F2F2F2}
-\textbf{ID} & \textbf{Class} & \textbf{ID} & \textbf{Class} \\
+\textbf{Dataset} & \textbf{Class} & \textbf{Train} & \textbf{Val} & \textbf{Test} & \textbf{Total} & \textbf{Sample} \\
 \hline \hline
-0 & Basophil & 4 & Lymphocyte \\
+\multirow{8}{*}{Blood} & Basophil & 852 & 122 & 244 & 1,218 & \includegraphics[width=0.54cm,height=0.54cm,keepaspectratio]{figures/appendix_blood_class_0.png} \\
 \rowcolor{gray!10}
-1 & Eosinophil & 5 & Monocyte \\
-2 & Erythroblast & 6 & Neutrophil \\
+ & Eosinophil & 2,181 & 312 & 624 & 3,117 & \includegraphics[width=0.54cm,height=0.54cm,keepaspectratio]{figures/appendix_blood_class_1.png} \\
+ & Erythroblast & 1,085 & 155 & 311 & 1,551 & \includegraphics[width=0.54cm,height=0.54cm,keepaspectratio]{figures/appendix_blood_class_2.png} \\
 \rowcolor{gray!10}
-3 & Immature granulocyte & 7 & Platelet \\
+ & Immature granulocytes & 2,026 & 290 & 579 & 2,895 & \includegraphics[width=0.54cm,height=0.54cm,keepaspectratio]{figures/appendix_blood_class_3.png} \\
+ & Lymphocyte & 849 & 122 & 243 & 1,214 & \includegraphics[width=0.54cm,height=0.54cm,keepaspectratio]{figures/appendix_blood_class_4.png} \\
+\rowcolor{gray!10}
+ & Monocyte & 993 & 143 & 284 & 1,420 & \includegraphics[width=0.54cm,height=0.54cm,keepaspectratio]{figures/appendix_blood_class_5.png} \\
+ & Neutrophil & 2,330 & 333 & 666 & 3,329 & \includegraphics[width=0.54cm,height=0.54cm,keepaspectratio]{figures/appendix_blood_class_6.png} \\
+\rowcolor{gray!10}
+ & Platelet & 1,643 & 235 & 470 & 2,348 & \includegraphics[width=0.54cm,height=0.54cm,keepaspectratio]{figures/appendix_blood_class_7.png} \\
 \noalign{\hrule height 1.25pt}
 \end{tabular}
-\end{center}
+\end{table*}
 
 \begin{figure*}[!t]
 \centering
 \includegraphics[width=0.93\textwidth]{figures/appendix_blood_classes.png}
-\caption{Representative BloodMNIST training examples, one for every class in Table~\ref{tab:blood-labels}. Images are drawn directly from the labeled benchmark file used to construct the experimental partitions; they are shown only to document class appearance, not as training data for merging.}
+\caption{Representative BloodMNIST training examples, one for every class in Table~\ref{tab:blood-class-statistics}. Images are drawn directly from the labeled benchmark file used to construct the experimental partitions; they are shown only to document class appearance, not as training data for merging.}
 \label{fig:blood-class-reference}
 \end{figure*}
 
@@ -59,23 +67,29 @@ e_{i,c}=(n_{i,c}+1)^\gamma\mathbf{1}[n_{i,c}>0].
 \end{equation}
 Here \(\mu_{i,c}\) is client \(i\)'s class-conditional reference-space mean and \(n_{i,c}\) is its support for that class. The substitutions below test whether the class semantics in \(\mu_{i,c}\) and the class-specific reliability in \(\alpha_{i,c}\) are both required.
 
-\paragraph{Classifier-head aggregation (CHA).} CHA replaces the reference-space evidence by the local classifier-head direction, \(\mu_{i,c}\leftarrow h_{i,c}\). It tests whether client heads already provide a common, class-aligned representation. Its mean ACC is 25.63\%, a 36.58-point reduction from LAMP-Merge (62.21\%), showing that independently trained head directions are not a reliable substitute for shared-space class evidence.
+\paragraph{Classifier-head aggregation (CHA).} CHA replaces the class prototype in Eq.~\ref{eq:appendix-dpr}, \(\mu_{i,c}\longrightarrow h_{i,c}\), with the local classifier-head direction. It tests whether client heads already provide a common, class-aligned representation. Its mean ACC is 25.63\%, a 36.58-point reduction from LAMP-Merge (62.21\%), showing that independently trained head directions are not a reliable substitute for shared-space class evidence.
 
-\paragraph{Global-feature mean (GFM).} GFM removes class conditioning by using the same class-agnostic feature mean for every class, \(\mu_{i,c}\leftarrow g\). This tests whether generic client appearance alone can drive merging. Its 26.50\% mean ACC is 35.71 points below LAMP-Merge, indicating that class conditioning, not merely feature aggregation, is essential.
+\paragraph{Global-feature mean (GFM).} GFM replaces the class-conditional prototype by the same class-agnostic feature mean for every class, \(\mu_{i,c}\longrightarrow g\). This tests whether generic client appearance alone can drive merging. Its 26.50\% mean ACC is 35.71 points below LAMP-Merge, indicating that class conditioning, not merely feature aggregation, is essential.
 
-\paragraph{Support-only synthetic head (SSH).} SSH removes image-derived prototype information and sets \(p_c\leftarrow u_c\), where \(u_c\) is a fixed random unit vector. It preserves the classifier interface while eliminating diagnostic content. The 10.89\% mean ACC, 51.32 points below LAMP-Merge, verifies that performance does not arise from support counts or the cosine-head form alone.
+\paragraph{Support-only synthetic head (SSH).} SSH replaces the aggregated prototype \(p_c=\sum_i\alpha_{i,c}\mu_{i,c}\) by \(p_c\longrightarrow u_c\), where \(u_c\) is a fixed random unit vector. It preserves the classifier interface while eliminating diagnostic content. The 10.89\% mean ACC, 51.32 points below LAMP-Merge, verifies that performance does not arise from support counts or the cosine-head form alone.
 
-\paragraph{Shuffled-label prototype (SLP).} SLP preserves prototype magnitudes but destroys their label correspondence, \(p_c\leftarrow p_{\sigma(c)}\), for a permutation \(\sigma\) of the diagnosis labels. Its 19.57\% mean ACC (a 42.64-point reduction) directly tests semantic alignment: useful class evidence must be assigned to the correct output class.
+\paragraph{Shuffled-label prototype (SLP).} SLP replaces the class-aligned aggregate by \(p_c\longrightarrow p_{\sigma(c)}\), for a permutation \(\sigma\) of the diagnosis labels. Its 19.57\% mean ACC (a 42.64-point reduction) directly tests semantic alignment: useful class evidence must be assigned to the correct output class.
 
-\paragraph{Uniform client weight (UCW).} UCW retains class prototypes but weights every client observing \(c\) equally:
+\paragraph{Uniform client weight (UCW).} UCW replaces the support-aware weight \(e_{i,c}=(n_{i,c}+1)^\gamma\mathbf{1}[n_{i,c}>0]\) by equal class-presence evidence:
 \begin{equation}
-\alpha_{i,c}\leftarrow\frac{\mathbf{1}[n_{i,c}>0]}{\sum_j\mathbf{1}[n_{j,c}>0]}.
+e_{i,c}\longrightarrow\mathbf{1}[n_{i,c}>0],\qquad
+\alpha_{i,c}=\frac{e_{i,c}}{\sum_j e_{j,c}}.
 \end{equation}
 It tests whether observing a class is sufficient, independent of the amount of evidence. Its 58.33\% mean ACC is 3.88 points below LAMP-Merge, showing that support magnitude provides useful reliability information beyond class presence.
 
-\paragraph{Binary support only (BSO).} BSO turns both prototype support and prevalence counts into presence indicators, \(n_{i,c},m_{i,c}\leftarrow\mathbf{1}[n_{i,c}>0]\). It tests whether fine-grained class frequency is necessary in both modules. The mean ACC falls to 55.18\% (7.03 points below LAMP-Merge), the largest loss among the weighting controls.
+\paragraph{Binary support only (BSO).} BSO replaces both class support and prevalence counts by presence indicators, \(n_{i,c},m_{i,c}\longrightarrow\mathbf{1}[n_{i,c}>0]\). It tests whether fine-grained class frequency is necessary in both modules. The mean ACC falls to 55.18\% (7.03 points below LAMP-Merge), the largest loss among the weighting controls.
 
-\paragraph{Global client-size weight (GCSW).} GCSW replaces class-specific reliability by total client size, \(e_{i,c}\leftarrow(N_i+1)^\gamma\mathbf{1}[n_{i,c}>0]\), where \(N_i=\sum_k n_{i,k}\). It tests whether a generally large client can stand in for strong evidence of a particular class. Its 59.39\% mean ACC, 2.82 points below LAMP-Merge, shows that local data volume should be assigned at the class level.
+\paragraph{Global client-size weight (GCSW).} GCSW replaces class-specific support in the reliability weight by total client size:
+\begin{equation}
+e_{i,c}=(n_{i,c}+1)^\gamma\mathbf{1}[n_{i,c}>0]
+\longrightarrow(N_i+1)^\gamma\mathbf{1}[n_{i,c}>0].
+\end{equation}
+Here \(N_i=\sum_k n_{i,k}\) is the total support of client \(i\). GCSW tests whether a generally large client can stand in for strong evidence of a particular class. Its 59.39\% mean ACC, 2.82 points below LAMP-Merge, shows that local data volume should be assigned at the class level.
 
 \paragraph{DPR summary.} The semantic controls cause large reductions (35.71--51.32 points), while the weighting controls cause smaller but consistent reductions (2.82--7.03 points). Together, these results support the two parts of Eq.~\ref{eq:appendix-dpr}: class-conditioned shared-space evidence provides the discriminative direction, and class-specific support determines how reliably each client contributes to that direction.
 
@@ -92,13 +106,14 @@ b_c=\lambda\left(\log\pi_c-\frac{1}{C}\sum_k\log\pi_k\right).
 \end{equation}
 The three controls retain DPR and test the prior estimator or the activation gate in Eq.~\ref{eq:appendix-lpc}.
 
-\paragraph{Uniform prevalence prior (UPP).} UPP suppresses prevalence information by setting \(\pi_c\leftarrow1/C\). It tests whether calibration should ignore the observed class distribution. Mean ACC is 58.91\%, 3.30 points below LAMP-Merge, demonstrating that the empirical prior is useful rather than a source of collapse.
+\paragraph{Uniform prevalence prior (UPP).} UPP replaces the empirical prior in Eq.~\ref{eq:appendix-lpc} by \(\pi_c\longrightarrow1/C\). It tests whether calibration should ignore the observed class distribution. Mean ACC is 58.91\%, 3.30 points below LAMP-Merge, demonstrating that the empirical prior is useful rather than a source of collapse.
 
-\paragraph{Always-on calibration (AOC).} AOC removes the long-tail criterion and sets \(\mathbf{1}[r>\tau]\leftarrow1\). It tests whether the prior should be applied uniformly to every configuration. Its 61.90\% mean ACC is 0.31 points below LAMP-Merge. The small aggregate gap indicates that calibration is broadly useful, while the gated design avoids imposing a prior when a configuration is not sufficiently long-tailed.
+\paragraph{Always-on calibration (AOC).} AOC replaces the activation gate in the score \(\ell_c(x)\) by \(\mathbf{1}[r>\tau]\longrightarrow1\). It tests whether the prior should be applied uniformly to every configuration. Its 61.90\% mean ACC is 0.31 points below LAMP-Merge. The small aggregate gap indicates that calibration is broadly useful, while the gated design avoids imposing a prior when a configuration is not sufficiently long-tailed.
 
-\paragraph{Client-balanced prior (CBP).} CBP gives every client equal prior influence:
+\paragraph{Client-balanced prior (CBP).} CBP replaces the sample-count empirical prior by equal client influence:
 \begin{equation}
-\pi_c\leftarrow\frac{1}{K}\sum_i\frac{m_{i,c}}{\sum_k m_{i,k}}.
+\pi_c=\frac{\sum_i m_{i,c}}{\sum_k\sum_i m_{i,k}}
+\longrightarrow\frac{1}{K}\sum_i\frac{m_{i,c}}{\sum_k m_{i,k}}.
 \end{equation}
 It tests whether each client should contribute equally regardless of sample volume. The 58.97\% mean ACC, 3.24 points below LAMP-Merge, favors the sample-count empirical prior over a client-balanced estimate.
 

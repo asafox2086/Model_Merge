@@ -41,6 +41,12 @@ def create_blood_reference_sheet() -> None:
         sample_indices = [int(np.flatnonzero(labels == class_id)[0]) for class_id in range(8)]
         samples = [images[index] for index in sample_indices]
 
+    for class_id, image in enumerate(samples):
+        plt.imsave(
+            ROOT / "figures" / f"appendix_blood_class_{class_id}.png",
+            image,
+        )
+
     setup_style("dashboard")
     plt.rcParams.update({"font.size": 8.0, "axes.titlesize": 9.0})
     figure, axes = plt.subplots(2, 4, figsize=(7.15, 3.75), dpi=300)
