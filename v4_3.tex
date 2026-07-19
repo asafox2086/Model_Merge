@@ -200,6 +200,7 @@
 % END REMOVE bibentry
 
 \begin{document}
+\raggedbottom
 
 \maketitle
 
@@ -866,12 +867,12 @@ CBP & 81.25 & 49.61 & 62.10 & 57.12 & 44.76 & 58.97 \\
 
 We further conduct three full-scope LPC internal controls while retaining DPR. Uniform prevalence prior (UPP) sets \(\pi_c=1/C\), removing empirical long-tail prevalence. Always-on calibration (AOC) replaces the thresholded activation \(\mathbf{1}[r>\tau]\) with 1 while retaining the empirical prior. Client-balanced prior (CBP) first normalizes each client's prevalence counts and then averages clients, rather than weighting the global prior by raw client counts. Table~\ref{tab:prevalence-internal-ablation} reports overall mean ACC values of 58.91\% (UPP), 61.90\% (AOC), and 58.97\% (CBP), compared with 62.21\% for LAMP-Merge. Thus, UPP, AOC, and CBP are lower by 3.30, 0.31, and 3.24 percentage points, respectively. The small AOC gap indicates that always applying the empirical prior is close but still inferior, whereas UPP and CBP show that both the empirical long-tail prior and its client-size-aware aggregation are needed. The strict controls in Fig.~\ref{fig:baseline-2x2-ablation} average all 60 client-average cells and cross DPR and LPC for each classifier-head baseline. Without DPR, LPC raises TIES from 19.52\% to 28.21\% and DARE from 19.33\% to 28.79\%. DPR raises the two baselines to 58.91\%, and adding LPC reaches 62.21\%. Thus, DPR provides the dominant improvement, while LPC supplies a complementary gain in the complete method.
 
-\begin{figure}[t]
+\begin{figure*}[t]
 \centering
-\includegraphics[width=\columnwidth]{figures/new/03_baseline_2x2_ablation.pdf}
+\includegraphics[width=0.96\textwidth]{figures/new/03_baseline_2x2_ablation.pdf}
 \caption{Strict $2\times2$ DPR/LPC ablations for TIES-Merging and DARE-Linear. Values are overall ACC across 60 client-average cells (five datasets, four backbones, and three client counts).}
 \label{fig:baseline-2x2-ablation}
-\end{figure}
+\end{figure*}
 
 \subsection{New-metric Diagnostic Experiment}
 Although the main experiments use ACC for direct comparison, long-tailed medical distributions can allow single-class or few-class predictors to achieve high ACC\cite{BUDA2018249,5597285}. We therefore report collapse ratio, effective predicted classes, and predicted--true total variation.
@@ -912,36 +913,25 @@ Table \ref{tab:collapse-key} compares LAMP-Merge with the best-performing baseli
 
 \subsection{Visualization Experiment}
 
-To visualize the prediction-distribution changes measured by the new diagnostic metrics, we plot the per-class difference between each method's predicted allocation and the true test distribution. Values closer to zero indicate better prevalence alignment; positive and negative values respectively indicate over- and under-prediction. LAMP-Merge exhibits smaller deviations than representative generic merges across most classes.
+To visualize the prediction-distribution changes measured by the new diagnostic metrics, we plot the absolute per-class gap between each method's predicted allocation and the true test distribution. Values closer to zero indicate better prevalence alignment. LAMP-Merge exhibits smaller deviations than representative generic merges across most classes.
 
-\begin{figure}[t]
+\begin{figure}[H]
 \centering
 \includegraphics[width=\linewidth]{figures/new/04_ultrasound_class_distribution.pdf}
-\caption{Per-class prediction deviations on Ultrasound, averaged over the four visual backbones, $K\in\{3,5,7\}$, and the three Dirichlet skew levels. Values are predicted minus true class proportions in percentage points; zero denotes exact distributional agreement.}
+\caption{Absolute per-class prediction gaps on Ultrasound, averaged over the four visual backbones, $K\in\{3,5,7\}$, and the three Dirichlet skew levels. Values are absolute predicted--true class-proportion differences in percentage points; zero denotes exact distributional agreement.}
 \label{fig:visual-chaosheng_predict}
 \end{figure}
 
 \subsection{Hyperparameter Analysis Experiment}
 Fig.~\ref{fig:hparam-analysis} evaluates the prototype-head scale $s$ and calibration strength $\lambda$ over 180 raw cells and 60 client-average cells. The fixed method uses $\gamma=0.55$, $s=18.75$, $\tau=2.5$, and $\lambda=4.25$; these values lie in broad stable regions, indicating that the gain is not produced by narrow hyperparameter tuning.
 
-\begin{figure*}[t]
+\begin{figure}[H]
 \centering
-\includegraphics[width=0.96\textwidth]{figures/new/05_hyperparameter_sensitivity.pdf}
+\includegraphics[width=\columnwidth]{figures/new/05_hyperparameter_sensitivity.pdf}
 \caption{Full-scope hyperparameter sensitivity of DPR and LPC. Expanded vertical ranges show stable accuracy across broad intervals.}
 \label{fig:hparam-analysis}
-\end{figure*}
+\end{figure}
 
-
-
-\subsection{t-SNE Visualization Experiment}
-Fig.~\ref{fig:tsne-analysis} uses t-SNE\cite{vanDerMaaten2008} only for analysis on Blood with ResNet, $K=3$, and $\beta=0.01$. LAMP-Merge retains separated output-probability groups, while generic merges exhibit compressed or entangled predictive representations.
-
-\begin{figure*}[t]
-\centering
-\includegraphics[width=0.98\textwidth]{figures/new/07_tsne_output_probability.png}
-\caption{Joint t-SNE of test-image output-probability representations on Blood; from left to right, LAMP-Merge, weight averaging, TIES-Merging, and DARE-Linear.}
-\label{fig:tsne-analysis}
-\end{figure*}
 
 
 \FloatBarrier
@@ -1066,5 +1056,10 @@ Let \(y_n\) and \(\hat{y}_n\) denote the true and predicted labels of the \(n\)-
 \item \(C_{\mathrm{eff}}=\exp\left(-\sum_c q_c\log q_c\right)\), the effective number of predicted classes.
 \item \(\mathrm{TV}(q,p)=\frac{1}{2}\sum_c |q_c-p_c|\), the total variation distance between predicted and true class distributions.
 \end{itemize}
+
+\subsection{Hyperparameter-sweep Reproducibility}
+The DPR and LPC sensitivity curves are computed from the complete 2026-07-19 sweep rather than from selected runs. DPR uses \(\gamma\in\{0.50,0.55,0.60\}\) and ten prototype-head scales \(s\in\{13.75,15.00,\ldots,25.00\}\). LPC uses \(\tau\in\{2.0,2.5,3.0\}\) and ten calibration strengths \(\lambda\in\{3.00,3.25,\ldots,5.25\}\). Thus, each module has a \(3\times10\) grid. At every grid point, we evaluate the five datasets, four backbone families, three client counts, and three Dirichlet skew levels, yielding 180 raw result cells and 60 client-average cells after averaging the three skew levels for each dataset--backbone--client-count combination.
+
+For reuse, the paper package records one row per grid point in the DPR and LPC hyperparameter CSV files. Each row includes both the raw-cell and client-average-cell counts together with the mean ACC used in Fig.~\ref{fig:hparam-analysis}. The curves retain every measured point in ascending parameter order and do not apply smoothing, interpolation, or best-run selection. The marked operating point is fixed before comparison at \(\gamma=0.55\), \(s=18.75\), \(\tau=2.5\), and \(\lambda=4.25\); it is therefore directly traceable to the same recorded grid as the surrounding sensitivity values.
 
 \end{document}

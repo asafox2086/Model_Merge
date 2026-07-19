@@ -8,5 +8,4 @@ Table 6 / Figure 3 right,LPC internal ablation,长尾患病率校准内部消融
 Table 7,Prediction-collapse diagnostics,预测坍缩诊断.csv
 Figure 5,Ultrasound predicted distribution,超声预测类别分布.csv
 Hyperparameter figure,Combined DPR/LPC sensitivity,超参数分析_诊断原型重建.csv; 超参数分析_长尾患病率校准.csv
-Figure 8,Blood/ResNet output-probability t-SNE,tSNE输出概率坐标.csv
 Appendix Table,Dataset statistics and samples,数据集统计.csv

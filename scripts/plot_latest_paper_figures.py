@@ -158,7 +158,7 @@ def plot_baseline_2x2_ablation(csv_dir: Path, figure_dir: Path) -> None:
             "axes.linewidth": 0.7,
         }
     )
-    fig, axes = plt.subplots(2, 1, figsize=(3.35, 3.65), dpi=300, sharey=True)
+    fig, axes = plt.subplots(1, 2, figsize=(7.1, 2.25), dpi=300, sharey=True)
     x = np.arange(len(settings))
     for axis, baseline in zip(axes, baselines):
         bars = axis.bar(
@@ -188,19 +188,19 @@ def plot_baseline_2x2_ablation(csv_dir: Path, figure_dir: Path) -> None:
         for spine in axis.spines.values():
             spine.set_linewidth(0.7)
 
-    fig.text(0.025, 0.56, "Overall client-average ACC (%)", va="center", rotation="vertical", fontsize=7.8)
+    fig.text(0.015, 0.55, "Overall client-average ACC (%)", va="center", rotation="vertical", fontsize=7.8)
     fig.legend(
         bars,
         settings,
         loc="lower center",
-        bbox_to_anchor=(0.53, 0.01),
-        ncol=2,
+        bbox_to_anchor=(0.5, 0.005),
+        ncol=4,
         frameon=False,
         handlelength=1.8,
         columnspacing=1.0,
         handletextpad=0.45,
     )
-    fig.subplots_adjust(left=0.18, right=0.985, top=0.96, bottom=0.18, hspace=0.34)
+    fig.subplots_adjust(left=0.09, right=0.995, top=0.88, bottom=0.22, wspace=0.22)
     save_png_pdf(fig, str(figure_dir / "03_baseline_2x2_ablation"), dpi=350)
     plt.close(fig)
 
@@ -293,12 +293,12 @@ def plot_ultrasound_distribution(csv_dir: Path, figure_dir: Path) -> None:
     for index, method in enumerate(methods):
         row = by_series[method]
         values = finite_array(
-            [float(row[f"Class {class_index} difference vs. true (pp)"]) for class_index in range(8)],
+            [float(row[f"Class {class_index} absolute difference vs. true (pp)"]) for class_index in range(8)],
             (8,),
             method,
         )
-        if abs(float(values.sum())) > 0.1:
-            raise ValueError(f"{method} prediction-truth differences do not sum to zero")
+        if np.any(values < 0):
+            raise ValueError(f"{method} has negative absolute prediction-truth gaps")
         plotted_values.append(values)
         marker, linestyle = LINE_STYLES[index]
         label = method
@@ -319,11 +319,10 @@ def plot_ultrasound_distribution(csv_dir: Path, figure_dir: Path) -> None:
     ax.set_xticks(x)
     ax.set_xticklabels([f"Class {index}" for index in x])
     ax.set_xlabel("Ultrasound class")
-    ax.set_ylabel("Predicted $-$ true proportion (pp)")
-    limit = max(10.0, 5.0 * np.ceil(max(float(np.abs(values).max()) for values in plotted_values) / 5.0))
-    ax.set_ylim(-limit, limit)
-    ax.axhline(0.0, color="black", linewidth=1.2, alpha=0.75, zorder=2)
-    ax.set_title("Prediction Minus Truth on Ultrasound", fontweight="bold", pad=10)
+    ax.set_ylabel("Absolute predicted--true gap (pp)")
+    limit = max(5.0, 5.0 * np.ceil(max(float(values.max()) for values in plotted_values) / 5.0))
+    ax.set_ylim(0, limit)
+    ax.set_title("Absolute Prediction Gaps on Ultrasound", fontweight="bold", pad=10)
     ax.legend(loc="upper center", bbox_to_anchor=(0.5, 1.02), ncol=2, frameon=False)
     polish_axes(ax, y_grid=True, x_grid=False)
     fig.tight_layout()
@@ -416,7 +415,7 @@ def plot_hparams(csv_dir: Path, figure_dir: Path) -> None:
             "lines.markersize": 4.8,
         }
     )
-    fig, axes = plt.subplots(1, 2, figsize=(7.1, 2.25), dpi=300)
+    fig, axes = plt.subplots(2, 1, figsize=(3.35, 3.45), dpi=300)
     plot_hparam_curves(
         axes[0],
         diagnostic,
@@ -442,7 +441,7 @@ def plot_hparams(csv_dir: Path, figure_dir: Path) -> None:
     for axis in axes:
         for spine in axis.spines.values():
             spine.set_linewidth(0.8)
-    fig.tight_layout(w_pad=1.0, pad=0.35)
+    fig.tight_layout(h_pad=0.9, pad=0.35)
     save_png_pdf(fig, str(figure_dir / "05_hyperparameter_sensitivity"), dpi=350)
     plt.close(fig)
 

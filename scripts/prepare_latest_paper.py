@@ -26,6 +26,9 @@ BASELINE_2X2_ROOT = (
     / "outputs"
     / "lamp_merge_baseline_2x2_20260719_followup_formal_baseline_2x2"
 )
+HPARAM_3X10_ROOT = (
+    ROOT / "outputs" / "lamp_merge_hparam_3x10_20260719_followup_formal_hparam_3x10"
+)
 
 DATASETS = [
     ("bloodmnist_224", "Blood"),
@@ -512,39 +515,74 @@ def build_ultrasound_distribution() -> list[dict[str, object]]:
     output_rows = []
     for method, label in methods:
         distribution = [value / counts[method] for value in sums[method]]
-        total_variation = 0.5 * sum(abs(a - b) for a, b in zip(distribution, true_distribution))
-        row: dict[str, object] = {"Series": label, "TV": f"{total_variation:.4f}"}
+        row: dict[str, object] = {"Series": label}
         for index, value in enumerate(distribution):
-            difference = 100 * (value - true_distribution[index])
-            row[f"Class {index} difference vs. true (pp)"] = f"{difference:.4f}"
+            absolute_difference = 100 * abs(value - true_distribution[index])
+            row[f"Class {index} absolute difference vs. true (pp)"] = f"{absolute_difference:.4f}"
         output_rows.append(row)
     return output_rows
 
 
 def build_hparam_rows() -> tuple[list[dict[str, object]], list[dict[str, object]]]:
-    rows = read_csv(REPORT_DIR / "lamp_merge_hparam_interaction_full.csv")
-    diagnostic = []
-    prevalence = []
-    for row in rows:
+    expected_keys = {
+        (dataset, model, num_clients, beta)
+        for dataset, _ in DATASETS
+        for model, _, _ in BACKBONES
+        for num_clients in (3, 5, 7)
+        for beta in (0.0, 0.01, 0.1)
+    }
+    patterns = {
+        "dpr": re.compile(r"dpr_gamma_([0-9p]+)_s_([0-9p]+)$"),
+        "lpc": re.compile(r"lpc_tau_([0-9p]+)_lambda_([0-9p]+)$"),
+    }
+    diagnostic: list[dict[str, object]] = []
+    prevalence: list[dict[str, object]] = []
+    for child in sorted(HPARAM_3X10_ROOT.iterdir()):
+        if not child.is_dir():
+            continue
+        match = patterns["dpr"].match(child.name) or patterns["lpc"].match(child.name)
+        if match is None:
+            continue
+        rows = read_csv(child / "reports" / "batch_status.csv")
+        if len(rows) != 180 or any(row["status"] != "OK" for row in rows):
+            raise RuntimeError(f"Incomplete new hyperparameter run: {child}")
+        values_by_key: dict[tuple[str, str, int, float], float] = {}
+        for row in rows:
+            key = (row["dataset"], row["model"], int(row["num_clients"]), float(row["beta"]))
+            values_by_key[key] = float(row["test_acc"])
+        if set(values_by_key) != expected_keys:
+            raise RuntimeError(f"Unexpected hyperparameter coverage: {child}")
+        client_values = [
+            sum(values_by_key[(dataset, model, num_clients, beta)] for beta in (0.0, 0.01, 0.1)) / 3
+            for dataset, _ in DATASETS
+            for model, _, _ in BACKBONES
+            for num_clients in (3, 5, 7)
+        ]
         item = {
-            "Raw cells": row["raw_cells"],
-            "Client-average cells": row["client_average_cells"],
-            "Mean ACC (%)": f"{100 * float(row['client_average_mean_acc']):.4f}",
+            "Raw cells": len(values_by_key),
+            "Client-average cells": len(client_values),
+            "Mean ACC (%)": f"{100 * sum(client_values) / len(client_values):.4f}",
         }
-        if row["module"] == "diagnostic prototype reconstruction":
-            item = {
-                "Evidence exponent gamma": row["curve_value"],
-                "Prototype-head scale s": row["x_value"],
-                **item,
-            }
-            diagnostic.append(item)
-        elif row["module"] == "long-tail prevalence calibration":
-            item = {
-                "Activation threshold tau": row["curve_value"],
-                "Calibration strength lambda": row["x_value"],
-                **item,
-            }
-            prevalence.append(item)
+        first_value = float(match.group(1).replace("p", "."))
+        second_value = float(match.group(2).replace("p", "."))
+        if child.name.startswith("dpr_"):
+            diagnostic.append(
+                {
+                    "Evidence exponent gamma": first_value,
+                    "Prototype-head scale s": second_value,
+                    **item,
+                }
+            )
+        else:
+            prevalence.append(
+                {
+                    "Activation threshold tau": first_value,
+                    "Calibration strength lambda": second_value,
+                    **item,
+                }
+            )
+    if len(diagnostic) != 30 or len(prevalence) != 30:
+        raise RuntimeError("Expected complete 3x10 DPR and LPC hyperparameter grids")
     return diagnostic, prevalence
 
 
@@ -864,6 +902,14 @@ def update_tex(
         "The generic merge concentrates predictions on one class, while LAMP-Merge recovers a broader class allocation aligned with the test distribution.",
         "Generic merges concentrate predictions on a few classes, while LAMP-Merge recovers a broader class allocation aligned with the test distribution.",
     )
+    tex = tex.replace(
+        "To visualize the prediction-distribution changes measured by the new diagnostic metrics, we plot the per-class difference between each method's predicted allocation and the true test distribution. Values closer to zero indicate better prevalence alignment; positive and negative values respectively indicate over- and under-prediction. LAMP-Merge exhibits smaller deviations than representative generic merges across most classes.",
+        "To visualize the prediction-distribution changes measured by the new diagnostic metrics, we plot the absolute per-class gap between each method's predicted allocation and the true test distribution. Values closer to zero indicate better prevalence alignment. LAMP-Merge exhibits smaller deviations than representative generic merges across most classes.",
+    )
+    tex = tex.replace(
+        "Per-class prediction deviations on Ultrasound, averaged over the four visual backbones, $K\\in\\{3,5,7\\}$, and the three Dirichlet skew levels. Values are predicted minus true class proportions in percentage points; zero denotes exact distributional agreement.",
+        "Absolute per-class prediction gaps on Ultrasound, averaged over the four visual backbones, $K\\in\\{3,5,7\\}$, and the three Dirichlet skew levels. Values are absolute predicted--true class-proportion differences in percentage points; zero denotes exact distributional agreement.",
+    )
 
     for backbone, _, label in BACKBONES:
         tex = replace_lamp_row(tex, label, backbone, formal_values)
@@ -926,12 +972,12 @@ def update_tex(
     )
     baseline_2x2_figure = "\n".join(
         [
-            r"\begin{figure}[t]",
+            r"\begin{figure*}[t]",
             r"\centering",
-            r"\includegraphics[width=\columnwidth]{figures/03_baseline_2x2_ablation.pdf}",
+            r"\includegraphics[width=0.96\textwidth]{figures/03_baseline_2x2_ablation.pdf}",
             r"\caption{Strict $2\times2$ DPR/LPC ablations for TIES-Merging and DARE-Linear. Values are overall ACC across 60 client-average cells (five datasets, four backbones, and three client counts).}",
             r"\label{fig:baseline-2x2-ablation}",
-            r"\end{figure}",
+            r"\end{figure*}",
         ]
     )
     if r"\label{fig:dataset-ablation-acc}" in tex:
@@ -941,12 +987,12 @@ def update_tex(
 
     combined_hparam_figure = "\n".join(
         [
-            r"\begin{figure*}[t]",
+            r"\begin{figure}[H]",
             r"\centering",
-            r"\includegraphics[width=0.96\textwidth]{figures/05_hyperparameter_sensitivity.pdf}",
+            r"\includegraphics[width=\columnwidth]{figures/05_hyperparameter_sensitivity.pdf}",
             r"\caption{Full-scope hyperparameter sensitivity of DPR and LPC. Expanded vertical ranges show stable accuracy across broad intervals.}",
             r"\label{fig:hparam-analysis}",
-            r"\end{figure*}",
+            r"\end{figure}",
         ]
     )
     if r"\label{fig:hparam-analysis-dpr}" in tex:
@@ -955,6 +1001,13 @@ def update_tex(
         tex = replace_figure_block(tex, "fig:hparam-analysis", combined_hparam_figure)
     if r"\label{fig:hparam-analysis-lpc}" in tex:
         tex = remove_figure_block(tex, "fig:hparam-analysis-lpc")
+    tex = re.sub(
+        r"\n\n\\subsection\{t-SNE Visualization Experiment\}.*?(?=\n\n\\FloatBarrier)",
+        "",
+        tex,
+        count=1,
+        flags=re.DOTALL,
+    )
     for figure_name in [
         "01_module_ablation_accuracy",
         "02_internal_module_ablations",
@@ -964,6 +1017,14 @@ def update_tex(
         "07_tsne_output_probability",
     ]:
         tex = tex.replace(f"figures/{figure_name}", f"figures/new/{figure_name}")
+    tex = tex.replace(
+        r"\begin{figure}[t]"
+        "\n\\centering"
+        "\n\\includegraphics[width=\\linewidth]{figures/new/04_ultrasound_class_distribution.pdf}",
+        r"\begin{figure}[H]"
+        "\n\\centering"
+        "\n\\includegraphics[width=\\linewidth]{figures/new/04_ultrasound_class_distribution.pdf}",
+    )
     if r"\label{fig:dataset-examples}" in tex:
         tex = remove_figure_block(tex, "fig:dataset-examples")
     tex = tex.replace(
@@ -994,7 +1055,6 @@ def write_index(csv_dir: Path) -> None:
         ("Table 7", "Prediction-collapse diagnostics", "预测坍缩诊断.csv"),
         ("Figure 5", "Ultrasound predicted distribution", "超声预测类别分布.csv"),
         ("Hyperparameter figure", "Combined DPR/LPC sensitivity", "超参数分析_诊断原型重建.csv; 超参数分析_长尾患病率校准.csv"),
-        ("Figure 8", "Blood/ResNet output-probability t-SNE", "tSNE输出概率坐标.csv"),
         ("Appendix Table", "Dataset statistics and samples", "数据集统计.csv"),
     ]
     write_annotated_csv(
@@ -1076,12 +1136,12 @@ def main() -> None:
     )
 
     distribution_rows = build_ultrasound_distribution()
-    distribution_fields = ["Series", "TV"] + [
-        f"Class {index} difference vs. true (pp)" for index in range(8)
+    distribution_fields = ["Series"] + [
+        f"Class {index} absolute difference vs. true (pp)" for index in range(8)
     ]
     write_annotated_csv(
         csv_dir / "超声预测类别分布.csv",
-        "本表对应 Ultrasound 预测分布相对真实分布的逐类差值图；每个方法对四个 backbone、K=3/5/7 和三个 beta 设置取平均，差值为预测比例减真实比例，单位为百分点。",
+        "本表对应 Ultrasound 预测分布相对真实分布的逐类绝对差值图；每个方法对四个 backbone、K=3/5/7 和三个 beta 设置取平均，差值为预测比例与真实比例之差的绝对值，单位为百分点。",
         distribution_fields,
         distribution_rows,
     )
@@ -1089,13 +1149,13 @@ def main() -> None:
     diagnostic_hparams, prevalence_hparams = build_hparam_rows()
     write_annotated_csv(
         csv_dir / "超参数分析_诊断原型重建.csv",
-        "本表对应 DPR 超参数分析，记录 evidence exponent gamma 与 prototype-head scale s 的 5x10 完整网格，ACC 使用百分比。",
+        "本表对应 2026-07-19 的 DPR 超参数分析，记录 evidence exponent gamma 与 prototype-head scale s 的 3x10 完整网格；每点覆盖五个数据集、四个 backbone、K=3/5/7 和三个 beta，ACC 使用百分比。",
         ["Evidence exponent gamma", "Prototype-head scale s", "Raw cells", "Client-average cells", "Mean ACC (%)"],
         diagnostic_hparams,
     )
     write_annotated_csv(
         csv_dir / "超参数分析_长尾患病率校准.csv",
-        "本表对应 LPC 超参数分析，记录 activation threshold tau 与 calibration strength lambda 的 5x10 完整网格，ACC 使用百分比。",
+        "本表对应 2026-07-19 的 LPC 超参数分析，记录 activation threshold tau 与 calibration strength lambda 的 3x10 完整网格；每点覆盖五个数据集、四个 backbone、K=3/5/7 和三个 beta，ACC 使用百分比。",
         ["Activation threshold tau", "Calibration strength lambda", "Raw cells", "Client-average cells", "Mean ACC (%)"],
         prevalence_hparams,
     )
