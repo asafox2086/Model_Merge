@@ -432,7 +432,7 @@ We evaluate four vision-model families: ResNet, ConvNeXt, ViT-Tiny, and Swin-Tin
 
 % The main comparison uses client-average ACC: for each fixed dataset, model, and client number, we first average over the three $\beta$ skew levels and then compare merging methods. A cell is counted as successful when LAMP-Merge is greater than or equal to the strongest non-LAMP baseline in that cell.
 
-Tables~\ref{tab:client-avg-resnet}--\ref{tab:client-avg-swin-tiny} report the full client-average results for all four backbones. Across the 60 client-average cells, LAMP-Merge wins or ties the strongest non-LAMP baseline in \textbf{57 cells (95.0\%)}.
+Tables~\ref{tab:client-avg-resnet}--\ref{tab:client-avg-swin-tiny} report the full client-average results for all four backbones. Across all evaluated settings, LAMP-Merge wins or ties the strongest non-LAMP baseline in \textbf{57 cells (95.0\%)}.
 
 \setcounter{dbltopnumber}{4}
 \setcounter{topnumber}{4}
@@ -952,20 +952,21 @@ We visualize the absolute per-class predicted--true gap; values closer to zero i
 \end{figure}
 
 \subsection{Hyperparameter Analysis Experiment}
-Fig.~\ref{fig:hparam-analysis} evaluates full-configuration DPR/LPC sensitivity; each marker averages 180 raw and 60 client-average cells.
+Fig.~\ref{fig:hparam-analysis} evaluates DPR/LPC sensitivity on \textbf{the full setting}.
 
 \begin{figure}[!t]
 \centering
 \includegraphics[width=\columnwidth]{figures/05_hyperparameter_sensitivity.png}
-\caption{Full-configuration DPR/LPC sensitivity. Each point averages 60 client-average cells.}
+\caption{DPR/LPC sensitivity on \textbf{the full setting}.}
 \label{fig:hparam-analysis}
 \end{figure}
 
+The DPR curves are stable around moderate prototype-head scales, and the selected \(s=18.75\) lies in this broad high-performing region for all displayed \(\gamma\) values. LPC changes gradually with \(\lambda\), while the threshold curves remain close around the selected \(\tau=2.5\). These trends show that the selected operating point is representative rather than an isolated peak.
 
 
 \section{Conclusion}
 
-We study one-shot asynchronous medical model merging without raw-image sharing or federated rounds. Generic merges can suffer aggregation-induced prediction collapse under incomplete local diagnostic coverage, while raw ACC may conceal this failure on long-tailed medical data. Across full-scope comparisons, ablations, and prediction-distribution diagnostics, DPR restores class-level diagnostic directions and LPC retains clinically meaningful prevalence without reintroducing collapse. These results establish a concise mechanism: support-weighted reconstruction recovers discriminative directions for locally absent classes, while bounded calibration preserves meaningful imbalance. By using only uploadable class-level statistics, LAMP-Merge offers a practical and interpretable foundation for broader multicenter medical imaging tasks.
+We study one-shot asynchronous medical model merging without raw-image sharing or federated rounds. Generic merges can suffer aggregation-induced prediction collapse under incomplete local diagnostic coverage, while raw ACC may conceal this failure on long-tailed medical data. Across full-scope comparisons, ablations, and prediction-distribution diagnostics, DPR restores class-level diagnostic directions and LPC retains clinically meaningful prevalence without reintroducing collapse.
 
 \bibliography{aaai2026}
 \appendix

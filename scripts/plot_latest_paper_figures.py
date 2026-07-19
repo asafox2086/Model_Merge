@@ -101,6 +101,38 @@ def load_completed_dpr_points() -> list[dict[str, str]]:
     return list(unique.values())
 
 
+def load_completed_lpc_points() -> list[dict[str, str]]:
+    root = ROOT / "outputs" / "lamp_merge_hparam_5x5_20260719_full"
+    rows: list[dict[str, str]] = []
+    if not root.exists():
+        return rows
+    for run_dir in sorted(root.glob("lpc_tau_*_lambda_*")):
+        status_path = run_dir / "reports" / "batch_status.csv"
+        if not status_path.exists():
+            continue
+        with status_path.open(newline="", encoding="utf-8") as handle:
+            status_rows = list(csv.DictReader(handle))
+        if len(status_rows) != 180 or any(item["status"] != "OK" for item in status_rows):
+            continue
+        grouped: dict[tuple[str, str, str], list[float]] = defaultdict(list)
+        for item in status_rows:
+            grouped[(item["dataset"], item["model"], item["num_clients"])].append(float(item["test_acc"]))
+        if len(grouped) != 60 or any(len(values) != 3 for values in grouped.values()):
+            raise ValueError(f"Unexpected LPC coverage in {run_dir}")
+        parts = run_dir.name.removeprefix("lpc_tau_").split("_lambda_")
+        tau = float(parts[0].replace("p", "."))
+        strength = float(parts[1].replace("p", "."))
+        rows.append(
+            {
+                "Source": "Full configuration grid",
+                "Activation threshold tau": f"{tau:.2f}",
+                "Calibration strength lambda": f"{strength:.2f}",
+                "Mean ACC (%)": f"{100 * np.mean([np.mean(values) for values in grouped.values()]):.4f}",
+            }
+        )
+    return rows
+
+
 def finite_array(values: list[float], shape: tuple[int, ...], name: str) -> np.ndarray:
     array = np.asarray(values, dtype=float)
     if array.shape != shape:
@@ -471,6 +503,17 @@ def plot_hparams(csv_dir: Path, figure_dir: Path) -> None:
     if not diagnostic:
         diagnostic = load_completed_dpr_points()
     prevalence = read_annotated_csv(csv_dir / "超参数分析_长尾患病率校准.csv")
+    prevalence_by_point = {
+        (row["Activation threshold tau"], row["Calibration strength lambda"]): row
+        for row in prevalence
+    }
+    prevalence_by_point.update(
+        {
+            (row["Activation threshold tau"], row["Calibration strength lambda"]): row
+            for row in load_completed_lpc_points()
+        }
+    )
+    prevalence = list(prevalence_by_point.values())
     setup_style("line")
     plt.rcParams.update(
         {
@@ -486,7 +529,7 @@ def plot_hparams(csv_dir: Path, figure_dir: Path) -> None:
             "lines.markersize": 4.8,
         }
     )
-    fig, axes = plt.subplots(1, 2, figsize=(4.45, 2.85), dpi=300)
+    fig, axes = plt.subplots(1, 2, figsize=(4.45, 2.55), dpi=300)
     if diagnostic:
         plot_hparam_curves(
             axes[0],
@@ -502,6 +545,7 @@ def plot_hparams(csv_dir: Path, figure_dir: Path) -> None:
             legend_location="lower left",
             legend_anchor=(0.01, 0.02),
             x_limits=(13.25, 24.25),
+            y_limits=(61.0, 63.0),
         )
     else:
         dpr_axis = axes[0]
@@ -527,12 +571,13 @@ def plot_hparams(csv_dir: Path, figure_dir: Path) -> None:
             ("Full configuration grid", 2.5),
             ("Full configuration grid", 3.0),
         ],
-        (55.0, 65.0),
+        (61.0, 63.0),
         (3.75, 5.25),
         legend_location="lower center",
         legend_anchor=(0.5, 0.05),
     )
     for axis in axes:
+        axis.set_yticks(np.arange(61.0, 63.1, 0.5))
         for spine in axis.spines.values():
             spine.set_linewidth(0.8)
     fig.tight_layout(w_pad=0.65, pad=0.35)

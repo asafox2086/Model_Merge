@@ -14,40 +14,9 @@ The experiments use five MedMNIST v2 benchmarks~\cite{yang2023medmnist}. They we
 
 \paragraph{Ultrasound.} UltrasoundMNIST is an eight-class ultrasound-structure benchmark. Speckle noise, low contrast, and view-dependent boundaries make it particularly suitable for the prediction-collapse diagnostics and the per-class gap visualization in Fig.~\ref{fig:visual-chaosheng_predict}.
 
-\begin{table*}[!t]
-\centering
-\caption{Class-wise BloodMNIST split statistics and representative samples. This expands the Blood row in Table~\ref{tab:dataset-statistics}: the class-count field is replaced by the class name, and each row gives one real training example from that class.}
-\label{tab:blood-class-statistics}
-\small
-\renewcommand{\arraystretch}{1.12}
-\setlength{\tabcolsep}{4.2pt}
-\begin{tabular}{llrrrrc}
-\noalign{\hrule height 1.25pt}
-\rowcolor[HTML]{F2F2F2}
-\textbf{Dataset} & \textbf{Class} & \textbf{Train} & \textbf{Val} & \textbf{Test} & \textbf{Total} & \textbf{Sample} \\
-\hline \hline
-\multirow{8}{*}{Blood} & Basophil & 852 & 122 & 244 & 1,218 & \includegraphics[width=0.54cm,height=0.54cm,keepaspectratio]{figures/appendix_blood_class_0.png} \\
-\rowcolor{gray!10}
- & Eosinophil & 2,181 & 312 & 624 & 3,117 & \includegraphics[width=0.54cm,height=0.54cm,keepaspectratio]{figures/appendix_blood_class_1.png} \\
- & Erythroblast & 1,085 & 155 & 311 & 1,551 & \includegraphics[width=0.54cm,height=0.54cm,keepaspectratio]{figures/appendix_blood_class_2.png} \\
-\rowcolor{gray!10}
- & Immature granulocytes & 2,026 & 290 & 579 & 2,895 & \includegraphics[width=0.54cm,height=0.54cm,keepaspectratio]{figures/appendix_blood_class_3.png} \\
- & Lymphocyte & 849 & 122 & 243 & 1,214 & \includegraphics[width=0.54cm,height=0.54cm,keepaspectratio]{figures/appendix_blood_class_4.png} \\
-\rowcolor{gray!10}
- & Monocyte & 993 & 143 & 284 & 1,420 & \includegraphics[width=0.54cm,height=0.54cm,keepaspectratio]{figures/appendix_blood_class_5.png} \\
- & Neutrophil & 2,330 & 333 & 666 & 3,329 & \includegraphics[width=0.54cm,height=0.54cm,keepaspectratio]{figures/appendix_blood_class_6.png} \\
-\rowcolor{gray!10}
- & Platelet & 1,643 & 235 & 470 & 2,348 & \includegraphics[width=0.54cm,height=0.54cm,keepaspectratio]{figures/appendix_blood_class_7.png} \\
-\noalign{\hrule height 1.25pt}
-\end{tabular}
-\end{table*}
-
-\begin{figure*}[!t]
-\centering
-\includegraphics[width=0.93\textwidth]{figures/appendix_blood_classes.png}
-\caption{Representative BloodMNIST training examples, one for every class in Table~\ref{tab:blood-class-statistics}. Images are drawn directly from the labeled benchmark file used to construct the experimental partitions; they are shown only to document class appearance, not as training data for merging.}
-\label{fig:blood-class-reference}
-\end{figure*}
+\newcommand{\classsample}[2]{\makebox[1.05cm][c]{\raisebox{-0.16cm}{\includegraphics[width=0.95cm,height=0.52cm,keepaspectratio]{figures/appendix_sample_#1_#2.png}}}}
+\newcommand{\datasetlabel}[1]{\cellcolor{white}\makebox[1.35cm][c]{#1}}
+\input{appendix_dataset_tables}
 
 \subsection{Detailed Ablation Configurations and Interpretation}
 \label{app:ablation-configurations}
@@ -166,4 +135,4 @@ The collapse ratio \(\rho\) measures the largest predicted-class share, \(C_{\ma
 
 \subsection{Hyperparameter-Sweep Reproducibility}
 
-Every point in Fig.~\ref{fig:hparam-analysis} is a completed full-configuration experiment covering five datasets, four backbones, three client counts, and three Dirichlet settings (180 raw cells, or 60 client-average cells after averaging the three skew levels). The plotted curves retain measured points in ascending parameter order; no smoothing, interpolation, or best-run selection is applied. The LPC grid records \(\tau\in\{2.0,2.5,3.0\}\) and calibration strengths \(\lambda\in\{3.00,3.25,\ldots,5.25\}\), with \(\gamma=0.55\) and \(s=18.75\) fixed. DPR completion records are read from the full-configuration run directories and are plotted only after all 180 cells have succeeded. The selected operating point is \(\gamma=0.55\), \(s=18.75\), \(\tau=2.5\), and \(\lambda=4.25\), making its reported value traceable to the same completed grid as its neighboring points.
+Every point in Fig.~\ref{fig:hparam-analysis} is a completed \textbf{full-scope experiment} covering five datasets, four backbones, three client counts, and three Dirichlet settings. The plotted curves retain measured points in ascending parameter order; no smoothing, interpolation, or best-run selection is applied. The LPC grid records \(\tau\in\{2.0,2.5,3.0\}\) and calibration strengths \(\lambda\in\{3.00,3.25,\ldots,5.25\}\), with \(\gamma=0.55\) and \(s=18.75\) fixed. DPR completion records are plotted only after the full grid point has succeeded. The selected operating point is \(\gamma=0.55\), \(s=18.75\), \(\tau=2.5\), and \(\lambda=4.25\), making its reported value traceable to the same completed grid as its neighboring points.
