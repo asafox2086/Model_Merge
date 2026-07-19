@@ -681,18 +681,18 @@ def replace_lamp_row(
 
 
 INTERNAL_SHORT_LABELS = {
-    "Classifier-head aggregation": "Cls-head agg.",
-    "Global-feature mean": "Global feat. mean",
-    "Support-only synthetic head": "Support-only",
-    "Shuffled-label prototype": "Shuffled proto.",
-    "Uniform client weight": "Uniform client",
-    "Binary support only": "Binary support",
-    "Global client-size weight": "Client-size weight",
+    "Classifier-head aggregation": "CHA",
+    "Global-feature mean": "GFM",
+    "Support-only synthetic head": "SSH",
+    "Shuffled-label prototype": "SLP",
+    "Uniform client weight": "UCW",
+    "Binary support only": "BSO",
+    "Global client-size weight": "GCSW",
     "No prevalence calibration": "No LPC",
     "Uniform prevalence prior": "UPP",
     "Always-on calibration": "AOC",
     "Client-balanced prior": "CBP",
-    "LAMP-Merge": "LAMP-Merge",
+    "LAMP-Merge": "LAMP",
 }
 
 
@@ -701,6 +701,7 @@ def build_internal_dataset_table(
     caption: str,
     label: str,
     divider_mode: str | None = None,
+    dpr_categories: bool = False,
 ) -> str:
     dataset_fields = [f"{dataset_label} ACC (%)" for _, dataset_label in DATASETS]
     body = []
@@ -710,12 +711,22 @@ def build_internal_dataset_table(
             body.append(r"\hdashline")
         setting = INTERNAL_SHORT_LABELS[str(row["Setting"])]
         values = [str(row[field]) for field in dataset_fields] + [str(row["Avg ACC (%)"])]
+        category = ""
+        if dpr_categories and mode == "prototype_head_agg":
+            category = r"\multirow{4}{*}{\shortstack{Prototype\\semantics}}"
+        elif dpr_categories and mode == "uniform_client_weight":
+            category = r"\multirow{3}{*}{\shortstack{Client-support\\weighting}}"
         if mode == "full":
-            body.extend([r"\hline \hline", r"\rowcolor[HTML]{FFF9C4}"])
+            body.append(r"\hline \hline")
             setting = rf"\textbf{{{setting}}}"
             values = [rf"\textbf{{{value}}}" for value in values]
+            setting = rf"\cellcolor[HTML]{{FFF9C4}}{setting}"
+            values = [rf"\cellcolor[HTML]{{FFF9C4}}{value}" for value in values]
         elif index % 2 and row["Setting"] != "Always-on calibration":
-            body.append(r"\rowcolor{gray!10}")
+            setting = rf"\cellcolor{{gray!10}}{setting}"
+            values = [rf"\cellcolor{{gray!10}}{value}" for value in values]
+        if dpr_categories:
+            setting = category + " & " + setting
         body.append(setting + " & " + " & ".join(values) + " \\\\")
 
     return "\n".join(
@@ -728,10 +739,10 @@ def build_internal_dataset_table(
             r"\renewcommand{\arraystretch}{1.20}",
             r"\setlength{\tabcolsep}{2.4pt}",
             r"\resizebox{\columnwidth}{!}{%",
-            r"\begin{tabular}{lccccc:c}",
+            r"\begin{tabular}{clccccc:c}" if dpr_categories else r"\begin{tabular}{lccccc:c}",
             r"\noalign{\hrule height 1.25pt}",
             r"\rowcolor[HTML]{F2F2F2}",
-            r"\textbf{Setting} & \textbf{Blood} & \textbf{Derma} & \textbf{Organ-C} & \textbf{Organ-S} & \textbf{US} & \textbf{Avg} \\",
+            (r"\textbf{Category} & \textbf{Setting} & \textbf{Blood} & \textbf{Derma} & \textbf{Organ-C} & \textbf{Organ-S} & \textbf{US} & \textbf{Avg} \\") if dpr_categories else r"\textbf{Setting} & \textbf{Blood} & \textbf{Derma} & \textbf{Organ-C} & \textbf{Organ-S} & \textbf{US} & \textbf{Avg} \\",
             r"\hline \hline",
             *body,
             r"\noalign{\hrule height 1.25pt}",
@@ -942,6 +953,7 @@ def update_tex(
         "DPR internal ablation by dataset. Each entry averages all backbones, client counts, and Dirichlet settings; Avg averages the five datasets.",
         "tab:diagnostic-internal-ablation",
         divider_mode="uniform_client_weight",
+        dpr_categories=True,
     )
     tex = replace_table_block(tex, "tab:diagnostic-internal-ablation", diagnostic_table)
 

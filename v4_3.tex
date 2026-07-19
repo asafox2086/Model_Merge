@@ -825,32 +825,28 @@ To further identify which information within diagnostic prototype reconstruction
 \renewcommand{\arraystretch}{1.20}
 \setlength{\tabcolsep}{2.4pt}
 \resizebox{\columnwidth}{!}{%
-\begin{tabular}{lccccc:c}
+\begin{tabular}{clccccc:c}
 \noalign{\hrule height 1.25pt}
 \rowcolor[HTML]{F2F2F2}
-\textbf{Setting} & \textbf{Blood} & \textbf{Derma} & \textbf{Organ-C} & \textbf{Organ-S} & \textbf{US} & \textbf{Avg} \\
+\textbf{Category} & \textbf{Setting} & \textbf{Blood} & \textbf{Derma} & \textbf{Organ-C} & \textbf{Organ-S} & \textbf{US} & \textbf{Avg} \\
 \hline \hline
-Cls-head agg. & 18.95 & 56.14 & 17.74 & 18.88 & 16.43 & 25.63 \\
-\rowcolor{gray!10}
-Global feat. mean & 8.88 & 66.88 & 22.33 & 23.54 & 10.87 & 26.50 \\
-Support-only & 11.62 & 17.29 & 7.08 & 7.74 & 10.69 & 10.89 \\
-\rowcolor{gray!10}
-Shuffled proto. & 24.46 & 28.73 & 14.18 & 16.25 & 14.25 & 19.57 \\
+\multirow{4}{*}{\shortstack{Prototype\\semantics}} & CHA & 18.95 & 56.14 & 17.74 & 18.88 & 16.43 & 25.63 \\
+ & \cellcolor{gray!10}GFM & \cellcolor{gray!10}8.88 & \cellcolor{gray!10}66.88 & \cellcolor{gray!10}22.33 & \cellcolor{gray!10}23.54 & \cellcolor{gray!10}10.87 & \cellcolor{gray!10}26.50 \\
+ & SSH & 11.62 & 17.29 & 7.08 & 7.74 & 10.69 & 10.89 \\
+ & \cellcolor{gray!10}SLP & \cellcolor{gray!10}24.46 & \cellcolor{gray!10}28.73 & \cellcolor{gray!10}14.18 & \cellcolor{gray!10}16.25 & \cellcolor{gray!10}14.25 & \cellcolor{gray!10}19.57 \\
 \hdashline
-Uniform client & 78.03 & 59.61 & 58.36 & 53.86 & 41.79 & 58.33 \\
-\rowcolor{gray!10}
-Binary support & 78.03 & 44.96 & 57.86 & 53.24 & 41.79 & 55.18 \\
-Client-size weight & 78.45 & 62.48 & 59.11 & 53.79 & 43.13 & 59.39 \\
+\multirow{3}{*}{\shortstack{Client-support\\weighting}} & UCW & 78.03 & 59.61 & 58.36 & 53.86 & 41.79 & 58.33 \\
+ & \cellcolor{gray!10}BSO & \cellcolor{gray!10}78.03 & \cellcolor{gray!10}44.96 & \cellcolor{gray!10}57.86 & \cellcolor{gray!10}53.24 & \cellcolor{gray!10}41.79 & \cellcolor{gray!10}55.18 \\
+ & GCSW & 78.45 & 62.48 & 59.11 & 53.79 & 43.13 & 59.39 \\
 \hline \hline
-\rowcolor[HTML]{FFF9C4}
-\textbf{LAMP-Merge} & \textbf{81.81} & \textbf{62.40} & \textbf{63.05} & \textbf{57.67} & \textbf{46.11} & \textbf{62.21} \\
+ & \cellcolor[HTML]{FFF9C4}\textbf{LAMP} & \cellcolor[HTML]{FFF9C4}\textbf{81.81} & \cellcolor[HTML]{FFF9C4}\textbf{62.40} & \cellcolor[HTML]{FFF9C4}\textbf{63.05} & \cellcolor[HTML]{FFF9C4}\textbf{57.67} & \cellcolor[HTML]{FFF9C4}\textbf{46.11} & \cellcolor[HTML]{FFF9C4}\textbf{62.21} \\
 \noalign{\hrule height 1.25pt}
 \end{tabular}
 }
 \end{table}
 
 
-Table~\ref{tab:diagnostic-internal-ablation} shows that neither an arbitrary head nor a class-agnostic statistic explains the gain. Replacing reference-space prototypes or class-specific support weights consistently reduces ACC, confirming that \textbf{diagnostic semantics and class-level reliability are jointly necessary}.
+Table~\ref{tab:diagnostic-internal-ablation} groups the DPR controls into \textbf{prototype semantics} (CHA, GFM, SSH, and SLP) and \textbf{client-support weighting} (UCW, BSO, and GCSW). Neither an arbitrary head nor a class-agnostic statistic explains the gain; replacing reference-space prototypes or class-specific support weights consistently reduces ACC, confirming that \textbf{diagnostic semantics and class-level reliability are jointly necessary}.
 
 \subsubsection{2) Effectiveness of Long-tail Prevalence Calibration}
 
