@@ -41,8 +41,8 @@ safe_value() {
 }
 
 RUN_ITEMS=()
-for gamma in "${DPR_GAMMAS[@]}"; do
-  for scale in "${DPR_SCALES[@]}"; do
+for scale in "${DPR_SCALES[@]}"; do
+  for gamma in "${DPR_GAMMAS[@]}"; do
     RUN_ITEMS+=("dpr:${gamma}:${scale}")
   done
 done
