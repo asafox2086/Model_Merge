@@ -1,0 +1,978 @@
+
+\PassOptionsToPackage{table}{xcolor}
+\documentclass[letterpaper]{article} % DO NOT CHANGE THIS
+\usepackage[submission]{aaai2026}  % DO NOT CHANGE THIS
+\usepackage{times}  % DO NOT CHANGE THIS
+\usepackage{helvet}  % DO NOT CHANGE THIS
+\usepackage{courier}  % DO NOT CHANGE THIS
+\usepackage[hyphens]{url}  % DO NOT CHANGE THIS
+\usepackage{graphicx} % DO NOT CHANGE THIS
+\urlstyle{rm} % DO NOT CHANGE THIS
+\def\UrlFont{\rm}  % DO NOT CHANGE THIS
+\usepackage{natbib}  % DO NOT CHANGE THIS AND DO NOT ADD ANY OPTIONS TO IT
+\usepackage{caption} % DO NOT CHANGE THIS AND DO NOT ADD ANY OPTIONS TO IT
+\frenchspacing  % DO NOT CHANGE THIS
+\setlength{\pdfpagewidth}{8.5in} % DO NOT CHANGE THIS
+\setlength{\pdfpageheight}{11in} % DO NOT CHANGE THIS
+%
+% These are recommended to typeset algorithms but not required. See the subsubsection on algorithms. Remove them if you don't have algorithms in your paper.
+\usepackage{algorithm}
+\usepackage{algorithmic}
+
+% YipanWei Edited
+\usepackage[table]{xcolor}
+\usepackage{multirow}
+\usepackage{arydshln}
+\usepackage{placeins}
+
+\definecolor{DarkGreen}{RGB}{34,120,50}
+
+
+\newcommand{\pub}[1]{{\color{gray}{\footnotesize{[{#1}]}}}}
+
+\newcommand{\tworowbestreshl}[2]{%
+\begin{tabular}{@{}c@{}}
+{#1}  \\
+{\small\color{DarkGreen}{$+$ \textbf{#2\%}}}
+\end{tabular}%
+}
+
+%
+% These are are recommended to typeset listings but not required. See the subsubsection on listing. Remove this block if you don't have listings in your paper.
+\usepackage{newfloat}
+\usepackage{listings}
+\DeclareCaptionStyle{ruled}{labelfont=normalfont,labelsep=colon,strut=off} % DO NOT CHANGE THIS
+\lstset{%
+	basicstyle={\footnotesize\ttfamily},% footnotesize acceptable for monospace
+	numbers=left,numberstyle=\footnotesize,xleftmargin=2em,% show line numbers, remove this entire line if you don't want the numbers.
+	aboveskip=0pt,belowskip=0pt,%
+	showstringspaces=false,tabsize=2,breaklines=true}
+\floatstyle{ruled}
+\newfloat{listing}{tb}{lst}{}
+\floatname{listing}{Listing}
+%
+% Keep the \pdfinfo as shown here. There's no need
+% for you to add the /Title and /Author tags.
+\pdfinfo{
+/TemplateVersion (2026.1)
+}
+\definecolor{LAMPYellow}{RGB}{255,220,112}
+\definecolor{HeaderGray}{RGB}{235,235,235}
+\definecolor{AvgBlue}{RGB}{226,241,255}
+\definecolor{GainGreen}{RGB}{32,132,84}
+\definecolor{DropRed}{RGB}{190,54,54}
+\newcommand{\tblhead}[1]{\strut #1}
+\newcommand{\lampcell}[1]{\begingroup\setlength{\fboxsep}{0pt}\colorbox{LAMPYellow}{\makebox[6.7em][c]{\rule[-1.12ex]{0pt}{4.45ex}\bfseries\boldmath #1}}\endgroup}
+\newcommand{\avgcell}[1]{\begingroup\def\avgcontent{#1}\def\avgheader{Avg}\ifx\avgcontent\avgheader\bfseries #1\else\setlength{\fboxsep}{0pt}\colorbox{AvgBlue}{\makebox[3.55em][c]{\strut #1}}\fi\endgroup}
+\newcommand{\metriclampcell}[1]{\begingroup\setlength{\fboxsep}{0pt}\colorbox{LAMPYellow}{\makebox[7.05em][c]{\rule[-0.96ex]{0pt}{3.95ex}\bfseries\boldmath #1}}\endgroup}
+\newcommand{\lampband}{\noalign{\begingroup\color{LAMPYellow}\hrule height 3.35ex\endgroup\kern-3.35ex}}
+\newcommand{\headband}{\noalign{\begingroup\color{HeaderGray}\hrule height 6.15ex\endgroup\kern-6.15ex}}
+\newcommand{\gainup}[1]{\makebox[5.85em][l]{\textcolor{DropRed}{\(\uparrow\)#1}}}
+\newcommand{\gaindown}[1]{\makebox[5.85em][l]{\textcolor{DropRed}{\(\downarrow\)#1}}}
+\newcommand{\dropdown}[1]{\makebox[5.85em][l]{\textcolor{DropRed}{\(\downarrow\)#1}}}
+\newcommand{\neutraldelta}[1]{\makebox[5.85em][l]{\textcolor{GainGreen}{#1}}}
+\newcommand{\compactdrop}[1]{\textcolor{DropRed}{\(\downarrow\)#1}}
+\newcommand{\compactgain}[1]{\textcolor{DropRed}{\(\uparrow\)#1}}
+\newcommand{\compactneutral}[1]{\textcolor{GainGreen}{#1}}
+
+\makeatletter
+\setlength{\@fptop}{0pt}
+\setlength{\@fpsep}{10pt}
+\setlength{\@fpbot}{0pt}
+\setlength{\@dblfptop}{0pt}
+\setlength{\@dblfpsep}{10pt}
+\setlength{\@dblfpbot}{0pt}
+\makeatother
+\setcounter{dbltopnumber}{4}
+\renewcommand{\dbltopfraction}{0.99}
+\renewcommand{\dblfloatpagefraction}{0.01}
+
+% DISALLOWED PACKAGES
+% \usepackage{authblk} -- This package is specifically forbidden
+% \usepackage{balance} -- This package is specifically forbidden
+% \usepackage{color (if used in text)
+% \usepackage{CJK} -- This package is specifically forbidden
+% \usepackage{float} -- This package is specifically forbidden
+% \usepackage{flushend} -- This package is specifically forbidden
+% \usepackage{fontenc} -- This package is specifically forbidden
+% \usepackage{fullpage} -- This package is specifically forbidden
+% \usepackage{geometry} -- This package is specifically forbidden
+% \usepackage{grffile} -- This package is specifically forbidden
+% \usepackage{hyperref} -- This package is specifically forbidden
+% \usepackage{navigator} -- This package is specifically forbidden
+% (or any other package that embeds links such as navigator or hyperref)
+% \indentfirst} -- This package is specifically forbidden
+% \layout} -- This package is specifically forbidden
+% \multicol} -- This package is specifically forbidden
+% \nameref} -- This package is specifically forbidden
+% \usepackage{savetrees} -- This package is specifically forbidden
+% \usepackage{setspace} -- This package is specifically forbidden
+% \usepackage{stfloats} -- This package is specifically forbidden
+% \usepackage{tabu} -- This package is specifically forbidden
+% \usepackage{titlesec} -- This package is specifically forbidden
+% \usepackage{tocbibind} -- This package is specifically forbidden
+% \usepackage{ulem} -- This package is specifically forbidden
+% \usepackage{wrapfig} -- This package is specifically forbidden
+% DISALLOWED COMMANDS
+% \nocopyright -- Your paper will not be published if you use this command
+% \addtolength -- This command may not be used
+% \balance -- This command may not be used
+% \baselinestretch -- Your paper will not be published if you use this command
+% \clearpage -- No page breaks of any kind may be used for the final version of your paper
+% \columnsep -- This command may not be used
+% \newpage -- No page breaks of any kind may be used for the final version of your paper
+% \pagebreak -- No page breaks of any kind may be used for the final version of your paperr
+% \pagestyle -- This command may not be used
+% \tiny -- This is not an acceptable font size.
+% \vspace{- -- No negative value may be used in proximity of a caption, figure, table, section, subsection, subsubsection, or reference
+% \vskip{- -- No negative value may be used to alter spacing above or below a caption, figure, table, section, subsection, subsubsection, or reference
+
+\setcounter{secnumdepth}{0} %May be changed to 1 or 2 if section numbers are desired.
+
+% The file aaai2026.sty is the style file for AAAI Press
+% proceedings, working notes, and technical reports.
+%
+
+% Title
+
+% Your title must be in mixed case, not sentence case.
+% That means all verbs (including short verbs like be, is, using,and go),
+% nouns, adverbs, adjectives should be capitalized, including both words in hyphenated terms, while
+% articles, conjunctions, and prepositions are lower case unless they
+% directly follow a colon or long dash
+
+\title{LAMP-Merge: Long-tail-Aware Medical Prototype Merging for One-shot Asynchronous Clinical Models}
+\author{
+    %Authors
+    % All authors must be in the same font size and format.
+    Written by AAAI Press Staff\textsuperscript{\rm 1}\thanks{With help from the AAAI Publications Committee.}\\
+    AAAI Style Contributions by Pater Patel Schneider,
+    Sunil Issar,\\
+    J. Scott Penberthy,
+    George Ferguson,
+    Hans Guesgen,
+    Francisco Cruz\equalcontrib,
+    Marc Pujol-Gonzalez\equalcontrib
+}
+\affiliations{
+    %Afiliations
+    \textsuperscript{\rm 1}Association for the Advancement of Artificial Intelligence\\
+    % If you have multiple authors and multiple affiliations
+    % use superscripts in text and roman font to identify them.
+    % For example,
+
+    % Sunil Issar\textsuperscript{\rm 2},
+    % J. Scott Penberthy\textsuperscript{\rm 3},
+    % George Ferguson\textsuperscript{\rm 4},
+    % Hans Guesgen\textsuperscript{\rm 5}
+    % Note that the comma should be placed after the superscript
+
+    1101 Pennsylvania Ave, NW Suite 300\\
+    Washington, DC 20004 USA\\
+    % email address must be in roman text type, not monospace or sans serif
+    proceedings-questions@aaai.org
+%
+% See more examples next
+}
+
+%Example, Single Author, ->> remove \iffalse,\fi and place them surrounding AAAI title to use it
+\iffalse
+\title{My Publication Title --- Single Author}
+\author {
+    Author Name
+}
+\affiliations{
+    Affiliation\\
+    Affiliation Line 2\\
+    name@example.com
+}
+\fi
+
+\iffalse
+%Example, Multiple Authors, ->> remove \iffalse,\fi and place them surrounding AAAI title to use it
+\title{My Publication Title --- Multiple Authors}
+\author {
+    % Authors
+    First Author Name\textsuperscript{\rm 1},
+    Second Author Name\textsuperscript{\rm 2},
+    Third Author Name\textsuperscript{\rm 1}
+}
+\affiliations {
+    % Affiliations
+    \textsuperscript{\rm 1}Affiliation 1\\
+    \textsuperscript{\rm 2}Affiliation 2\\
+    firstAuthor@affiliation1.com, secondAuthor@affilation2.com, thirdAuthor@affiliation1.com
+}
+\fi
+
+
+% REMOVE THIS: bibentry
+% This is only needed to show inline citations in the guidelines document. You should not need it and can safely delete it.
+\usepackage{bibentry}
+% END REMOVE bibentry
+
+\begin{document}
+\maketitle
+
+\begin{abstract}
+Model merging aims to integrate multiple independently trained local checkpoints into a unified global model, typically through general-purpose paradigms such as parameter interpolation, task-vector composition, or update-direction alignment. These methods implicitly assume that client models share relatively complete and comparable global discriminative structures. We argue that this assumption does not hold in medical settings, giving rise to two diagnostic-structure anomalies: (1)\textbf{ Aggregation-induced prediction collapse after merging}: When clients have incomplete diagnostic-class coverage, multiple locally effective models can be merged into a globally collapsed model whose predictive distribution concentrates on a small number of dominant classes. (2)\textbf{ Long-tailed medical prevalence cannot be ignored}. Majority classes in medical data often reflect genuine clinical prevalence rather than merely data noise. To address these challenges, we propose \textbf{LAMP-Merge}, which recasts medical model merging from global parameter interpolation as class-level diagnostic-evidence reconstruction. Through \textbf{diagnostic prototype reconstruction(DPR)} and \textbf{long-tail prevalence calibration(LPC)}, LAMP-Merge constructs a global diagnostic model without exposing raw medical images or requiring multi-round federated communication. Experiments on the Blood, Derma, Organ-C, Organ-S, and Ultrasound medical imaging datasets show that LAMP-Merge outperforms existing model-merging methods in most client-averaged settings while substantially mitigating prediction collapse.
+
+% Index Terms:medical model merging, asynchronous fusion, predictive collapse, long-tail calibration, privacy-preserving learning
+\end{abstract}
+
+
+% Uncomment the following to link to your code, datasets, an extended version or similar.
+% You must keep this block between (not within) the abstract and the main body of the paper.
+% \begin{links}
+%     \link{Code}{https://aaai.org/example/code}
+%     \link{Datasets}{https://aaai.org/example/datasets}
+%     \link{Extended version}{https://aaai.org/example/extended-version}
+% \end{links}
+
+\section{Introduction}
+
+Federated learning~\cite{pmlr-v54-mcmahan17a,li2020fedprox,karimireddy2020scaffold,kairouz2021advances} and model merging~\cite{izmailov2018averaging,pmlr-v162-wortsman22a,ilharco2023editingmodelstaskarithmetic,yadav2023tiesmergingresolvinginterferencemerging} provide two important collaboration routes for privacy-sensitive multicenter medical intelligence. Federated learning enables hospitals to train collaboratively without sharing raw data~\cite{sheller2020federated,rieke2020future}, while model merging further reduces communication and optimization costs by integrating independently trained local models after training~\cite{ainsworth2023gitrebasinmergingmodels,stoica2024zipit,wu_parameter_2025}. These paradigms are particularly attractive for \textbf{medical imaging}, because a single hospital rarely covers the full disease spectrum, while privacy regulations and device heterogeneity make centralizing raw medical images difficult ~\cite{kaissis2020secure,bonawitz2019towards,abadi2016deep}.
+
+\begin{figure}[!t]
+    \centering
+    \includegraphics[width=0.96\linewidth]{figures/intro.png}
+    \caption{In multicenter healthcare settings, individual clients typically observe only a subset of the global diagnostic space. Conventional parameter-level model-merging methods can therefore cause the merged global model's predictions to concentrate on a small number of dominant classes.}
+    \label{fig:intro-collapse}
+\end{figure}
+
+Despite their success on natural images and general visual tasks~\cite{izmailov2018averaging,pmlr-v162-wortsman22a,ilharco2023editingmodelstaskarithmetic,entezari2022role,ainsworth2023gitrebasinmergingmodels}, transferring these paradigms to medical data remains challenging. A key reason is that general-purpose model merging implicitly assumes that different client checkpoints contain relatively complete and comparable \textbf{global discriminative structures}; local models are expected to align through parameter space, task-vector space, update signs, or curvature statistics~\cite{yadav2023tiesmergingresolvinginterferencemerging,yu2024languagemodelssupermario,wu_parameter_2025,jin2025datalessknowledgefusionmerging}. This assumption does not hold in medical scenarios. Medical centers differ not only in device domains but also in diagnostic-class availability: some centers may mainly cover common diseases or specific examination types, while having few rare-disease samples~\cite{9557808,10.1371/journal.pmed.1002683,li2021fedbn}. The resulting local models are not complete replicas of the global task, but \textbf{partial diagnostic experts} supported by locally observed diseases.
+
+As illustrated in Fig.~\ref{fig:intro-collapse}, we summarize these challenges as two diagnostic-structure abnormalities in medical model merging:
+\begin{itemize}
+    \item \textbf{Diagnostic evidence fragmented across isolated medical clients.} Each client has reliable supervision only for observed classes; thus, a local model may be locally discriminative but still lack evidence for the full global diagnostic space~\cite{9557808,li2021fedbn}.
+    \item \textbf{Long-tailed Medical Image Prevalence.} Medical image datasets naturally follow a long-tailed distribution: a few common diagnostic classes dominate the  samples, while rare classes are underrepresented~\cite{BUDA2018249,5597285}. Under this imbalanced class prior, a merged model collapsed to the majority class can still obtain high Accuracy despite lacking complete multi-class discrimination.
+\end{itemize}
+
+To address these issues, we propose \textbf{LAMP-Merge, a long-tail-aware medical prototype-merging method for single-shot asynchronous medical image model merging}. LAMP-Merge shifts the merge target from global parameter interpolation to \textbf{class-level diagnostic-evidence reconstruction}. The key idea is to use client-uploaded class-level statistics as a synchronization signal for the global diagnostic space, allowing the server to reconstruct a global diagnostic classifier without accessing raw medical images, using a server-side validation set, or conducting multi-round federated communication. Specifically, LAMP-Merge consists of two mechanisms: \textbf{diagnostic prototype reconstruction} aggregates reliable class-level evidence through prototypes in a shared reference feature space, and \textbf{long-tail prevalence calibration} injects a bounded prior bias from client-uploaded class counts, thereby mitigating prediction collapse while preserving clinically meaningful majority-class prevalence.
+
+\begin{figure*}[!t]
+    \centering
+    \includegraphics[width=0.92\textwidth,height=0.34\textheight]{figures/method.png}
+    \caption{Local models from multicenter hospitals typically contain only partial diagnostic knowledge, while raw medical images cannot be centrally shared. LAMP-Merge reconstructs a privacy-friendly global medical classifier through DPR and LPC, without accessing raw data or requiring multi-round federated optimization.}
+    \label{fig_method}
+\end{figure*}
+
+Our main contributions are summarized as follows:
+\begin{itemize}
+    \item \textbf{Medical Merging Diagnosis.} We revisit model merging under single-shot asynchronous medical collaboration and identify limited local diagnostic coverage and aggregation-induced prediction collapse as two key abnormalities caused by medical class availability and long-tailed prevalence.
+    \item \textbf{LAMP-Merge.} We propose a long-tail-aware medical prototype-merging method that reconstructs a global diagnostic classifier from client-side class prototypes and prevalence statistics without exposing raw images or requiring multi-round federated optimization.
+    \item \textbf{Empirical Validation.} We conduct full-scope experiments on five medical image datasets, four vision-model families, three client-population sizes, and three non-IID skew levels, showing that LAMP-Merge consistently outperforms strong model-merging baselines and improves prediction-collapse diagnostics.
+\end{itemize}
+
+\section{Related Works}
+
+\subsection{Model Merging}
+
+Model-merging methods integrate independently trained checkpoints in parameter, task-vector, or geometric spaces. Weight averaging~\cite{izmailov2018averaging} and Model Soups~\cite{pmlr-v162-wortsman22a} directly interpolate parameters; permutation-aware matching~\cite{entezari2022role,ainsworth2023gitrebasinmergingmodels} aligns hidden-unit symmetries; ZipIt~\cite{stoica2024zipit} performs feature-level zipping; Task Arithmetic~\cite{ilharco2023editingmodelstaskarithmetic}, TIES-Merging~\cite{yadav2023tiesmergingresolvinginterferencemerging}, and DARE~\cite{yu2024languagemodelssupermario} manipulate task deltas and sign conflicts; Fisher merging~\cite{wu_parameter_2025}, RegMean~\cite{jin2025datalessknowledgefusionmerging}, Model Stock~\cite{jang2025modelstockneedjust}, Breadcrumbs~\cite{davari2024modelbreadcrumbsscalingmultitask}, Iso-C~\cite{marczak2025taskleftbehindisotropic}, FreeMerge~\cite{zheng2025freemergingfouriertransformefficient}, and RobustMerge~\cite{zeng2025robustmergeparameterefficientmodelmerging} introduce curvature, mean-statistic, subspace, frequency-domain, or robustness assumptions.
+
+However, these methods share a class-agnostic merging interface: their variables are global parameters, task vectors, update signs, or geometric statistics rather than class-level diagnostic evidence. \textbf{They do not encode whether a client has reliable supervision for a specific medical class.} Under incomplete local class coverage and long-tailed prevalence, reliable class directions can be mixed with absent or conflicting directions from other clients, resulting in aggregation-induced prediction collapse\cite{BUDA2018249,10.1371/journal.pmed.1002683}.
+
+One-shot clinical merging therefore requires class availability to be distinguished from model-wide parameter similarity.
+
+\subsection{Medical Model Merging}
+
+Medical fusion studies exploit domain structures such as irregular clinical time series, physiological sensor graphs, and image-EHR fusion. mTAN~\cite{shukla2021multitimeattentionnetworksirregularly}, Raindrop~\cite{zhang2022graphguidednetworkirregularlysampled}, and MedFuse~\cite{hayat2023medfusemultimodalfusionclinical} show that medical tasks benefit from modeling clinical sampling mechanisms, modality heterogeneity, and patient-level temporal relations.
+
+However, their fusion objects are usually patient-level inputs, multimodal records, or clinical representations rather than independently trained image-classifier checkpoints. They often require patient samples, timestamps, electronic health records, or server-side validation feedback, which conflicts with common privacy constraints~\cite{kaissis2020secure,sheller2020federated,bonawitz2019towards}. MedMerge~\cite{11382027} is a relevant training-free medical knowledge-transfer framework, but it targets cross-modal adaptation for medical vision-language models rather than asynchronous checkpoint merging for the same classification task. \textbf{Thus, existing medical fusion routes are mismatched with our privacy and single-upload protocol constraints.} LAMP-Merge keeps the medical structure uploadable by using only locally computed class prototypes and prevalence counts.
+
+\subsection{Federated Learning}
+
+Federated and decentralized learning perform collaborative training through communication protocols. FedAvg~\cite{pmlr-v54-mcmahan17a} and its variants or medical deployments~\cite{li2020fedprox,karimireddy2020scaffold,li2021fedbn,kaissis_secure_2020,sheller2020federated,rieke2020future,kairouz2021advances} rely on repeated server-client updates; Swarm Learning~\cite{warnat-herresthal_swarm_2021} and Gossip Learning~\cite{hegedhus_gossip_2019} reduce centralization but still require participants to continue training, exchanging models, and optimizing from intermediate states.
+
+However, our setting begins after local training has finished. Hospitals may not remain online, receive global checkpoints repeatedly, or run additional optimization rounds. \textbf{The bottleneck is therefore communication feasibility in addition to privacy.} LAMP-Merge requires one upload of a local model interface and class-level statistics, enabling the server to construct a unified diagnostic model without a multi-round feedback loop.
+
+\section{Method}
+
+In this section, we first formulate the diagnostic-structure pathologies exposed when generic model merging is applied to medical data, namely \textbf{limited local diagnostic coverage} and \textbf{aggregation-induced prediction collapse}. To correct these intrinsic mismatches, we propose \textbf{LAMP-Merge}, a two-stage framework composed of \textbf{DPR} and \textbf{LPC}, as shown in Fig.~\ref{fig_method}.
+
+\subsection{Preliminaries}
+
+\subsubsection{Problem Formulation.}
+
+Assume $K$ medical clients. Client $i$ owns a private labeled dataset $D_i=\{(x,y)\}$ drawn from a class-skewed medical distribution over $C$ diagnosis classes. Let $D_{i,c}$ denote the subset of client $i$ belonging to diagnosis class $c$. In medical partitions, $D_{i,c}$ can be empty for many classes; therefore, client $i$ has reliable supervision only for its observed classes. The goal is to construct a global diagnostic model under this partial and heterogeneous diagnostic-label coverage.
+
+\subsubsection{Upload and Server Constraints.}
+
+After local training, each client uploads its checkpoint interface and class-level statistics once; the server receives no raw images, per-sample data, validation set, or iterative feedback. The uploaded support $n_{i,c}$, prevalence $m_{i,c}$, and reference-space prototype $\mu_{i,c}$ enable one merge with class-level diagnostic evidence as an explicit variable.
+
+\subsection{Motivation}
+
+Although generic model merging is training-free and parameter-efficient, we find that its diagnostic structure can severely degenerate in medical model merging. Prediction-distribution diagnosis and class-support analysis reveal two key abnormalities:
+
+\subsubsection{(1) Aggregation-induced prediction collapse.} Under partial diagnostic coverage, parameter-level merging can turn several locally useful predictors into \textbf{a globally collapsed predictor}. The merged model tends to allocate most test images to a few dominant classes, indicating that global class-discriminative structure has not been reconstructed.
+
+\subsubsection{(2) Prevalence prior cannot be ignored.} Medical datasets often exhibit clinically meaningful long-tailed prevalence. Therefore, completely suppressing majority-class dominance is also inappropriate: a collapsed predictor is undesirable, but a merger should still preserve calibrated disease prevalence when the dominant class reflects the true clinical prior.
+
+\subsection{Diagnostic Prototype Reconstruction Module}
+
+To address \textbf{fragmented diagnostic evidence across isolated medical clients}, DPR reconstructs class-conditional evidence in a shared reference space and synthesizes a global diagnostic head over the full label space.
+
+\subsubsection{(1) Reference-space Class Prototype Extraction.}
+
+
+First, all clients extract class prototypes with the same frozen reference backbone. Let $\phi_0$ be the reference backbone instantiated from the shared model configuration before local training, and let $T(\cdot)$ be the evaluation transform. For each diagnosis class $c$, client $i$ locally computes a reference-space class prototype
+\begin{equation}
+\mu_{i,c}=\frac{1}{n_{i,c}}\sum_{(x,y)\in D_i}\mathbf{1}[y=c]\phi_0(T(x)),
+\end{equation}
+where $n_{i,c}=|D_{i,c}|$ is the class support count. If $n_{i,c}=0$, the client uploads zero support for that class and contributes no prototype evidence.
+
+\subsubsection{(2) Support-aware Evidence Aggregation.}
+
+Second, the server converts class-support counts into evidence weights to characterize the reliability of each client for a given class:
+\begin{equation}
+e_{i,c}=(n_{i,c}+1)^\gamma \mathbf{1}[n_{i,c}>0],
+\end{equation}
+where $\gamma=0.55$ is the default evidence exponent. This weight gives larger class-specific contribution to clients with more supervised samples of class $c$, while excluding clients that never observe this class. The normalized reliability is
+\begin{equation}
+\alpha_{i,c}=\frac{e_{i,c}}{\sum_{j=1}^{K} e_{j,c}}.
+\end{equation}
+
+The global diagnosis prototype is obtained by class-wise reliability-weighted aggregation:
+\begin{equation}
+p_c=\sum_{i=1}^{K}\alpha_{i,c}\mu_{i,c}.
+\end{equation}
+This step aggregates evidence only from clients that have actually observed class $c$, preventing absent-class classifiers from diluting valid diagnostic signals.
+
+\subsubsection{(3) Prototype-induced Diagnostic Head.}
+
+Finally, LAMP-Merge maps global diagnosis prototypes into a cosine prototype classifier:
+\begin{equation}
+w_c=s\frac{p_c}{\|p_c\|_2},
+\end{equation}
+where $s=18.75$ is the default head scale. The resulting head is not an average of local classifier parameters; it is induced by class evidence in the shared reference space, thereby restoring multiclass diagnostic directions over the global label space.
+
+\subsection{Long-tail Prevalence Calibration}
+
+To address \textbf{long-tailed medical prevalence cannot be ignored}, LPC adds a bounded class prior after DPR to calibrate the clinical prevalence reflected by client statistics.
+
+\subsubsection{(1) Client-reported Prevalence Prior.}
+
+First, each client uploads class-prevalence counts $m_{i,c}$. The server estimates the global class prior
+\begin{equation}
+\pi_c=\frac{\sum_{i=1}^{K}m_{i,c}}{\sum_{k=1}^{C}\sum_{i=1}^{K}m_{i,k}}.
+\end{equation}
+This prior is computed only from class-level counts, not from raw images, per-sample features, or per-sample predictions.
+
+\subsubsection{(2) Long-tail Activation Criterion.}
+
+Second, to avoid unnecessary calibration in non-long-tailed cases, the server measures dominant-class imbalance by
+\begin{equation}
+r=C\max_c \pi_c.
+\end{equation}
+The calibration module is activated only when $r>\tau$, where $\tau=2.5$ by default.
+
+\subsubsection{(3) Centered Log-prior Calibration.}
+
+Finally, when the module is activated, LAMP-Merge constructs a centered log-prior bias
+\begin{equation}
+b_c=\lambda\left(\log\pi_c-\frac{1}{C}\sum_{k=1}^{C}\log\pi_k\right),
+\end{equation}
+with default maximum calibration strength $\lambda=4.25$. The centering term prevents a uniform shift of all class logits, so the bias only changes the relative class prior. This module calibrates prevalence without replacing the diagnostic directions reconstructed by the first module.
+
+\subsection{Optimization Objective and Algorithm}
+
+The final scoring function of LAMP-Merge integrates the diagnostic prototype reconstruction term and the long-tail prevalence calibration term:
+\begin{equation}
+\ell_c(x)=w_c^\top\phi_0(T(x))+\mathbf{1}[r>\tau]\,b_c.
+\end{equation}
+
+
+\section{Experiments}
+
+\subsection{Experimental Settings}
+
+\subsubsection{(1) Evaluation Datasets:}
+
+We evaluate the merged models on five representative MedMNIST v2 benchmarks\cite{yang2023medmnist}: Blood, Derma, Organ-C, Organ-S, and Ultrasound. They cover blood-cell microscopy, dermoscopy, abdominal CT, and ultrasound image classification (detailed dataset descriptions are provided in the Appendix).
+
+\begin{table}[!t]
+\centering
+\caption{Dataset statistics and representative samples for the five medical image benchmarks. Counts are taken from the exact NPZ files used in our experiments.}
+\label{tab:dataset-statistics}
+\scriptsize
+\renewcommand{\arraystretch}{1.25}
+\setlength{\tabcolsep}{2.2pt}
+\resizebox{\columnwidth}{!}{%
+\begin{tabular}{lrrrrr:c}
+\noalign{\hrule height 1.25pt}
+\rowcolor[HTML]{F2F2F2}
+\textbf{Dataset} & \textbf{Classes} & \textbf{Train} & \textbf{Val} & \textbf{Test} & \textbf{Total} & \textbf{Sample} \\
+\hline \hline
+Blood & 8 & 11,959 & 1,712 & 3,421 & 17,092 & \makebox[1.05cm][c]{\raisebox{-0.16cm}{\includegraphics[width=0.95cm,height=0.52cm,keepaspectratio]{figures/sample_blood.png}}} \\
+\rowcolor{gray!10}
+Derma & 7 & 7,007 & 1,003 & 2,005 & 10,015 & \makebox[1.05cm][c]{\raisebox{-0.16cm}{\includegraphics[width=0.95cm,height=0.52cm,keepaspectratio]{figures/sample_derma.png}}} \\
+Organ-C & 11 & 12,975 & 2,392 & 8,216 & 23,583 & \makebox[1.05cm][c]{\raisebox{-0.16cm}{\includegraphics[width=0.95cm,height=0.52cm,keepaspectratio]{figures/sample_organ_c.png}}} \\
+\rowcolor{gray!10}
+Organ-S & 11 & 13,932 & 2,452 & 8,827 & 25,211 & \makebox[1.05cm][c]{\raisebox{-0.16cm}{\includegraphics[width=0.95cm,height=0.52cm,keepaspectratio]{figures/sample_organ_s.png}}} \\
+Ultrasound & 8 & 3,869 & 549 & 1,113 & 5,531 & \makebox[1.05cm][c]{\raisebox{-0.16cm}{\includegraphics[width=0.95cm,height=0.52cm,keepaspectratio]{figures/sample_ultrasound.png}}} \\
+\noalign{\hrule height 1.25pt}
+\end{tabular}
+}
+\end{table}
+
+\subsubsection{(2) Baselines:}
+
+We compare LAMP-Merge with twelve established merging baselines spanning parameter averaging, task-vector pruning, conflict resolution, statistic-aware correction, interpolation, subspace merging, Fourier fusion, and robust merging~\cite{yadav2023tiesmergingresolvinginterferencemerging,yu2024languagemodelssupermario,jin2025datalessknowledgefusionmerging,wu_parameter_2025,davari2024modelbreadcrumbsscalingmultitask,jang2025modelstockneedjust,ilharco2023editingmodelstaskarithmetic,marczak2025taskleftbehindisotropic,zheng2025freemergingfouriertransformefficient,zeng2025robustmergeparameterefficientmodelmerging}.
+
+\subsubsection{(3) Merging Settings:}
+
+
+% Experiments follow a single-shot asynchronous model-merging protocol. Each client independently trains a local model on its own medical imaging data and then computes the class-level statistics required by LAMP-Merge locally, including class-support counts, reference-space class prototypes, and class-prevalence counts. These statistics are uploaded once together with an interface to the local checkpoint. The server performs a single model-merging step using only the uploaded checkpoints and class-level statistics, and evaluates the resulting merged model on a global test set.
+
+We evaluate four vision-model families: ResNet, ConvNeXt, ViT-Tiny, and Swin-Tiny\cite{he2016deep,liu2022convnet,dosovitskiy2021image,liu2021swin}. For each dataset-model pair, we construct non-IID client partitions with $K\in\{3,5,7\}$ clients and Dirichlet skew parameter $\beta\in\{0,0.01,0.1\}$, using seed 42\cite{hsu2019measuringeffectsnonidenticaldata}. A client-average result fixes the dataset, model, and $K$, and then averages over the three $\beta$ values. And the experiments follow a single-shot asynchronous model-merging protocol.
+
+% \subsubsection{4) Implementation Environment:}
+
+% All experiments were run on a server with two Intel(R) Xeon(R) Silver 4210 CPUs, four NVIDIA GeForce RTX 2080 Ti GPUs, and the conda environment \texttt{MM} with Python 3.10.20, PyTorch 2.6.0+\texttt{cu118}, and CUDA runtime 11.8.
+
+\subsection{Comparison With the State of the Arts}
+
+% The main comparison uses client-average ACC: for each fixed dataset, model, and client number, we first average over the three $\beta$ skew levels and then compare merging methods. A cell is counted as successful when LAMP-Merge is greater than or equal to the strongest non-LAMP baseline in that cell.
+
+Tables~\ref{tab:client-avg-resnet}--\ref{tab:client-avg-swin-tiny} report the full client-average results for all four backbones. Across all evaluated settings, LAMP-Merge wins or ties the strongest non-LAMP baseline in \textbf{57 cells (95.0\%)}.
+
+\setcounter{dbltopnumber}{4}
+\setcounter{topnumber}{4}
+\setcounter{totalnumber}{4}
+
+\begin{table*}[!t]
+\centering
+\renewcommand{\arraystretch}{1.35}
+\caption{Client-average test accuracy (\%) on ResNet. Each entry averages the three Dirichlet settings for a fixed client number; Avg denotes the mean over $K=3,5,7$ within the corresponding dataset.}
+\label{tab:client-avg-resnet}
+\resizebox{0.90\textwidth}{!}{%
+\begin{tabular}{l||ccc:c|ccc:c|ccc:c|ccc:c|ccc:c}
+\noalign{\hrule height 1.25pt}
+\rowcolor[HTML]{F2F2F2}
+ &
+\multicolumn{4}{c|}{\textbf{Blood}} &
+\multicolumn{4}{c|}{\textbf{Derma}} &
+\multicolumn{4}{c|}{\textbf{Organ-C}} &
+\multicolumn{4}{c|}{\textbf{Organ-S}} &
+\multicolumn{4}{c}{\textbf{Ultrasound}} \\
+\rowcolor[HTML]{F2F2F2}
+\multirow{-2}{*}{\textbf{Method}}
+& \textbf{$K=3$} & \textbf{$K=5$} & \textbf{$K=7$} & \textbf{Avg}
+& \textbf{$K=3$} & \textbf{$K=5$} & \textbf{$K=7$} & \textbf{Avg}
+& \textbf{$K=3$} & \textbf{$K=5$} & \textbf{$K=7$} & \textbf{Avg}
+& \textbf{$K=3$} & \textbf{$K=5$} & \textbf{$K=7$} & \textbf{Avg}
+& \textbf{$K=3$} & \textbf{$K=5$} & \textbf{$K=7$} & \textbf{Avg} \\
+\hline \hline
+
+Weight Avg. &
+33.45 & 24.67 & 28.22 & 28.78 &
+62.91 & 47.00 & 62.44 & 57.45 &
+22.61 & 17.72 & 13.96 & 18.10 &
+28.64 & 17.94 & 24.75 & 23.78 &
+24.35 & 15.81 & 15.42 & 18.53 \\
+
+\rowcolor{gray!10}
+TIES\pub{NeurIPS 2023} &
+26.01 & 18.72 & 17.87 & 20.87 &
+59.95 & 48.41 & 64.84 & 57.73 &
+26.50 & 16.84 & 21.18 & 21.51 &
+19.81 & 19.15 & 18.74 & 19.23 &
+34.77 & 19.89 & 18.54 & 24.40 \\
+
+DARE-Linear\pub{ICML 2024} &
+28.32 & 28.56 & 23.92 & 26.93 &
+63.57 & 48.41 & 62.88 & 58.29 &
+20.18 & 25.88 & 16.50 & 20.85 &
+25.45 & 22.45 & 25.37 & 24.42 &
+21.62 & 17.28 & 16.08 & 18.33 \\
+
+\rowcolor{gray!10}
+DARE-TIES\pub{ICML 2024} &
+31.94 & 19.35 & 17.80 & 23.03 &
+53.75 & 48.25 & 55.58 & 52.53 &
+18.51 & 15.15 & 18.59 & 17.42 &
+17.90 & 13.52 & 17.30 & 16.24 &
+29.32 & 16.35 & 18.90 & 21.52 \\
+
+RegMean\pub{ICLR 2023} &
+34.60 & 23.69 & 34.07 & 30.79 &
+58.12 & 28.43 & 50.22 & 45.59 &
+24.05 & 13.40 & 13.88 & 17.11 &
+25.04 & 16.23 & 14.93 & 18.73 &
+22.76 & 16.95 & 13.18 & 17.63 \\
+
+\rowcolor{gray!10}
+Fisher\pub{NeurIPS 2022} &
+31.96 & 22.37 & 26.08 & 26.80 &
+67.07 & 67.02 & 66.90 & 67.00 &
+29.73 & 17.41 & 18.12 & 21.75 &
+20.10 & 29.56 & 19.63 & 23.10 &
+23.33 & 18.60 & 25.13 & 22.35 \\
+
+Breadcrumbs\pub{ECCV 2024} &
+8.54 & 14.17 & 14.60 & 12.44 &
+4.95 & 29.13 & 17.21 & 17.10 &
+7.66 & 6.76 & 6.85 & 7.09 &
+8.02 & 9.48 & 6.03 & 7.84 &
+12.25 & 12.73 & 10.21 & 11.73 \\
+
+\rowcolor{gray!10}
+Model Stock\pub{ECCV 2024} &
+24.20 & 18.24 & 19.75 & 20.73 &
+62.16 & 43.11 & 57.21 & 54.16 &
+12.25 & 12.74 & 11.85 & 12.28 &
+27.42 & 15.78 & 20.12 & 21.11 &
+17.91 & 13.21 & 15.78 & 15.63 \\
+
+Iso-C\pub{ICML 2025} &
+32.78 & 27.48 & 30.23 & 30.16 &
+50.49 & 44.22 & 64.16 & 52.96 &
+23.31 & 16.29 & 13.83 & 17.81 &
+27.36 & 21.18 & 24.53 & 24.36 &
+26.15 & 16.98 & 15.54 & 19.56 \\
+
+\rowcolor{gray!10}
+Free-Merging\pub{ICCV 2025} &
+33.45 & 24.67 & 28.22 & 28.78 &
+62.91 & 47.00 & 62.46 & 57.46 &
+22.61 & 17.71 & 13.96 & 18.09 &
+28.63 & 17.93 & 24.75 & 23.77 &
+24.35 & 15.81 & 15.45 & 18.54 \\
+
+RobustMerge\pub{NeurIPS 2025} &
+34.01 & 24.30 & 22.56 & 26.96 &
+29.56 & 20.85 & 39.42 & 29.94 &
+24.58 & 17.64 & 16.53 & 19.58 &
+26.80 & 22.27 & 23.01 & 24.03 &
+21.89 & 22.31 & 17.07 & 20.42 \\
+
+\rowcolor{gray!10}
+FROM\pub{AAAI 2026} &
+29.89 & 23.06 & 20.52 & 24.49 &
+67.13 & 43.69 & 65.80 & 58.87 &
+23.50 & 15.60 & 15.20 & 18.10 &
+22.07 & 20.87 & 24.76 & 22.57 &
+23.09 & 15.06 & 20.63 & 19.59 \\
+
+\hline \hline
+\rowcolor[HTML]{FFF9C4}
+\textbf{LAMP-Merge} &
+\textbf{80.01} &
+\textbf{79.94} &
+\textbf{79.92} &
+\textbf{79.95} &
+\textbf{67.55} &
+\textbf{67.63} &
+\textbf{67.63} &
+\textbf{67.60} &
+\textbf{60.05} &
+\textbf{59.94} &
+\textbf{60.07} &
+\textbf{60.02} &
+\textbf{52.98} &
+\textbf{52.79} &
+\textbf{52.81} &
+\textbf{52.86} &
+\textbf{48.07} &
+\textbf{46.75} &
+\textbf{47.35} &
+\textbf{47.39} \\
+\noalign{\hrule height 1.25pt}
+\end{tabular}%
+}
+\end{table*}
+
+\begin{table*}[!t]
+\centering
+\renewcommand{\arraystretch}{1.35}
+\caption{Client-average test accuracy (\%) on ConvNeXt. Each entry averages the three Dirichlet settings for a fixed client number; Avg denotes the mean over $K=3,5,7$ within the corresponding dataset.}
+\label{tab:client-avg-convnext}
+\resizebox{0.90\textwidth}{!}{%
+\begin{tabular}{l||ccc:c|ccc:c|ccc:c|ccc:c|ccc:c}
+\noalign{\hrule height 1.25pt}
+\rowcolor[HTML]{F2F2F2}
+ &
+\multicolumn{4}{c|}{\textbf{Blood}} &
+\multicolumn{4}{c|}{\textbf{Derma}} &
+\multicolumn{4}{c|}{\textbf{Organ-C}} &
+\multicolumn{4}{c|}{\textbf{Organ-S}} &
+\multicolumn{4}{c}{\textbf{Ultrasound}} \\
+\rowcolor[HTML]{F2F2F2}
+\multirow{-2}{*}{\textbf{Method}}
+& \textbf{$K=3$} & \textbf{$K=5$} & \textbf{$K=7$} & \textbf{Avg}
+& \textbf{$K=3$} & \textbf{$K=5$} & \textbf{$K=7$} & \textbf{Avg}
+& \textbf{$K=3$} & \textbf{$K=5$} & \textbf{$K=7$} & \textbf{Avg}
+& \textbf{$K=3$} & \textbf{$K=5$} & \textbf{$K=7$} & \textbf{Avg}
+& \textbf{$K=3$} & \textbf{$K=5$} & \textbf{$K=7$} & \textbf{Avg} \\
+\hline \hline
+
+Weight Avg. & 15.65 & 11.22 & 13.84 & 13.57 & 29.66 & 48.30 & 66.88 & 48.28 & 10.37 & 12.18 & 9.44 & 10.66 & 13.08 & 10.35 & 14.16 & 12.53 & 15.06 & 15.06 & 12.52 & 14.21 \\
+
+\rowcolor{gray!10}
+TIES\pub{NeurIPS 2023} & 17.15 & 12.14 & 15.24 & 14.84 & 29.66 & 17.97 & 27.13 & 24.92 & 12.17 & 7.86 & 7.16 & 9.06 & 11.23 & 7.61 & 7.96 & 8.93 & 15.18 & 14.56 & 12.91 & 14.22 \\
+
+DARE-Linear\pub{ICML 2024} & 17.56 & 11.22 & 13.45 & 14.08 & 27.05 & 48.30 & 48.30 & 41.22 & 10.35 & 6.99 & 10.85 & 9.40 & 12.82 & 10.35 & 7.97 & 10.38 & 15.75 & 15.75 & 12.64 & 14.71 \\
+
+\rowcolor{gray!10}
+DARE-TIES\pub{ICML 2024} & 10.96 & 15.19 & 14.97 & 13.71 & 9.08 & 27.98 & 24.51 & 20.52 & 13.05 & 13.46 & 7.70 & 11.40 & 10.96 & 9.46 & 7.09 & 9.17 & 14.56 & 12.97 & 15.00 & 14.18 \\
+
+RegMean\pub{ICLR 2023} & 15.65 & 8.17 & 18.56 & 14.13 & 26.33 & 7.73 & 27.20 & 20.42 & 11.43 & 10.17 & 7.68 & 9.76 & 10.14 & 12.59 & 10.38 & 11.04 & 15.75 & 15.39 & 15.00 & 15.38 \\
+
+\rowcolor{gray!10}
+Fisher\pub{NeurIPS 2022} & 15.65 & 9.99 & 11.89 & 12.51 & 48.25 & 26.38 & 29.71 & 34.78 & 10.03 & 9.74 & 9.15 & 9.64 & 6.04 & 5.17 & 8.43 & 6.55 & 16.95 & 13.60 & 14.56 & 15.04 \\
+
+Breadcrumbs\pub{ECCV 2024} & 15.16 & 13.66 & 11.63 & 13.48 & 5.24 & 27.66 & 46.30 & 26.40 & 10.31 & 14.44 & 15.74 & 13.50 & 15.16 & 15.54 & 20.77 & 17.16 & 13.84 & 13.63 & 13.63 & 13.70 \\
+
+\rowcolor{gray!10}
+Model Stock\pub{ECCV 2024} & 17.56 & 11.44 & 17.78 & 15.59 & 29.66 & 48.30 & 66.88 & 48.28 & 12.76 & 12.18 & 13.85 & 12.93 & 13.08 & 10.35 & 19.35 & 14.26 & 15.75 & 12.91 & 14.79 & 14.48 \\
+
+Iso-C\pub{ICML 2025} & 19.47 & 18.65 & 14.80 & 17.64 & 29.71 & 48.30 & 66.88 & 48.30 & 9.91 & 6.99 & 9.45 & 8.78 & 7.89 & 14.77 & 8.67 & 10.44 & 15.18 & 12.91 & 16.05 & 14.71 \\
+
+\rowcolor{gray!10}
+Free-Merging\pub{ICCV 2025} & 15.75 & 11.90 & 13.84 & 13.83 & 29.71 & 48.30 & 66.88 & 48.30 & 9.06 & 12.18 & 13.85 & 11.70 & 13.08 & 10.35 & 14.16 & 12.53 & 15.06 & 12.91 & 16.95 & 14.97 \\
+
+RobustMerge\pub{NeurIPS 2025} & 14.10 & 14.05 & 7.52 & 11.89 & 9.08 & 45.07 & 48.30 & 34.15 & 13.94 & 12.18 & 17.93 & 14.68 & 23.54 & 9.61 & 20.77 & 17.97 & 13.00 & 11.35 & 13.63 & 12.66 \\
+
+\rowcolor{gray!10}
+FROM\pub{AAAI 2026} & 15.65 & 10.83 & 16.71 & 14.40 & 29.66 & 34.06 & 45.69 & 36.47 & 12.32 & 12.24 & 6.50 & 10.35 & 13.24 & 11.05 & 8.97 & 11.09 & 15.75 & 15.78 & 10.87 & 14.13 \\
+
+\hline \hline
+\rowcolor[HTML]{FFF9C4}
+\textbf{LAMP-Merge} &
+\textbf{84.85} &
+\textbf{84.87} &
+\textbf{84.98} &
+\textbf{84.90} &
+\textbf{59.68} &
+\textbf{58.77} &
+\textbf{59.42} &
+\textbf{59.29} &
+\textbf{65.41} &
+\textbf{65.33} &
+\textbf{65.51} &
+\textbf{65.42} &
+\textbf{60.55} &
+\textbf{60.50} &
+\textbf{60.66} &
+\textbf{60.57} &
+\textbf{43.07} &
+\textbf{42.80} &
+\textbf{42.41} &
+\textbf{42.76} \\
+\end{tabular}%
+}
+\end{table*}
+
+\begin{table*}[!t]
+\centering
+\renewcommand{\arraystretch}{1.35}
+\caption{Client-average test accuracy (\%) on ViT-Tiny. Each entry averages the three Dirichlet settings for a fixed client number; Avg denotes the mean over $K=3,5,7$ within the corresponding dataset.}
+\label{tab:client-avg-vit-t}
+\resizebox{0.90\textwidth}{!}{%
+\begin{tabular}{l||ccc:c|ccc:c|ccc:c|ccc:c|ccc:c}
+\noalign{\hrule height 1.25pt}
+\rowcolor[HTML]{F2F2F2}
+ &
+\multicolumn{4}{c|}{\textbf{Blood}} &
+\multicolumn{4}{c|}{\textbf{Derma}} &
+\multicolumn{4}{c|}{\textbf{Organ-C}} &
+\multicolumn{4}{c|}{\textbf{Organ-S}} &
+\multicolumn{4}{c}{\textbf{Ultrasound}} \\
+\rowcolor[HTML]{F2F2F2}
+\multirow{-2}{*}{\textbf{Method}}
+& \textbf{$K=3$} & \textbf{$K=5$} & \textbf{$K=7$} & \textbf{Avg}
+& \textbf{$K=3$} & \textbf{$K=5$} & \textbf{$K=7$} & \textbf{Avg}
+& \textbf{$K=3$} & \textbf{$K=5$} & \textbf{$K=7$} & \textbf{Avg}
+& \textbf{$K=3$} & \textbf{$K=5$} & \textbf{$K=7$} & \textbf{Avg}
+& \textbf{$K=3$} & \textbf{$K=5$} & \textbf{$K=7$} & \textbf{Avg} \\
+\hline \hline
+
+Weight Avg. & 13.43 & 10.82 & 11.60 & 11.95 & 46.38 & 43.69 & 36.96 & 42.34 & 16.57 & 10.43 & 9.52 & 12.17 & 8.44 & 8.52 & 17.10 & 11.35 & 14.50 & 13.27 & 18.84 & 15.54 \\
+
+\rowcolor{gray!10}
+TIES\pub{NeurIPS 2023} & 7.96 & 14.21 & 12.85 & 11.67 & 47.80 & 34.98 & 46.15 & 42.98 & 13.41 & 12.23 & 9.53 & 11.72 & 11.92 & 10.02 & 15.97 & 12.64 & 20.01 & 13.06 & 10.18 & 14.42 \\
+
+DARE-Linear\pub{ICML 2024} & 23.97 & 11.29 & 13.87 & 16.38 & 28.50 & 10.02 & 12.04 & 16.85 & 15.34 & 9.46 & 7.04 & 10.61 & 7.48 & 5.49 & 16.11 & 9.69 & 13.66 & 10.51 & 14.35 & 12.84 \\
+
+\rowcolor{gray!10}
+DARE-TIES\pub{ICML 2024} & 7.35 & 11.89 & 11.46 & 10.23 & 27.35 & 45.02 & 35.28 & 35.88 & 12.52 & 9.03 & 10.33 & 10.63 & 5.41 & 8.74 & 5.91 & 6.69 & 14.47 & 11.20 & 10.42 & 12.03 \\
+
+RegMean\pub{ICLR 2023} & 17.48 & 14.17 & 12.90 & 14.85 & 51.14 & 36.67 & 66.58 & 51.46 & 12.50 & 9.64 & 9.83 & 10.66 & 12.63 & 7.17 & 10.68 & 10.16 & 14.91 & 13.84 & 11.44 & 13.40 \\
+
+\rowcolor{gray!10}
+Fisher\pub{NeurIPS 2022} & 11.66 & 15.12 & 19.44 & 15.41 & 47.80 & 20.42 & 48.20 & 38.81 & 7.99 & 10.72 & 14.24 & 10.98 & 8.56 & 12.18 & 12.22 & 10.99 & 16.11 & 13.15 & 14.20 & 14.49 \\
+
+Breadcrumbs\pub{ECCV 2024} & 13.63 & 10.39 & 13.00 & 12.34 & 4.89 & 25.72 & 6.07 & 12.23 & 7.73 & 10.00 & 16.44 & 11.39 & 12.37 & 4.83 & 12.19 & 9.80 & 13.60 & 11.41 & 15.24 & 13.42 \\
+
+\rowcolor{gray!10}
+Model Stock\pub{ECCV 2024} & 19.40 & 11.20 & 11.34 & 13.98 & 38.05 & 30.79 & 27.35 & 32.06 & 14.88 & 12.27 & 12.15 & 13.10 & 8.93 & 8.59 & 18.67 & 12.06 & 15.99 & 18.09 & 16.41 & 16.83 \\
+
+Iso-C\pub{ICML 2025} & 12.34 & 14.83 & 10.18 & 12.45 & 57.09 & 45.29 & 23.06 & 41.81 & 10.84 & 5.67 & 8.97 & 8.49 & 6.11 & 5.31 & 10.81 & 7.41 & 14.17 & 15.27 & 18.69 & 16.04 \\
+
+\rowcolor{gray!10}
+Free-Merging\pub{ICCV 2025} & 19.89 & 14.57 & 13.92 & 16.13 & 46.30 & 47.70 & 38.55 & 44.18 & 14.25 & 9.80 & 7.59 & 10.55 & 7.27 & 9.14 & 16.43 & 10.95 & 14.05 & 15.93 & 16.47 & 15.48 \\
+
+RobustMerge\pub{NeurIPS 2025} & 14.82 & 10.70 & 14.25 & 13.26 & 3.47 & 27.68 & 17.24 & 16.13 & 9.54 & 6.17 & 14.38 & 10.03 & 12.60 & 7.07 & 12.17 & 10.61 & 16.98 & 18.54 & 15.63 & 17.05 \\
+
+\rowcolor{gray!10}
+FROM\pub{AAAI 2026} & 18.02 & 7.81 & 14.05 & 13.29 & 46.95 & 51.21 & 66.88 & 55.01 & 21.48 & 13.01 & 9.72 & 14.74 & 7.72 & 7.98 & 14.85 & 10.18 & 18.36 & 17.43 & 17.76 & 17.85 \\
+
+\hline \hline
+\rowcolor[HTML]{FFF9C4}
+\textbf{LAMP-Merge} &
+\textbf{85.21} &
+\textbf{85.06} &
+\textbf{84.98} &
+\textbf{85.09} &
+\textbf{59.45} &
+\textbf{59.32} &
+\textbf{59.83} &
+\textbf{59.53} &
+\textbf{58.78} &
+\textbf{58.40} &
+\textbf{58.29} &
+\textbf{58.49} &
+\textbf{54.39} &
+\textbf{54.51} &
+\textbf{54.65} &
+\textbf{54.52} &
+\textbf{46.12} &
+\textbf{45.97} &
+\textbf{45.94} &
+\textbf{46.01} \\
+\end{tabular}%
+}
+\end{table*}
+
+\begin{table*}[!t]
+\centering
+\renewcommand{\arraystretch}{1.35}
+\caption{Client-average test accuracy (\%) on Swin-Tiny. Each entry averages the three Dirichlet settings for a fixed client number; Avg denotes the mean over $K=3,5,7$ within the corresponding dataset.}
+\label{tab:client-avg-swin-tiny}
+\resizebox{0.90\textwidth}{!}{%
+\begin{tabular}{l||ccc:c|ccc:c|ccc:c|ccc:c|ccc:c}
+\noalign{\hrule height 1.25pt}
+\rowcolor[HTML]{F2F2F2}
+ &
+\multicolumn{4}{c|}{\textbf{Blood}} &
+\multicolumn{4}{c|}{\textbf{Derma}} &
+\multicolumn{4}{c|}{\textbf{Organ-C}} &
+\multicolumn{4}{c|}{\textbf{Organ-S}} &
+\multicolumn{4}{c}{\textbf{Ultrasound}} \\
+\rowcolor[HTML]{F2F2F2}
+\multirow{-2}{*}{\textbf{Method}}
+& \textbf{$K=3$} & \textbf{$K=5$} & \textbf{$K=7$} & \textbf{Avg}
+& \textbf{$K=3$} & \textbf{$K=5$} & \textbf{$K=7$} & \textbf{Avg}
+& \textbf{$K=3$} & \textbf{$K=5$} & \textbf{$K=7$} & \textbf{Avg}
+& \textbf{$K=3$} & \textbf{$K=5$} & \textbf{$K=7$} & \textbf{Avg}
+& \textbf{$K=3$} & \textbf{$K=5$} & \textbf{$K=7$} & \textbf{Avg} \\
+\hline \hline
+
+Weight Avg. & 15.65 & 11.86 & 15.24 & 14.25 & 45.69 & 48.30 & 66.88 & 53.62 & 10.68 & 12.94 & 7.87 & 10.50 & 6.82 & 6.04 & 13.81 & 8.89 & 15.27 & 12.94 & 14.65 & 14.29 \\
+
+\rowcolor{gray!10}
+TIES\pub{NeurIPS 2023} & 9.72 & 11.90 & 13.84 & 11.82 & 8.41 & 7.80 & 66.88 & 27.70 & 11.60 & 7.02 & 9.34 & 9.32 & 7.34 & 6.07 & 11.07 & 8.16 & 16.95 & 13.03 & 12.61 & 14.20 \\
+
+DARE-Linear\pub{ICML 2024} & 15.65 & 11.61 & 18.25 & 15.17 & 45.69 & 27.71 & 46.30 & 39.90 & 11.55 & 12.72 & 7.76 & 10.68 & 6.40 & 7.20 & 13.81 & 9.14 & 17.43 & 15.36 & 14.97 & 15.92 \\
+
+\rowcolor{gray!10}
+DARE-TIES\pub{ICML 2024} & 13.84 & 11.62 & 13.84 & 13.10 & 29.61 & 26.38 & 66.88 & 40.96 & 12.76 & 7.74 & 11.16 & 10.55 & 11.94 & 4.34 & 12.30 & 9.53 & 17.91 & 13.51 & 13.00 & 14.81 \\
+
+RegMean\pub{ICLR 2023} & 13.74 & 17.15 & 15.78 & 15.56 & 27.05 & 46.30 & 45.69 & 39.68 & 14.11 & 7.73 & 8.11 & 9.98 & 12.15 & 8.21 & 9.26 & 9.87 & 14.65 & 11.05 & 17.79 & 14.50 \\
+
+\rowcolor{gray!10}
+Fisher\pub{NeurIPS 2022} & 16.33 & 17.56 & 15.65 & 16.51 & 45.82 & 6.52 & 47.18 & 33.17 & 8.14 & 8.99 & 9.78 & 8.97 & 6.51 & 6.50 & 10.92 & 7.98 & 17.46 & 11.65 & 17.55 & 15.55 \\
+
+Breadcrumbs\pub{ECCV 2024} & 15.00 & 13.65 & 15.37 & 14.67 & 6.47 & 27.71 & 7.15 & 13.78 & 14.45 & 17.83 & 16.60 & 16.29 & 23.54 & 20.77 & 21.11 & 21.81 & 14.50 & 13.12 & 16.53 & 14.72 \\
+
+\rowcolor{gray!10}
+Model Stock\pub{ECCV 2024} & 13.74 & 14.40 & 17.15 & 15.10 & 45.69 & 27.71 & 48.25 & 40.55 & 11.10 & 7.71 & 14.04 & 10.95 & 6.71 & 11.06 & 17.14 & 11.64 & 15.39 & 12.73 & 18.69 & 15.60 \\
+
+Iso-C\pub{ICML 2025} & 14.30 & 17.22 & 17.00 & 16.17 & 30.99 & 28.40 & 51.74 & 37.04 & 13.02 & 13.27 & 14.69 & 13.66 & 15.45 & 17.27 & 18.80 & 17.17 & 17.55 & 17.31 & 17.91 & 17.59 \\
+
+\rowcolor{gray!10}
+Free-Merging\pub{ICCV 2025} & 11.54 & 8.61 & 18.40 & 12.85 & 45.69 & 48.30 & 66.88 & 53.62 & 9.59 & 13.77 & 8.90 & 10.75 & 6.82 & 4.97 & 10.62 & 7.47 & 15.18 & 15.75 & 15.99 & 15.64 \\
+
+RobustMerge\pub{NeurIPS 2025} & 13.74 & 14.09 & 16.70 & 14.84 & 23.77 & 27.71 & 5.04 & 18.84 & 16.01 & 14.42 & 19.60 & 16.68 & 16.73 & 11.51 & 20.77 & 16.34 & 17.61 & 13.15 & 16.29 & 15.68 \\
+
+\rowcolor{gray!10}
+FROM\pub{AAAI 2026} & 15.65 & 14.95 & 16.71 & 15.77 & 45.69 & 29.71 & 66.88 & 47.43 & 11.74 & 12.20 & 10.51 & 11.48 & 11.33 & 10.16 & 13.80 & 11.76 & 15.39 & 12.52 & 14.76 & 14.22 \\
+
+\hline \hline
+\rowcolor[HTML]{FFF9C4}
+\textbf{LAMP-Merge} &
+\textbf{77.38} &
+\textbf{77.34} &
+\textbf{77.17} &
+\textbf{77.30} &
+\textbf{63.24} &
+\textbf{63.18} &
+\textbf{63.09} &
+\textbf{63.17} &
+\textbf{68.49} &
+\textbf{68.17} &
+\textbf{68.12} &
+\textbf{68.26} &
+\textbf{62.58} &
+\textbf{62.80} &
+\textbf{62.84} &
+\textbf{62.74} &
+\textbf{47.71} &
+\textbf{48.70} &
+\textbf{48.40} &
+\textbf{48.27} \\
+\end{tabular}%
+}
+\end{table*}
+
+
+\subsection{Ablation Study}
+
+To assess DPR and LPC, we conduct module ablations under the main experimental configuration. Weight averaging, weight averaging + DPR, and full LAMP-Merge obtain mean ACC of 22.04\%, 58.91\%, and 62.21\%, respectively; Fig.~\ref{fig:baseline-2x2-ablation} further reports strict $2\times2$ TIES/DARE controls.
+
+\subsubsection{1) Effectiveness of DPR}
+To identify the necessary components of DPR, we retain LPC and replace its prototype semantics with classifier-head aggregation (CHA), global-feature mean (GFM), support-only synthetic head (SSH), or shuffled-label prototype (SLP). These settings test head directions, class conditioning, synthetic directions, and label--prototype alignment. We also replace its client-support weighting with uniform client weight (UCW), binary support only (BSO), or global client-size weight (GCSW), which test the reliability assigned to each observed class.
+
+
+\begin{table}[!t]
+\centering
+\caption{DPR internal ablation by dataset. Each entry averages all backbones, client counts, and Dirichlet settings; Avg averages the five datasets.}
+\label{tab:diagnostic-internal-ablation}
+\scriptsize
+\renewcommand{\arraystretch}{1.20}
+\setlength{\tabcolsep}{2.4pt}
+\resizebox{\columnwidth}{!}{%
+\begin{tabular}{clccccc:c}
+\noalign{\hrule height 1.25pt}
+\rowcolor[HTML]{F2F2F2}
+\textbf{Category} & \textbf{Setting} & \textbf{Blood} & \textbf{Derma} & \textbf{Organ-C} & \textbf{Organ-S} & \textbf{US} & \textbf{Avg} \\
+\hline \hline
+\multirow{4}{*}{\shortstack{Prototype\\semantics}} & CHA & 18.95 & 56.14 & 17.74 & 18.88 & 16.43 & 25.63 \\
+ & \cellcolor{gray!10}GFM & \cellcolor{gray!10}8.88 & \cellcolor{gray!10}66.88 & \cellcolor{gray!10}22.33 & \cellcolor{gray!10}23.54 & \cellcolor{gray!10}10.87 & \cellcolor{gray!10}26.50 \\
+ & SSH & 11.62 & 17.29 & 7.08 & 7.74 & 10.69 & 10.89 \\
+ & \cellcolor{gray!10}SLP & \cellcolor{gray!10}24.46 & \cellcolor{gray!10}28.73 & \cellcolor{gray!10}14.18 & \cellcolor{gray!10}16.25 & \cellcolor{gray!10}14.25 & \cellcolor{gray!10}19.57 \\
+\hdashline
+\multirow{3}{*}{\shortstack{Client-support\\weighting}} & UCW & 78.03 & 59.61 & 58.36 & 53.86 & 41.79 & 58.33 \\
+ & \cellcolor{gray!10}BSO & \cellcolor{gray!10}78.03 & \cellcolor{gray!10}44.96 & \cellcolor{gray!10}57.86 & \cellcolor{gray!10}53.24 & \cellcolor{gray!10}41.79 & \cellcolor{gray!10}55.18 \\
+ & GCSW & 78.45 & 62.48 & 59.11 & 53.79 & 43.13 & 59.39 \\
+\hline \hline
+ & \cellcolor[HTML]{FFF9C4}\textbf{LAMP} & \cellcolor[HTML]{FFF9C4}\textbf{81.81} & \cellcolor[HTML]{FFF9C4}\textbf{62.40} & \cellcolor[HTML]{FFF9C4}\textbf{63.05} & \cellcolor[HTML]{FFF9C4}\textbf{57.67} & \cellcolor[HTML]{FFF9C4}\textbf{46.11} & \cellcolor[HTML]{FFF9C4}\textbf{62.21} \\
+\noalign{\hrule height 1.25pt}
+\end{tabular}
+}
+\end{table}
+
+
+Table~\ref{tab:diagnostic-internal-ablation} and Fig.~\ref{fig:internal_module_ablations} show that every replacement lowers ACC. This confirms that DPR needs both reliable class prototypes and class-specific support weighting.
+
+\subsubsection{2) Effectiveness of LPC}
+
+
+
+\begin{table}[!t]
+\centering
+\caption{LPC internal ablation by dataset. UPP uses a uniform prior, AOC removes the activation gate, and CBP averages client-normalized priors. Each entry averages all backbones, client counts, and Dirichlet settings; Avg averages the five datasets.}
+\label{tab:prevalence-internal-ablation}
+\scriptsize
+\renewcommand{\arraystretch}{1.20}
+\setlength{\tabcolsep}{2.4pt}
+\resizebox{\columnwidth}{!}{%
+\begin{tabular}{lccccc:c}
+\noalign{\hrule height 1.25pt}
+\rowcolor[HTML]{F2F2F2}
+\textbf{Setting} & \textbf{Blood} & \textbf{Derma} & \textbf{Organ-C} & \textbf{Organ-S} & \textbf{US} & \textbf{Avg} \\
+\hline \hline
+UPP & 81.81 & 46.58 & 62.57 & 57.50 & 46.11 & 58.91 \\
+AOC & 80.57 & 62.40 & 63.05 & 57.67 & 45.80 & 61.90 \\
+CBP & 81.25 & 49.61 & 62.10 & 57.12 & 44.76 & 58.97 \\
+\hline \hline
+\rowcolor[HTML]{FFF9C4}
+\textbf{LAMP-Merge} & \textbf{81.81} & \textbf{62.40} & \textbf{63.05} & \textbf{57.67} & \textbf{46.11} & \textbf{62.21} \\
+\noalign{\hrule height 1.25pt}
+\end{tabular}
+}
+\end{table}
+
+\begin{figure}[!t]
+    \centering
+    \includegraphics[width=\columnwidth]{figures/02_internal_module_ablations.png}
+    \caption{Internal ablations of DPR and LPC. Definitions of the plotted abbreviations are provided in the supplementary ablation configurations.}
+    \label{fig:internal_module_ablations}
+\end{figure}
+
+To evaluate LPC, we retain DPR and compare its empirical prior with the uniform prevalence prior (UPP), always-on calibration (AOC), and client-balanced prior (CBP) across the full experimental setting. UPP tests whether measured medical prevalence is useful, AOC tests the activation gate, and CBP tests whether equal client influence can replace sample-weighted prevalence.
+
+Table~\ref{tab:prevalence-internal-ablation} and Fig.~\ref{fig:internal_module_ablations} show that LAMP-Merge is best and every control reduces ACC. This demonstrates that calibrated empirical prevalence and client-size-aware aggregation complement DPR.
+
+\begin{figure}[!t]
+\centering
+\includegraphics[width=\columnwidth]{figures/03_baseline_2x2_ablation.png}
+\caption{Strict $2\times2$ DPR/LPC ablations for TIES-Merging and DARE-Linear. \textbf{All experimental datasets are included.}}
+\label{fig:baseline-2x2-ablation}
+\end{figure}
+
+\subsection{Prediction-collapse Diagnostics}
+Because raw ACC can hide single-class predictions on long-tailed data, we additionally report collapse ratio, effective predicted classes, and predicted--true total variation\cite{BUDA2018249,5597285}.
+
+\begin{table}[!t]
+\centering
+\caption{Prediction-collapse diagnostics by dataset. Best ref. is selected separately for each metric and dataset. Ratio metrics use percentage scale; Avg averages the five datasets.}
+\label{tab:collapse-key}
+\scriptsize
+\setlength{\tabcolsep}{2.2pt}
+\renewcommand{\arraystretch}{1.16}
+\resizebox{\columnwidth}{!}{%
+\begin{tabular}{clccccc:c}
+\noalign{\hrule height 1.25pt}
+\rowcolor[HTML]{F2F2F2}
+\textbf{Metric} & \textbf{Series} & \textbf{Blood} & \textbf{Derma} & \textbf{Organ-C} & \textbf{Organ-S} & \textbf{US} & \textbf{Avg} \\
+\hline \hline
+ & \cellcolor{gray!10}Best ref. & \cellcolor{gray!10}80.20 & \cellcolor{gray!10}85.18 & \cellcolor{gray!10}72.38 & \cellcolor{gray!10}71.12 & \cellcolor{gray!10}80.31 & \cellcolor{gray!10}79.02 \\
+\multirow{-2}{*}{Collapse $\downarrow$} & \cellcolor[HTML]{FFF9C4}\textbf{LAMP} & \cellcolor[HTML]{FFF9C4}\textbf{19.58} & \cellcolor[HTML]{FFF9C4}\textbf{68.05} & \cellcolor[HTML]{FFF9C4}\textbf{20.72} & \cellcolor[HTML]{FFF9C4}\textbf{24.36} & \cellcolor[HTML]{FFF9C4}\textbf{20.45} & \cellcolor[HTML]{FFF9C4}\textbf{30.63} \\
+\hdashline
+ & \cellcolor{gray!10}Best ref. & \cellcolor{gray!10}1.81 & \cellcolor{gray!10}1.65 & \cellcolor{gray!10}2.49 & \cellcolor{gray!10}2.53 & \cellcolor{gray!10}1.98 & \cellcolor{gray!10}2.05 \\
+\multirow{-2}{*}{Eff. classes $\uparrow$} & \cellcolor[HTML]{FFF9C4}\textbf{LAMP} & \cellcolor[HTML]{FFF9C4}\textbf{7.48} & \cellcolor[HTML]{FFF9C4}\textbf{3.10} & \cellcolor[HTML]{FFF9C4}\textbf{9.55} & \cellcolor[HTML]{FFF9C4}\textbf{8.44} & \cellcolor[HTML]{FFF9C4}\textbf{7.44} & \cellcolor[HTML]{FFF9C4}\textbf{7.20} \\
+\hdashline
+ & \cellcolor{gray!10}Best ref. & \cellcolor{gray!10}73.48 & \cellcolor{gray!10}46.03 & \cellcolor{gray!10}75.42 & \cellcolor{gray!10}73.85 & \cellcolor{gray!10}72.73 & \cellcolor{gray!10}69.44 \\
+\multirow{-2}{*}{Pred-true TV $\downarrow$} & \cellcolor[HTML]{FFF9C4}\textbf{LAMP} & \cellcolor[HTML]{FFF9C4}\textbf{3.97} & \cellcolor[HTML]{FFF9C4}\textbf{17.09} & \cellcolor[HTML]{FFF9C4}\textbf{12.38} & \cellcolor[HTML]{FFF9C4}\textbf{13.17} & \cellcolor[HTML]{FFF9C4}\textbf{15.51} & \cellcolor[HTML]{FFF9C4}\textbf{12.42} \\
+\noalign{\hrule height 1.25pt}
+\end{tabular}
+}
+\end{table}
+
+Table~\ref{tab:collapse-key} shows that \textbf{LAMP-Merge consistently improves all collapse diagnostics}.
+
+\subsection{Visualization Experiment}
+
+We visualize the absolute per-class predicted--true gap; values closer to zero indicate better prevalence alignment.
+
+\begin{figure}[!t]
+\centering
+\includegraphics[width=\linewidth]{figures/04_ultrasound_class_distribution.png}
+\caption{Absolute predicted--true class gaps on Ultrasound, averaged over all backbones, client counts, and Dirichlet settings. Values are percentage points; zero denotes exact agreement.}
+\label{fig:visual-chaosheng_predict}
+\end{figure}
+
+\subsection{Hyperparameter Analysis Experiment}
+Fig.~\ref{fig:hparam-analysis} evaluates DPR/LPC sensitivity on \textbf{the full setting}.
+
+\begin{figure}[!t]
+\centering
+\includegraphics[width=\columnwidth]{figures/05_hyperparameter_sensitivity.png}
+\caption{Single-factor DPR/LPC ablation on \textbf{the full setting}; each curve varies one module parameter while all others remain fixed.}
+\label{fig:hparam-analysis}
+\end{figure}
+
+This single-factor ablation varies DPR's prototype-head scale \(s\) under several \(\gamma\) values and LPC's calibration strength \(\lambda\) under several \(\tau\) values, while holding all remaining settings fixed. The selected \(s=18.75\) lies in a broad high-performing DPR region, and the closely spaced LPC curves around \(\tau=2.5\) show gradual sensitivity rather than an isolated peak.
+
+
+\section{Conclusion}
+
+We study one-shot medical model merging without raw-image sharing or federated rounds. Under incomplete local coverage, generic merges can collapse predictions, while raw ACC may conceal failure on long-tailed data. Across full-scope experiments, DPR restores class-level directions and LPC retains clinically meaningful prevalence without reintroducing collapse. Together, they offer a class-level interface for privacy-constrained post-training collaboration.
+
+\bibliography{aaai2026}
+\appendix
+\def\appendixinmain{}
+\input{appendix}
+
+\end{document}
