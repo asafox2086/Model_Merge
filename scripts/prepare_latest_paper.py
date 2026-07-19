@@ -26,10 +26,10 @@ BASELINE_2X2_ROOT = (
     / "outputs"
     / "lamp_merge_baseline_2x2_20260719_followup_formal_baseline_2x2"
 )
-HPARAM_3X10_ROOT = (
+LPC_HPARAM_3X10_ROOT = (
     ROOT / "outputs" / "lamp_merge_hparam_3x10_20260719_followup_formal_hparam_3x10"
 )
-GAMMA_EXTENSION_ROOT = ROOT / "outputs" / "lamp_merge_hparam_gamma_extension_full_20260715"
+DPR_HPARAM_3X10_ROOT = ROOT / "outputs" / "lamp_merge_hparam_3x10_20260719_full_dpr"
 
 DATASETS = [
     ("bloodmnist_224", "Blood"),
@@ -532,11 +532,8 @@ def build_hparam_rows() -> tuple[list[dict[str, object]], list[dict[str, object]
         for num_clients in (3, 5, 7)
         for beta in (0.0, 0.01, 0.1)
     }
-    patterns = {
-        "dpr": re.compile(r"dpr_gamma_([0-9p]+)_s_([0-9p]+)$"),
-        "lpc": re.compile(r"lpc_tau_([0-9p]+)_lambda_([0-9p]+)$"),
-    }
-    extension_pattern = re.compile(r"m1_gamma_([0-9p]+)_s_([0-9p]+)$")
+    dpr_pattern = re.compile(r"dpr_gamma_([0-9p]+)_s_([0-9p]+)$")
+    lpc_pattern = re.compile(r"lpc_tau_([0-9p]+)_lambda_([0-9p]+)$")
     diagnostic: list[dict[str, object]] = []
     prevalence: list[dict[str, object]] = []
 
@@ -544,6 +541,8 @@ def build_hparam_rows() -> tuple[list[dict[str, object]], list[dict[str, object]
         rows = read_csv(path / "reports" / "batch_status.csv")
         if len(rows) != 180 or any(row["status"] != "OK" for row in rows):
             raise RuntimeError(f"Incomplete hyperparameter run: {path}")
+        if any(row["lamp_merge_ablation_mode"] != "full" for row in rows):
+            raise RuntimeError(f"Hyperparameter run is not full LAMP-Merge: {path}")
         values_by_key: dict[tuple[str, str, int, float], float] = {}
         for row in rows:
             key = (row["dataset"], row["model"], int(row["num_clients"]), float(row["beta"]))
@@ -562,78 +561,36 @@ def build_hparam_rows() -> tuple[list[dict[str, object]], list[dict[str, object]
             "Mean ACC (%)": f"{100 * sum(client_values) / len(client_values):.4f}",
         }
 
-    for child in sorted(HPARAM_3X10_ROOT.iterdir()):
+    for child in sorted(DPR_HPARAM_3X10_ROOT.iterdir()):
         if not child.is_dir():
             continue
-        match = patterns["dpr"].match(child.name) or patterns["lpc"].match(child.name)
+        match = dpr_pattern.match(child.name)
         if match is None:
-            continue
-        item = {"Source": "2026-07-19 grid", **summarize_batch_status(child)}
-        first_value = float(match.group(1).replace("p", "."))
-        second_value = float(match.group(2).replace("p", "."))
-        if child.name.startswith("dpr_"):
-            diagnostic.append(
-                {
-                    "Evidence exponent gamma": first_value,
-                    "Prototype-head scale s": second_value,
-                    **item,
-                }
-            )
-        else:
-            prevalence.append(
-                {
-                    "Activation threshold tau": first_value,
-                    "Calibration strength lambda": second_value,
-                    **item,
-                }
-            )
-    if len(diagnostic) != 30 or len(prevalence) != 30:
-        raise RuntimeError("Expected complete 3x10 DPR and LPC hyperparameter grids")
-
-    for row in read_csv(REPORT_DIR / "lamp_merge_hparam_interaction_full.csv"):
-        module = row["module"]
-        curve_value = float(row["curve_value"])
-        if module == "diagnostic prototype reconstruction" and curve_value in {0.4, 0.5}:
-            diagnostic.append(
-                {
-                    "Source": "Earlier interaction grid",
-                    "Evidence exponent gamma": curve_value,
-                    "Prototype-head scale s": float(row["x_value"]),
-                    "Raw cells": int(row["raw_cells"]),
-                    "Client-average cells": int(row["client_average_cells"]),
-                    "Mean ACC (%)": f"{100 * float(row['client_average_mean_acc']):.4f}",
-                }
-            )
-        elif module == "long-tail prevalence calibration" and curve_value in {1.5, 2.0, 3.5}:
-            prevalence.append(
-                {
-                    "Source": "Earlier interaction grid",
-                    "Activation threshold tau": curve_value,
-                    "Calibration strength lambda": float(row["x_value"]),
-                    "Raw cells": int(row["raw_cells"]),
-                    "Client-average cells": int(row["client_average_cells"]),
-                    "Mean ACC (%)": f"{100 * float(row['client_average_mean_acc']):.4f}",
-                }
-            )
-
-    extension_rows = 0
-    for child in sorted(GAMMA_EXTENSION_ROOT.iterdir()):
-        if not child.is_dir():
-            continue
-        match = extension_pattern.match(child.name)
-        if match is None or float(match.group(1).replace("p", ".")) not in {0.65, 0.7}:
             continue
         diagnostic.append(
             {
-                "Source": "Earlier extension grid",
+                "Source": "Full configuration grid",
                 "Evidence exponent gamma": float(match.group(1).replace("p", ".")),
                 "Prototype-head scale s": float(match.group(2).replace("p", ".")),
                 **summarize_batch_status(child),
             }
         )
-        extension_rows += 1
-    if extension_rows != 20:
-        raise RuntimeError("Expected 20 complete DPR gamma-extension runs")
+    for child in sorted(LPC_HPARAM_3X10_ROOT.iterdir()):
+        if not child.is_dir():
+            continue
+        match = lpc_pattern.match(child.name)
+        if match is None:
+            continue
+        prevalence.append(
+            {
+                "Source": "Full configuration grid",
+                "Activation threshold tau": float(match.group(1).replace("p", ".")),
+                "Calibration strength lambda": float(match.group(2).replace("p", ".")),
+                **summarize_batch_status(child),
+            }
+        )
+    if len(diagnostic) != 30 or len(prevalence) != 30:
+        raise RuntimeError("Expected complete full-configuration 3x10 DPR and LPC grids")
     return diagnostic, prevalence
 
 
@@ -941,7 +898,7 @@ def update_tex(
     )
     tex = tex.replace(
         r"Fig.~\ref{fig:hparam-analysis} evaluates the prototype-head scale $s$ and calibration strength $\lambda$ over 180 raw cells and 60 client-average cells.",
-        r"Fig.~\ref{fig:hparam-analysis} overlays the current 2026-07-19 grid with earlier complete grids; every curve point uses 180 raw cells and 60 client-average cells.",
+        r"Fig.~\ref{fig:hparam-analysis} evaluates DPR and LPC sensitivities under the full LAMP-Merge configuration; every curve point uses 180 raw cells and 60 client-average cells.",
     )
     tex = tex.replace(
         "generic merge concentrates predictions on one class, whereas LAMP-Merge recovers a broader class allocation aligned with the test distribution.",
@@ -956,8 +913,8 @@ def update_tex(
         "Generic merges concentrate predictions on a few classes, while LAMP-Merge recovers a broader class allocation aligned with the test distribution.",
     )
     tex = tex.replace(
-        "To visualize the prediction-distribution changes measured by the new diagnostic metrics, we plot the per-class difference between each method's predicted allocation and the true test distribution. Values closer to zero indicate better prevalence alignment; positive and negative values respectively indicate over- and under-prediction. LAMP-Merge exhibits smaller deviations than representative generic merges across most classes.",
-        "To visualize the prediction-distribution changes measured by the new diagnostic metrics, we plot the absolute per-class gap between each method's predicted allocation and the true test distribution. Values closer to zero indicate better prevalence alignment. LAMP-Merge exhibits smaller deviations than representative generic merges across most classes.",
+        "To visualize the prediction-distribution changes measured by the diagnostic metrics, we plot the per-class difference between each method's predicted allocation and the true test distribution. Values closer to zero indicate better prevalence alignment; positive and negative values respectively indicate over- and under-prediction. LAMP-Merge exhibits smaller deviations than representative generic merges across most classes.",
+        "To visualize the prediction-distribution changes measured by the diagnostic metrics, we plot the absolute per-class gap between each method's predicted allocation and the true test distribution. Values closer to zero indicate better prevalence alignment. LAMP-Merge exhibits smaller deviations than representative generic merges across most classes.",
     )
     tex = tex.replace(
         "Per-class prediction deviations on Ultrasound, averaged over the four visual backbones, $K\\in\\{3,5,7\\}$, and the three Dirichlet skew levels. Values are predicted minus true class proportions in percentage points; zero denotes exact distributional agreement.",
@@ -1043,7 +1000,7 @@ def update_tex(
             r"\begin{figure}[H]",
             r"\centering",
             r"\includegraphics[width=\columnwidth]{figures/05_hyperparameter_sensitivity.pdf}",
-            r"\caption{Full-scope DPR and LPC sensitivity. Solid curves use the 2026-07-19 grid; dashed and dash-dotted curves use earlier complete grids. Each point averages 60 client-average cells.}",
+            r"\caption{DPR and LPC sensitivity under the full LAMP-Merge configuration. Each line varies one module while fixing the other at its selected operating point. Each point averages 60 client-average cells.}",
             r"\label{fig:hparam-analysis}",
             r"\end{figure}",
         ]
@@ -1202,13 +1159,13 @@ def main() -> None:
     diagnostic_hparams, prevalence_hparams = build_hparam_rows()
     write_annotated_csv(
         csv_dir / "超参数分析_诊断原型重建.csv",
-        "本表记录 DPR 超参数曲线的 2026-07-19 完整 3x10 网格、早期交互网格和 gamma 扩展网格；每点覆盖五个数据集、四个 backbone、K=3/5/7 和三个 beta，ACC 使用百分比。",
+        "本表记录完整 LAMP-Merge 配置下的 DPR 3x10 网格；每点覆盖五个数据集、四个 backbone、K=3/5/7 和三个 beta，ACC 使用百分比。",
         ["Source", "Evidence exponent gamma", "Prototype-head scale s", "Raw cells", "Client-average cells", "Mean ACC (%)"],
         diagnostic_hparams,
     )
     write_annotated_csv(
         csv_dir / "超参数分析_长尾患病率校准.csv",
-        "本表记录 LPC 超参数曲线的 2026-07-19 完整 3x10 网格及早期交互网格；每点覆盖五个数据集、四个 backbone、K=3/5/7 和三个 beta，ACC 使用百分比。",
+        "本表记录完整 LAMP-Merge 配置下的 LPC 3x10 网格；每点覆盖五个数据集、四个 backbone、K=3/5/7 和三个 beta，ACC 使用百分比。",
         ["Source", "Activation threshold tau", "Calibration strength lambda", "Raw cells", "Client-average cells", "Mean ACC (%)"],
         prevalence_hparams,
     )

@@ -200,8 +200,6 @@
 % END REMOVE bibentry
 
 \begin{document}
-\raggedbottom
-
 \maketitle
 
 \begin{abstract}
@@ -873,7 +871,7 @@ We further conduct three full-scope LPC internal controls while retaining DPR. U
 \label{fig:baseline-2x2-ablation}
 \end{figure*}
 
-\subsection{New-metric Diagnostic Experiment}
+\subsection{Prediction-collapse Diagnostics}
 Although the main experiments use ACC for direct comparison, long-tailed medical distributions can allow single-class or few-class predictors to achieve high ACC\cite{BUDA2018249,5597285}. We therefore report collapse ratio, effective predicted classes, and predicted--true total variation.
 
 \begin{table}[t]
@@ -906,7 +904,7 @@ Table \ref{tab:collapse-key} compares LAMP-Merge with the best-performing baseli
 
 \subsection{Visualization Experiment}
 
-To visualize the prediction-distribution changes measured by the new diagnostic metrics, we plot the absolute per-class gap between each method's predicted allocation and the true test distribution. Values closer to zero indicate better prevalence alignment. LAMP-Merge exhibits smaller deviations than representative generic merges across most classes.
+To visualize the prediction-distribution changes measured by the diagnostic metrics, we plot the absolute per-class gap between each method's predicted allocation and the true test distribution. Values closer to zero indicate better prevalence alignment. LAMP-Merge exhibits smaller deviations than representative generic merges across most classes.
 
 \begin{figure}[H]
 \centering
@@ -916,12 +914,12 @@ To visualize the prediction-distribution changes measured by the new diagnostic 
 \end{figure}
 
 \subsection{Hyperparameter Analysis Experiment}
-Fig.~\ref{fig:hparam-analysis} overlays the current 2026-07-19 grid with earlier complete grids; every curve point uses 180 raw cells and 60 client-average cells. The fixed method uses $\gamma=0.55$, $s=18.75$, $\tau=2.5$, and $\lambda=4.25$; these values lie in broad stable regions, indicating that the gain is not produced by narrow hyperparameter tuning.
+Fig.~\ref{fig:hparam-analysis} evaluates DPR and LPC sensitivities under the full LAMP-Merge configuration. Each curve point uses 180 raw cells and 60 client-average cells. The fixed operating point uses $\gamma=0.55$, $s=18.75$, $\tau=2.5$, and $\lambda=4.25$; the sweeps assess deviations around these values while holding the other module fixed.
 
 \begin{figure}[H]
 \centering
 \includegraphics[width=\columnwidth]{figures/new/05_hyperparameter_sensitivity.pdf}
-\caption{Full-scope DPR and LPC sensitivity. Solid curves use the 2026-07-19 grid; dashed and dash-dotted curves use earlier complete grids. Each point averages 60 client-average cells.}
+\caption{DPR and LPC sensitivity under the full LAMP-Merge configuration. Each line varies one module while fixing the other at its selected operating point. Each point averages 60 client-average cells.}
 \label{fig:hparam-analysis}
 \end{figure}
 
@@ -930,7 +928,7 @@ Fig.~\ref{fig:hparam-analysis} overlays the current 2026-07-19 grid with earlier
 \FloatBarrier
 \section{Conclusion}
 
-We studied \textbf{one-shot asynchronous medical model merging}, where independently trained hospital models must be fused without federated optimization rounds and without exposing raw medical images to the server. Our empirical analysis shows that generic model-merging methods suffer from \textbf{aggregation-induced predictive collapse} under incomplete local diagnostic coverage. We further show that, on long-tailed medical datasets, such collapse can be masked by raw accuracy. We therefore introduce the Long-tail Prevalence Calibration module and perform secondary evaluation using macro recall, macro-F1, and predictive-distribution diagnostics\cite{BUDA2018249,5597285}.
+We studied \textbf{one-shot asynchronous medical model merging}, where independently trained hospital models must be fused without federated optimization rounds and without exposing raw medical images to the server. Our empirical analysis shows that generic model-merging methods suffer from \textbf{aggregation-induced predictive collapse} under incomplete local diagnostic coverage. We further show that, on long-tailed medical datasets, such collapse can be masked by raw accuracy. We therefore introduce the Long-tail Prevalence Calibration module and evaluate prediction-collapse diagnostics alongside accuracy\cite{BUDA2018249,5597285}.
 
 Taken together, the full-scope comparisons, module ablations, and prediction-distribution diagnostics establish a consistent mechanism: class-level support-weighted evidence reconstructs discriminative directions for locally absent diagnoses, while bounded prevalence calibration retains clinically meaningful imbalance without reintroducing majority-class collapse.
 
@@ -1040,18 +1038,16 @@ As long as $\lambda$ is bounded, long-tail prevalence calibration does not repla
 \subsection{Metric Definitions}
 \label{app:metric-geometry}
 
-Let \(y_n\) and \(\hat{y}_n\) denote the true and predicted labels of the \(n\)-th test sample. Let \(q_c=N^{-1}\sum_n\mathbf{1}[\hat{y}_n=c]\) be the predicted-class distribution, \(p_c=N^{-1}\sum_n\mathbf{1}[y_n=c]\) the true class distribution, and \(\mathcal{C}_{\mathrm{test}}=\{c\mid \sum_n\mathbf{1}[y_n=c]>0\}\) the set of classes observed in the test set. We use:
+Let \(y_n\) and \(\hat{y}_n\) denote the true and predicted labels of the \(n\)-th test sample. Let \(q_c=N^{-1}\sum_n\mathbf{1}[\hat{y}_n=c]\) be the predicted-class distribution and \(p_c=N^{-1}\sum_n\mathbf{1}[y_n=c]\) the true class distribution. We use:
 \begin{itemize}
 \setlength{\itemsep}{0pt}
-\item \(\mathrm{BA}=|\mathcal{C}_{\mathrm{test}}|^{-1}\sum_{c\in\mathcal{C}_{\mathrm{test}}}\mathrm{Recall}_c\), balanced accuracy or macro recall, which measures whether all observed diagnosis classes are recalled.
-\item \(\mathrm{MacroF1}=|\mathcal{C}_{\mathrm{test}}|^{-1}\sum_{c\in\mathcal{C}_{\mathrm{test}}}\mathrm{F1}_c\), class-balanced precision-recall quality that penalizes majority-only predictions.
 \item \(\rho=\max_c q_c\), the prediction-collapse ratio, which measures concentration on a single diagnosis class.
 \item \(C_{\mathrm{eff}}=\exp\left(-\sum_c q_c\log q_c\right)\), the effective number of predicted classes.
 \item \(\mathrm{TV}(q,p)=\frac{1}{2}\sum_c |q_c-p_c|\), the total variation distance between predicted and true class distributions.
 \end{itemize}
 
 \subsection{Hyperparameter-sweep Reproducibility}
-The sensitivity figure overlays the complete 2026-07-19 sweep with earlier complete interaction and DPR-extension sweeps rather than selecting individual runs. The current DPR grid uses \(\gamma\in\{0.50,0.55,0.60\}\) and ten prototype-head scales \(s\in\{13.75,15.00,\ldots,25.00\}\); the current LPC grid uses \(\tau\in\{2.0,2.5,3.0\}\) and ten calibration strengths \(\lambda\in\{3.00,3.25,\ldots,5.25\}\). At every grid point, we evaluate the five datasets, four backbone families, three client counts, and three Dirichlet skew levels, yielding 180 raw result cells and 60 client-average cells after averaging the three skew levels for each dataset--backbone--client-count combination.
+The sensitivity figure uses full-configuration sweeps only. The DPR grid uses \(\gamma\in\{0.50,0.55,0.60\}\) and ten prototype-head scales \(s\in\{13.75,15.00,\ldots,25.00\}\), while holding \(\tau=2.5\) and \(\lambda=4.25\) fixed. The LPC grid uses \(\tau\in\{2.0,2.5,3.0\}\) and ten calibration strengths \(\lambda\in\{3.00,3.25,\ldots,5.25\}\), while holding \(\gamma=0.55\) and \(s=18.75\) fixed. At every grid point, we evaluate the five datasets, four backbone families, three client counts, and three Dirichlet skew levels, yielding 180 raw result cells and 60 client-average cells after averaging the three skew levels for each dataset--backbone--client-count combination.
 
 For reuse, the paper package records one row per grid point in the DPR and LPC hyperparameter CSV files. Each row includes both the raw-cell and client-average-cell counts together with the mean ACC used in Fig.~\ref{fig:hparam-analysis}. The curves retain every measured point in ascending parameter order and do not apply smoothing, interpolation, or best-run selection. The marked operating point is fixed before comparison at \(\gamma=0.55\), \(s=18.75\), \(\tau=2.5\), and \(\lambda=4.25\); it is therefore directly traceable to the same recorded grid as the surrounding sensitivity values.
 

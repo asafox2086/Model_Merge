@@ -366,11 +366,7 @@ def plot_hparam_curves(
         raise ValueError(f"Missing requested hyperparameter curves: {missing}")
 
     palette = ["#4F81BD", "#F79646", "#9BBB59", "#C0504D", "#8064A2", "#70AD47"]
-    source_styles = {
-        "2026-07-19 grid": "-",
-        "Earlier interaction grid": "--",
-        "Earlier extension grid": "-.",
-    }
+    source_styles = {"Full configuration grid": "-"}
     plotted_values = []
     for index, (source, curve) in enumerate(displayed_curves):
         marker, linestyle = LINE_STYLES[index % len(LINE_STYLES)]
@@ -395,7 +391,7 @@ def plot_hparam_curves(
     selected_row = next(
         row
         for row in rows
-        if row["Source"] == "2026-07-19 grid"
+        if row["Source"] == "Full configuration grid"
         and float(row[curve_field]) == selected_curve
         and float(row[x_field]) == selected_x
     )
@@ -462,12 +458,9 @@ def plot_hparams(csv_dir: Path, figure_dir: Path) -> None:
         r"Prototype-head scale $s$",
         r"\gamma",
         [
-            ("Earlier interaction grid", 0.4),
-            ("Earlier interaction grid", 0.5),
-            ("2026-07-19 grid", 0.55),
-            ("2026-07-19 grid", 0.6),
-            ("Earlier extension grid", 0.65),
-            ("Earlier extension grid", 0.7),
+            ("Full configuration grid", 0.5),
+            ("Full configuration grid", 0.55),
+            ("Full configuration grid", 0.6),
         ],
         legend_location="center",
         legend_anchor=(0.57, 0.48),
@@ -484,11 +477,9 @@ def plot_hparams(csv_dir: Path, figure_dir: Path) -> None:
         r"Calibration strength $\lambda$",
         r"\tau",
         [
-            ("Earlier interaction grid", 1.5),
-            ("Earlier interaction grid", 2.0),
-            ("2026-07-19 grid", 2.5),
-            ("2026-07-19 grid", 3.0),
-            ("Earlier interaction grid", 3.5),
+            ("Full configuration grid", 2.0),
+            ("Full configuration grid", 2.5),
+            ("Full configuration grid", 3.0),
         ],
         (55.0, 65.0),
         (3.75, 5.25),
