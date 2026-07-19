@@ -731,7 +731,7 @@ def build_internal_dataset_table(
 
     return "\n".join(
         [
-            r"\begin{table}[!b]",
+            r"\begin{table}[!t]",
             r"\centering",
             rf"\caption{{{caption}}}",
             rf"\label{{{label}}}",
@@ -787,7 +787,7 @@ def build_collapse_dataset_table(diagnostic_summary: dict[str, dict[str, object]
 
     return "\n".join(
         [
-            r"\begin{table}[!b]",
+            r"\begin{table}[!t]",
             r"\centering",
             r"\caption{Prediction-collapse diagnostics by dataset. Best ref. is selected separately for each metric and dataset. Ratio metrics use percentage scale; Avg averages the five datasets.}",
             r"\label{tab:collapse-key}",
@@ -824,7 +824,7 @@ def build_dataset_statistics_table() -> str:
         )
     return "\n".join(
         [
-            r"\begin{table}[!htbp]",
+            r"\begin{table}[!t]",
             r"\centering",
             r"\caption{Dataset statistics and representative samples for the five medical image benchmarks. Counts are taken from the exact NPZ files used in our experiments.}",
             r"\label{tab:dataset-statistics}",
@@ -1004,7 +1004,7 @@ def update_tex(
     )
     baseline_2x2_figure = "\n".join(
         [
-            r"\begin{figure}[!b]",
+            r"\begin{figure}[!t]",
             r"\centering",
             r"\includegraphics[width=\columnwidth]{figures/03_baseline_2x2_ablation.pdf}",
             r"\caption{Strict $2\times2$ DPR/LPC ablations for TIES-Merging and DARE-Linear. \textbf{All experimental datasets are included.}}",
@@ -1070,7 +1070,7 @@ def update_tex(
     )
     combined_hparam_figure = "\n".join(
         [
-            r"\begin{figure}[!htbp]",
+            r"\begin{figure}[!t]",
             r"\centering",
             r"\includegraphics[width=\columnwidth]{figures/05_hyperparameter_sensitivity.pdf}",
             rf"\caption{{{hparam_caption}}}",
@@ -1104,7 +1104,7 @@ def update_tex(
         r"\begin{figure}[t]"
         "\n\\centering"
         "\n\\includegraphics[width=\\linewidth]{figures/new/04_ultrasound_class_distribution.pdf}",
-        r"\begin{figure}[!htbp]"
+        r"\begin{figure}[!t]"
         "\n\\centering"
         "\n\\includegraphics[width=\\linewidth]{figures/new/04_ultrasound_class_distribution.pdf}",
     )
