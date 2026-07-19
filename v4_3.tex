@@ -892,18 +892,15 @@ Although the main experiments use ACC for direct comparison, long-tailed medical
 \hline \hline
 \rowcolor{gray!10}
  & Best ref. & 80.20 & 85.18 & 72.38 & 71.12 & 80.31 & 79.02 \\
-\rowcolor[HTML]{FFF9C4}
-\multirow{-2}{*}{Collapse $\downarrow$} & \textbf{LAMP} & \textbf{19.58} & \textbf{68.05} & \textbf{20.72} & \textbf{24.36} & \textbf{20.45} & \textbf{30.63} \\
+\multirow{-2}{*}{Collapse $\downarrow$} & \cellcolor[HTML]{FFF9C4}\textbf{LAMP} & \cellcolor[HTML]{FFF9C4}\textbf{19.58} & \cellcolor[HTML]{FFF9C4}\textbf{68.05} & \cellcolor[HTML]{FFF9C4}\textbf{20.72} & \cellcolor[HTML]{FFF9C4}\textbf{24.36} & \cellcolor[HTML]{FFF9C4}\textbf{20.45} & \cellcolor[HTML]{FFF9C4}\textbf{30.63} \\
 \hdashline
 \rowcolor{gray!10}
  & Best ref. & 1.81 & 1.65 & 2.49 & 2.53 & 1.98 & 2.05 \\
-\rowcolor[HTML]{FFF9C4}
-\multirow{-2}{*}{Eff. classes $\uparrow$} & \textbf{LAMP} & \textbf{7.48} & \textbf{3.10} & \textbf{9.55} & \textbf{8.44} & \textbf{7.44} & \textbf{7.20} \\
+\multirow{-2}{*}{Eff. classes $\uparrow$} & \cellcolor[HTML]{FFF9C4}\textbf{LAMP} & \cellcolor[HTML]{FFF9C4}\textbf{7.48} & \cellcolor[HTML]{FFF9C4}\textbf{3.10} & \cellcolor[HTML]{FFF9C4}\textbf{9.55} & \cellcolor[HTML]{FFF9C4}\textbf{8.44} & \cellcolor[HTML]{FFF9C4}\textbf{7.44} & \cellcolor[HTML]{FFF9C4}\textbf{7.20} \\
 \hdashline
 \rowcolor{gray!10}
  & Best ref. & 73.48 & 46.03 & 75.42 & 73.85 & 72.73 & 69.44 \\
-\rowcolor[HTML]{FFF9C4}
-\multirow{-2}{*}{Pred-true TV $\downarrow$} & \textbf{LAMP} & \textbf{3.97} & \textbf{17.09} & \textbf{12.38} & \textbf{13.17} & \textbf{15.51} & \textbf{12.42} \\
+\multirow{-2}{*}{Pred-true TV $\downarrow$} & \cellcolor[HTML]{FFF9C4}\textbf{LAMP} & \cellcolor[HTML]{FFF9C4}\textbf{3.97} & \cellcolor[HTML]{FFF9C4}\textbf{17.09} & \cellcolor[HTML]{FFF9C4}\textbf{12.38} & \cellcolor[HTML]{FFF9C4}\textbf{13.17} & \cellcolor[HTML]{FFF9C4}\textbf{15.51} & \cellcolor[HTML]{FFF9C4}\textbf{12.42} \\
 \noalign{\hrule height 1.25pt}
 \end{tabular}
 }
@@ -923,12 +920,12 @@ To visualize the prediction-distribution changes measured by the new diagnostic 
 \end{figure}
 
 \subsection{Hyperparameter Analysis Experiment}
-Fig.~\ref{fig:hparam-analysis} evaluates the prototype-head scale $s$ and calibration strength $\lambda$ over 180 raw cells and 60 client-average cells. The fixed method uses $\gamma=0.55$, $s=18.75$, $\tau=2.5$, and $\lambda=4.25$; these values lie in broad stable regions, indicating that the gain is not produced by narrow hyperparameter tuning.
+Fig.~\ref{fig:hparam-analysis} overlays the current 2026-07-19 grid with earlier complete grids; every curve point uses 180 raw cells and 60 client-average cells. The fixed method uses $\gamma=0.55$, $s=18.75$, $\tau=2.5$, and $\lambda=4.25$; these values lie in broad stable regions, indicating that the gain is not produced by narrow hyperparameter tuning.
 
 \begin{figure}[H]
 \centering
 \includegraphics[width=\columnwidth]{figures/new/05_hyperparameter_sensitivity.pdf}
-\caption{Full-scope hyperparameter sensitivity of DPR and LPC. Expanded vertical ranges show stable accuracy across broad intervals.}
+\caption{Full-scope DPR and LPC sensitivity. Solid curves use the 2026-07-19 grid; dashed and dash-dotted curves use earlier complete grids. Each point averages 60 client-average cells.}
 \label{fig:hparam-analysis}
 \end{figure}
 
@@ -1058,7 +1055,7 @@ Let \(y_n\) and \(\hat{y}_n\) denote the true and predicted labels of the \(n\)-
 \end{itemize}
 
 \subsection{Hyperparameter-sweep Reproducibility}
-The DPR and LPC sensitivity curves are computed from the complete 2026-07-19 sweep rather than from selected runs. DPR uses \(\gamma\in\{0.50,0.55,0.60\}\) and ten prototype-head scales \(s\in\{13.75,15.00,\ldots,25.00\}\). LPC uses \(\tau\in\{2.0,2.5,3.0\}\) and ten calibration strengths \(\lambda\in\{3.00,3.25,\ldots,5.25\}\). Thus, each module has a \(3\times10\) grid. At every grid point, we evaluate the five datasets, four backbone families, three client counts, and three Dirichlet skew levels, yielding 180 raw result cells and 60 client-average cells after averaging the three skew levels for each dataset--backbone--client-count combination.
+The sensitivity figure overlays the complete 2026-07-19 sweep with earlier complete interaction and DPR-extension sweeps rather than selecting individual runs. The current DPR grid uses \(\gamma\in\{0.50,0.55,0.60\}\) and ten prototype-head scales \(s\in\{13.75,15.00,\ldots,25.00\}\); the current LPC grid uses \(\tau\in\{2.0,2.5,3.0\}\) and ten calibration strengths \(\lambda\in\{3.00,3.25,\ldots,5.25\}\). At every grid point, we evaluate the five datasets, four backbone families, three client counts, and three Dirichlet skew levels, yielding 180 raw result cells and 60 client-average cells after averaging the three skew levels for each dataset--backbone--client-count combination.
 
 For reuse, the paper package records one row per grid point in the DPR and LPC hyperparameter CSV files. Each row includes both the raw-cell and client-average-cell counts together with the mean ACC used in Fig.~\ref{fig:hparam-analysis}. The curves retain every measured point in ascending parameter order and do not apply smoothing, interpolation, or best-run selection. The marked operating point is fixed before comparison at \(\gamma=0.55\), \(s=18.75\), \(\tau=2.5\), and \(\lambda=4.25\); it is therefore directly traceable to the same recorded grid as the surrounding sensitivity values.
 

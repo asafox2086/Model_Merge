@@ -28,6 +28,7 @@ PAPER_COLORS = {
     "Weight Averaging": "#7F7F7F",
     "TIES-Merging": "#9BBB59",
     "DARE-Linear": "#4F81BD",
+    "DARE-TIES": "#8064A2",
     "True distribution": "#8064A2",
 }
 
@@ -228,7 +229,7 @@ def plot_internal_ablations(csv_dir: Path, figure_dir: Path) -> None:
     fig, axes = plt.subplots(
         1,
         2,
-        figsize=(3.35, 2.55),
+        figsize=(3.55, 2.72),
         dpi=300,
         gridspec_kw={"width_ratios": [1.35, 1.0]},
     )
@@ -262,7 +263,7 @@ def plot_internal_ablations(csv_dir: Path, figure_dir: Path) -> None:
         axis.set_yticks(y)
         axis.set_yticklabels(labels)
         axis.invert_yaxis()
-        axis.set_xlim(0, 70)
+        axis.set_xlim(0, 85)
         axis.set_xlabel("Mean ACC (%)")
         axis.set_title(title, fontweight="bold", pad=3)
         for bar, value in zip(bars, values):
@@ -284,7 +285,7 @@ def plot_internal_ablations(csv_dir: Path, figure_dir: Path) -> None:
 
 def plot_ultrasound_distribution(csv_dir: Path, figure_dir: Path) -> None:
     rows = read_annotated_csv(csv_dir / "超声预测类别分布.csv")
-    methods = ["LAMP-Merge", "Weight Averaging", "TIES-Merging", "DARE-Linear"]
+    methods = ["LAMP-Merge", "TIES-Merging", "DARE-Linear", "DARE-TIES"]
     by_series = {row["Series"]: row for row in rows}
     x = np.arange(8)
     setup_style("line")
@@ -302,7 +303,9 @@ def plot_ultrasound_distribution(csv_dir: Path, figure_dir: Path) -> None:
         plotted_values.append(values)
         marker, linestyle = LINE_STYLES[index]
         label = method
-        color = PAPER_COLORS[method]
+        color = "#FFC000" if method == "LAMP-Merge" else PAPER_COLORS[method]
+        linewidth = 3.8 if method == "LAMP-Merge" else 2.5
+        marker_edge_color = "#7F6000" if method == "LAMP-Merge" else darken_color(color, 0.65)
         ax.plot(
             x,
             values,
@@ -311,10 +314,10 @@ def plot_ultrasound_distribution(csv_dir: Path, figure_dir: Path) -> None:
             marker=marker,
             linestyle=linestyle,
             markerfacecolor=color,
-            markeredgecolor=darken_color(color, 0.65),
-            markeredgewidth=1.4,
-            linewidth=2.5,
-            zorder=3,
+            markeredgecolor=marker_edge_color,
+            markeredgewidth=1.7 if method == "LAMP-Merge" else 1.4,
+            linewidth=linewidth,
+            zorder=4 if method == "LAMP-Merge" else 3,
         )
     ax.set_xticks(x)
     ax.set_xticklabels([f"Class {index}" for index in x])
@@ -340,27 +343,42 @@ def plot_hparam_curves(
     title: str,
     x_label: str,
     curve_symbol: str,
+    displayed_curves: list[tuple[str, float]],
+    y_limits: tuple[float, float] | None = None,
+    legend_location: str = "best",
+    legend_anchor: tuple[float, float] | None = None,
 ) -> None:
-    grouped: dict[float, dict[float, float]] = defaultdict(dict)
+    grouped: dict[tuple[str, float], dict[float, float]] = defaultdict(dict)
     for row in rows:
+        source = row["Source"]
         curve_value = float(row[curve_field])
         x_value = float(row[x_field])
         accuracy = float(row["Mean ACC (%)"])
         if not np.isfinite([curve_value, x_value, accuracy]).all():
             raise ValueError(f"Non-finite hyperparameter row: {row}")
-        grouped[curve_value][x_value] = accuracy
-    curves = sorted(grouped)
-    x_values = sorted({value for curve in grouped.values() for value in curve})
-    matrix = np.asarray([[grouped[curve][x_value] for x_value in x_values] for curve in curves])
-    if matrix.shape != (len(curves), len(x_values)) or not np.isfinite(matrix).all():
-        raise ValueError("Hyperparameter grid is incomplete")
+        grouped[(source, curve_value)][x_value] = accuracy
+    missing = [item for item in displayed_curves if item not in grouped]
+    if missing:
+        raise ValueError(f"Missing requested hyperparameter curves: {missing}")
 
-    palette = ["#4F81BD", "#F79646", "#9BBB59", "#C0504D", "#8064A2"]
-    for index, curve in enumerate(curves):
+    palette = ["#4F81BD", "#F79646", "#9BBB59", "#C0504D", "#8064A2", "#70AD47"]
+    source_styles = {
+        "2026-07-19 grid": "-",
+        "Earlier interaction grid": "--",
+        "Earlier extension grid": "-.",
+    }
+    plotted_values = []
+    for index, (source, curve) in enumerate(displayed_curves):
         marker, linestyle = LINE_STYLES[index % len(LINE_STYLES)]
+        linestyle = source_styles[source]
+        x_values = np.asarray(sorted(grouped[(source, curve)]), dtype=float)
+        values = np.asarray([grouped[(source, curve)][value] for value in x_values], dtype=float)
+        if len(x_values) != 10 or not np.isfinite(values).all():
+            raise ValueError(f"Incomplete hyperparameter curve: {(source, curve)}")
+        plotted_values.extend(values)
         axis.plot(
             x_values,
-            matrix[index],
+            values,
             label=rf"${curve_symbol}={curve:g}$",
             color=palette[index % len(palette)],
             marker=marker,
@@ -370,30 +388,41 @@ def plot_hparam_curves(
             linewidth=2.2,
             zorder=3,
         )
-    selected_curve_index = curves.index(selected_curve)
-    selected_x_index = x_values.index(selected_x)
+    selected_row = next(
+        row
+        for row in rows
+        if row["Source"] == "2026-07-19 grid"
+        and float(row[curve_field]) == selected_curve
+        and float(row[x_field]) == selected_x
+    )
     axis.axvline(selected_x, color="black", linestyle="--", linewidth=1.3, alpha=0.65)
     axis.scatter(
         [selected_x],
-        [matrix[selected_curve_index, selected_x_index]],
+        [float(selected_row["Mean ACC (%)"])],
         marker="*",
         s=180,
         color="#FFD966",
         edgecolor="black",
         linewidth=1.0,
         zorder=5,
-        label="Fixed method",
+        label="_nolegend_",
     )
-    data_min = float(matrix.min())
-    data_max = float(matrix.max())
-    data_span = max(data_max - data_min, 0.1)
-    expanded_span = 2.5 * data_span
-    center = (data_min + data_max) / 2
-    axis.set_ylim(center - expanded_span / 2, center + expanded_span / 2)
+    if y_limits is None:
+        data_min = min(plotted_values)
+        data_max = max(plotted_values)
+        data_span = max(data_max - data_min, 0.1)
+        expanded_span = 1.35 * data_span
+        center = (data_min + data_max) / 2
+        axis.set_ylim(center - expanded_span / 2, center + expanded_span / 2)
+    else:
+        axis.set_ylim(*y_limits)
     axis.set_xlabel(x_label)
-    axis.set_ylabel("Client-average ACC (%)")
+    axis.set_ylabel("Mean ACC (%)")
     axis.set_title(title, fontweight="bold", pad=4)
-    axis.legend(loc="best", frameon=False, ncol=2)
+    legend_kwargs = {"loc": legend_location, "frameon": False, "ncol": 3, "fontsize": 5.2, "columnspacing": 0.6, "handletextpad": 0.3}
+    if legend_anchor is not None:
+        legend_kwargs["bbox_to_anchor"] = legend_anchor
+    axis.legend(**legend_kwargs)
     polish_axes(axis, y_grid=True, x_grid=False)
 
 
@@ -423,9 +452,19 @@ def plot_hparams(csv_dir: Path, figure_dir: Path) -> None:
         "Prototype-head scale s",
         0.55,
         18.75,
-        "Diagnostic Prototype Reconstruction (DPR)",
-        "Prototype-head scale s",
+        "DPR",
+        r"Prototype-head scale $s$",
         r"\gamma",
+        [
+            ("Earlier interaction grid", 0.4),
+            ("Earlier interaction grid", 0.5),
+            ("2026-07-19 grid", 0.55),
+            ("2026-07-19 grid", 0.6),
+            ("Earlier extension grid", 0.65),
+            ("Earlier extension grid", 0.7),
+        ],
+        legend_location="center",
+        legend_anchor=(0.57, 0.48),
     )
     plot_hparam_curves(
         axes[1],
@@ -434,9 +473,19 @@ def plot_hparams(csv_dir: Path, figure_dir: Path) -> None:
         "Calibration strength lambda",
         2.5,
         4.25,
-        "Long-tail Prevalence Calibration (LPC)",
-        "Calibration strength lambda",
+        "LPC",
+        r"Calibration strength $\lambda$",
         r"\tau",
+        [
+            ("Earlier interaction grid", 1.5),
+            ("Earlier interaction grid", 2.0),
+            ("2026-07-19 grid", 2.5),
+            ("2026-07-19 grid", 3.0),
+            ("Earlier interaction grid", 3.5),
+        ],
+        (55.0, 65.0),
+        legend_location="lower center",
+        legend_anchor=(0.5, 0.05),
     )
     for axis in axes:
         for spine in axis.spines.values():

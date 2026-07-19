@@ -29,6 +29,7 @@ BASELINE_2X2_ROOT = (
 HPARAM_3X10_ROOT = (
     ROOT / "outputs" / "lamp_merge_hparam_3x10_20260719_followup_formal_hparam_3x10"
 )
+GAMMA_EXTENSION_ROOT = ROOT / "outputs" / "lamp_merge_hparam_gamma_extension_full_20260715"
 
 DATASETS = [
     ("bloodmnist_224", "Blood"),
@@ -486,9 +487,9 @@ def build_ultrasound_distribution() -> list[dict[str, object]]:
     rows = read_csv(REPORT_DIR / "prediction_diagnostics_full.csv")
     methods = [
         ("lamp_merge:full", "LAMP-Merge"),
-        ("avg", "Weight Averaging"),
         ("ties", "TIES-Merging"),
         ("dare_linear", "DARE-Linear"),
+        ("dare_ties", "DARE-TIES"),
     ]
     sums = defaultdict(lambda: [0.0] * 8)
     counts = defaultdict(int)
@@ -535,34 +536,39 @@ def build_hparam_rows() -> tuple[list[dict[str, object]], list[dict[str, object]
         "dpr": re.compile(r"dpr_gamma_([0-9p]+)_s_([0-9p]+)$"),
         "lpc": re.compile(r"lpc_tau_([0-9p]+)_lambda_([0-9p]+)$"),
     }
+    extension_pattern = re.compile(r"m1_gamma_([0-9p]+)_s_([0-9p]+)$")
     diagnostic: list[dict[str, object]] = []
     prevalence: list[dict[str, object]] = []
-    for child in sorted(HPARAM_3X10_ROOT.iterdir()):
-        if not child.is_dir():
-            continue
-        match = patterns["dpr"].match(child.name) or patterns["lpc"].match(child.name)
-        if match is None:
-            continue
-        rows = read_csv(child / "reports" / "batch_status.csv")
+
+    def summarize_batch_status(path: Path) -> dict[str, object]:
+        rows = read_csv(path / "reports" / "batch_status.csv")
         if len(rows) != 180 or any(row["status"] != "OK" for row in rows):
-            raise RuntimeError(f"Incomplete new hyperparameter run: {child}")
+            raise RuntimeError(f"Incomplete hyperparameter run: {path}")
         values_by_key: dict[tuple[str, str, int, float], float] = {}
         for row in rows:
             key = (row["dataset"], row["model"], int(row["num_clients"]), float(row["beta"]))
             values_by_key[key] = float(row["test_acc"])
         if set(values_by_key) != expected_keys:
-            raise RuntimeError(f"Unexpected hyperparameter coverage: {child}")
+            raise RuntimeError(f"Unexpected hyperparameter coverage: {path}")
         client_values = [
             sum(values_by_key[(dataset, model, num_clients, beta)] for beta in (0.0, 0.01, 0.1)) / 3
             for dataset, _ in DATASETS
             for model, _, _ in BACKBONES
             for num_clients in (3, 5, 7)
         ]
-        item = {
+        return {
             "Raw cells": len(values_by_key),
             "Client-average cells": len(client_values),
             "Mean ACC (%)": f"{100 * sum(client_values) / len(client_values):.4f}",
         }
+
+    for child in sorted(HPARAM_3X10_ROOT.iterdir()):
+        if not child.is_dir():
+            continue
+        match = patterns["dpr"].match(child.name) or patterns["lpc"].match(child.name)
+        if match is None:
+            continue
+        item = {"Source": "2026-07-19 grid", **summarize_batch_status(child)}
         first_value = float(match.group(1).replace("p", "."))
         second_value = float(match.group(2).replace("p", "."))
         if child.name.startswith("dpr_"):
@@ -583,6 +589,51 @@ def build_hparam_rows() -> tuple[list[dict[str, object]], list[dict[str, object]
             )
     if len(diagnostic) != 30 or len(prevalence) != 30:
         raise RuntimeError("Expected complete 3x10 DPR and LPC hyperparameter grids")
+
+    for row in read_csv(REPORT_DIR / "lamp_merge_hparam_interaction_full.csv"):
+        module = row["module"]
+        curve_value = float(row["curve_value"])
+        if module == "diagnostic prototype reconstruction" and curve_value in {0.4, 0.5}:
+            diagnostic.append(
+                {
+                    "Source": "Earlier interaction grid",
+                    "Evidence exponent gamma": curve_value,
+                    "Prototype-head scale s": float(row["x_value"]),
+                    "Raw cells": int(row["raw_cells"]),
+                    "Client-average cells": int(row["client_average_cells"]),
+                    "Mean ACC (%)": f"{100 * float(row['client_average_mean_acc']):.4f}",
+                }
+            )
+        elif module == "long-tail prevalence calibration" and curve_value in {1.5, 2.0, 3.5}:
+            prevalence.append(
+                {
+                    "Source": "Earlier interaction grid",
+                    "Activation threshold tau": curve_value,
+                    "Calibration strength lambda": float(row["x_value"]),
+                    "Raw cells": int(row["raw_cells"]),
+                    "Client-average cells": int(row["client_average_cells"]),
+                    "Mean ACC (%)": f"{100 * float(row['client_average_mean_acc']):.4f}",
+                }
+            )
+
+    extension_rows = 0
+    for child in sorted(GAMMA_EXTENSION_ROOT.iterdir()):
+        if not child.is_dir():
+            continue
+        match = extension_pattern.match(child.name)
+        if match is None or float(match.group(1).replace("p", ".")) not in {0.65, 0.7}:
+            continue
+        diagnostic.append(
+            {
+                "Source": "Earlier extension grid",
+                "Evidence exponent gamma": float(match.group(1).replace("p", ".")),
+                "Prototype-head scale s": float(match.group(2).replace("p", ".")),
+                **summarize_batch_status(child),
+            }
+        )
+        extension_rows += 1
+    if extension_rows != 20:
+        raise RuntimeError("Expected 20 complete DPR gamma-extension runs")
     return diagnostic, prevalence
 
 
@@ -751,10 +802,9 @@ def build_collapse_dataset_table(diagnostic_summary: dict[str, dict[str, object]
                 r" & Best ref. & "
                 + " & ".join(f"{value:.2f}" for value in reference_values)
                 + " \\\\",
-                r"\rowcolor[HTML]{FFF9C4}",
                 rf"\multirow{{-2}}{{*}}{{{metric_label}}}"
-                + r" & \textbf{LAMP} & "
-                + " & ".join(rf"\textbf{{{value:.2f}}}" for value in lamp_values)
+                + r" & \cellcolor[HTML]{FFF9C4}\textbf{LAMP} & "
+                + " & ".join(rf"\cellcolor[HTML]{{FFF9C4}}\textbf{{{value:.2f}}}" for value in lamp_values)
                 + " \\\\",
             ]
         )
@@ -891,6 +941,10 @@ def update_tex(
         r"The fixed method uses $\gamma=0.55$, $s=18.75$, $\tau=2.5$, and $\lambda=4.25$; these values lie in broad stable regions, indicating that the gain is not produced by narrow hyperparameter tuning.",
     )
     tex = tex.replace(
+        r"Fig.~\ref{fig:hparam-analysis} evaluates the prototype-head scale $s$ and calibration strength $\lambda$ over 180 raw cells and 60 client-average cells.",
+        r"Fig.~\ref{fig:hparam-analysis} overlays the current 2026-07-19 grid with earlier complete grids; every curve point uses 180 raw cells and 60 client-average cells.",
+    )
+    tex = tex.replace(
         "generic merge concentrates predictions on one class, whereas LAMP-Merge recovers a broader class allocation aligned with the test distribution.",
         "representative generic merges concentrate predictions on a few classes, whereas LAMP-Merge recovers a broader class allocation aligned with the test distribution.",
     )
@@ -990,7 +1044,7 @@ def update_tex(
             r"\begin{figure}[H]",
             r"\centering",
             r"\includegraphics[width=\columnwidth]{figures/05_hyperparameter_sensitivity.pdf}",
-            r"\caption{Full-scope hyperparameter sensitivity of DPR and LPC. Expanded vertical ranges show stable accuracy across broad intervals.}",
+            r"\caption{Full-scope DPR and LPC sensitivity. Solid curves use the 2026-07-19 grid; dashed and dash-dotted curves use earlier complete grids. Each point averages 60 client-average cells.}",
             r"\label{fig:hparam-analysis}",
             r"\end{figure}",
         ]
@@ -1149,14 +1203,14 @@ def main() -> None:
     diagnostic_hparams, prevalence_hparams = build_hparam_rows()
     write_annotated_csv(
         csv_dir / "超参数分析_诊断原型重建.csv",
-        "本表对应 2026-07-19 的 DPR 超参数分析，记录 evidence exponent gamma 与 prototype-head scale s 的 3x10 完整网格；每点覆盖五个数据集、四个 backbone、K=3/5/7 和三个 beta，ACC 使用百分比。",
-        ["Evidence exponent gamma", "Prototype-head scale s", "Raw cells", "Client-average cells", "Mean ACC (%)"],
+        "本表记录 DPR 超参数曲线的 2026-07-19 完整 3x10 网格、早期交互网格和 gamma 扩展网格；每点覆盖五个数据集、四个 backbone、K=3/5/7 和三个 beta，ACC 使用百分比。",
+        ["Source", "Evidence exponent gamma", "Prototype-head scale s", "Raw cells", "Client-average cells", "Mean ACC (%)"],
         diagnostic_hparams,
     )
     write_annotated_csv(
         csv_dir / "超参数分析_长尾患病率校准.csv",
-        "本表对应 2026-07-19 的 LPC 超参数分析，记录 activation threshold tau 与 calibration strength lambda 的 3x10 完整网格；每点覆盖五个数据集、四个 backbone、K=3/5/7 和三个 beta，ACC 使用百分比。",
-        ["Activation threshold tau", "Calibration strength lambda", "Raw cells", "Client-average cells", "Mean ACC (%)"],
+        "本表记录 LPC 超参数曲线的 2026-07-19 完整 3x10 网格及早期交互网格；每点覆盖五个数据集、四个 backbone、K=3/5/7 和三个 beta，ACC 使用百分比。",
+        ["Source", "Activation threshold tau", "Calibration strength lambda", "Raw cells", "Client-average cells", "Mean ACC (%)"],
         prevalence_hparams,
     )
 
