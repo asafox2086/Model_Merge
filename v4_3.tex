@@ -75,6 +75,18 @@
 \newcommand{\compactgain}[1]{\textcolor{DropRed}{\(\uparrow\)#1}}
 \newcommand{\compactneutral}[1]{\textcolor{GainGreen}{#1}}
 
+\makeatletter
+\setlength{\@fptop}{0pt}
+\setlength{\@fpsep}{10pt}
+\setlength{\@fpbot}{0pt}
+\setlength{\@dblfptop}{0pt}
+\setlength{\@dblfpsep}{10pt}
+\setlength{\@dblfpbot}{0pt}
+\makeatother
+\setcounter{dbltopnumber}{4}
+\renewcommand{\dbltopfraction}{0.99}
+\renewcommand{\dblfloatpagefraction}{0.01}
+
 % DISALLOWED PACKAGES
 % \usepackage{authblk} -- This package is specifically forbidden
 % \usepackage{balance} -- This package is specifically forbidden
@@ -422,13 +434,16 @@ We evaluate four vision-model families: ResNet, ConvNeXt, ViT-Tiny, and Swin-Tin
 
 Tables~\ref{tab:client-avg-resnet}--\ref{tab:client-avg-swin-tiny} report the full client-average results for all four backbones. Across the 60 client-average cells, LAMP-Merge wins or ties the strongest non-LAMP baseline in \textbf{57 cells (95.0\%)}.
 
+\setcounter{dbltopnumber}{4}
+\setcounter{topnumber}{4}
+\setcounter{totalnumber}{4}
 
 \begin{table*}[!t]
 \centering
-\renewcommand{\arraystretch}{1.75}
+\renewcommand{\arraystretch}{1.35}
 \caption{Client-average test accuracy (\%) on ResNet. Each entry averages the three Dirichlet settings for a fixed client number; Avg denotes the mean over $K=3,5,7$ within the corresponding dataset.}
 \label{tab:client-avg-resnet}
-\resizebox{\textwidth}{!}{%
+\resizebox{0.90\textwidth}{!}{%
 \begin{tabular}{l||ccc:c|ccc:c|ccc:c|ccc:c|ccc:c}
 \noalign{\hrule height 1.25pt}
 \rowcolor[HTML]{F2F2F2}
@@ -507,7 +522,6 @@ Model Stock\pub{ECCV 2024} &
 27.42 & 15.78 & 20.12 & 21.11 &
 17.91 & 13.21 & 15.78 & 15.63 \\
 
-\rowcolor{gray!10}
 Iso-C\pub{ICML 2025} &
 32.78 & 27.48 & 30.23 & 30.16 &
 50.49 & 44.22 & 64.16 & 52.96 &
@@ -515,6 +529,7 @@ Iso-C\pub{ICML 2025} &
 27.36 & 21.18 & 24.53 & 24.36 &
 26.15 & 16.98 & 15.54 & 19.56 \\
 
+\rowcolor{gray!10}
 Free-Merging\pub{ICCV 2025} &
 33.45 & 24.67 & 28.22 & 28.78 &
 62.91 & 47.00 & 62.46 & 57.46 &
@@ -567,10 +582,10 @@ FROM\pub{AAAI 2026} &
 
 \begin{table*}[!t]
 \centering
-\renewcommand{\arraystretch}{1.75}
+\renewcommand{\arraystretch}{1.35}
 \caption{Client-average test accuracy (\%) on ConvNeXt. Each entry averages the three Dirichlet settings for a fixed client number; Avg denotes the mean over $K=3,5,7$ within the corresponding dataset.}
 \label{tab:client-avg-convnext}
-\resizebox{\textwidth}{!}{%
+\resizebox{0.90\textwidth}{!}{%
 \begin{tabular}{l||ccc:c|ccc:c|ccc:c|ccc:c|ccc:c}
 \noalign{\hrule height 1.25pt}
 \rowcolor[HTML]{F2F2F2}
@@ -609,9 +624,9 @@ Breadcrumbs\pub{ECCV 2024} & 15.16 & 13.66 & 11.63 & 13.48 & 5.24 & 27.66 & 46.3
 \rowcolor{gray!10}
 Model Stock\pub{ECCV 2024} & 17.56 & 11.44 & 17.78 & 15.59 & 29.66 & 48.30 & 66.88 & 48.28 & 12.76 & 12.18 & 13.85 & 12.93 & 13.08 & 10.35 & 19.35 & 14.26 & 15.75 & 12.91 & 14.79 & 14.48 \\
 
-\rowcolor{gray!10}
 Iso-C\pub{ICML 2025} & 19.47 & 18.65 & 14.80 & 17.64 & 29.71 & 48.30 & 66.88 & 48.30 & 9.91 & 6.99 & 9.45 & 8.78 & 7.89 & 14.77 & 8.67 & 10.44 & 15.18 & 12.91 & 16.05 & 14.71 \\
 
+\rowcolor{gray!10}
 Free-Merging\pub{ICCV 2025} & 15.75 & 11.90 & 13.84 & 13.83 & 29.71 & 48.30 & 66.88 & 48.30 & 9.06 & 12.18 & 13.85 & 11.70 & 13.08 & 10.35 & 14.16 & 12.53 & 15.06 & 12.91 & 16.95 & 14.97 \\
 
 \rowcolor{gray!10}
@@ -648,10 +663,10 @@ FROM\pub{AAAI 2026} & 15.65 & 10.83 & 16.71 & 14.40 & 29.66 & 34.06 & 45.69 & 36
 
 \begin{table*}[!t]
 \centering
-\renewcommand{\arraystretch}{1.75}
+\renewcommand{\arraystretch}{1.35}
 \caption{Client-average test accuracy (\%) on ViT-Tiny. Each entry averages the three Dirichlet settings for a fixed client number; Avg denotes the mean over $K=3,5,7$ within the corresponding dataset.}
 \label{tab:client-avg-vit-t}
-\resizebox{\textwidth}{!}{%
+\resizebox{0.90\textwidth}{!}{%
 \begin{tabular}{l||ccc:c|ccc:c|ccc:c|ccc:c|ccc:c}
 \noalign{\hrule height 1.25pt}
 \rowcolor[HTML]{F2F2F2}
@@ -690,9 +705,9 @@ Breadcrumbs\pub{ECCV 2024} & 13.63 & 10.39 & 13.00 & 12.34 & 4.89 & 25.72 & 6.07
 \rowcolor{gray!10}
 Model Stock\pub{ECCV 2024} & 19.40 & 11.20 & 11.34 & 13.98 & 38.05 & 30.79 & 27.35 & 32.06 & 14.88 & 12.27 & 12.15 & 13.10 & 8.93 & 8.59 & 18.67 & 12.06 & 15.99 & 18.09 & 16.41 & 16.83 \\
 
-\rowcolor{gray!10}
 Iso-C\pub{ICML 2025} & 12.34 & 14.83 & 10.18 & 12.45 & 57.09 & 45.29 & 23.06 & 41.81 & 10.84 & 5.67 & 8.97 & 8.49 & 6.11 & 5.31 & 10.81 & 7.41 & 14.17 & 15.27 & 18.69 & 16.04 \\
 
+\rowcolor{gray!10}
 Free-Merging\pub{ICCV 2025} & 19.89 & 14.57 & 13.92 & 16.13 & 46.30 & 47.70 & 38.55 & 44.18 & 14.25 & 9.80 & 7.59 & 10.55 & 7.27 & 9.14 & 16.43 & 10.95 & 14.05 & 15.93 & 16.47 & 15.48 \\
 
 \rowcolor{gray!10}
@@ -729,10 +744,10 @@ FROM\pub{AAAI 2026} & 18.02 & 7.81 & 14.05 & 13.29 & 46.95 & 51.21 & 66.88 & 55.
 
 \begin{table*}[!t]
 \centering
-\renewcommand{\arraystretch}{1.75}
+\renewcommand{\arraystretch}{1.35}
 \caption{Client-average test accuracy (\%) on Swin-Tiny. Each entry averages the three Dirichlet settings for a fixed client number; Avg denotes the mean over $K=3,5,7$ within the corresponding dataset.}
 \label{tab:client-avg-swin-tiny}
-\resizebox{\textwidth}{!}{%
+\resizebox{0.90\textwidth}{!}{%
 \begin{tabular}{l||ccc:c|ccc:c|ccc:c|ccc:c|ccc:c}
 \noalign{\hrule height 1.25pt}
 \rowcolor[HTML]{F2F2F2}
@@ -771,9 +786,9 @@ Breadcrumbs\pub{ECCV 2024} & 15.00 & 13.65 & 15.37 & 14.67 & 6.47 & 27.71 & 7.15
 \rowcolor{gray!10}
 Model Stock\pub{ECCV 2024} & 13.74 & 14.40 & 17.15 & 15.10 & 45.69 & 27.71 & 48.25 & 40.55 & 11.10 & 7.71 & 14.04 & 10.95 & 6.71 & 11.06 & 17.14 & 11.64 & 15.39 & 12.73 & 18.69 & 15.60 \\
 
-\rowcolor{gray!10}
 Iso-C\pub{ICML 2025} & 14.30 & 17.22 & 17.00 & 16.17 & 30.99 & 28.40 & 51.74 & 37.04 & 13.02 & 13.27 & 14.69 & 13.66 & 15.45 & 17.27 & 18.80 & 17.17 & 17.55 & 17.31 & 17.91 & 17.59 \\
 
+\rowcolor{gray!10}
 Free-Merging\pub{ICCV 2025} & 11.54 & 8.61 & 18.40 & 12.85 & 45.69 & 48.30 & 66.88 & 53.62 & 9.59 & 13.77 & 8.90 & 10.75 & 6.82 & 4.97 & 10.62 & 7.47 & 15.18 & 15.75 & 15.99 & 15.64 \\
 
 \rowcolor{gray!10}
