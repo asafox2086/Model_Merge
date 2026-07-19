@@ -28,7 +28,7 @@ PAPER_COLORS = {
     "Weight Averaging": "#7F7F7F",
     "TIES-Merging": "#9BBB59",
     "DARE-Linear": "#4F81BD",
-    "Model Stock": "#8064A2",
+    "Breadcrumbs": "#8064A2",
     "True distribution": "#8064A2",
 }
 
@@ -229,9 +229,9 @@ def plot_internal_ablations(csv_dir: Path, figure_dir: Path) -> None:
     fig, axes = plt.subplots(
         1,
         2,
-        figsize=(3.55, 2.72),
+        figsize=(4.15, 2.72),
         dpi=300,
-        gridspec_kw={"width_ratios": [1.35, 1.0]},
+        gridspec_kw={"width_ratios": [1.2, 1.45]},
     )
     panels = [
         (axes[0], diagnostic, "DPR"),
@@ -288,7 +288,7 @@ def plot_internal_ablations(csv_dir: Path, figure_dir: Path) -> None:
 
 def plot_ultrasound_distribution(csv_dir: Path, figure_dir: Path) -> None:
     rows = read_annotated_csv(csv_dir / "超声预测类别分布.csv")
-    methods = ["LAMP-Merge", "TIES-Merging", "DARE-Linear", "Model Stock"]
+    methods = ["LAMP-Merge", "TIES-Merging", "DARE-Linear", "Breadcrumbs"]
     by_series = {row["Series"]: row for row in rows}
     x = np.arange(8)
     setup_style("line")

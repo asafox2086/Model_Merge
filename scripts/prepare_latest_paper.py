@@ -489,7 +489,7 @@ def build_ultrasound_distribution() -> list[dict[str, object]]:
         ("lamp_merge:full", "LAMP-Merge"),
         ("ties", "TIES-Merging"),
         ("dare_linear", "DARE-Linear"),
-        ("model_stock", "Model Stock"),
+        ("breadcrumbs", "Breadcrumbs"),
     ]
     sums = defaultdict(lambda: [0.0] * 8)
     counts = defaultdict(int)
