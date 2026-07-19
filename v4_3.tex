@@ -296,7 +296,7 @@ Assume $K$ medical clients. Client $i$ owns a private labeled dataset $D_i=\{(x,
 
 \subsubsection{Upload and Server Constraints.}
 
-We study single-shot asynchronous merging: after local training, each client uploads only once, while the server cannot access raw medical images, per-sample features, per-sample predictions, or a server-side validation set, and does not issue multi-round updates to clients. Clients are allowed to upload class-level statistics. Specifically, $n_{i,c}$ denotes the class-support count, $m_{i,c}$ denotes the class-prevalence count, and $\mu_{i,c}$ denotes the class prototype computed in a shared reference feature space. The server performs one merge using only the local checkpoint interfaces and these class-level statistics. This setting differs from federated learning because clients do not continue optimization from server feedback; it also differs from standard model merging because the presence of class-level diagnostic evidence becomes an explicit merging variable.
+After local training, each client uploads its checkpoint interface and class-level statistics once; the server receives no raw images, per-sample data, validation set, or iterative feedback. The uploaded support $n_{i,c}$, prevalence $m_{i,c}$, and reference-space prototype $\mu_{i,c}$ enable one merge with class-level diagnostic evidence as an explicit variable.
 
 \subsection{Motivation}
 
@@ -308,7 +308,7 @@ Although generic model merging is training-free and parameter-efficient, we find
 
 \subsection{Diagnostic Prototype Reconstruction Module}
 
-To mitigate the \textbf{fragmented diagnostic evidence across isolated medical clients} caused by heterogeneous diagnostic coverage and conflicting class evidence, the diagnostic prototype reconstruction module shifts the merging target from parameter averaging to class-conditional evidence reconstruction. Instead of directly averaging local classifiers, it first collects reliable evidence for each diagnosis class in a shared reference space and then synthesizes a global diagnostic head over the full label space.
+To address \textbf{fragmented diagnostic evidence across isolated medical clients}, DPR reconstructs class-conditional evidence in a shared reference space and synthesizes a global diagnostic head over the full label space.
 
 \subsubsection{(1) Reference-space Class Prototype Extraction.}
 
@@ -346,7 +346,7 @@ where $s=18.75$ is the default head scale. The resulting head is not an average 
 
 \subsection{Long-tail Prevalence Calibration}
 
-To address the fact that \textbf{prevalence prior cannot be ignored} in real medical tasks, the long-tail prevalence calibration module introduces a bounded class prior after prototype reconstruction. This module does not push the model back to single-class collapse; instead, it calibrates the clinical prevalence reflected by client statistics after multiclass diagnostic directions have been restored.
+To address \textbf{long-tailed medical prevalence cannot be ignored}, LPC adds a bounded class prior after DPR to calibrate the clinical prevalence reflected by client statistics.
 
 \subsubsection{(1) Client-reported Prevalence Prior.}
 
@@ -965,7 +965,7 @@ Fig.~\ref{fig:hparam-analysis} evaluates DPR/LPC sensitivity under the full LAMP
 
 \section{Conclusion}
 
-LAMP-Merge enables single-shot medical model merging without raw-image sharing or federated rounds. DPR reconstructs class evidence and LPC calibrates its prevalence; together, they improve ACC and prediction-collapse diagnostics across the full setting.
+We study one-shot asynchronous medical model merging without raw-image sharing or federated rounds. Generic merges can suffer aggregation-induced prediction collapse under incomplete local diagnostic coverage, while raw ACC may conceal this failure on long-tailed medical data. Across full-scope comparisons, ablations, and prediction-distribution diagnostics, DPR restores class-level diagnostic directions and LPC retains clinically meaningful prevalence without reintroducing collapse.
 
 \bibliography{aaai2026}
 \appendix
