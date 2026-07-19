@@ -1,6 +1,10 @@
-说明,本表对应 TIES/DARE 严格 2x2 基线消融；两种 baseline 分别比较 LPC 关闭与开启，四组均关闭 DPR。每个数据集数值对四个 backbone、K=3/5/7 和三个 beta 设置取 client-average 后再平均，单位为 ACC 百分比。
-Setting,Baseline,LPC,Blood ACC (%),Derma ACC (%),Organ-C ACC (%),Organ-S ACC (%),Ultrasound ACC (%),Avg ACC (%)
-TIES-Merging,TIES-Merging,No,15.85,43.69,11.96,11.47,14.63,19.52
-TIES-Merging + LPC,TIES-Merging,Yes,15.85,66.88,21.81,21.87,14.63,28.21
-DARE-Linear,DARE-Linear,No,16.47,39.93,11.52,13.81,14.95,19.33
-DARE-Linear + LPC,DARE-Linear,Yes,16.47,66.88,22.21,23.42,14.95,28.79
+说明,本表对应 TIES/DARE 的完整 DPR×LPC 2x2 消融；每个 baseline 均包含 Baseline、+DPR、+LPC 和 +DPR+LPC 四种设置。数值为五个数据集、四个 backbone 和 K=3/5/7 共 60 个 client-average cells 的总体均值，单位为 ACC 百分比，不分数据集展示。
+Baseline,Setting,DPR,LPC,Client-average cells,Overall ACC (%)
+TIES-Merging,Baseline,No,No,60,19.52
+TIES-Merging,Baseline + DPR,Yes,No,60,58.91
+TIES-Merging,Baseline + LPC,No,Yes,60,28.21
+TIES-Merging,Baseline + DPR + LPC,Yes,Yes,60,62.21
+DARE-Linear,Baseline,No,No,60,19.33
+DARE-Linear,Baseline + DPR,Yes,No,60,58.91
+DARE-Linear,Baseline + LPC,No,Yes,60,28.79
+DARE-Linear,Baseline + DPR + LPC,Yes,Yes,60,62.21

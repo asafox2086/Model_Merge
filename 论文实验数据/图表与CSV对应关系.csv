@@ -2,9 +2,9 @@
 Paper item,Experiment,CSV file
 Tables 1--4,Main client-average ACC,主实验_ResNet.csv; 主实验_ConvNeXt.csv; 主实验_ViT-Tiny.csv; 主实验_Swin-Tiny.csv
 Ablation text,Incremental DPR/LPC module ablation,消融.csv
-Figure 3,Strict TIES/DARE 2x2 baseline ablation,基线2x2消融.csv
-Table 5 / Figure 4 left,DPR internal ablation,诊断原型重建内部消融.csv
-Table 6 / Figure 4 right,LPC internal ablation,长尾患病率校准内部消融.csv
+Figure 4,Complete TIES/DARE 2x2 DPR/LPC ablation,基线2x2消融.csv
+Table 5 / Figure 3 left,DPR internal ablation,诊断原型重建内部消融.csv
+Table 6 / Figure 3 right,LPC internal ablation,长尾患病率校准内部消融.csv
 Table 7,Prediction-collapse diagnostics,预测坍缩诊断.csv
 Figure 5,Ultrasound predicted distribution,超声预测类别分布.csv
 Hyperparameter figure,Combined DPR/LPC sensitivity,超参数分析_诊断原型重建.csv; 超参数分析_长尾患病率校准.csv

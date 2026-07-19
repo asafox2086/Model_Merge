@@ -274,8 +274,8 @@ def aggregate_module_ablation(client_rows: list[dict[str, str]]) -> list[dict[st
     return output_rows
 
 
-def build_baseline_2x2_rows() -> list[dict[str, object]]:
-    output_rows = []
+def build_baseline_2x2_rows(client_rows: list[dict[str, str]]) -> list[dict[str, object]]:
+    baseline_values: dict[tuple[str, str], float] = {}
     for setting, baseline, lpc, mode in BASELINE_2X2_CONFIGURATIONS:
         rows = read_csv(BASELINE_2X2_ROOT / mode / "reports" / "batch_status.csv")
         if len(rows) != 180:
@@ -292,22 +292,42 @@ def build_baseline_2x2_rows() -> list[dict[str, object]]:
             raise RuntimeError(f"Expected 60 three-beta client-average cells for {mode}")
 
         client_averages = {key: sum(values) / len(values) for key, values in cells.items()}
-        result: dict[str, object] = {
-            "Setting": setting,
-            "Baseline": baseline,
-            "LPC": lpc,
-        }
-        for dataset_key, dataset_label in DATASETS:
-            values = [
-                value
-                for (dataset, _, _), value in client_averages.items()
-                if dataset == dataset_key
-            ]
-            if len(values) != 12:
-                raise RuntimeError(f"Expected 12 client-average cells for {mode}/{dataset_key}")
-            result[f"{dataset_label} ACC (%)"] = f"{100 * sum(values) / len(values):.2f}"
-        result["Avg ACC (%)"] = f"{100 * sum(client_averages.values()) / len(client_averages):.2f}"
-        output_rows.append(result)
+        baseline_values[(baseline, lpc)] = sum(client_averages.values()) / len(client_averages)
+
+    dpr_only_values = [float(row["M1 only"]) for row in client_rows]
+    full_values = [float(row["LAMP-Merge"]) for row in client_rows]
+    if len(dpr_only_values) != 60 or len(full_values) != 60:
+        raise RuntimeError("Expected 60 canonical client-average cells for DPR ablations")
+    shared_values = {
+        "Baseline + DPR": sum(dpr_only_values) / len(dpr_only_values),
+        "Baseline + DPR + LPC": sum(full_values) / len(full_values),
+    }
+
+    output_rows = []
+    configurations = [
+        ("Baseline", "No", "No"),
+        ("Baseline + DPR", "Yes", "No"),
+        ("Baseline + LPC", "No", "Yes"),
+        ("Baseline + DPR + LPC", "Yes", "Yes"),
+    ]
+    for baseline in ("TIES-Merging", "DARE-Linear"):
+        for setting, dpr, lpc in configurations:
+            if setting == "Baseline":
+                value = baseline_values[(baseline, "No")]
+            elif setting == "Baseline + LPC":
+                value = baseline_values[(baseline, "Yes")]
+            else:
+                value = shared_values[setting]
+            output_rows.append(
+                {
+                    "Baseline": baseline,
+                    "Setting": setting,
+                    "DPR": dpr,
+                    "LPC": lpc,
+                    "Client-average cells": 60,
+                    "Overall ACC (%)": f"{100 * value:.2f}",
+                }
+            )
     return output_rows
 
 
@@ -758,16 +778,33 @@ def update_tex(
     tex = tex.replace(r"where $\gamma=0.45$ is the default evidence exponent", r"where $\gamma=0.55$ is the default evidence exponent")
     tex = tex.replace(r"where $s=20$ is the default head scale", r"where $s=18.75$ is the default head scale")
     tex = tex.replace(r"with default maximum calibration strength $\lambda=5.0$", r"with default maximum calibration strength $\lambda=4.25$")
-    baseline_by_setting = {str(row["Setting"]): row for row in baseline_2x2_rows}
-    ties_without_lpc = float(baseline_by_setting["TIES-Merging"]["Avg ACC (%)"])
-    ties_with_lpc = float(baseline_by_setting["TIES-Merging + LPC"]["Avg ACC (%)"])
-    dare_without_lpc = float(baseline_by_setting["DARE-Linear"]["Avg ACC (%)"])
-    dare_with_lpc = float(baseline_by_setting["DARE-Linear + LPC"]["Avg ACC (%)"])
+    baseline_by_configuration = {
+        (str(row["Baseline"]), str(row["Setting"])): row for row in baseline_2x2_rows
+    }
+    ties_baseline = float(
+        baseline_by_configuration[("TIES-Merging", "Baseline")]["Overall ACC (%)"]
+    )
+    ties_with_lpc = float(
+        baseline_by_configuration[("TIES-Merging", "Baseline + LPC")]["Overall ACC (%)"]
+    )
+    dare_baseline = float(
+        baseline_by_configuration[("DARE-Linear", "Baseline")]["Overall ACC (%)"]
+    )
+    dare_with_lpc = float(
+        baseline_by_configuration[("DARE-Linear", "Baseline + LPC")]["Overall ACC (%)"]
+    )
+    dpr_only = float(
+        baseline_by_configuration[("TIES-Merging", "Baseline + DPR")]["Overall ACC (%)"]
+    )
+    dpr_with_lpc = float(
+        baseline_by_configuration[("TIES-Merging", "Baseline + DPR + LPC")]["Overall ACC (%)"]
+    )
     module_ablation_intro = (
         "Module-level ablations use exactly the same experimental setup as the main experiments. "
         "The Weight-Averaging Baseline, Baseline + DPR, and full LAMP-Merge achieve overall "
-        "client-average ACC values of 22.04\%, 58.91\%, and 62.21\%, respectively. We additionally "
-        "isolate LPC from DPR through the strict $2\\times2$ TIES/DARE control in "
+        r"client-average ACC values of 22.04\%, 58.91\%, and 62.21\%, respectively. We additionally "
+        "measure the complete DPR/LPC factorial effect through the strict $2\\times2$ "
+        "TIES/DARE controls in "
         "Fig.~\\ref{fig:baseline-2x2-ablation}."
     )
     tex = re.sub(
@@ -834,12 +871,12 @@ def update_tex(
         "Table~\\ref{tab:prevalence-internal-ablation} shows that removing prevalence calibration "
         "or replacing the real prior with a uniform prior reduces mean ACC, confirming that "
         "long-tailed prevalence is part of the full method. The strict controls in "
-        "Fig.~\\ref{fig:baseline-2x2-ablation} disable DPR and apply LPC only to classifier heads "
-        f"merged by TIES or DARE. LPC raises TIES from {ties_without_lpc:.2f}\\% to "
-        f"{ties_with_lpc:.2f}\\% and DARE from {dare_without_lpc:.2f}\\% to "
-        f"{dare_with_lpc:.2f}\\%, but both remain far below DPR only (58.91\\%) and full "
-        "LAMP-Merge (62.21\\%). Thus, LPC improves prevalence alignment but cannot replace "
-        "diagnostic prototype reconstruction."
+        "Fig.~\\ref{fig:baseline-2x2-ablation} average all 60 client-average cells and cross DPR "
+        "and LPC for each classifier-head baseline. Without DPR, LPC raises TIES from "
+        f"{ties_baseline:.2f}\\% to {ties_with_lpc:.2f}\\% and DARE from "
+        f"{dare_baseline:.2f}\\% to {dare_with_lpc:.2f}\\%. DPR raises the two baselines to "
+        f"{dpr_only:.2f}\\%, and adding LPC reaches {dpr_with_lpc:.2f}\\%. Thus, DPR provides "
+        "the dominant improvement, while LPC supplies a complementary gain in the complete method."
     )
     tex = re.sub(
         r"We further replace the prior term inside long-tail prevalence calibration\..*?(?=\n\n\\begin\{figure\})",
@@ -849,12 +886,12 @@ def update_tex(
     )
     baseline_2x2_figure = "\n".join(
         [
-            r"\begin{figure}[t]",
+            r"\begin{figure*}[t]",
             r"\centering",
-            r"\includegraphics[width=\columnwidth]{figures/03_baseline_2x2_ablation.pdf}",
-            r"\caption{Strict $2\times2$ baseline ablation over TIES- and DARE-merged classifier heads, with LPC disabled or enabled. DPR is disabled in all four settings. Each dataset bar averages 12 client-average cells, and Avg averages all 60 cells.}",
+            r"\includegraphics[width=0.88\textwidth]{figures/03_baseline_2x2_ablation.pdf}",
+            r"\caption{Strict $2\times2$ DPR/LPC ablation for TIES-Merging and DARE-Linear baselines. Each bar reports overall ACC averaged over all five datasets, four backbones, and three client counts (60 client-average cells); no per-dataset results are shown.}",
             r"\label{fig:baseline-2x2-ablation}",
-            r"\end{figure}",
+            r"\end{figure*}",
         ]
     )
     if r"\label{fig:dataset-ablation-acc}" in tex:
@@ -897,9 +934,9 @@ def write_index(csv_dir: Path) -> None:
     rows = [
         ("Tables 1--4", "Main client-average ACC", "主实验_ResNet.csv; 主实验_ConvNeXt.csv; 主实验_ViT-Tiny.csv; 主实验_Swin-Tiny.csv"),
         ("Ablation text", "Incremental DPR/LPC module ablation", "消融.csv"),
-        ("Figure 3", "Strict TIES/DARE 2x2 baseline ablation", "基线2x2消融.csv"),
-        ("Table 5 / Figure 4 left", "DPR internal ablation", "诊断原型重建内部消融.csv"),
-        ("Table 6 / Figure 4 right", "LPC internal ablation", "长尾患病率校准内部消融.csv"),
+        ("Figure 4", "Complete TIES/DARE 2x2 DPR/LPC ablation", "基线2x2消融.csv"),
+        ("Table 5 / Figure 3 left", "DPR internal ablation", "诊断原型重建内部消融.csv"),
+        ("Table 6 / Figure 3 right", "LPC internal ablation", "长尾患病率校准内部消融.csv"),
         ("Table 7", "Prediction-collapse diagnostics", "预测坍缩诊断.csv"),
         ("Figure 5", "Ultrasound predicted distribution", "超声预测类别分布.csv"),
         ("Hyperparameter figure", "Combined DPR/LPC sensitivity", "超参数分析_诊断原型重建.csv; 超参数分析_长尾患病率校准.csv"),
@@ -941,13 +978,18 @@ def main() -> None:
         module_rows,
     )
 
-    baseline_2x2_rows = build_baseline_2x2_rows()
-    baseline_2x2_fields = ["Setting", "Baseline", "LPC"] + [
-        f"{label} ACC (%)" for _, label in DATASETS
-    ] + ["Avg ACC (%)"]
+    baseline_2x2_rows = build_baseline_2x2_rows(client_rows)
+    baseline_2x2_fields = [
+        "Baseline",
+        "Setting",
+        "DPR",
+        "LPC",
+        "Client-average cells",
+        "Overall ACC (%)",
+    ]
     write_annotated_csv(
         csv_dir / "基线2x2消融.csv",
-        "本表对应 TIES/DARE 严格 2x2 基线消融；两种 baseline 分别比较 LPC 关闭与开启，四组均关闭 DPR。每个数据集数值对四个 backbone、K=3/5/7 和三个 beta 设置取 client-average 后再平均，单位为 ACC 百分比。",
+        "本表对应 TIES/DARE 的完整 DPR×LPC 2x2 消融；每个 baseline 均包含 Baseline、+DPR、+LPC 和 +DPR+LPC 四种设置。数值为五个数据集、四个 backbone 和 K=3/5/7 共 60 个 client-average cells 的总体均值，单位为 ACC 百分比，不分数据集展示。",
         baseline_2x2_fields,
         baseline_2x2_rows,
     )

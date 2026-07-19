@@ -18,7 +18,7 @@ TEMPLATE_DIR = ROOT / "scripts" / "plot_templates"
 if str(TEMPLATE_DIR) not in sys.path:
     sys.path.insert(0, str(TEMPLATE_DIR))
 
-from style import darken_color, polish_axes, save_png_pdf, setup_style  # noqa: E402
+from style import ABLATION_COLORS, darken_color, polish_axes, save_png_pdf, setup_style  # noqa: E402
 
 
 PAPER_COLORS = {
@@ -109,91 +109,83 @@ def plot_module_ablation(csv_dir: Path, figure_dir: Path) -> None:
 
 def plot_baseline_2x2_ablation(csv_dir: Path, figure_dir: Path) -> None:
     rows = read_annotated_csv(csv_dir / "基线2x2消融.csv")
-    settings = ["TIES-Merging", "TIES-Merging + LPC", "DARE-Linear", "DARE-Linear + LPC"]
-    dataset_fields = ["Blood", "Derma", "Organ-C", "Organ-S", "Ultrasound", "Avg"]
-    row_by_setting = {row["Setting"]: row for row in rows}
-    if set(row_by_setting) != set(settings):
-        raise ValueError(f"Unexpected baseline 2x2 settings: {sorted(row_by_setting)}")
+    baselines = ["TIES-Merging", "DARE-Linear"]
+    settings = ["Baseline", "Baseline + DPR", "Baseline + LPC", "Baseline + DPR + LPC"]
+    row_by_configuration = {(row["Baseline"], row["Setting"]): row for row in rows}
+    expected = {(baseline, setting) for baseline in baselines for setting in settings}
+    if set(row_by_configuration) != expected:
+        raise ValueError(
+            "Unexpected baseline 2x2 configurations: "
+            f"{sorted(set(row_by_configuration).symmetric_difference(expected))}"
+        )
 
     values = {
-        setting: finite_array(
-            [
-                float(row_by_setting[setting]["Avg ACC (%)"])
-                if dataset == "Avg"
-                else float(row_by_setting[setting][f"{dataset} ACC (%)"])
-                for dataset in dataset_fields
-            ],
-            (len(dataset_fields),),
-            setting,
+        baseline: finite_array(
+            [float(row_by_configuration[(baseline, setting)]["Overall ACC (%)"]) for setting in settings],
+            (len(settings),),
+            baseline,
         )
-        for setting in settings
+        for baseline in baselines
     }
     if any((series < 0).any() or (series > 100).any() for series in values.values()):
         raise ValueError("Baseline 2x2 accuracy is outside [0, 100]")
 
-    style_specs = {
-        "TIES-Merging": ("TIES", "#C6E0B4", ""),
-        "TIES-Merging + LPC": ("TIES + LPC", PAPER_COLORS["TIES-Merging"], "///"),
-        "DARE-Linear": ("DARE", "#BDD7EE", ""),
-        "DARE-Linear + LPC": ("DARE + LPC", PAPER_COLORS["DARE-Linear"], "///"),
-    }
-
     setup_style("bar")
     plt.rcParams.update(
         {
-            "font.size": 7.5,
-            "axes.labelsize": 8.0,
-            "xtick.labelsize": 7.0,
-            "ytick.labelsize": 7.3,
-            "legend.fontsize": 6.8,
-            "axes.linewidth": 1.0,
+            "font.family": "serif",
+            "font.serif": ["Times New Roman", "Times", "DejaVu Serif"],
+            "font.size": 9.5,
+            "axes.titlesize": 13.5,
+            "axes.labelsize": 11.5,
+            "ytick.labelsize": 9.5,
+            "legend.fontsize": 9.5,
+            "axes.linewidth": 0.8,
         }
     )
-    fig, ax = plt.subplots(figsize=(3.35, 3.15), dpi=300)
-    y = np.arange(len(dataset_fields))
-    height = 0.19
-    for index, setting in enumerate(settings):
-        label, color, hatch = style_specs[setting]
-        offset = (index - (len(settings) - 1) / 2) * height
-        bars = ax.barh(
-            y + offset,
-            values[setting],
-            height=height,
-            label=label,
-            color=color,
-            edgecolor=darken_color(color, 0.58),
-            linewidth=0.75,
-            hatch=hatch,
+    fig, axes = plt.subplots(1, 2, figsize=(7.15, 3.45), dpi=300, sharey=True)
+    x = np.arange(len(settings))
+    for axis, baseline in zip(axes, baselines):
+        bars = axis.bar(
+            x,
+            values[baseline],
+            width=0.64,
+            color=ABLATION_COLORS,
+            edgecolor="black",
+            linewidth=0.8,
             zorder=3,
         )
-        average_bar = bars[-1]
-        average_value = values[setting][-1]
-        ax.text(
-            average_value + 0.8,
-            average_bar.get_y() + average_bar.get_height() / 2,
-            f"{average_value:.1f}",
-            va="center",
-            fontsize=5.8,
-            color="#30343B",
-        )
+        for bar, value in zip(bars, values[baseline]):
+            axis.text(
+                bar.get_x() + bar.get_width() / 2,
+                value + 1.0,
+                f"{value:.2f}",
+                ha="center",
+                va="bottom",
+                fontsize=9.5,
+            )
+        axis.set_title(f"{baseline} Baseline", pad=6)
+        axis.set_xticks([])
+        axis.set_ylim(0, 70)
+        axis.set_yticks(np.arange(0, 71, 10))
+        axis.tick_params(direction="in", top=True, right=True, width=0.8, length=3.5)
+        polish_axes(axis, y_grid=True, x_grid=False)
+        for spine in axis.spines.values():
+            spine.set_linewidth(0.8)
 
-    ax.set_yticks(y)
-    ax.set_yticklabels(["Blood", "Derma", "Organ-C", "Organ-S", "US", "Avg"])
-    ax.invert_yaxis()
-    ax.axhline(4.5, color="#8C8C8C", linewidth=0.7, linestyle="--", zorder=1)
-    ax.set_xlim(0, 75)
-    ax.set_xticks([0, 20, 40, 60])
-    ax.set_xlabel("Client-average ACC (%)")
-    ax.legend(
+    axes[0].set_ylabel("Overall client-average ACC (%)")
+    fig.legend(
+        bars,
+        settings,
         loc="lower center",
-        bbox_to_anchor=(0.5, 1.01),
+        bbox_to_anchor=(0.5, 0.015),
         ncol=2,
         frameon=False,
-        handlelength=1.8,
-        columnspacing=1.2,
+        handlelength=2.6,
+        columnspacing=2.2,
+        handletextpad=0.65,
     )
-    polish_axes(ax, y_grid=False, x_grid=True)
-    fig.tight_layout(pad=0.45)
+    fig.subplots_adjust(left=0.105, right=0.985, top=0.84, bottom=0.265, wspace=0.12)
     save_png_pdf(fig, str(figure_dir / "03_baseline_2x2_ablation"), dpi=350)
     plt.close(fig)
 
