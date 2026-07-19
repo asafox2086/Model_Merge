@@ -786,7 +786,7 @@ FROM\pub{AAAI 2026} & 15.65 & 14.95 & 16.71 & 15.77 & 45.69 & 29.71 & 66.88 & 47
 
 \subsection{Ablation Study}
 
-Module-level ablations use exactly the same experimental setup as the main experiments. We report the Weight-Averaging Baseline, Baseline + DPR, and full LAMP-Merge (Baseline + DPR + LPC), forming the incremental comparison used in Fig.~\ref{fig:dataset-ablation-acc}.
+Module-level ablations use exactly the same experimental setup as the main experiments. The Weight-Averaging Baseline, Baseline + DPR, and full LAMP-Merge achieve overall client-average ACC values of 22.04\%, 58.91\%, and 62.21\%, respectively. We additionally isolate LPC from DPR through the strict $2\times2$ TIES/DARE control in Fig.~\ref{fig:baseline-2x2-ablation}.
 
 \subsubsection{1) Effectiveness of Diagnostic Prototype Reconstruction}
 To further identify which information within diagnostic prototype reconstruction is necessary, we conduct controlled substitutions across the full setting. All configurations retain long-tail prevalence calibration and vary only the prototype semantics or support-count weighting.
@@ -825,7 +825,7 @@ Client-size weight & 78.45 & 62.48 & 59.11 & 53.79 & 43.13 & 59.39 \\
 \end{table}
 
 
-Fig.~\ref{fig:dataset-ablation-acc} and Table~\ref{tab:diagnostic-internal-ablation} show that neither an arbitrary head nor a class-agnostic statistic explains the gain. Replacing reference-space prototypes or class-specific support weights consistently reduces ACC, confirming that \textbf{diagnostic semantics and class-level reliability are jointly necessary}.
+Table~\ref{tab:diagnostic-internal-ablation} shows that neither an arbitrary head nor a class-agnostic statistic explains the gain. Replacing reference-space prototypes or class-specific support weights consistently reduces ACC, confirming that \textbf{diagnostic semantics and class-level reliability are jointly necessary}.
 
 \subsubsection{2) Effectiveness of Long-tail Prevalence Calibration}
 
@@ -862,14 +862,14 @@ Uniform prior & 81.81 & 46.58 & 62.57 & 57.50 & 46.11 & 58.91 \\
     \label{fig:internal_module_ablations}
 \end{figure}
 
-We further replace the prior term inside long-tail prevalence calibration. Table ~\ref{tab:prevalence-internal-ablation} shows that removing prevalence calibration or replacing the real prior with a uniform prior reduces mean ACC, confirming that long-tailed prevalence is part of the full method.
+We further replace the prior term inside long-tail prevalence calibration. Table~\ref{tab:prevalence-internal-ablation} shows that removing prevalence calibration or replacing the real prior with a uniform prior reduces mean ACC, confirming that long-tailed prevalence is part of the full method. The strict controls in Fig.~\ref{fig:baseline-2x2-ablation} disable DPR and apply LPC only to classifier heads merged by TIES or DARE. LPC raises TIES from 19.52\% to 28.21\% and DARE from 19.33\% to 28.79\%, but both remain far below DPR only (58.91\%) and full LAMP-Merge (62.21\%). Thus, LPC improves prevalence alignment but cannot replace diagnostic prototype reconstruction.
 
-\begin{figure*}[!t]
+\begin{figure}[t]
 \centering
-\includegraphics[width=0.92\textwidth]{figures/01_module_ablation_accuracy.png}
-\caption{Dataset-level client-average accuracy in the module ablation. Each dataset contains 12 cells from four vision-model families and three client counts; each cell is averaged over three Dirichlet skew levels.}
-\label{fig:dataset-ablation-acc}
-\end{figure*}
+\includegraphics[width=\columnwidth]{figures/03_baseline_2x2_ablation.pdf}
+\caption{Strict $2\times2$ baseline ablation over TIES- and DARE-merged classifier heads, with LPC disabled or enabled. DPR is disabled in all four settings. Each dataset bar averages 12 client-average cells, and Avg averages all 60 cells.}
+\label{fig:baseline-2x2-ablation}
+\end{figure}
 
 \subsection{New-metric Diagnostic Experiment}
 Although the main experiments use ACC for direct comparison, long-tailed medical distributions can allow single-class or few-class predictors to achieve high ACC\cite{BUDA2018249,5597285}. We therefore report collapse ratio, effective predicted classes, and predicted--true total variation.
@@ -887,20 +887,20 @@ Although the main experiments use ACC for direct comparison, long-tailed medical
 \rowcolor[HTML]{F2F2F2}
 \textbf{Metric} & \textbf{Series} & \textbf{Blood} & \textbf{Derma} & \textbf{Organ-C} & \textbf{Organ-S} & \textbf{US} & \textbf{Avg} \\
 \hline \hline
-\rowcolor[HTML]{FFF9C4}
-Collapse $\downarrow$ & \textbf{LAMP} & \textbf{19.58} & \textbf{68.05} & \textbf{20.72} & \textbf{24.36} & \textbf{20.45} & \textbf{30.63} \\
 \rowcolor{gray!10}
  & Best ref. & 80.20 & 85.18 & 72.38 & 71.12 & 80.31 & 79.02 \\
-\hdashline
 \rowcolor[HTML]{FFF9C4}
-Eff. classes $\uparrow$ & \textbf{LAMP} & \textbf{7.48} & \textbf{3.10} & \textbf{9.55} & \textbf{8.44} & \textbf{7.44} & \textbf{7.20} \\
+Collapse $\downarrow$ & \textbf{LAMP} & \textbf{19.58} & \textbf{68.05} & \textbf{20.72} & \textbf{24.36} & \textbf{20.45} & \textbf{30.63} \\
+\hdashline
 \rowcolor{gray!10}
  & Best ref. & 1.81 & 1.65 & 2.49 & 2.53 & 1.98 & 2.05 \\
-\hdashline
 \rowcolor[HTML]{FFF9C4}
-Pred-true TV $\downarrow$ & \textbf{LAMP} & \textbf{3.97} & \textbf{17.09} & \textbf{12.38} & \textbf{13.17} & \textbf{15.51} & \textbf{12.42} \\
+Eff. classes $\uparrow$ & \textbf{LAMP} & \textbf{7.48} & \textbf{3.10} & \textbf{9.55} & \textbf{8.44} & \textbf{7.44} & \textbf{7.20} \\
+\hdashline
 \rowcolor{gray!10}
  & Best ref. & 73.48 & 46.03 & 75.42 & 73.85 & 72.73 & 69.44 \\
+\rowcolor[HTML]{FFF9C4}
+Pred-true TV $\downarrow$ & \textbf{LAMP} & \textbf{3.97} & \textbf{17.09} & \textbf{12.38} & \textbf{13.17} & \textbf{15.51} & \textbf{12.42} \\
 \noalign{\hrule height 1.25pt}
 \end{tabular}
 }

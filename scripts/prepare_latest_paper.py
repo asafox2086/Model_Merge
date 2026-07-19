@@ -20,6 +20,11 @@ FORMAL_ROOT = (
     / "outputs"
     / "lamp_merge_internal_ablation_full_20260718_formal_gamma055_s18p75_tau2p5_lambda4p25"
 )
+BASELINE_2X2_ROOT = (
+    ROOT
+    / "outputs"
+    / "lamp_merge_baseline_2x2_20260719_followup_formal_baseline_2x2"
+)
 
 DATASETS = [
     ("bloodmnist_224", "Blood"),
@@ -65,6 +70,13 @@ MODE_COLUMNS = {
     "no_prevalence": "No prevalence calibration",
     "uniform_prevalence": "Uniform prevalence prior",
 }
+
+BASELINE_2X2_CONFIGURATIONS = [
+    ("TIES-Merging", "TIES-Merging", "No", "reference_ties_head"),
+    ("TIES-Merging + LPC", "TIES-Merging", "Yes", "reference_ties_head_lpc"),
+    ("DARE-Linear", "DARE-Linear", "No", "reference_dare_head"),
+    ("DARE-Linear + LPC", "DARE-Linear", "Yes", "reference_dare_head_lpc"),
+]
 
 DATASET_STATS = [
     {
@@ -262,6 +274,43 @@ def aggregate_module_ablation(client_rows: list[dict[str, str]]) -> list[dict[st
     return output_rows
 
 
+def build_baseline_2x2_rows() -> list[dict[str, object]]:
+    output_rows = []
+    for setting, baseline, lpc, mode in BASELINE_2X2_CONFIGURATIONS:
+        rows = read_csv(BASELINE_2X2_ROOT / mode / "reports" / "batch_status.csv")
+        if len(rows) != 180:
+            raise RuntimeError(f"Expected 180 rows for {mode}, got {len(rows)}")
+        failed = [row for row in rows if row["status"] != "OK"]
+        if failed:
+            raise RuntimeError(f"Found {len(failed)} failed rows for {mode}")
+
+        cells: dict[tuple[str, str, int], list[float]] = defaultdict(list)
+        for row in rows:
+            key = (row["dataset"], row["model"], int(row["num_clients"]))
+            cells[key].append(float(row["test_acc"]))
+        if len(cells) != 60 or any(len(values) != 3 for values in cells.values()):
+            raise RuntimeError(f"Expected 60 three-beta client-average cells for {mode}")
+
+        client_averages = {key: sum(values) / len(values) for key, values in cells.items()}
+        result: dict[str, object] = {
+            "Setting": setting,
+            "Baseline": baseline,
+            "LPC": lpc,
+        }
+        for dataset_key, dataset_label in DATASETS:
+            values = [
+                value
+                for (dataset, _, _), value in client_averages.items()
+                if dataset == dataset_key
+            ]
+            if len(values) != 12:
+                raise RuntimeError(f"Expected 12 client-average cells for {mode}/{dataset_key}")
+            result[f"{dataset_label} ACC (%)"] = f"{100 * sum(values) / len(values):.2f}"
+        result["Avg ACC (%)"] = f"{100 * sum(client_averages.values()) / len(client_averages):.2f}"
+        output_rows.append(result)
+    return output_rows
+
+
 def internal_ablation_rows(
     client_rows: list[dict[str, str]],
 ) -> tuple[list[dict[str, object]], list[dict[str, object]], dict[str, float]]:
@@ -372,7 +421,7 @@ def build_diagnostic_table() -> tuple[list[dict[str, object]], dict[str, dict[st
             reference_methods
             + [f"Overall: {MAIN_METHOD_NAMES.get(reference_method, reference_method)}"]
         )
-        output_rows.extend([lamp_row, reference_row])
+        output_rows.extend([reference_row, lamp_row])
         summary[field] = {
             "metric": metric,
             "direction": direction,
@@ -633,6 +682,7 @@ def build_collapse_dataset_table(diagnostic_summary: dict[str, dict[str, object]
                 + " \\\\",
             ]
         )
+        body[-4:] = body[-2:] + body[-4:-2]
 
     return "\n".join(
         [
@@ -698,6 +748,7 @@ def build_dataset_statistics_table() -> str:
 def update_tex(
     paper_dir: Path,
     formal_values: dict[tuple[str, str, int], float],
+    baseline_2x2_rows: list[dict[str, object]],
     diagnostic_rows: list[dict[str, object]],
     prevalence_rows: list[dict[str, object]],
     diagnostic_summary: dict[str, dict[str, object]],
@@ -707,15 +758,28 @@ def update_tex(
     tex = tex.replace(r"where $\gamma=0.45$ is the default evidence exponent", r"where $\gamma=0.55$ is the default evidence exponent")
     tex = tex.replace(r"where $s=20$ is the default head scale", r"where $s=18.75$ is the default head scale")
     tex = tex.replace(r"with default maximum calibration strength $\lambda=5.0$", r"with default maximum calibration strength $\lambda=4.25$")
+    baseline_by_setting = {str(row["Setting"]): row for row in baseline_2x2_rows}
+    ties_without_lpc = float(baseline_by_setting["TIES-Merging"]["Avg ACC (%)"])
+    ties_with_lpc = float(baseline_by_setting["TIES-Merging + LPC"]["Avg ACC (%)"])
+    dare_without_lpc = float(baseline_by_setting["DARE-Linear"]["Avg ACC (%)"])
+    dare_with_lpc = float(baseline_by_setting["DARE-Linear + LPC"]["Avg ACC (%)"])
+    module_ablation_intro = (
+        "Module-level ablations use exactly the same experimental setup as the main experiments. "
+        "The Weight-Averaging Baseline, Baseline + DPR, and full LAMP-Merge achieve overall "
+        "client-average ACC values of 22.04\%, 58.91\%, and 62.21\%, respectively. We additionally "
+        "isolate LPC from DPR through the strict $2\\times2$ TIES/DARE control in "
+        "Fig.~\\ref{fig:baseline-2x2-ablation}."
+    )
     tex = re.sub(
         r"Module-level ablations use exactly the same experimental setup as the main experiments\..*",
-        lambda _: r"Module-level ablations use exactly the same experimental setup as the main experiments. We report the Weight-Averaging Baseline, Baseline + DPR, and full LAMP-Merge (Baseline + DPR + LPC), forming the incremental comparison used in Fig.~\ref{fig:dataset-ablation-acc}.",
+        lambda _: module_ablation_intro,
         tex,
         count=1,
     )
-    tex = tex.replace(
-        r"Fig.~\ref{fig:hparam-analysis} evaluate",
-        r"Fig.~\ref{fig:hparam-analysis} evaluates",
+    tex = re.sub(
+        r"(Fig\.~\\ref\{fig:hparam-analysis\} )evaluates*\b",
+        r"\1evaluates",
+        tex,
     )
     tex = tex.replace(
         r"The default $s=20$ and $\lambda=5$ lie in broad stable regions, indicating that the gain is not produced by narrow hyperparameter tuning.",
@@ -761,6 +825,43 @@ def update_tex(
     dataset_table = build_dataset_statistics_table()
     tex = replace_table_block(tex, "tab:dataset-statistics", dataset_table)
 
+    tex = tex.replace(
+        r"Fig.~\ref{fig:dataset-ablation-acc} and Table~\ref{tab:diagnostic-internal-ablation} show that neither an arbitrary head nor a class-agnostic statistic explains the gain.",
+        r"Table~\ref{tab:diagnostic-internal-ablation} shows that neither an arbitrary head nor a class-agnostic statistic explains the gain.",
+    )
+    baseline_2x2_text = (
+        "We further replace the prior term inside long-tail prevalence calibration. "
+        "Table~\\ref{tab:prevalence-internal-ablation} shows that removing prevalence calibration "
+        "or replacing the real prior with a uniform prior reduces mean ACC, confirming that "
+        "long-tailed prevalence is part of the full method. The strict controls in "
+        "Fig.~\\ref{fig:baseline-2x2-ablation} disable DPR and apply LPC only to classifier heads "
+        f"merged by TIES or DARE. LPC raises TIES from {ties_without_lpc:.2f}\\% to "
+        f"{ties_with_lpc:.2f}\\% and DARE from {dare_without_lpc:.2f}\\% to "
+        f"{dare_with_lpc:.2f}\\%, but both remain far below DPR only (58.91\\%) and full "
+        "LAMP-Merge (62.21\\%). Thus, LPC improves prevalence alignment but cannot replace "
+        "diagnostic prototype reconstruction."
+    )
+    tex = re.sub(
+        r"We further replace the prior term inside long-tail prevalence calibration\..*?(?=\n\n\\begin\{figure\})",
+        lambda _: baseline_2x2_text,
+        tex,
+        count=1,
+    )
+    baseline_2x2_figure = "\n".join(
+        [
+            r"\begin{figure}[t]",
+            r"\centering",
+            r"\includegraphics[width=\columnwidth]{figures/03_baseline_2x2_ablation.pdf}",
+            r"\caption{Strict $2\times2$ baseline ablation over TIES- and DARE-merged classifier heads, with LPC disabled or enabled. DPR is disabled in all four settings. Each dataset bar averages 12 client-average cells, and Avg averages all 60 cells.}",
+            r"\label{fig:baseline-2x2-ablation}",
+            r"\end{figure}",
+        ]
+    )
+    if r"\label{fig:dataset-ablation-acc}" in tex:
+        tex = replace_figure_block(tex, "fig:dataset-ablation-acc", baseline_2x2_figure)
+    else:
+        tex = replace_figure_block(tex, "fig:baseline-2x2-ablation", baseline_2x2_figure)
+
     combined_hparam_figure = "\n".join(
         [
             r"\begin{figure*}[t]",
@@ -771,16 +872,22 @@ def update_tex(
             r"\end{figure*}",
         ]
     )
-    tex = replace_figure_block(tex, "fig:hparam-analysis-dpr", combined_hparam_figure)
-    tex = remove_figure_block(tex, "fig:hparam-analysis-lpc")
-    tex = remove_figure_block(tex, "fig:dataset-examples")
+    if r"\label{fig:hparam-analysis-dpr}" in tex:
+        tex = replace_figure_block(tex, "fig:hparam-analysis-dpr", combined_hparam_figure)
+    else:
+        tex = replace_figure_block(tex, "fig:hparam-analysis", combined_hparam_figure)
+    if r"\label{fig:hparam-analysis-lpc}" in tex:
+        tex = remove_figure_block(tex, "fig:hparam-analysis-lpc")
+    if r"\label{fig:dataset-examples}" in tex:
+        tex = remove_figure_block(tex, "fig:dataset-examples")
     tex = tex.replace(
         r"Fig.~\ref{fig:hparam-analysis-dpr} and Fig.~\ref{fig:hparam-analysis-lpc}",
         r"Fig.~\ref{fig:hparam-analysis}",
     )
-    tex = tex.replace(
-        r"Fig.~\ref{fig:hparam-analysis} evaluate",
-        r"Fig.~\ref{fig:hparam-analysis} evaluates",
+    tex = re.sub(
+        r"(Fig\.~\\ref\{fig:hparam-analysis\} )evaluates*\b",
+        r"\1evaluates",
+        tex,
     )
     tex = tex.replace("DPRM", "DPR")
     path.write_text(tex, encoding="utf-8")
@@ -789,7 +896,8 @@ def update_tex(
 def write_index(csv_dir: Path) -> None:
     rows = [
         ("Tables 1--4", "Main client-average ACC", "主实验_ResNet.csv; 主实验_ConvNeXt.csv; 主实验_ViT-Tiny.csv; 主实验_Swin-Tiny.csv"),
-        ("Figure 3", "Module-level ablation", "消融.csv"),
+        ("Ablation text", "Incremental DPR/LPC module ablation", "消融.csv"),
+        ("Figure 3", "Strict TIES/DARE 2x2 baseline ablation", "基线2x2消融.csv"),
         ("Table 5 / Figure 4 left", "DPR internal ablation", "诊断原型重建内部消融.csv"),
         ("Table 6 / Figure 4 right", "LPC internal ablation", "长尾患病率校准内部消融.csv"),
         ("Table 7", "Prediction-collapse diagnostics", "预测坍缩诊断.csv"),
@@ -816,9 +924,7 @@ def main() -> None:
     csv_dir = args.csv_dir.resolve()
     if not (paper_dir / "v4_3.tex").exists():
         raise FileNotFoundError(paper_dir / "v4_3.tex")
-    if csv_dir.exists():
-        shutil.rmtree(csv_dir)
-    csv_dir.mkdir(parents=True)
+    csv_dir.mkdir(parents=True, exist_ok=True)
 
     client_rows = load_client_average_rows()
     formal_values = load_formal_lamp_values(client_rows)
@@ -833,6 +939,17 @@ def main() -> None:
         "本表对应模块级消融实验；DPR 表示 Diagnostic Prototype Reconstruction，LPC 表示 Long-tail Prevalence Calibration，单位为 client-average ACC 百分比。图中仅报告 Baseline、Baseline + DPR 和 LAMP-Merge。",
         module_fields,
         module_rows,
+    )
+
+    baseline_2x2_rows = build_baseline_2x2_rows()
+    baseline_2x2_fields = ["Setting", "Baseline", "LPC"] + [
+        f"{label} ACC (%)" for _, label in DATASETS
+    ] + ["Avg ACC (%)"]
+    write_annotated_csv(
+        csv_dir / "基线2x2消融.csv",
+        "本表对应 TIES/DARE 严格 2x2 基线消融；两种 baseline 分别比较 LPC 关闭与开启，四组均关闭 DPR。每个数据集数值对四个 backbone、K=3/5/7 和三个 beta 设置取 client-average 后再平均，单位为 ACC 百分比。",
+        baseline_2x2_fields,
+        baseline_2x2_rows,
     )
 
     diagnostic_rows, prevalence_rows, _ = internal_ablation_rows(client_rows)
@@ -904,7 +1021,14 @@ def main() -> None:
     )
 
     crop_dataset_samples(paper_dir)
-    update_tex(paper_dir, formal_values, diagnostic_rows, prevalence_rows, diagnostic_summary)
+    update_tex(
+        paper_dir,
+        formal_values,
+        baseline_2x2_rows,
+        diagnostic_rows,
+        prevalence_rows,
+        diagnostic_summary,
+    )
     write_index(csv_dir)
     print(f"Prepared manuscript in {paper_dir}")
     print(f"Wrote CSV files to {csv_dir}")

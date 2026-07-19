@@ -17,5 +17,8 @@ result/
 reference_cache/
 methods/*
 !methods/__init__.py
+!methods/common.py
+!methods/dare.py
 !methods/lamp_merge.py
 !methods/lamp_merge_analysis.py
+!methods/ties.py

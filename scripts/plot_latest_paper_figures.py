@@ -107,6 +107,97 @@ def plot_module_ablation(csv_dir: Path, figure_dir: Path) -> None:
     plt.close(fig)
 
 
+def plot_baseline_2x2_ablation(csv_dir: Path, figure_dir: Path) -> None:
+    rows = read_annotated_csv(csv_dir / "基线2x2消融.csv")
+    settings = ["TIES-Merging", "TIES-Merging + LPC", "DARE-Linear", "DARE-Linear + LPC"]
+    dataset_fields = ["Blood", "Derma", "Organ-C", "Organ-S", "Ultrasound", "Avg"]
+    row_by_setting = {row["Setting"]: row for row in rows}
+    if set(row_by_setting) != set(settings):
+        raise ValueError(f"Unexpected baseline 2x2 settings: {sorted(row_by_setting)}")
+
+    values = {
+        setting: finite_array(
+            [
+                float(row_by_setting[setting]["Avg ACC (%)"])
+                if dataset == "Avg"
+                else float(row_by_setting[setting][f"{dataset} ACC (%)"])
+                for dataset in dataset_fields
+            ],
+            (len(dataset_fields),),
+            setting,
+        )
+        for setting in settings
+    }
+    if any((series < 0).any() or (series > 100).any() for series in values.values()):
+        raise ValueError("Baseline 2x2 accuracy is outside [0, 100]")
+
+    style_specs = {
+        "TIES-Merging": ("TIES", "#C6E0B4", ""),
+        "TIES-Merging + LPC": ("TIES + LPC", PAPER_COLORS["TIES-Merging"], "///"),
+        "DARE-Linear": ("DARE", "#BDD7EE", ""),
+        "DARE-Linear + LPC": ("DARE + LPC", PAPER_COLORS["DARE-Linear"], "///"),
+    }
+
+    setup_style("bar")
+    plt.rcParams.update(
+        {
+            "font.size": 7.5,
+            "axes.labelsize": 8.0,
+            "xtick.labelsize": 7.0,
+            "ytick.labelsize": 7.3,
+            "legend.fontsize": 6.8,
+            "axes.linewidth": 1.0,
+        }
+    )
+    fig, ax = plt.subplots(figsize=(3.35, 3.15), dpi=300)
+    y = np.arange(len(dataset_fields))
+    height = 0.19
+    for index, setting in enumerate(settings):
+        label, color, hatch = style_specs[setting]
+        offset = (index - (len(settings) - 1) / 2) * height
+        bars = ax.barh(
+            y + offset,
+            values[setting],
+            height=height,
+            label=label,
+            color=color,
+            edgecolor=darken_color(color, 0.58),
+            linewidth=0.75,
+            hatch=hatch,
+            zorder=3,
+        )
+        average_bar = bars[-1]
+        average_value = values[setting][-1]
+        ax.text(
+            average_value + 0.8,
+            average_bar.get_y() + average_bar.get_height() / 2,
+            f"{average_value:.1f}",
+            va="center",
+            fontsize=5.8,
+            color="#30343B",
+        )
+
+    ax.set_yticks(y)
+    ax.set_yticklabels(["Blood", "Derma", "Organ-C", "Organ-S", "US", "Avg"])
+    ax.invert_yaxis()
+    ax.axhline(4.5, color="#8C8C8C", linewidth=0.7, linestyle="--", zorder=1)
+    ax.set_xlim(0, 75)
+    ax.set_xticks([0, 20, 40, 60])
+    ax.set_xlabel("Client-average ACC (%)")
+    ax.legend(
+        loc="lower center",
+        bbox_to_anchor=(0.5, 1.01),
+        ncol=2,
+        frameon=False,
+        handlelength=1.8,
+        columnspacing=1.2,
+    )
+    polish_axes(ax, y_grid=False, x_grid=True)
+    fig.tight_layout(pad=0.45)
+    save_png_pdf(fig, str(figure_dir / "03_baseline_2x2_ablation"), dpi=350)
+    plt.close(fig)
+
+
 def plot_internal_ablations(csv_dir: Path, figure_dir: Path) -> None:
     diagnostic = read_annotated_csv(csv_dir / "诊断原型重建内部消融.csv")
     prevalence = read_annotated_csv(csv_dir / "长尾患病率校准内部消融.csv")
@@ -359,6 +450,7 @@ def main() -> None:
     figure_dir.mkdir(parents=True, exist_ok=True)
 
     plot_module_ablation(csv_dir, figure_dir)
+    plot_baseline_2x2_ablation(csv_dir, figure_dir)
     plot_internal_ablations(csv_dir, figure_dir)
     plot_ultrasound_distribution(csv_dir, figure_dir)
     plot_hparams(csv_dir, figure_dir)

@@ -1,8 +1,8 @@
 说明,本表对应预测坍缩诊断实验；每个数据集数值对四个 backbone、K=3/5/7 和三个 beta 设置取平均。Collapse ratio 和 Predicted-true TV 使用百分比，Effective predicted classes 使用类别数；Best generic reference 按数据集和指标分别选择最优通用模型合并基线。
 Metric,Direction,Series,Blood Avg,Derma Avg,Organ-C Avg,Organ-S Avg,Ultrasound Avg,Overall Avg,Reference methods
-Collapse ratio,lower,LAMP-Merge,19.58,68.05,20.72,24.36,20.45,30.63,--
 Collapse ratio,lower,Best generic reference,80.20,85.18,72.38,71.12,80.31,79.02,Blood: Iso-C; Derma: Iso-C; Organ-C: Iso-C; Organ-S: RegMean; Ultrasound: RegMean; Overall: Iso-C
-Effective predicted classes,higher,LAMP-Merge,7.48,3.10,9.55,8.44,7.44,7.20,--
+Collapse ratio,lower,LAMP-Merge,19.58,68.05,20.72,24.36,20.45,30.63,--
 Effective predicted classes,higher,Best generic reference,1.81,1.65,2.49,2.53,1.98,2.05,Blood: Iso-C; Derma: RobustMerge; Organ-C: RegMean; Organ-S: RegMean; Ultrasound: RegMean; Overall: RegMean
-Predicted-true TV,lower,LAMP-Merge,3.97,17.09,12.38,13.17,15.51,12.42,--
+Effective predicted classes,higher,LAMP-Merge,7.48,3.10,9.55,8.44,7.44,7.20,--
 Predicted-true TV,lower,Best generic reference,73.48,46.03,75.42,73.85,72.73,69.44,Blood: Iso-C; Derma: Weight Averaging; Organ-C: Fisher; Organ-S: RobustMerge; Ultrasound: RegMean; Overall: Iso-C
+Predicted-true TV,lower,LAMP-Merge,3.97,17.09,12.38,13.17,15.51,12.42,--

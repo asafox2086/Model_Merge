@@ -8,6 +8,9 @@ from utils.hub import beta_to_dirname
 from utils.runtime import build_reference_bundle
 from utils.state_dict import average_state_dicts
 
+from .dare import merge_dare_linear
+from .ties import merge_ties
+
 
 EPS = 1e-8
 
@@ -15,6 +18,12 @@ LAMP_MERGE_ABLATION_MODES = {
     "full",
     "m1_only",
     "avg_m2",
+    "reference_avg_head",
+    "reference_avg_head_lpc",
+    "reference_ties_head",
+    "reference_ties_head_lpc",
+    "reference_dare_head",
+    "reference_dare_head_lpc",
     "no_prevalence",
     "prototype_head_agg",
     "head_agg",
@@ -658,6 +667,110 @@ def _avg_plus_prevalence_model(state_dicts, weights, proto_stats, meta, cfg):
     }
 
 
+def _reference_merged_head_model(
+    state_dicts,
+    weights,
+    proto_stats,
+    meta,
+    cfg,
+    add_prevalence,
+    baseline_method,
+):
+    num_classes = int(meta["num_classes"])
+    base_state, param_names = build_reference_bundle(meta, device="cpu")
+    if baseline_method == "avg":
+        baseline_state, normalized_weights = average_state_dicts(state_dicts, weights)
+    elif baseline_method == "ties":
+        baseline_state, baseline_trace = merge_ties(
+            state_dicts,
+            base_state,
+            weights,
+            density=float(_cfg_value(cfg, "density", default=0.5)),
+            param_keys=param_names,
+        )
+        normalized_weights = baseline_trace["normalized_weights"]
+    elif baseline_method == "dare_linear":
+        baseline_state, baseline_trace = merge_dare_linear(
+            state_dicts,
+            base_state,
+            weights,
+            density=float(_cfg_value(cfg, "density", default=0.5)),
+            seed=int(_cfg_value(cfg, "dare_seed", default=42)),
+            param_keys=param_names,
+        )
+        normalized_weights = baseline_trace["normalized_weights"]
+    else:
+        raise ValueError(f"Unsupported reference-head baseline: {baseline_method}")
+
+    state = OrderedDict((key, value.detach().cpu().clone()) for key, value in base_state.items())
+
+    reference_weight_key, reference_bias_key = _classifier_pair(state, num_classes)
+    baseline_weight_key, baseline_bias_key = _classifier_pair(baseline_state, num_classes)
+    if reference_weight_key is None or baseline_weight_key is None:
+        raise ValueError("Reference merged-head ablation requires classifier weights in both models.")
+    if state[reference_weight_key].shape != baseline_state[baseline_weight_key].shape:
+        raise ValueError(
+            "Reference and merged classifier weights have incompatible shapes: "
+            f"reference={list(state[reference_weight_key].shape)}, "
+            f"merged={list(baseline_state[baseline_weight_key].shape)}"
+        )
+
+    state[reference_weight_key] = baseline_state[baseline_weight_key].detach().cpu().to(
+        dtype=state[reference_weight_key].dtype
+    )
+    if reference_bias_key is not None:
+        if baseline_bias_key is None:
+            bias = torch.zeros_like(state[reference_bias_key], dtype=torch.float32)
+        else:
+            bias = baseline_state[baseline_bias_key].detach().cpu().float()
+        state[reference_bias_key] = bias.to(dtype=state[reference_bias_key].dtype)
+
+    local_cfg = dict(cfg)
+    local_cfg["lamp_merge_ablation_mode"] = "full"
+    proto = _global_prototypes(proto_stats, meta, local_cfg)
+    class_counts = proto["class_counts"]
+    class_prior = class_counts / class_counts.sum().clamp_min(EPS)
+    prevalence_strength = (
+        _prevalence_calibration_strength(class_prior, num_classes, cfg)
+        if add_prevalence
+        else 0.0
+    )
+    imbalance_ratio = float((class_prior.max() * float(num_classes)).item())
+
+    if prevalence_strength != 0.0:
+        if reference_bias_key is None:
+            raise ValueError("Reference averaged-head + LPC ablation requires a classifier bias tensor.")
+        bias = state[reference_bias_key].detach().cpu().float()
+        bias = bias + _centered_log_prior_bias(class_prior, prevalence_strength)
+        state[reference_bias_key] = bias.to(dtype=state[reference_bias_key].dtype)
+
+    return state, {
+        "used": True,
+        "feature_space": "reference_model",
+        "head_mode": f"{baseline_method}_client_classifier",
+        "baseline_method": baseline_method,
+        "weight_key": reference_weight_key,
+        "bias_key": reference_bias_key,
+        "prevalence_bias_scale": prevalence_strength,
+        "prevalence_threshold": _dominant_prior_threshold(cfg, num_classes),
+        "reference_prior_threshold": float(_cfg_value(
+            cfg,
+            "lamp_merge_reference_prior_threshold",
+            default=2.5,
+        )),
+        "reference_prior_max_tau": float(_cfg_value(
+            cfg,
+            "lamp_merge_reference_prior_max_tau",
+            default=4.25,
+        )),
+        "imbalance_ratio": imbalance_ratio,
+        "class_counts": [float(x) for x in class_counts.tolist()],
+        "class_prevalence_source": proto["class_prevalence_source"],
+        "class_prior": [float(x) for x in class_prior.tolist()],
+        "avg_weights": [float(x) for x in normalized_weights],
+    }
+
+
 def merge_lamp_merge(state_dicts, weights, meta=None, checkpoints=None, cfg=None):
     if meta is None or cfg is None:
         raise ValueError("LAMP-Merge requires task metadata and runtime config.")
@@ -681,6 +794,33 @@ def merge_lamp_merge(state_dicts, weights, meta=None, checkpoints=None, cfg=None
         trace = {
             "used": False,
             "reason": "M1 diagnostic prototype head is disabled by avg_m2 ablation.",
+        }
+    elif ablation_mode in {
+        "reference_avg_head",
+        "reference_avg_head_lpc",
+        "reference_ties_head",
+        "reference_ties_head_lpc",
+        "reference_dare_head",
+        "reference_dare_head_lpc",
+    }:
+        if ablation_mode.startswith("reference_ties"):
+            baseline_method = "ties"
+        elif ablation_mode.startswith("reference_dare"):
+            baseline_method = "dare_linear"
+        else:
+            baseline_method = "avg"
+        merged, prevalence_trace = _reference_merged_head_model(
+            state_dicts,
+            weights,
+            client_stats,
+            meta,
+            cfg,
+            add_prevalence=ablation_mode.endswith("_lpc"),
+            baseline_method=baseline_method,
+        )
+        trace = {
+            "used": False,
+            "reason": "DPR is disabled for the reference merged-head baseline.",
         }
     else:
         base_state, _ = build_reference_bundle(meta, device="cpu")
