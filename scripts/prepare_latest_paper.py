@@ -489,7 +489,7 @@ def build_ultrasound_distribution() -> list[dict[str, object]]:
         ("lamp_merge:full", "LAMP-Merge"),
         ("ties", "TIES-Merging"),
         ("dare_linear", "DARE-Linear"),
-        ("dare_ties", "DARE-TIES"),
+        ("model_stock", "Model Stock"),
     ]
     sums = defaultdict(lambda: [0.0] * 8)
     counts = defaultdict(int)
@@ -748,7 +748,7 @@ def build_internal_dataset_table(
             body.extend([r"\hline \hline", r"\rowcolor[HTML]{FFF9C4}"])
             setting = rf"\textbf{{{setting}}}"
             values = [rf"\textbf{{{value}}}" for value in values]
-        elif index % 2:
+        elif index % 2 and row["Setting"] != "Always-on calibration":
             body.append(r"\rowcolor{gray!10}")
         body.append(setting + " & " + " & ".join(values) + " \\\\")
 
@@ -798,9 +798,8 @@ def build_collapse_dataset_table(diagnostic_summary: dict[str, dict[str, object]
             body.append(r"\hdashline")
         body.extend(
             [
-                r"\rowcolor{gray!10}",
-                r" & Best ref. & "
-                + " & ".join(f"{value:.2f}" for value in reference_values)
+                r" & \cellcolor{gray!10}Best ref. & "
+                + " & ".join(rf"\cellcolor{{gray!10}}{value:.2f}" for value in reference_values)
                 + " \\\\",
                 rf"\multirow{{-2}}{{*}}{{{metric_label}}}"
                 + r" & \cellcolor[HTML]{FFF9C4}\textbf{LAMP} & "

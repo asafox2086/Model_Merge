@@ -24,6 +24,7 @@ GAMMA_VALUES=( ${GAMMA_VALUES:-0.50 0.55 0.60} )
 S_VALUES=( ${S_VALUES:-13.75 15 16.25 17.5 18.75 20 21.25 22.5 23.75 25} )
 TAU_VALUES=( ${TAU_VALUES:-2.0 2.5 3.0} )
 LAMBDA_VALUES=( ${LAMBDA_VALUES:-3.0 3.25 3.5 3.75 4.0 4.25 4.5 4.75 5.0 5.25} )
+RUN_FAMILIES=( ${RUN_FAMILIES:-dpr lpc} )
 
 mkdir -p "${BASE_OUTPUT_ROOT}" "${LOG_DIR}"
 
@@ -43,15 +44,27 @@ safe_value() {
 }
 
 RUN_ITEMS=()
-for gamma in "${GAMMA_VALUES[@]}"; do
-  for scale in "${S_VALUES[@]}"; do
-    RUN_ITEMS+=("dpr:${gamma}:${scale}")
-  done
-done
-for threshold in "${TAU_VALUES[@]}"; do
-  for strength in "${LAMBDA_VALUES[@]}"; do
-    RUN_ITEMS+=("lpc:${threshold}:${strength}")
-  done
+for family in "${RUN_FAMILIES[@]}"; do
+  case "${family}" in
+    dpr)
+      for gamma in "${GAMMA_VALUES[@]}"; do
+        for scale in "${S_VALUES[@]}"; do
+          RUN_ITEMS+=("dpr:${gamma}:${scale}")
+        done
+      done
+      ;;
+    lpc)
+      for threshold in "${TAU_VALUES[@]}"; do
+        for strength in "${LAMBDA_VALUES[@]}"; do
+          RUN_ITEMS+=("lpc:${threshold}:${strength}")
+        done
+      done
+      ;;
+    *)
+      echo "Unknown sweep family: ${family}" >&2
+      exit 2
+      ;;
+  esac
 done
 
 run_item() {
@@ -67,7 +80,7 @@ run_item() {
   if [[ "${family}" == "dpr" ]]; then
     mode_root="${BASE_OUTPUT_ROOT}/dpr_gamma_${first_safe}_s_${second_safe}"
     log_path="${LOG_DIR}/dpr_gamma_${first_safe}_s_${second_safe}.log"
-    ablation_mode="m1_only"
+    ablation_mode="full"
     extra_args=(
       --lamp-merge-proto-count-power "${first_value}"
       --lamp-merge-reference-head-scale "${second_value}"

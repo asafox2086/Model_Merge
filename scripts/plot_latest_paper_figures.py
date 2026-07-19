@@ -28,7 +28,7 @@ PAPER_COLORS = {
     "Weight Averaging": "#7F7F7F",
     "TIES-Merging": "#9BBB59",
     "DARE-Linear": "#4F81BD",
-    "DARE-TIES": "#8064A2",
+    "Model Stock": "#8064A2",
     "True distribution": "#8064A2",
 }
 
@@ -263,7 +263,10 @@ def plot_internal_ablations(csv_dir: Path, figure_dir: Path) -> None:
         axis.set_yticks(y)
         axis.set_yticklabels(labels)
         axis.invert_yaxis()
-        axis.set_xlim(0, 85)
+        if title == "DPR":
+            axis.set_xlim(0, 85)
+        else:
+            axis.set_xlim(55, 65)
         axis.set_xlabel("Mean ACC (%)")
         axis.set_title(title, fontweight="bold", pad=3)
         for bar, value in zip(bars, values):
@@ -285,7 +288,7 @@ def plot_internal_ablations(csv_dir: Path, figure_dir: Path) -> None:
 
 def plot_ultrasound_distribution(csv_dir: Path, figure_dir: Path) -> None:
     rows = read_annotated_csv(csv_dir / "超声预测类别分布.csv")
-    methods = ["LAMP-Merge", "TIES-Merging", "DARE-Linear", "DARE-TIES"]
+    methods = ["LAMP-Merge", "TIES-Merging", "DARE-Linear", "Model Stock"]
     by_series = {row["Series"]: row for row in rows}
     x = np.arange(8)
     setup_style("line")
@@ -345,6 +348,7 @@ def plot_hparam_curves(
     curve_symbol: str,
     displayed_curves: list[tuple[str, float]],
     y_limits: tuple[float, float] | None = None,
+    x_limits: tuple[float, float] | None = None,
     legend_location: str = "best",
     legend_anchor: tuple[float, float] | None = None,
 ) -> None:
@@ -416,6 +420,8 @@ def plot_hparam_curves(
         axis.set_ylim(center - expanded_span / 2, center + expanded_span / 2)
     else:
         axis.set_ylim(*y_limits)
+    if x_limits is not None:
+        axis.set_xlim(*x_limits)
     axis.set_xlabel(x_label)
     axis.set_ylabel("Mean ACC (%)")
     axis.set_title(title, fontweight="bold", pad=4)
@@ -465,6 +471,7 @@ def plot_hparams(csv_dir: Path, figure_dir: Path) -> None:
         ],
         legend_location="center",
         legend_anchor=(0.57, 0.48),
+        x_limits=(16.25, 21.25),
     )
     plot_hparam_curves(
         axes[1],
@@ -484,6 +491,7 @@ def plot_hparams(csv_dir: Path, figure_dir: Path) -> None:
             ("Earlier interaction grid", 3.5),
         ],
         (55.0, 65.0),
+        (3.75, 5.25),
         legend_location="lower center",
         legend_anchor=(0.5, 0.05),
     )
