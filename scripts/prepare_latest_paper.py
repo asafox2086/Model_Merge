@@ -1033,8 +1033,8 @@ def update_tex(
             r"$\gamma=0.55$ and $s=18.75$ while varying $\tau$ and $\lambda$ around the selected operating point."
         )
         hparam_caption = (
-            r"LPC sensitivity under the full LAMP-Merge configuration, with DPR fixed at its selected operating point. "
-            r"Each point averages 60 client-average cells."
+            r"DPR and LPC sensitivity under the full LAMP-Merge configuration. Completed curve points average "
+            r"60 client-average cells."
         )
         hparam_reproducibility = (
             r"The sensitivity figure uses the completed full-configuration LPC sweep only. It uses "

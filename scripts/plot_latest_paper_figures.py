@@ -446,8 +446,8 @@ def plot_hparams(csv_dir: Path, figure_dir: Path) -> None:
             "lines.markersize": 4.8,
         }
     )
+    fig, axes = plt.subplots(2, 1, figsize=(3.35, 2.10), dpi=300)
     if diagnostic:
-        fig, axes = plt.subplots(2, 1, figsize=(3.35, 3.45), dpi=300)
         plot_hparam_curves(
             axes[0],
             diagnostic,
@@ -467,10 +467,15 @@ def plot_hparams(csv_dir: Path, figure_dir: Path) -> None:
             legend_anchor=(0.57, 0.48),
             x_limits=(16.25, 21.25),
         )
-        lpc_axis = axes[1]
     else:
-        fig, lpc_axis = plt.subplots(figsize=(3.35, 1.85), dpi=300)
-        axes = [lpc_axis]
+        dpr_axis = axes[0]
+        dpr_axis.set_xlim(16.25, 21.25)
+        dpr_axis.set_ylim(55.0, 65.0)
+        dpr_axis.set_xlabel(r"Prototype-head scale $s$")
+        dpr_axis.set_ylabel("Mean ACC (%)")
+        dpr_axis.set_title("DPR", fontweight="bold", pad=4)
+        polish_axes(dpr_axis, y_grid=True, x_grid=False)
+    lpc_axis = axes[1]
     plot_hparam_curves(
         lpc_axis,
         prevalence,
@@ -494,7 +499,7 @@ def plot_hparams(csv_dir: Path, figure_dir: Path) -> None:
     for axis in axes:
         for spine in axis.spines.values():
             spine.set_linewidth(0.8)
-    fig.tight_layout(h_pad=0.9, pad=0.35)
+    fig.tight_layout(h_pad=0.55, pad=0.25)
     save_png_pdf(fig, str(figure_dir / "05_hyperparameter_sensitivity"), dpi=350)
     plt.close(fig)
 

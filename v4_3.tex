@@ -221,6 +221,13 @@ Model merging aims to integrate multiple independently trained local checkpoints
 
 Federated learning~\cite{pmlr-v54-mcmahan17a,li2020fedprox,karimireddy2020scaffold,kairouz2021advances} and model merging~\cite{izmailov2018averaging,pmlr-v162-wortsman22a,ilharco2023editingmodelstaskarithmetic,yadav2023tiesmergingresolvinginterferencemerging} provide two important collaboration routes for privacy-sensitive multicenter medical intelligence. Federated learning enables hospitals to train collaboratively without sharing raw data~\cite{sheller2020federated,rieke2020future}, while model merging further reduces communication and optimization costs by integrating independently trained local models after training~\cite{ainsworth2023gitrebasinmergingmodels,stoica2024zipit,wu_parameter_2025}. These paradigms are particularly attractive for \textbf{medical imaging}, because a single hospital rarely covers the full disease spectrum, while privacy regulations and device heterogeneity make centralizing raw medical images difficult ~\cite{kaissis2020secure,bonawitz2019towards,abadi2016deep}.
 
+\begin{figure}[!t]
+    \centering
+    \includegraphics[width=0.96\linewidth]{figures/intro.png}
+    \caption{In multicenter healthcare settings, individual clients typically observe only a subset of the global diagnostic space. Conventional parameter-level model-merging methods can therefore cause the merged global model's predictions to concentrate on a small number of dominant classes.}
+    \label{fig:intro-collapse}
+\end{figure}
+
 Despite their success on natural images and general visual tasks~\cite{izmailov2018averaging,pmlr-v162-wortsman22a,ilharco2023editingmodelstaskarithmetic,entezari2022role,ainsworth2023gitrebasinmergingmodels}, transferring these paradigms to medical data remains challenging. A key reason is that general-purpose model merging implicitly assumes that different client checkpoints contain relatively complete and comparable \textbf{global discriminative structures}; local models are expected to align through parameter space, task-vector space, update signs, or curvature statistics~\cite{yadav2023tiesmergingresolvinginterferencemerging,yu2024languagemodelssupermario,wu_parameter_2025,jin2025datalessknowledgefusionmerging}. This assumption does not hold in medical scenarios. Medical centers differ not only in device domains but also in diagnostic-class availability: some centers may mainly cover common diseases or specific examination types, while having few rare-disease samples~\cite{9557808,10.1371/journal.pmed.1002683,li2021fedbn}. The resulting local models are not complete replicas of the global task, but \textbf{partial diagnostic experts} supported by locally observed diseases.
 
 As illustrated in Fig.~\ref{fig:intro-collapse}, we summarize these challenges as two diagnostic-structure abnormalities in medical model merging:
@@ -229,16 +236,9 @@ As illustrated in Fig.~\ref{fig:intro-collapse}, we summarize these challenges a
     \item \textbf{Long-tailed Medical Image Prevalence.} Medical image datasets naturally follow a long-tailed distribution: a few common diagnostic classes dominate the  samples, while rare classes are underrepresented~\cite{BUDA2018249,5597285}. Under this imbalanced class prior, a merged model collapsed to the majority class can still obtain high Accuracy despite lacking complete multi-class discrimination.
 \end{itemize}
 
-\begin{figure}[t]
-    \centering
-    \includegraphics[width=0.96\linewidth]{figures/intro.png}
-    \caption{In multicenter healthcare settings, individual clients typically observe only a subset of the global diagnostic space. Conventional parameter-level model-merging methods can therefore cause the merged global model's predictions to concentrate on a small number of dominant classes.}
-    \label{fig:intro-collapse}
-\end{figure}
-
 To address these issues, we propose \textbf{LAMP-Merge, a long-tail-aware medical prototype-merging method for single-shot asynchronous medical image model merging}. LAMP-Merge shifts the merge target from global parameter interpolation to \textbf{class-level diagnostic-evidence reconstruction}. The key idea is to use client-uploaded class-level statistics as a synchronization signal for the global diagnostic space, allowing the server to reconstruct a global diagnostic classifier without accessing raw medical images, using a server-side validation set, or conducting multi-round federated communication. Specifically, LAMP-Merge consists of two mechanisms: \textbf{diagnostic prototype reconstruction} aggregates reliable class-level evidence through prototypes in a shared reference feature space, and \textbf{long-tail prevalence calibration} injects a bounded prior bias from client-uploaded class counts, thereby mitigating prediction collapse while preserving clinically meaningful majority-class prevalence.
 
-\begin{figure*}[t]
+\begin{figure*}[!t]
     \centering
     \includegraphics[width=0.92\textwidth,height=0.34\textheight]{figures/method.png}
     \caption{Local models from multicenter hospitals typically contain only partial diagnostic knowledge, while raw medical images cannot be centrally shared. LAMP-Merge reconstructs a privacy-friendly global medical classifier through DPR and LPC, without accessing raw data or requiring multi-round federated optimization.}
@@ -375,6 +375,31 @@ The final scoring function of LAMP-Merge integrates the diagnostic prototype rec
 \subsubsection{(1) Evaluation Datasets:}
 
 We evaluate the merged models on five representative MedMNIST v2 benchmarks\cite{yang2023medmnist}: Blood, Derma, Organ-C, Organ-S, and Ultrasound. They cover blood-cell microscopy, dermoscopy, abdominal CT, and ultrasound image classification (detailed dataset descriptions are provided in the Appendix).
+
+\begin{table}[t]
+\centering
+\caption{Dataset statistics and representative samples for the five medical image benchmarks. Counts are taken from the exact NPZ files used in our experiments.}
+\label{tab:dataset-statistics}
+\scriptsize
+\renewcommand{\arraystretch}{1.25}
+\setlength{\tabcolsep}{2.2pt}
+\resizebox{\columnwidth}{!}{%
+\begin{tabular}{lrrrrr:c}
+\noalign{\hrule height 1.25pt}
+\rowcolor[HTML]{F2F2F2}
+\textbf{Dataset} & \textbf{Classes} & \textbf{Train} & \textbf{Val} & \textbf{Test} & \textbf{Total} & \textbf{Sample} \\
+\hline \hline
+Blood & 8 & 11,959 & 1,712 & 3,421 & 17,092 & \makebox[1.05cm][c]{\raisebox{-0.16cm}{\includegraphics[width=0.95cm,height=0.52cm,keepaspectratio]{figures/sample_blood.png}}} \\
+\rowcolor{gray!10}
+Derma & 7 & 7,007 & 1,003 & 2,005 & 10,015 & \makebox[1.05cm][c]{\raisebox{-0.16cm}{\includegraphics[width=0.95cm,height=0.52cm,keepaspectratio]{figures/sample_derma.png}}} \\
+Organ-C & 11 & 12,975 & 2,392 & 8,216 & 23,583 & \makebox[1.05cm][c]{\raisebox{-0.16cm}{\includegraphics[width=0.95cm,height=0.52cm,keepaspectratio]{figures/sample_organ_c.png}}} \\
+\rowcolor{gray!10}
+Organ-S & 11 & 13,932 & 2,452 & 8,827 & 25,211 & \makebox[1.05cm][c]{\raisebox{-0.16cm}{\includegraphics[width=0.95cm,height=0.52cm,keepaspectratio]{figures/sample_organ_s.png}}} \\
+Ultrasound & 8 & 3,869 & 549 & 1,113 & 5,531 & \makebox[1.05cm][c]{\raisebox{-0.16cm}{\includegraphics[width=0.95cm,height=0.52cm,keepaspectratio]{figures/sample_ultrasound.png}}} \\
+\noalign{\hrule height 1.25pt}
+\end{tabular}
+}
+\end{table}
 
 \subsubsection{(2) Baselines:}
 
@@ -906,7 +931,7 @@ Table \ref{tab:collapse-key} compares LAMP-Merge with the best-performing baseli
 
 To visualize the prediction-distribution changes measured by the diagnostic metrics, we plot the absolute per-class gap between each method's predicted allocation and the true test distribution. Values closer to zero indicate better prevalence alignment. LAMP-Merge exhibits smaller deviations than representative generic merges across most classes.
 
-\begin{figure}[H]
+\begin{figure}[!t]
 \centering
 \includegraphics[width=\linewidth]{figures/new/04_ultrasound_class_distribution.pdf}
 \caption{Absolute per-class prediction gaps on Ultrasound, averaged over the four visual backbones, $K\in\{3,5,7\}$, and the three Dirichlet skew levels. Values are absolute predicted--true class-proportion differences in percentage points; zero denotes exact distributional agreement.}
@@ -919,7 +944,7 @@ Fig.~\ref{fig:hparam-analysis} evaluates LPC sensitivity under the full LAMP-Mer
 \begin{figure}[H]
 \centering
 \includegraphics[width=\columnwidth]{figures/new/05_hyperparameter_sensitivity.pdf}
-\caption{LPC sensitivity under the full LAMP-Merge configuration, with DPR fixed at its selected operating point. Each point averages 60 client-average cells.}
+\caption{DPR and LPC sensitivity under the full LAMP-Merge configuration. Completed curve points average 60 client-average cells.}
 \label{fig:hparam-analysis}
 \end{figure}
 
@@ -950,33 +975,6 @@ The five MedMNIST v2 benchmarks\cite{yang2023medmnist} cover blood-cell microsco
 \item \textbf{Ultrasound}: an eight-class ultrasound image dataset, covering structure recognition under modality-specific speckle noise and low-contrast boundaries.
 \end{itemize}
 Together, these benchmarks provide a systematic testbed for evaluating cross-modality robustness, class-discriminative capability, and task generalization under different medical image types and class-distribution conditions.
-
-\begin{table}[t]
-\centering
-\caption{Dataset statistics and representative samples for the five medical image benchmarks. Counts are taken from the exact NPZ files used in our experiments.}
-\label{tab:dataset-statistics}
-\scriptsize
-\renewcommand{\arraystretch}{1.25}
-\setlength{\tabcolsep}{2.2pt}
-\resizebox{\columnwidth}{!}{%
-\begin{tabular}{lrrrrr:c}
-\noalign{\hrule height 1.25pt}
-\rowcolor[HTML]{F2F2F2}
-\textbf{Dataset} & \textbf{Classes} & \textbf{Train} & \textbf{Val} & \textbf{Test} & \textbf{Total} & \textbf{Sample} \\
-\hline \hline
-Blood & 8 & 11,959 & 1,712 & 3,421 & 17,092 & \makebox[1.05cm][c]{\raisebox{-0.16cm}{\includegraphics[width=0.95cm,height=0.52cm,keepaspectratio]{figures/sample_blood.png}}} \\
-\rowcolor{gray!10}
-Derma & 7 & 7,007 & 1,003 & 2,005 & 10,015 & \makebox[1.05cm][c]{\raisebox{-0.16cm}{\includegraphics[width=0.95cm,height=0.52cm,keepaspectratio]{figures/sample_derma.png}}} \\
-Organ-C & 11 & 12,975 & 2,392 & 8,216 & 23,583 & \makebox[1.05cm][c]{\raisebox{-0.16cm}{\includegraphics[width=0.95cm,height=0.52cm,keepaspectratio]{figures/sample_organ_c.png}}} \\
-\rowcolor{gray!10}
-Organ-S & 11 & 13,932 & 2,452 & 8,827 & 25,211 & \makebox[1.05cm][c]{\raisebox{-0.16cm}{\includegraphics[width=0.95cm,height=0.52cm,keepaspectratio]{figures/sample_organ_s.png}}} \\
-Ultrasound & 8 & 3,869 & 549 & 1,113 & 5,531 & \makebox[1.05cm][c]{\raisebox{-0.16cm}{\includegraphics[width=0.95cm,height=0.52cm,keepaspectratio]{figures/sample_ultrasound.png}}} \\
-\noalign{\hrule height 1.25pt}
-\end{tabular}
-}
-\end{table}
-
-
 
 \subsection{Detailed Ablation Configurations}
 \label{app:ablation-configurations}
