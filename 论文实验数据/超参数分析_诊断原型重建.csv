@@ -1,2 +1,52 @@
-说明,本表记录完整 LAMP-Merge 配置下的 DPR 3x10 网格；每点覆盖五个数据集、四个 backbone、K=3/5/7 和三个 beta，ACC 使用百分比。
-Source,Evidence exponent gamma,Prototype-head scale s,Raw cells,Client-average cells,Mean ACC (%)
+说明,本表记录完整 LAMP-Merge 配置下的 DPR 5x10 网格；每点覆盖五个数据集、四个 backbone、K=3/5/7 和三个 beta，ACC 使用百分比。
+Source,Support exponent gamma,Prototype head scale s,Raw cells,Client-average cells,Mean ACC (%)
+Full configuration grid,0.4,12.5,180,60,61.9661
+Full configuration grid,0.4,13.75,180,60,61.9730
+Full configuration grid,0.4,15,180,60,62.0037
+Full configuration grid,0.4,16.25,180,60,62.0236
+Full configuration grid,0.4,17.5,180,60,62.0055
+Full configuration grid,0.4,18.75,180,60,61.9793
+Full configuration grid,0.4,20,180,60,61.9126
+Full configuration grid,0.4,21.25,180,60,61.8682
+Full configuration grid,0.4,22.5,180,60,61.8464
+Full configuration grid,0.4,23.75,180,60,61.8023
+Full configuration grid,0.45,12.5,180,60,62.0639
+Full configuration grid,0.45,13.75,180,60,62.0789
+Full configuration grid,0.45,15,180,60,62.1038
+Full configuration grid,0.45,16.25,180,60,62.1235
+Full configuration grid,0.45,17.5,180,60,62.1020
+Full configuration grid,0.45,18.75,180,60,62.0801
+Full configuration grid,0.45,20,180,60,62.0121
+Full configuration grid,0.45,21.25,180,60,61.9679
+Full configuration grid,0.45,22.5,180,60,61.9483
+Full configuration grid,0.45,23.75,180,60,61.8981
+Full configuration grid,0.5,12.5,180,60,62.1443
+Full configuration grid,0.5,13.75,180,60,62.1552
+Full configuration grid,0.5,15,180,60,62.1954
+Full configuration grid,0.5,16.25,180,60,62.2136
+Full configuration grid,0.5,17.5,180,60,62.1944
+Full configuration grid,0.5,18.75,180,60,62.1691
+Full configuration grid,0.5,20,180,60,62.0971
+Full configuration grid,0.5,21.25,180,60,62.0516
+Full configuration grid,0.5,22.5,180,60,62.0313
+Full configuration grid,0.5,23.75,180,60,61.9796
+Full configuration grid,0.55,12.5,180,60,62.1882
+Full configuration grid,0.55,13.75,180,60,62.2011
+Full configuration grid,0.55,15,180,60,62.2329
+Full configuration grid,0.55,16.25,180,60,62.2543
+Full configuration grid,0.55,17.5,180,60,62.2294
+Full configuration grid,0.55,18.75,180,60,62.2065
+Full configuration grid,0.55,20,180,60,62.1428
+Full configuration grid,0.55,21.25,180,60,62.0869
+Full configuration grid,0.55,22.5,180,60,62.0713
+Full configuration grid,0.55,23.75,180,60,62.0276
+Full configuration grid,0.6,12.5,180,60,62.2109
+Full configuration grid,0.6,13.75,180,60,62.2268
+Full configuration grid,0.6,15,180,60,62.2696
+Full configuration grid,0.6,16.25,180,60,62.2890
+Full configuration grid,0.6,17.5,180,60,62.2592
+Full configuration grid,0.6,18.75,180,60,62.2358
+Full configuration grid,0.6,20,180,60,62.1721
+Full configuration grid,0.6,21.25,180,60,62.1328
+Full configuration grid,0.6,22.5,180,60,62.0977
+Full configuration grid,0.6,23.75,180,60,62.0510

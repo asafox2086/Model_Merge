@@ -1,6 +1,6 @@
 说明,本表给出论文图表与整理后 CSV 的一一对应关系；所有方法名称均使用论文口径。
 Paper item,Experiment,CSV file
-Tables 1--4,Main client-average ACC,主实验_ResNet.csv; 主实验_ConvNeXt.csv; 主实验_ViT-Tiny.csv; 主实验_Swin-Tiny.csv
+Tables 2--5,Main client-average ACC/F1,主实验_ResNet.csv; 主实验_ConvNeXt.csv; 主实验_ViT-Tiny.csv; 主实验_Swin-Tiny.csv
 Ablation text,Incremental DPR/LPC module ablation,消融.csv
 Figure 4,Complete TIES/DARE 2x2 DPR/LPC ablation,基线2x2消融.csv
 Table 5 / Figure 3 left,DPR internal ablation,诊断原型重建内部消融.csv
