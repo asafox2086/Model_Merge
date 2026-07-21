@@ -1,0 +1,136 @@
+{
+  "hub_dir": "medmerge_empirical_study/results/experiment14_strict_domain_control/noreplace/natural/natural_probe_hub/small/cifar7_derma_strict_noreplace/resnet/clients_3/partial_label/seed_42",
+  "dataset": "cifar7_derma_strict_noreplace",
+  "model": "resnet",
+  "groups": {
+    "0": [
+      3,
+      4,
+      0
+    ],
+    "1": [
+      2,
+      1
+    ],
+    "2": [
+      6,
+      5
+    ]
+  },
+  "image_size": 224,
+  "max_train_per_class": 0,
+  "group_class_counts": {
+    "0": {
+      "3": 56,
+      "4": 549,
+      "0": 160
+    },
+    "1": {
+      "2": 542,
+      "1": 253
+    },
+    "2": {
+      "6": 69,
+      "5": 3308
+    }
+  },
+  "avg_test": {
+    "loss": 1.2673815667502513,
+    "accuracy": 0.6697377562522888,
+    "balanced_accuracy": 0.14285714285714285,
+    "macro_f1": 0.11460101867572156,
+    "num_samples": 1411,
+    "pred_counts": [
+      0,
+      0,
+      0,
+      0,
+      0,
+      1411,
+      0
+    ],
+    "support": [
+      46,
+      72,
+      155,
+      16,
+      157,
+      945,
+      20
+    ],
+    "collapse_ratio": 1.0,
+    "effective_pred_classes": 1,
+    "top_pred_class": 5,
+    "mean_confidence": 0.3777255713939667,
+    "mean_top1_top2_margin": 0.725027859210968,
+    "min_top1_top2_margin": 0.1240234375,
+    "per_class_recall": [
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      1.0,
+      0.0
+    ],
+    "per_class_precision": [
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.6697377746279235,
+      0.0
+    ],
+    "per_class_f1": [
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.8022071307300509,
+      0.0
+    ]
+  },
+  "client_rows": [
+    {
+      "client_id": 0,
+      "classes": "[3, 4, 0]",
+      "sampled_num_samples": 765,
+      "sampled_class_counts": "{\"3\": 56, \"4\": 549, \"0\": 160}",
+      "best_val_acc": "0.142045",
+      "test_acc": "0.138909",
+      "test_bacc": "0.286599",
+      "test_collapse": "0.583983",
+      "effective_pred_classes": 3,
+      "top_pred_class": 4,
+      "test_pred_counts": "[196, 0, 0, 391, 824, 0, 0]"
+    },
+    {
+      "client_id": 1,
+      "classes": "[2, 1]",
+      "sampled_num_samples": 795,
+      "sampled_class_counts": "{\"2\": 542, \"1\": 253}",
+      "best_val_acc": "0.160511",
+      "test_acc": "0.160879",
+      "test_bacc": "0.285714",
+      "test_collapse": "0.906449",
+      "effective_pred_classes": 2,
+      "top_pred_class": 2,
+      "test_pred_counts": "[0, 132, 1279, 0, 0, 0, 0]"
+    },
+    {
+      "client_id": 2,
+      "classes": "[6, 5]",
+      "sampled_num_samples": 3377,
+      "sampled_class_counts": "{\"6\": 69, \"5\": 3308}",
+      "best_val_acc": "0.680398",
+      "test_acc": "0.676116",
+      "test_bacc": "0.242101",
+      "test_collapse": "0.947555",
+      "effective_pred_classes": 2,
+      "top_pred_class": 5,
+      "test_pred_counts": "[0, 0, 0, 0, 0, 1337, 74]"
+    }
+  ]
+}
