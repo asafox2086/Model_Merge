@@ -84,7 +84,7 @@ def write_distribution_csv(path, counts):
             )
 
 
-def plot_distribution(output_base, counts, title, color):
+def plot_distribution(output_base, counts, title, color, merge_label="AVG"):
     import matplotlib
 
     matplotlib.use("Agg")
@@ -119,14 +119,14 @@ def plot_distribution(output_base, counts, title, color):
     axis.set_xlabel("Predicted class")
     axis.set_ylabel("Test predictions (%)")
     axis.set_ylim(0, 108)
-    axis.set_title(f"{title}\nAVG ResNet / K=3 / test set (n={total:,})", fontweight="bold", pad=10)
+    axis.set_title(f"{title}\n{merge_label} ResNet / K=3 / test set (n={total:,})", fontweight="bold", pad=10)
     polish_axes(axis, y_grid=True, x_grid=False)
     figure.tight_layout()
     save_png_pdf(figure, str(output_base), dpi=350)
     plt.close(figure)
 
 
-def plot_prediction_tsne(output_base, coordinates, predictions, domain_name, num_classes):
+def plot_prediction_tsne(output_base, coordinates, predictions, domain_name, num_classes, merge_label="AVG"):
     import matplotlib
 
     matplotlib.use("Agg")
@@ -136,7 +136,7 @@ def plot_prediction_tsne(output_base, coordinates, predictions, domain_name, num
     coordinates, predictions = STRICT.validate_embedding(coordinates, predictions)
     palette = plt.get_cmap("tab10")
     setup_style("scatter")
-    figure, axis = plt.subplots(figsize=(6.3, 5.4), dpi=350)
+    figure, axis = plt.subplots(figsize=(8.8, 5.4), dpi=350)
     observed = []
     for class_index in range(num_classes):
         mask = predictions == class_index
@@ -155,13 +155,19 @@ def plot_prediction_tsne(output_base, coordinates, predictions, domain_name, num
     counts = np.bincount(predictions, minlength=num_classes)
     axis.set_xlabel("t-SNE dimension 1")
     axis.set_ylabel("t-SNE dimension 2")
-    axis.set_title(f"{domain_name}\nCentered-logit t-SNE, colored by AVG prediction", fontweight="bold", pad=10)
+    axis.set_title(
+        f"{domain_name}\nCentered-logit t-SNE, colored by {merge_label} prediction",
+        fontweight="bold",
+        pad=10,
+    )
+    count_items = [f"Class {class_index}: {counts[class_index]}" for class_index in observed]
+    count_lines = [", ".join(count_items[index:index + 3]) for index in range(0, len(count_items), 3)]
     axis.text(
         0.02,
         0.02,
-        ", ".join(f"Class {class_index}: {counts[class_index]}" for class_index in observed),
+        "\n".join(count_lines),
         transform=axis.transAxes,
-        fontsize=9,
+        fontsize=8.5,
         va="bottom",
         ha="left",
     )
@@ -169,7 +175,7 @@ def plot_prediction_tsne(output_base, coordinates, predictions, domain_name, num
         Line2D([0], [0], marker="o", color="w", markerfacecolor=palette(class_index), markersize=7, label=f"Predicted Class {class_index}")
         for class_index in observed
     ]
-    axis.legend(handles=handles, loc="upper right", frameon=False)
+    axis.legend(handles=handles, loc="upper left", bbox_to_anchor=(1.01, 1), frameon=False, fontsize=10)
     polish_axes(axis, y_grid=False, x_grid=False)
     figure.tight_layout()
     save_png_pdf(figure, str(output_base), dpi=350)

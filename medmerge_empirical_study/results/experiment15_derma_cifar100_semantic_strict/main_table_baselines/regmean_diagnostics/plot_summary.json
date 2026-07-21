@@ -1,0 +1,153 @@
+{
+  "analysis": "separate RegMean prediction distributions and prediction-colored centered-logit t-SNE embeddings",
+  "interpretation_boundary": "These are output/prediction-collapse diagnostics, not evidence of classifier-feature collapse.",
+  "merge_method": "regmean",
+  "merge_weight_mode": "equal",
+  "formal_stats_budget": {
+    "split": "val",
+    "batch_size": 32,
+    "regmean_max_batches": 1
+  },
+  "tsne": {
+    "seed": 1701,
+    "perplexity": 50.0,
+    "init": "pca",
+    "learning_rate": "auto"
+  },
+  "alignment": {
+    "shared_hyperparameters": {
+      "model": "resnet",
+      "num_clients": 3,
+      "num_classes": 7,
+      "in_channels": 3,
+      "epochs": 50,
+      "batch_size": 64,
+      "lr": 0.001,
+      "weight_decay": 0.0001,
+      "image_size": 224,
+      "pretrained": true,
+      "seed": 42
+    },
+    "client_classes": {
+      "0": [
+        3,
+        4,
+        0
+      ],
+      "1": [
+        2,
+        1
+      ],
+      "2": [
+        6,
+        5
+      ]
+    },
+    "client_class_counts": {
+      "0": {
+        "3": 80,
+        "4": 779,
+        "0": 228
+      },
+      "1": {
+        "2": 769,
+        "1": 359
+      },
+      "2": {
+        "6": 99,
+        "5": 4693
+      }
+    },
+    "split_class_counts": {
+      "train": [
+        228,
+        359,
+        769,
+        80,
+        779,
+        4693,
+        99
+      ],
+      "val": [
+        33,
+        52,
+        110,
+        12,
+        111,
+        671,
+        14
+      ],
+      "test": [
+        66,
+        103,
+        220,
+        23,
+        223,
+        1341,
+        29
+      ]
+    }
+  },
+  "recorded_metrics": {
+    "medical": {
+      "method": "regmean",
+      "status": "ok",
+      "accuracy": "0.668828",
+      "loss": "1.422375",
+      "num_samples": "2005",
+      "collapse_ratio": "0.999501",
+      "effective_predicted_classes": "2",
+      "top_predicted_class": "5",
+      "prediction_counts": "[0, 0, 0, 0, 1, 2004, 0]",
+      "seconds": "41.248",
+      "error": ""
+    },
+    "natural": {
+      "method": "regmean",
+      "status": "ok",
+      "accuracy": "0.442893",
+      "loss": "1.656343",
+      "num_samples": "2005",
+      "collapse_ratio": "0.530673",
+      "effective_predicted_classes": "7",
+      "top_predicted_class": "5",
+      "prediction_counts": "[47, 87, 373, 7, 426, 1064, 1]",
+      "seconds": "3.373",
+      "error": ""
+    }
+  },
+  "domains": {
+    "medical_dermamnist": {
+      "prediction_counts": [
+        0,
+        0,
+        0,
+        0,
+        1,
+        2004,
+        0
+      ],
+      "checkpoint_sha256": {
+        "client_0.pt": "cb7eab5f5b8db6cfce1603b77e814fde668220010cc0849a30905d8b3adbc937",
+        "client_1.pt": "23ed9769ae66874b86f6bf953a7f583d9e08ec7af5b333342138ae27850b3d20",
+        "client_2.pt": "d82a4021f89b3253051fb9b893083a38707d23bb5b3a6a0b8ce698d1fe7f11a0"
+      }
+    },
+    "natural_cifar100_semantic7": {
+      "prediction_counts": [
+        47,
+        87,
+        373,
+        7,
+        426,
+        1064,
+        1
+      ],
+      "checkpoint_sha256": {
+        "client_0.pt": "5c79c70f8f1882c277d1ad351cbf5168b9b656519d25b23c47414ba96820668d",
+        "client_1.pt": "fb17bd6df12c6062391106822cbdc61cf3a520e780d730751038060552cf313c",
+        "client_2.pt": "d3648106c9f8294c6264467f015edefdac631630f8906115d7e45fb8712600a9"
+      }
+    }
+  }
+}
