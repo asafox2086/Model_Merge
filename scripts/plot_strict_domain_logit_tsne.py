@@ -63,6 +63,7 @@ def extract_centered_logits(model, meta, data_root, device, batch_size, split_na
     labels_all = []
     predictions_all = []
     split_values = []
+    amp_enabled = device.type == "cuda"
     for split_name in split_names:
         data_split = splits[split_name]
         dataset = NpzTensorDataset(
@@ -79,7 +80,8 @@ def extract_centered_logits(model, meta, data_root, device, batch_size, split_na
         )
         with torch.no_grad():
             for images, targets in loader:
-                logits = model(images.to(device, non_blocking=True))
+                with torch.autocast(device_type="cuda", dtype=torch.float16, enabled=amp_enabled):
+                    logits = model(images.to(device, non_blocking=True))
                 logits_all.append((logits - logits.mean(dim=1, keepdim=True)).cpu().float().numpy())
                 labels_all.append(targets.numpy().reshape(-1))
                 predictions_all.append(logits.argmax(dim=1).cpu().numpy())
@@ -215,6 +217,7 @@ def main():
         "sample_splits": list(args.splits),
         "samples_per_domain": int(len(domains["medical"]["labels"])),
         "merge_weighting": "uniform",
+        "inference_dtype": "float16_autocast" if device.type == "cuda" else "float32",
         "tsne": {"seed": args.seed, "perplexity": args.perplexity, "init": "pca", "learning_rate": "auto"},
         "alignment": alignment,
         "domains": {

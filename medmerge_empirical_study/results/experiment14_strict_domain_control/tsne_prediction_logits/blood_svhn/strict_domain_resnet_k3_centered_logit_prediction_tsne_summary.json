@@ -6,6 +6,7 @@
   ],
   "samples_per_domain": 3421,
   "merge_weighting": "uniform",
+  "inference_dtype": "float16_autocast",
   "tsne": {
     "seed": 1701,
     "perplexity": 50.0,
@@ -95,10 +96,10 @@
     "medical": {
       "dataset": "bloodmnist_224",
       "prediction_counts": [
-        165,
+        167,
         0,
         0,
-        3256,
+        3254,
         0,
         0,
         0,
