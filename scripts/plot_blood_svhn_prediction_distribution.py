@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Plot matched BloodMNIST/SVHN AVG prediction distributions."""
+"""Plot separate matched BloodMNIST and SVHN AVG prediction distributions."""
 
 from __future__ import annotations
 
@@ -45,60 +45,48 @@ def load_avg_row(path):
     return prediction_counts, support
 
 
-def write_source_data(path, blood_counts, svhn_counts):
-    total = int(blood_counts.sum())
+def write_source_data(path, counts):
+    total = int(counts.sum())
     with Path(path).open("w", newline="", encoding="utf-8") as handle:
         writer = csv.DictWriter(
             handle,
-            fieldnames=("class", "blood_prediction_count", "blood_prediction_percent", "svhn_prediction_count", "svhn_prediction_percent"),
+            fieldnames=("class", "prediction_count", "prediction_percent"),
             lineterminator="\n",
         )
         writer.writeheader()
-        for class_index in range(len(blood_counts)):
+        for class_index in range(len(counts)):
             writer.writerow(
                 {
                     "class": class_index,
-                    "blood_prediction_count": int(blood_counts[class_index]),
-                    "blood_prediction_percent": f"{100 * blood_counts[class_index] / total:.6f}",
-                    "svhn_prediction_count": int(svhn_counts[class_index]),
-                    "svhn_prediction_percent": f"{100 * svhn_counts[class_index] / total:.6f}",
+                    "prediction_count": int(counts[class_index]),
+                    "prediction_percent": f"{100 * counts[class_index] / total:.6f}",
                 }
             )
 
 
-def plot_distribution(output_base, blood_counts, svhn_counts):
+def plot_distribution(output_base, counts, domain_name, color):
     import matplotlib
 
     matplotlib.use("Agg")
     import matplotlib.pyplot as plt
 
-    if blood_counts.shape != svhn_counts.shape:
-        raise ValueError("Blood and SVHN must have equal class counts")
-    total = int(blood_counts.sum())
-    if total <= 0 or int(svhn_counts.sum()) != total:
-        raise ValueError("Domains must have the same positive test-set size")
-    blood_percent = blood_counts * 100.0 / total
-    svhn_percent = svhn_counts * 100.0 / total
+    total = int(counts.sum())
+    if total <= 0:
+        raise ValueError("Prediction counts must have a positive total")
+    percentages = counts * 100.0 / total
     setup_style("bar")
-    figure, axis = plt.subplots(figsize=(9.4, 5.1), dpi=350)
-    positions = np.arange(len(blood_counts))
-    width = 0.36
-    colors = {"BloodMNIST": "#4F81BD", "SVHN": "#C0504D"}
-    bars = (
-        (axis.bar(positions - width / 2, blood_percent, width, label="Medical BloodMNIST", color=colors["BloodMNIST"], edgecolor=darken_color(colors["BloodMNIST"], 0.65), linewidth=1.4, zorder=3), blood_counts),
-        (axis.bar(positions + width / 2, svhn_percent, width, label="Natural SVHN", color=colors["SVHN"], edgecolor=darken_color(colors["SVHN"], 0.65), linewidth=1.4, zorder=3), svhn_counts),
-    )
-    for bar_group, counts in bars:
-        for bar, count in zip(bar_group, counts):
-            if count:
-                axis.text(bar.get_x() + bar.get_width() / 2, bar.get_height() + 1.1, f"{count}\n({bar.get_height():.1f}%)", ha="center", va="bottom", fontsize=9)
+    figure, axis = plt.subplots(figsize=(7.6, 5.1), dpi=350)
+    positions = np.arange(len(counts))
+    bars = axis.bar(positions, percentages, width=0.62, color=color, edgecolor=darken_color(color, 0.65), linewidth=1.4, zorder=3)
+    for bar, count in zip(bars, counts):
+        if count:
+            axis.text(bar.get_x() + bar.get_width() / 2, bar.get_height() + 1.1, f"{count}\n({bar.get_height():.1f}%)", ha="center", va="bottom", fontsize=9)
     axis.set_xticks(positions)
     axis.set_xticklabels([f"Class {index}" for index in positions])
     axis.set_xlabel("Predicted class")
     axis.set_ylabel("Test predictions (%)")
     axis.set_ylim(0, 108)
-    axis.set_title("AVG prediction distribution: BloodMNIST vs SVHN\nResNet / K=3 / matched test set (n=3,421 per domain)", pad=10, fontweight="bold")
-    axis.legend(loc="upper right", frameon=False)
+    axis.set_title(f"AVG prediction distribution: {domain_name}\nResNet / K=3 / test set (n={total:,})", pad=10, fontweight="bold")
     polish_axes(axis, y_grid=True, x_grid=False)
     figure.tight_layout()
     save_png_pdf(figure, str(output_base), dpi=350)
@@ -112,9 +100,10 @@ def main():
     if not np.array_equal(blood_support, svhn_support):
         raise ValueError("Blood and SVHN test class supports are not matched")
     args.output_dir.mkdir(parents=True, exist_ok=True)
-    output_base = args.output_dir / "blood_svhn_avg_prediction_distribution"
-    plot_distribution(output_base, blood_counts, svhn_counts)
-    write_source_data(args.output_dir / "blood_svhn_avg_prediction_distribution.csv", blood_counts, svhn_counts)
+    plot_distribution(args.output_dir / "blood_avg_prediction_distribution", blood_counts, "Medical BloodMNIST", "#4F81BD")
+    plot_distribution(args.output_dir / "svhn_avg_prediction_distribution", svhn_counts, "Natural SVHN", "#C0504D")
+    write_source_data(args.output_dir / "blood_avg_prediction_distribution.csv", blood_counts)
+    write_source_data(args.output_dir / "svhn_avg_prediction_distribution.csv", svhn_counts)
     print(f"Wrote prediction distribution plot to {args.output_dir}")
 
 
