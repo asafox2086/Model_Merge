@@ -1,0 +1,143 @@
+{
+  "hub_dir": "medmerge_empirical_study/results/experiment14_strict_domain_control/full_blood_svhn/medical/natural_probe_hub/small/bloodmnist_224/resnet/clients_3/partial_label/seed_42",
+  "dataset": "bloodmnist_224",
+  "model": "resnet",
+  "groups": {
+    "0": [
+      3,
+      4,
+      0
+    ],
+    "1": [
+      2,
+      1,
+      7
+    ],
+    "2": [
+      6,
+      5
+    ]
+  },
+  "image_size": 224,
+  "max_train_per_class": 0,
+  "group_class_counts": {
+    "0": {
+      "3": 2026,
+      "4": 849,
+      "0": 852
+    },
+    "1": {
+      "2": 1085,
+      "1": 2181,
+      "7": 1643
+    },
+    "2": {
+      "6": 2330,
+      "5": 993
+    }
+  },
+  "avg_test": {
+    "loss": 1.8492949398523602,
+    "accuracy": 0.2002338469028473,
+    "balanced_accuracy": 0.17930327868852458,
+    "macro_f1": 0.10224103904941274,
+    "num_samples": 3421,
+    "pred_counts": [
+      167,
+      0,
+      0,
+      3254,
+      0,
+      0,
+      0,
+      0
+    ],
+    "support": [
+      244,
+      624,
+      311,
+      579,
+      243,
+      284,
+      666,
+      470
+    ],
+    "collapse_ratio": 0.9511838643671441,
+    "effective_pred_classes": 2,
+    "top_pred_class": 3,
+    "mean_confidence": 0.2695097029209137,
+    "mean_top1_top2_margin": 0.5646932721138,
+    "min_top1_top2_margin": 0.0,
+    "per_class_recall": [
+      0.4344262295081967,
+      0.0,
+      0.0,
+      1.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0
+    ],
+    "per_class_precision": [
+      0.6347305389221557,
+      0.0,
+      0.0,
+      0.17793484941610327,
+      0.0,
+      0.0,
+      0.0,
+      0.0
+    ],
+    "per_class_f1": [
+      0.5158150851581509,
+      0.0,
+      0.0,
+      0.30211322723715106,
+      0.0,
+      0.0,
+      0.0,
+      0.0
+    ]
+  },
+  "client_rows": [
+    {
+      "client_id": 0,
+      "classes": "[3, 4, 0]",
+      "sampled_num_samples": 3727,
+      "sampled_class_counts": "{\"3\": 2026, \"4\": 849, \"0\": 852}",
+      "best_val_acc": "0.311916",
+      "test_acc": "0.310436",
+      "test_bacc": "0.373247",
+      "test_collapse": "0.653318",
+      "effective_pred_classes": 3,
+      "top_pred_class": 3,
+      "test_pred_counts": "[691, 0, 0, 2235, 495, 0, 0, 0]"
+    },
+    {
+      "client_id": 1,
+      "classes": "[2, 1, 7]",
+      "sampled_num_samples": 4909,
+      "sampled_class_counts": "{\"2\": 1085, \"1\": 2181, \"7\": 1643}",
+      "best_val_acc": "0.410047",
+      "test_acc": "0.410699",
+      "test_bacc": "0.375000",
+      "test_collapse": "0.488746",
+      "effective_pred_classes": 3,
+      "top_pred_class": 2,
+      "test_pred_counts": "[0, 1269, 1672, 0, 0, 0, 0, 480]"
+    },
+    {
+      "client_id": 2,
+      "classes": "[6, 5]",
+      "sampled_num_samples": 3323,
+      "sampled_class_counts": "{\"6\": 2330, \"5\": 993}",
+      "best_val_acc": "0.277453",
+      "test_acc": "0.277404",
+      "test_bacc": "0.249812",
+      "test_collapse": "0.622625",
+      "effective_pred_classes": 2,
+      "top_pred_class": 6,
+      "test_pred_counts": "[0, 0, 0, 0, 0, 1291, 2130, 0]"
+    }
+  ]
+}

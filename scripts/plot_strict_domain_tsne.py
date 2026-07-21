@@ -247,15 +247,16 @@ def draw_embedding(axis, coordinates, labels, title, panel_label=None):
     import matplotlib.pyplot as plt
 
     coordinates, labels = validate_embedding(coordinates, labels)
-    class_colors = plt.get_cmap("tab10")(np.arange(7))
-    for class_index in range(7):
+    class_indices = np.unique(labels)
+    class_colors = plt.get_cmap("tab10")(class_indices)
+    for class_index, class_color in zip(class_indices, class_colors):
         mask = labels == class_index
         axis.scatter(
             coordinates[mask, 0],
             coordinates[mask, 1],
             s=9,
             alpha=0.68,
-            color=class_colors[class_index],
+            color=class_color,
             edgecolors="none",
             label=f"Class {class_index}",
         )
@@ -293,7 +294,14 @@ def plot_domain_comparison(out_base, embeddings):
     for axis, (title, coordinates, labels), panel_label in zip(axes, embeddings, ("(a)", "(b)")):
         draw_embedding(axis, coordinates, labels, title, panel_label)
     handles, labels = axes[0].get_legend_handles_labels()
-    figure.legend(handles, labels, loc="lower center", bbox_to_anchor=(0.5, -0.02), ncol=7, frameon=False)
+    figure.legend(
+        handles,
+        labels,
+        loc="lower center",
+        bbox_to_anchor=(0.5, -0.02),
+        ncol=len(handles),
+        frameon=False,
+    )
     figure.tight_layout(rect=(0, 0.1, 1, 1))
     save_png_pdf(figure, str(out_base), dpi=350)
     plt.close(figure)
@@ -322,10 +330,12 @@ def main():
     rows = []
     summaries = {}
     embeddings = []
+    medical_domain = "medical_bloodmnist" if medical_meta["dataset"].startswith("bloodmnist") else "medical_dermamnist"
+    medical_display_name = "Medical BloodMNIST" if medical_domain == "medical_bloodmnist" else "Medical DermaMNIST"
     natural_domain = "natural_svhn" if natural_meta["dataset"].startswith("svhn") else "natural_cifar"
     natural_display_name = "Natural SVHN" if natural_domain == "natural_svhn" else "Natural CIFAR"
     domains = [
-        ("medical_dermamnist", "Medical DermaMNIST", medical_meta, args.medical_hub_dir, args.medical_data_root),
+        (medical_domain, medical_display_name, medical_meta, args.medical_hub_dir, args.medical_data_root),
         (natural_domain, natural_display_name, natural_meta, args.natural_hub_dir, args.natural_data_root),
     ]
     for domain, display_name, meta, hub_dir, data_root in domains:

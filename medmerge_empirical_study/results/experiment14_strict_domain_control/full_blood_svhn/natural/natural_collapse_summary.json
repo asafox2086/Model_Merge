@@ -1,0 +1,143 @@
+{
+  "hub_dir": "medmerge_empirical_study/results/experiment14_strict_domain_control/full_blood_svhn/natural/natural_probe_hub/small/svhn8_blood_strict_full_noreplace/resnet/clients_3/partial_label/seed_42",
+  "dataset": "svhn8_blood_strict_full_noreplace",
+  "model": "resnet",
+  "groups": {
+    "0": [
+      3,
+      4,
+      0
+    ],
+    "1": [
+      2,
+      1,
+      7
+    ],
+    "2": [
+      6,
+      5
+    ]
+  },
+  "image_size": 224,
+  "max_train_per_class": 0,
+  "group_class_counts": {
+    "0": {
+      "3": 2026,
+      "4": 849,
+      "0": 852
+    },
+    "1": {
+      "2": 1085,
+      "1": 2181,
+      "7": 1643
+    },
+    "2": {
+      "6": 2330,
+      "5": 993
+    }
+  },
+  "avg_test": {
+    "loss": 2.011450131780674,
+    "accuracy": 0.25226542353630066,
+    "balanced_accuracy": 0.21164543712058587,
+    "macro_f1": 0.11497210765269478,
+    "num_samples": 3421,
+    "pred_counts": [
+      24,
+      0,
+      0,
+      9,
+      0,
+      802,
+      2586,
+      0
+    ],
+    "support": [
+      244,
+      624,
+      311,
+      579,
+      243,
+      284,
+      666,
+      470
+    ],
+    "collapse_ratio": 0.7559193218357205,
+    "effective_pred_classes": 4,
+    "top_pred_class": 6,
+    "mean_confidence": 0.1487104594707489,
+    "mean_top1_top2_margin": 0.06639139354228973,
+    "min_top1_top2_margin": 0.0,
+    "per_class_recall": [
+      0.09836065573770492,
+      0.0,
+      0.0,
+      0.013816925734024179,
+      0.0,
+      0.5809859154929577,
+      1.0,
+      0.0
+    ],
+    "per_class_precision": [
+      1.0,
+      0.0,
+      0.0,
+      0.8888888888888888,
+      0.0,
+      0.2057356608478803,
+      0.25754060324825984,
+      0.0
+    ],
+    "per_class_f1": [
+      0.1791044776119403,
+      0.0,
+      0.0,
+      0.027210884353741496,
+      0.0,
+      0.30386740331491713,
+      0.40959409594095936,
+      0.0
+    ]
+  },
+  "client_rows": [
+    {
+      "client_id": 0,
+      "classes": "[3, 4, 0]",
+      "sampled_num_samples": 3727,
+      "sampled_class_counts": "{\"3\": 2026, \"4\": 849, \"0\": 852}",
+      "best_val_acc": "0.304907",
+      "test_acc": "0.306343",
+      "test_bacc": "0.367544",
+      "test_collapse": "0.600409",
+      "effective_pred_classes": 3,
+      "top_pred_class": 3,
+      "test_pred_counts": "[773, 0, 0, 2054, 594, 0, 0, 0]"
+    },
+    {
+      "client_id": 1,
+      "classes": "[2, 1, 7]",
+      "sampled_num_samples": 4909,
+      "sampled_class_counts": "{\"2\": 1085, \"1\": 2181, \"7\": 1643}",
+      "best_val_acc": "0.397780",
+      "test_acc": "0.387898",
+      "test_bacc": "0.354748",
+      "test_collapse": "0.417129",
+      "effective_pred_classes": 3,
+      "top_pred_class": 2,
+      "test_pred_counts": "[0, 1249, 1427, 0, 0, 0, 0, 745]"
+    },
+    {
+      "client_id": 2,
+      "classes": "[6, 5]",
+      "sampled_num_samples": 3323,
+      "sampled_class_counts": "{\"6\": 2330, \"5\": 993}",
+      "best_val_acc": "0.269276",
+      "test_acc": "0.270681",
+      "test_bacc": "0.240951",
+      "test_collapse": "0.674949",
+      "effective_pred_classes": 2,
+      "top_pred_class": 6,
+      "test_pred_counts": "[0, 0, 0, 0, 0, 1112, 2309, 0]"
+    }
+  ]
+}

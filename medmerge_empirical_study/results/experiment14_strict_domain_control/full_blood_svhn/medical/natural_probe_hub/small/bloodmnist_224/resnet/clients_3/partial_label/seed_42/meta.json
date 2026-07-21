@@ -1,0 +1,104 @@
+{
+  "task_type": "small",
+  "dataset": "bloodmnist_224",
+  "model": "resnet",
+  "train_mode": "natural_partial_label_probe",
+  "num_clients": 3,
+  "beta": 0.0,
+  "seed": 42,
+  "num_classes": 8,
+  "observed_num_classes": 8,
+  "in_channels": 3,
+  "epochs": 50,
+  "batch_size": 64,
+  "lr": 0.001,
+  "weight_decay": 0.0001,
+  "image_size": 224,
+  "pretrained": true,
+  "client_classes": {
+    "0": [
+      3,
+      4,
+      0
+    ],
+    "1": [
+      2,
+      1,
+      7
+    ],
+    "2": [
+      6,
+      5
+    ]
+  },
+  "group_class_counts": {
+    "0": {
+      "3": 2026,
+      "4": 849,
+      "0": 852
+    },
+    "1": {
+      "2": 1085,
+      "1": 2181,
+      "7": 1643
+    },
+    "2": {
+      "6": 2330,
+      "5": 993
+    }
+  },
+  "clients": [
+    {
+      "client_id": 0,
+      "num_samples": 3727,
+      "classes": [
+        3,
+        4,
+        0
+      ],
+      "sampled_class_counts": {
+        "3": 2026,
+        "4": 849,
+        "0": 852
+      },
+      "best_val_acc": 0.31191587448120117,
+      "test_acc": 0.31043553352355957,
+      "test_loss": 6.458710012711896,
+      "checkpoint": "client_0.pt"
+    },
+    {
+      "client_id": 1,
+      "num_samples": 4909,
+      "classes": [
+        2,
+        1,
+        7
+      ],
+      "sampled_class_counts": {
+        "2": 1085,
+        "1": 2181,
+        "7": 1643
+      },
+      "best_val_acc": 0.4100467264652252,
+      "test_acc": 0.41069862246513367,
+      "test_loss": 4.51076848825423,
+      "checkpoint": "client_1.pt"
+    },
+    {
+      "client_id": 2,
+      "num_samples": 3323,
+      "classes": [
+        6,
+        5
+      ],
+      "sampled_class_counts": {
+        "6": 2330,
+        "5": 993
+      },
+      "best_val_acc": 0.2774532735347748,
+      "test_acc": 0.2774042785167694,
+      "test_loss": 3.632914700239104,
+      "checkpoint": "client_2.pt"
+    }
+  ]
+}
