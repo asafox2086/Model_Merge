@@ -365,6 +365,8 @@ def main():
         sampling_note = ""
         if args.max_per_class is not None:
             sampling_note = f"\nBalanced {'+'.join(args.splits)} / {args.max_per_class} per class"
+        elif len(args.splits) > 1:
+            sampling_note = f"\n{'+'.join(args.splits)} / all samples"
         title = f"{display_name}\nResNet / K=3 / {args.merge_weighting} AVG{sampling_note}"
         plot_embedding(
             args.output_dir / f"{domain}_resnet_k3_avg_feature_tsne",
