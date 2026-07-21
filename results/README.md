@@ -15,3 +15,7 @@ Batch runs with `scripts/run_lamp_merge_eval.py` additionally write:
 <output_root>/reports/eval_summary.csv
 <output_root>/reports/merge_summary.csv
 ```
+
+## Released Analysis Outputs
+
+The strict medical-versus-natural-image ResNet/K=3 feature t-SNE control is available in [`strict_domain_resnet_k3_tsne/`](strict_domain_resnet_k3_tsne/).
