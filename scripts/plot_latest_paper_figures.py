@@ -581,7 +581,7 @@ def plot_hparams(csv_dir: Path, figure_dir: Path) -> None:
             ("Full configuration grid", 3.5),
         ],
         expand_interval((60.6, 63.4), 3.0),
-        (3.75, 5.25),
+        (2.9, 5.35),
         legend_location="lower center",
         legend_anchor=(0.5, 0.05),
     )
