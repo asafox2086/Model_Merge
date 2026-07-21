@@ -1,0 +1,136 @@
+{
+  "hub_dir": "medmerge_empirical_study/results/experiment15_derma_cifar100_semantic_strict/natural/natural_probe_hub/small/cifar100_semantic7_derma_strict/resnet/clients_3/partial_label/seed_42",
+  "dataset": "cifar100_semantic7_derma_strict",
+  "model": "resnet",
+  "groups": {
+    "0": [
+      3,
+      4,
+      0
+    ],
+    "1": [
+      2,
+      1
+    ],
+    "2": [
+      6,
+      5
+    ]
+  },
+  "image_size": 224,
+  "max_train_per_class": 0,
+  "group_class_counts": {
+    "0": {
+      "3": 80,
+      "4": 779,
+      "0": 228
+    },
+    "1": {
+      "2": 769,
+      "1": 359
+    },
+    "2": {
+      "6": 99,
+      "5": 4693
+    }
+  },
+  "avg_test": {
+    "loss": 1.4649828068336048,
+    "accuracy": 0.21246883273124695,
+    "balanced_accuracy": 0.21948055856624188,
+    "macro_f1": 0.14029898213715922,
+    "num_samples": 2005,
+    "pred_counts": [
+      60,
+      0,
+      79,
+      0,
+      1588,
+      278,
+      0
+    ],
+    "support": [
+      66,
+      103,
+      220,
+      23,
+      223,
+      1341,
+      29
+    ],
+    "collapse_ratio": 0.7920199501246883,
+    "effective_pred_classes": 4,
+    "top_pred_class": 4,
+    "mean_confidence": 0.29004883766174316,
+    "mean_top1_top2_margin": 0.215925395488739,
+    "min_top1_top2_margin": 0.0,
+    "per_class_recall": [
+      0.19696969696969696,
+      0.0,
+      0.24545454545454545,
+      0.0,
+      0.9910313901345291,
+      0.1029082774049217,
+      0.0
+    ],
+    "per_class_precision": [
+      0.21666666666666667,
+      0.0,
+      0.6835443037974683,
+      0.0,
+      0.13916876574307305,
+      0.49640287769784175,
+      0.0
+    ],
+    "per_class_f1": [
+      0.20634920634920634,
+      0.0,
+      0.3612040133779264,
+      0.0,
+      0.24406405300938705,
+      0.1704756022235948,
+      0.0
+    ]
+  },
+  "client_rows": [
+    {
+      "client_id": 0,
+      "classes": "[3, 4, 0]",
+      "sampled_num_samples": 1087,
+      "sampled_class_counts": "{\"3\": 80, \"4\": 779, \"0\": 228}",
+      "best_val_acc": "0.151545",
+      "test_acc": "0.147132",
+      "test_bacc": "0.383208",
+      "test_collapse": "0.515711",
+      "effective_pred_classes": 3,
+      "top_pred_class": 4,
+      "test_pred_counts": "[742, 0, 0, 229, 1034, 0, 0]"
+    },
+    {
+      "client_id": 1,
+      "classes": "[2, 1]",
+      "sampled_num_samples": 1128,
+      "sampled_class_counts": "{\"2\": 769, \"1\": 359}",
+      "best_val_acc": "0.161515",
+      "test_acc": "0.161097",
+      "test_bacc": "0.285714",
+      "test_collapse": "0.505237",
+      "effective_pred_classes": 2,
+      "top_pred_class": 2,
+      "test_pred_counts": "[0, 992, 1013, 0, 0, 0, 0]"
+    },
+    {
+      "client_id": 2,
+      "classes": "[6, 5]",
+      "sampled_num_samples": 4792,
+      "sampled_class_counts": "{\"6\": 99, \"5\": 4693}",
+      "best_val_acc": "0.681954",
+      "test_acc": "0.681297",
+      "test_bacc": "0.270829",
+      "test_collapse": "0.985037",
+      "effective_pred_classes": 2,
+      "top_pred_class": 5,
+      "test_pred_counts": "[0, 0, 0, 0, 0, 1975, 30]"
+    }
+  ]
+}

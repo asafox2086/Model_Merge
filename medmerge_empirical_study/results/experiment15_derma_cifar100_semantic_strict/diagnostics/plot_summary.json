@@ -1,0 +1,161 @@
+{
+  "analysis": "prediction distribution and separate prediction-colored centered-logit t-SNE embeddings of the uniform AVG model",
+  "interpretation_boundary": "These are output/prediction-collapse diagnostics, not evidence of classifier-feature collapse.",
+  "merge_weighting": "uniform",
+  "tsne": {
+    "seed": 1701,
+    "perplexity": 50.0,
+    "init": "pca",
+    "learning_rate": "auto"
+  },
+  "alignment": {
+    "shared_hyperparameters": {
+      "model": "resnet",
+      "num_clients": 3,
+      "num_classes": 7,
+      "in_channels": 3,
+      "epochs": 50,
+      "batch_size": 64,
+      "lr": 0.001,
+      "weight_decay": 0.0001,
+      "image_size": 224,
+      "pretrained": true,
+      "seed": 42
+    },
+    "client_classes": {
+      "0": [
+        3,
+        4,
+        0
+      ],
+      "1": [
+        2,
+        1
+      ],
+      "2": [
+        6,
+        5
+      ]
+    },
+    "client_class_counts": {
+      "0": {
+        "3": 80,
+        "4": 779,
+        "0": 228
+      },
+      "1": {
+        "2": 769,
+        "1": 359
+      },
+      "2": {
+        "6": 99,
+        "5": 4693
+      }
+    },
+    "split_class_counts": {
+      "train": [
+        228,
+        359,
+        769,
+        80,
+        779,
+        4693,
+        99
+      ],
+      "val": [
+        33,
+        52,
+        110,
+        12,
+        111,
+        671,
+        14
+      ],
+      "test": [
+        66,
+        103,
+        220,
+        23,
+        223,
+        1341,
+        29
+      ]
+    }
+  },
+  "avg_test": {
+    "medical": {
+      "model": "avg",
+      "split": "test",
+      "accuracy": "0.668828",
+      "balanced_accuracy": "0.142857",
+      "macro_f1": "0.114508",
+      "collapse_ratio": "1.000000",
+      "effective_pred_classes": "1",
+      "top_pred_class": "5",
+      "mean_confidence": "0.275434",
+      "mean_top1_top2_margin": "0.567162",
+      "min_top1_top2_margin": "0.467407",
+      "pred_counts": "[0, 0, 0, 0, 0, 2005, 0]",
+      "support": "[66, 103, 220, 23, 223, 1341, 29]"
+    },
+    "natural": {
+      "model": "avg",
+      "split": "test",
+      "accuracy": "0.212469",
+      "balanced_accuracy": "0.219481",
+      "macro_f1": "0.140299",
+      "collapse_ratio": "0.792020",
+      "effective_pred_classes": "4",
+      "top_pred_class": "4",
+      "mean_confidence": "0.290049",
+      "mean_top1_top2_margin": "0.215925",
+      "min_top1_top2_margin": "0.000000",
+      "pred_counts": "[60, 0, 79, 0, 1588, 278, 0]",
+      "support": "[66, 103, 220, 23, 223, 1341, 29]"
+    }
+  },
+  "domains": {
+    "medical_dermamnist": {
+      "prediction_counts": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        2005,
+        0
+      ],
+      "checkpoint_sha256": {
+        "client_0.pt": "cb7eab5f5b8db6cfce1603b77e814fde668220010cc0849a30905d8b3adbc937",
+        "client_1.pt": "23ed9769ae66874b86f6bf953a7f583d9e08ec7af5b333342138ae27850b3d20",
+        "client_2.pt": "d82a4021f89b3253051fb9b893083a38707d23bb5b3a6a0b8ce698d1fe7f11a0"
+      },
+      "avg_weights": [
+        0.3333333333333333,
+        0.3333333333333333,
+        0.3333333333333333
+      ]
+    },
+    "natural_cifar100_semantic7": {
+      "prediction_counts": [
+        60,
+        0,
+        79,
+        0,
+        1588,
+        278,
+        0
+      ],
+      "checkpoint_sha256": {
+        "client_0.pt": "5c79c70f8f1882c277d1ad351cbf5168b9b656519d25b23c47414ba96820668d",
+        "client_1.pt": "fb17bd6df12c6062391106822cbdc61cf3a520e780d730751038060552cf313c",
+        "client_2.pt": "d3648106c9f8294c6264467f015edefdac631630f8906115d7e45fb8712600a9"
+      },
+      "avg_weights": [
+        0.3333333333333333,
+        0.3333333333333333,
+        0.3333333333333333
+      ]
+    }
+  }
+}
