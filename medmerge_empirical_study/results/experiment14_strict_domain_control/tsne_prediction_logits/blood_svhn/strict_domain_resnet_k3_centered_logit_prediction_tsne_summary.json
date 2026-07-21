@@ -1,0 +1,142 @@
+{
+  "analysis": "separate prediction-colored t-SNE embeddings of per-sample centered AVG logits",
+  "logit_transform": "subtract the per-sample mean logit; this retains all pairwise class margins and predictions",
+  "sample_splits": [
+    "test"
+  ],
+  "samples_per_domain": 3421,
+  "merge_weighting": "uniform",
+  "tsne": {
+    "seed": 1701,
+    "perplexity": 50.0,
+    "init": "pca",
+    "learning_rate": "auto"
+  },
+  "alignment": {
+    "shared_hyperparameters": {
+      "model": "resnet",
+      "num_clients": 3,
+      "num_classes": 8,
+      "in_channels": 3,
+      "epochs": 50,
+      "batch_size": 64,
+      "lr": 0.001,
+      "weight_decay": 0.0001,
+      "image_size": 224,
+      "pretrained": true,
+      "seed": 42
+    },
+    "client_classes": {
+      "0": [
+        3,
+        4,
+        0
+      ],
+      "1": [
+        2,
+        1,
+        7
+      ],
+      "2": [
+        6,
+        5
+      ]
+    },
+    "client_class_counts": {
+      "0": {
+        "3": 2026,
+        "4": 849,
+        "0": 852
+      },
+      "1": {
+        "2": 1085,
+        "1": 2181,
+        "7": 1643
+      },
+      "2": {
+        "6": 2330,
+        "5": 993
+      }
+    },
+    "split_class_counts": {
+      "train": [
+        852,
+        2181,
+        1085,
+        2026,
+        849,
+        993,
+        2330,
+        1643
+      ],
+      "val": [
+        122,
+        312,
+        155,
+        290,
+        122,
+        143,
+        333,
+        235
+      ],
+      "test": [
+        244,
+        624,
+        311,
+        579,
+        243,
+        284,
+        666,
+        470
+      ]
+    }
+  },
+  "domains": {
+    "medical": {
+      "dataset": "bloodmnist_224",
+      "prediction_counts": [
+        165,
+        0,
+        0,
+        3256,
+        0,
+        0,
+        0,
+        0
+      ],
+      "checkpoint_sha256": {
+        "client_0.pt": "b590b31c353eaa76b61161e9af7eeb4bc2d7cdee3b5c6315ce439fd84b17e5e3",
+        "client_1.pt": "e28e28ecb5d3aef9f708b91531e3e97296ffc74bce0053523a41ac387c3287cf",
+        "client_2.pt": "e3ba6f3598fe2c0abeb6979ede031492ed2a52e066351bc2965a5e15106158d9"
+      },
+      "avg_weights": [
+        0.3333333333333333,
+        0.3333333333333333,
+        0.3333333333333333
+      ]
+    },
+    "natural": {
+      "dataset": "svhn8_blood_strict_full_noreplace",
+      "prediction_counts": [
+        24,
+        0,
+        0,
+        9,
+        0,
+        802,
+        2586,
+        0
+      ],
+      "checkpoint_sha256": {
+        "client_0.pt": "7f1127f5364eaa19269536df9c2052543612dfb2212282c4c438c9260e8e0a5b",
+        "client_1.pt": "2b434a7052699f5f0ce1527691e1171af79873a5fad9830a404ee396397281b6",
+        "client_2.pt": "92f05f331765fe1feb8ad7d68714cfd30819f226226647456d91d1706c7be618"
+      },
+      "avg_weights": [
+        0.3333333333333333,
+        0.3333333333333333,
+        0.3333333333333333
+      ]
+    }
+  }
+}
