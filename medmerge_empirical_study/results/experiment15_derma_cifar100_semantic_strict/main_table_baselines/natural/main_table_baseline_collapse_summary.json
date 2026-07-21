@@ -1,0 +1,508 @@
+{
+  "analysis": "formal main-table baselines under the strict DermaMNIST/CIFAR-100 control",
+  "methods": [
+    "avg",
+    "ties",
+    "dare_linear",
+    "dare_ties",
+    "regmean",
+    "fisher",
+    "breadcrumbs",
+    "model_stock",
+    "from",
+    "iso_c",
+    "free_merge",
+    "robustmerge"
+  ],
+  "main_table_implementation_root": "/data2/liyapeng_grp/program/MedMNISTMerge",
+  "merge_weight_mode": "equal",
+  "formal_stats_budget": {
+    "split": "val",
+    "batch_size": 32,
+    "fisher_max_batches": 1,
+    "regmean_max_batches": 1
+  },
+  "test_support": [
+    66,
+    103,
+    220,
+    23,
+    223,
+    1341,
+    29
+  ],
+  "rows": [
+    {
+      "method": "avg",
+      "status": "ok",
+      "accuracy": "0.212469",
+      "loss": "1.464983",
+      "num_samples": 2005,
+      "collapse_ratio": "0.792020",
+      "effective_predicted_classes": 4,
+      "top_predicted_class": 4,
+      "prediction_counts": "[60, 0, 79, 0, 1588, 278, 0]",
+      "seconds": "2.448",
+      "error": ""
+    },
+    {
+      "method": "ties",
+      "status": "ok",
+      "accuracy": "0.668828",
+      "loss": "1.667484",
+      "num_samples": 2005,
+      "collapse_ratio": "1.000000",
+      "effective_predicted_classes": 1,
+      "top_predicted_class": 5,
+      "prediction_counts": "[0, 0, 0, 0, 0, 2005, 0]",
+      "seconds": "2.443",
+      "error": ""
+    },
+    {
+      "method": "dare_linear",
+      "status": "ok",
+      "accuracy": "0.243890",
+      "loss": "1.492259",
+      "num_samples": 2005,
+      "collapse_ratio": "0.728678",
+      "effective_predicted_classes": 4,
+      "top_predicted_class": 4,
+      "prediction_counts": "[71, 0, 250, 0, 1461, 223, 0]",
+      "seconds": "2.385",
+      "error": ""
+    },
+    {
+      "method": "dare_ties",
+      "status": "ok",
+      "accuracy": "0.540648",
+      "loss": "1.344343",
+      "num_samples": 2005,
+      "collapse_ratio": "0.637905",
+      "effective_predicted_classes": 4,
+      "top_predicted_class": 5,
+      "prediction_counts": "[4, 0, 26, 0, 696, 1279, 0]",
+      "seconds": "2.657",
+      "error": ""
+    },
+    {
+      "method": "regmean",
+      "status": "ok",
+      "accuracy": "0.442893",
+      "loss": "1.656343",
+      "num_samples": 2005,
+      "collapse_ratio": "0.530673",
+      "effective_predicted_classes": 7,
+      "top_predicted_class": 5,
+      "prediction_counts": "[47, 87, 373, 7, 426, 1064, 1]",
+      "seconds": "3.373",
+      "error": ""
+    },
+    {
+      "method": "fisher",
+      "status": "ok",
+      "accuracy": "0.637905",
+      "loss": "1.019473",
+      "num_samples": 2005,
+      "collapse_ratio": "0.760100",
+      "effective_predicted_classes": 5,
+      "top_predicted_class": 5,
+      "prediction_counts": "[18, 53, 368, 0, 42, 1524, 0]",
+      "seconds": "5.753",
+      "error": ""
+    },
+    {
+      "method": "breadcrumbs",
+      "status": "ok",
+      "accuracy": "0.081297",
+      "loss": "1.938740",
+      "num_samples": 2005,
+      "collapse_ratio": "0.892269",
+      "effective_predicted_classes": 6,
+      "top_predicted_class": 1,
+      "prediction_counts": "[3, 1789, 0, 52, 34, 98, 29]",
+      "seconds": "5.963",
+      "error": ""
+    },
+    {
+      "method": "model_stock",
+      "status": "ok",
+      "accuracy": "0.220449",
+      "loss": "1.495010",
+      "num_samples": 2005,
+      "collapse_ratio": "0.783541",
+      "effective_predicted_classes": 5,
+      "top_predicted_class": 4,
+      "prediction_counts": "[66, 1, 66, 0, 1571, 301, 0]",
+      "seconds": "1.929",
+      "error": ""
+    },
+    {
+      "method": "from",
+      "status": "ok",
+      "accuracy": "0.137157",
+      "loss": "1.763921",
+      "num_samples": 2005,
+      "collapse_ratio": "0.912718",
+      "effective_predicted_classes": 3,
+      "top_predicted_class": 4,
+      "prediction_counts": "[154, 0, 21, 0, 1830, 0, 0]",
+      "seconds": "1.918",
+      "error": ""
+    },
+    {
+      "method": "iso_c",
+      "status": "ok",
+      "accuracy": "0.229925",
+      "loss": "1.598564",
+      "num_samples": 2005,
+      "collapse_ratio": "0.714214",
+      "effective_predicted_classes": 7,
+      "top_predicted_class": 4,
+      "prediction_counts": "[148, 37, 210, 1, 1432, 176, 1]",
+      "seconds": "2.563",
+      "error": ""
+    },
+    {
+      "method": "free_merge",
+      "status": "ok",
+      "accuracy": "0.212968",
+      "loss": "1.464995",
+      "num_samples": 2005,
+      "collapse_ratio": "0.792020",
+      "effective_predicted_classes": 4,
+      "top_predicted_class": 4,
+      "prediction_counts": "[59, 0, 80, 0, 1588, 278, 0]",
+      "seconds": "2.216",
+      "error": ""
+    },
+    {
+      "method": "robustmerge",
+      "status": "ok",
+      "accuracy": "0.200499",
+      "loss": "1.678976",
+      "num_samples": 2005,
+      "collapse_ratio": "0.799002",
+      "effective_predicted_classes": 6,
+      "top_predicted_class": 4,
+      "prediction_counts": "[137, 122, 20, 4, 1602, 120, 0]",
+      "seconds": "1.836",
+      "error": ""
+    }
+  ],
+  "method_details": {
+    "avg": {
+      "metrics": {
+        "accuracy": 0.21246883273124695,
+        "loss": 1.4649828068336048,
+        "num_samples": 2005,
+        "prediction_counts": [
+          60,
+          0,
+          79,
+          0,
+          1588,
+          278,
+          0
+        ],
+        "collapse_ratio": 0.7920199501246883,
+        "effective_predicted_classes": 4,
+        "top_predicted_class": 4
+      },
+      "method_info_keys": []
+    },
+    "ties": {
+      "metrics": {
+        "accuracy": 0.6688279509544373,
+        "loss": 1.6674836347227977,
+        "num_samples": 2005,
+        "prediction_counts": [
+          0,
+          0,
+          0,
+          0,
+          0,
+          2005,
+          0
+        ],
+        "collapse_ratio": 1.0,
+        "effective_predicted_classes": 1,
+        "top_predicted_class": 5
+      },
+      "method_info_keys": [
+        "implementation",
+        "mask_rate",
+        "normalized_weights",
+        "preserve_density",
+        "scaling_coefficient"
+      ]
+    },
+    "dare_linear": {
+      "metrics": {
+        "accuracy": 0.24389027059078217,
+        "loss": 1.49225934182022,
+        "num_samples": 2005,
+        "prediction_counts": [
+          71,
+          0,
+          250,
+          0,
+          1461,
+          223,
+          0
+        ],
+        "collapse_ratio": 0.7286783042394015,
+        "effective_predicted_classes": 4,
+        "top_predicted_class": 4
+      },
+      "method_info_keys": [
+        "implementation",
+        "mask_rate",
+        "normalized_weights",
+        "preserve_density",
+        "scaling_coefficient",
+        "seed"
+      ]
+    },
+    "dare_ties": {
+      "metrics": {
+        "accuracy": 0.5406484007835388,
+        "loss": 1.3443425130368467,
+        "num_samples": 2005,
+        "prediction_counts": [
+          4,
+          0,
+          26,
+          0,
+          696,
+          1279,
+          0
+        ],
+        "collapse_ratio": 0.6379052369077307,
+        "effective_predicted_classes": 4,
+        "top_predicted_class": 5
+      },
+      "method_info_keys": [
+        "implementation",
+        "mask_rate",
+        "normalized_weights",
+        "preserve_density",
+        "scaling_coefficient",
+        "seed"
+      ]
+    },
+    "regmean": {
+      "metrics": {
+        "accuracy": 0.44289276003837585,
+        "loss": 1.6563434323765096,
+        "num_samples": 2005,
+        "prediction_counts": [
+          47,
+          87,
+          373,
+          7,
+          426,
+          1064,
+          1
+        ],
+        "collapse_ratio": 0.5306733167082295,
+        "effective_predicted_classes": 7,
+        "top_predicted_class": 5
+      },
+      "method_info_keys": [
+        "eps",
+        "implementation",
+        "normalized_weights",
+        "reduce_non_diagonal_ratio"
+      ]
+    },
+    "fisher": {
+      "metrics": {
+        "accuracy": 0.6379052400588989,
+        "loss": 1.0194732893732124,
+        "num_samples": 2005,
+        "prediction_counts": [
+          18,
+          53,
+          368,
+          0,
+          42,
+          1524,
+          0
+        ],
+        "collapse_ratio": 0.7600997506234414,
+        "effective_predicted_classes": 5,
+        "top_predicted_class": 5
+      },
+      "method_info_keys": [
+        "effective_scaling",
+        "eps",
+        "implementation",
+        "minimal_fisher_weight",
+        "normalize_fisher_weight",
+        "normalized_weights"
+      ]
+    },
+    "breadcrumbs": {
+      "metrics": {
+        "accuracy": 0.08129675686359406,
+        "loss": 1.9387400639621992,
+        "num_samples": 2005,
+        "prediction_counts": [
+          3,
+          1789,
+          0,
+          52,
+          34,
+          98,
+          29
+        ],
+        "collapse_ratio": 0.8922693266832917,
+        "effective_predicted_classes": 6,
+        "top_predicted_class": 1
+      },
+      "method_info_keys": [
+        "alpha",
+        "implementation",
+        "normalized_weights",
+        "remove_first",
+        "top_k_keep",
+        "top_k_remove"
+      ]
+    },
+    "model_stock": {
+      "metrics": {
+        "accuracy": 0.22044888138771057,
+        "loss": 1.4950102766255786,
+        "num_samples": 2005,
+        "prediction_counts": [
+          66,
+          1,
+          66,
+          0,
+          1571,
+          301,
+          0
+        ],
+        "collapse_ratio": 0.7835411471321696,
+        "effective_predicted_classes": 5,
+        "top_predicted_class": 4
+      },
+      "method_info_keys": [
+        "implementation",
+        "k",
+        "normalized_weights",
+        "num_models"
+      ]
+    },
+    "from": {
+      "metrics": {
+        "accuracy": 0.1371571123600006,
+        "loss": 1.7639206421940106,
+        "num_samples": 2005,
+        "prediction_counts": [
+          154,
+          0,
+          21,
+          0,
+          1830,
+          0,
+          0
+        ],
+        "collapse_ratio": 0.912718204488778,
+        "effective_predicted_classes": 3,
+        "top_predicted_class": 4
+      },
+      "method_info_keys": [
+        "effective_scaling",
+        "implementation",
+        "k",
+        "normalized_weights"
+      ]
+    },
+    "iso_c": {
+      "metrics": {
+        "accuracy": 0.22992518544197083,
+        "loss": 1.5985641363552978,
+        "num_samples": 2005,
+        "prediction_counts": [
+          148,
+          37,
+          210,
+          1,
+          1432,
+          176,
+          1
+        ],
+        "collapse_ratio": 0.714214463840399,
+        "effective_predicted_classes": 7,
+        "top_predicted_class": 4
+      },
+      "method_info_keys": [
+        "implementation",
+        "normalized_weights",
+        "num_models",
+        "paper",
+        "venue",
+        "year"
+      ]
+    },
+    "free_merge": {
+      "metrics": {
+        "accuracy": 0.21296757459640503,
+        "loss": 1.464994740069953,
+        "num_samples": 2005,
+        "prediction_counts": [
+          59,
+          0,
+          80,
+          0,
+          1588,
+          278,
+          0
+        ],
+        "collapse_ratio": 0.7920199501246883,
+        "effective_predicted_classes": 4,
+        "top_predicted_class": 4
+      },
+      "method_info_keys": [
+        "filter_ratio",
+        "implementation",
+        "include_all_2d",
+        "normalized_weights",
+        "paper_family",
+        "scaling",
+        "venue",
+        "year"
+      ]
+    },
+    "robustmerge": {
+      "metrics": {
+        "accuracy": 0.2004987597465515,
+        "loss": 1.6789763876327553,
+        "num_samples": 2005,
+        "prediction_counts": [
+          137,
+          122,
+          20,
+          4,
+          1602,
+          120,
+          0
+        ],
+        "collapse_ratio": 0.7990024937655861,
+        "effective_predicted_classes": 6,
+        "top_predicted_class": 4
+      },
+      "method_info_keys": [
+        "att_ratio",
+        "fuse_weight",
+        "implementation",
+        "include_all_2d",
+        "mask_ratio",
+        "normalized_weights",
+        "venue",
+        "year"
+      ]
+    }
+  }
+}
