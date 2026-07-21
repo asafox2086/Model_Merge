@@ -23,15 +23,13 @@ This run applies every formal main-table baseline to the identical three client 
 
 The raw outputs are retained separately for [medical](medical/main_table_baseline_collapse_metrics.csv) and [natural](natural/main_table_baseline_collapse_metrics.csv). The runner uses the existing formal baseline implementations from `/data2/liyapeng_grp/program/MedMNISTMerge`, because this experiment worktree does not contain the baseline modules `avg`, `fisher`, `regmean`, `breadcrumbs`, `model_stock`, `from`, `iso`, `free_merge`, and `robustmerge`.
 
-## RegMean Prediction Diagnostics
+## RegMean Prediction Distributions
 
 The RegMean figures are separate for the two domains and use all 2,005 matched test images:
 
 - [Medical prediction distribution](regmean_diagnostics/dermamnist_regmean_prediction_distribution.png)
 - [Natural prediction distribution](regmean_diagnostics/cifar100_semantic7_regmean_prediction_distribution.png)
-- [Medical prediction-colored centered-logit t-SNE](regmean_diagnostics/dermamnist_regmean_centered_logit_prediction_tsne.png)
-- [Natural prediction-colored centered-logit t-SNE](regmean_diagnostics/cifar100_semantic7_regmean_centered_logit_prediction_tsne.png)
 
-Before plotting, the RegMean model is rebuilt with the same main-table configuration and its predictions are checked against the recorded baseline counts. The plotting output includes the source counts, t-SNE coordinates, plot settings, 350-DPI PNG, and vector PDF. The t-SNE diagrams show output-space geometry and predicted labels; they are not claims of feature collapse.
+In each chart, the colored bars are RegMean predictions and the black line is the true-label distribution of the same test images. The plotting output includes both count series, plot settings, 350-DPI PNG, and vector PDF.
 
 These metrics measure output/prediction collapse. They do not establish feature collapse.

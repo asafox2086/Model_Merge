@@ -209,6 +209,7 @@ def main():
     PLOT.plot_distribution(
         args.output_dir / "dermamnist_regmean_prediction_distribution",
         medical_counts,
+        expected_support,
         "Medical DermaMNIST",
         "#4F81BD",
         merge_label="RegMean",
@@ -216,58 +217,25 @@ def main():
     PLOT.plot_distribution(
         args.output_dir / "cifar100_semantic7_regmean_prediction_distribution",
         natural_counts,
+        expected_support,
         "Natural CIFAR-100 semantic 7-class control",
         "#C0504D",
         merge_label="RegMean",
     )
-    PLOT.write_distribution_csv(args.output_dir / "dermamnist_regmean_prediction_distribution.csv", medical_counts)
-    PLOT.write_distribution_csv(args.output_dir / "cifar100_semantic7_regmean_prediction_distribution.csv", natural_counts)
-
-    device = PLOT.STRICT.resolve_device(args.device)
-    domains = {
-        "medical_dermamnist": extract_domain(medical_meta, args.medical_hub_dir, args.data_root, device, args.batch_size, args.stats_batch_size, args.seed, args.perplexity),
-        "natural_cifar100_semantic7": extract_domain(natural_meta, args.natural_hub_dir, args.data_root, device, args.batch_size, args.stats_batch_size, args.seed, args.perplexity),
-    }
-    for domain_name, expected_counts in (("medical_dermamnist", medical_counts), ("natural_cifar100_semantic7", natural_counts)):
-        observed_counts = np.bincount(domains[domain_name]["predictions"], minlength=len(expected_counts))
-        if not np.array_equal(observed_counts, expected_counts):
-            raise ValueError(
-                f"RegMean re-merge predictions differ for {domain_name}: "
-                f"recorded={expected_counts.tolist()} observed={observed_counts.tolist()}"
-            )
-    num_classes = int(medical_meta["num_classes"])
-    PLOT.plot_prediction_tsne(
-        args.output_dir / "dermamnist_regmean_centered_logit_prediction_tsne",
-        domains["medical_dermamnist"]["coordinates"],
-        domains["medical_dermamnist"]["predictions"],
-        "Medical DermaMNIST (n=2,005)",
-        num_classes,
-        merge_label="RegMean",
-    )
-    PLOT.plot_prediction_tsne(
-        args.output_dir / "cifar100_semantic7_regmean_centered_logit_prediction_tsne",
-        domains["natural_cifar100_semantic7"]["coordinates"],
-        domains["natural_cifar100_semantic7"]["predictions"],
-        "Natural CIFAR-100 semantic 7-class control (n=2,005)",
-        num_classes,
-        merge_label="RegMean",
-    )
-    write_coordinates(args.output_dir / "regmean_centered_logit_prediction_tsne_coordinates.csv", domains)
+    PLOT.write_distribution_csv(args.output_dir / "dermamnist_regmean_prediction_distribution.csv", medical_counts, expected_support)
+    PLOT.write_distribution_csv(args.output_dir / "cifar100_semantic7_regmean_prediction_distribution.csv", natural_counts, expected_support)
     summary = {
-        "analysis": "separate RegMean prediction distributions and prediction-colored centered-logit t-SNE embeddings",
-        "interpretation_boundary": "These are output/prediction-collapse diagnostics, not evidence of classifier-feature collapse.",
+        "analysis": "separate RegMean prediction-distribution bars with an overlaid true test-label distribution line",
+        "interpretation_boundary": "This is an output/prediction-collapse diagnostic, not evidence of classifier-feature collapse.",
         "merge_method": "regmean",
         "merge_weight_mode": "equal",
         "formal_stats_budget": {"split": "val", "batch_size": args.stats_batch_size, "regmean_max_batches": 1},
-        "tsne": {"seed": args.seed, "perplexity": args.perplexity, "init": "pca", "learning_rate": "auto"},
         "alignment": alignment,
+        "true_test_label_counts": expected_support.astype(int).tolist(),
         "recorded_metrics": {"medical": medical_row, "natural": natural_row},
         "domains": {
-            name: {
-                "prediction_counts": np.bincount(domain["predictions"], minlength=num_classes).astype(int).tolist(),
-                "checkpoint_sha256": domain["checkpoint_sha256"],
-            }
-            for name, domain in domains.items()
+            "medical_dermamnist": {"prediction_counts": medical_counts.astype(int).tolist()},
+            "natural_cifar100_semantic7": {"prediction_counts": natural_counts.astype(int).tolist()},
         },
     }
     (args.output_dir / "plot_summary.json").write_text(json.dumps(summary, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")

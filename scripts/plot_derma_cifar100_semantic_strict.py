@@ -69,29 +69,44 @@ def load_avg_metrics(path):
     return row, counts, support
 
 
-def write_distribution_csv(path, counts):
-    total = int(counts.sum())
+def write_distribution_csv(path, prediction_counts, true_counts):
+    prediction_counts = np.asarray(prediction_counts, dtype=np.int64)
+    true_counts = np.asarray(true_counts, dtype=np.int64)
+    if prediction_counts.shape != true_counts.shape or int(prediction_counts.sum()) != int(true_counts.sum()):
+        raise ValueError("Prediction and true-label counts must have equal shape and total")
+    total = int(prediction_counts.sum())
     with Path(path).open("w", newline="", encoding="utf-8") as handle:
-        writer = csv.DictWriter(handle, fieldnames=("class", "prediction_count", "prediction_percent"), lineterminator="\n")
+        writer = csv.DictWriter(
+            handle,
+            fieldnames=("class", "prediction_count", "prediction_percent", "true_count", "true_percent"),
+            lineterminator="\n",
+        )
         writer.writeheader()
-        for class_index, count in enumerate(counts):
+        for class_index, (prediction_count, true_count) in enumerate(zip(prediction_counts, true_counts)):
             writer.writerow(
                 {
                     "class": class_index,
-                    "prediction_count": int(count),
-                    "prediction_percent": f"{100 * count / total:.6f}",
+                    "prediction_count": int(prediction_count),
+                    "prediction_percent": f"{100 * prediction_count / total:.6f}",
+                    "true_count": int(true_count),
+                    "true_percent": f"{100 * true_count / total:.6f}",
                 }
             )
 
 
-def plot_distribution(output_base, counts, title, color, merge_label="AVG"):
+def plot_distribution(output_base, counts, true_counts, title, color, merge_label="AVG"):
     import matplotlib
 
     matplotlib.use("Agg")
     import matplotlib.pyplot as plt
 
+    counts = np.asarray(counts, dtype=np.int64)
+    true_counts = np.asarray(true_counts, dtype=np.int64)
+    if counts.shape != true_counts.shape or int(counts.sum()) != int(true_counts.sum()):
+        raise ValueError("Prediction and true-label counts must have equal shape and total")
     total = int(counts.sum())
     percentages = counts * 100.0 / total
+    true_percentages = true_counts * 100.0 / total
     positions = np.arange(len(counts))
     setup_style("bar")
     figure, axis = plt.subplots(figsize=(7.7, 5.2), dpi=350)
@@ -102,6 +117,7 @@ def plot_distribution(output_base, counts, title, color, merge_label="AVG"):
         color=color,
         edgecolor=darken_color(color, 0.65),
         linewidth=1.4,
+        label=f"{merge_label} predictions",
         zorder=3,
     )
     for bar, count, percentage in zip(bars, counts, percentages):
@@ -114,12 +130,23 @@ def plot_distribution(output_base, counts, title, color, merge_label="AVG"):
                 va="bottom",
                 fontsize=9,
             )
+    axis.plot(
+        positions,
+        true_percentages,
+        color="#202020",
+        marker="o",
+        markersize=5.5,
+        linewidth=2.2,
+        label="True test-label distribution",
+        zorder=4,
+    )
     axis.set_xticks(positions)
     axis.set_xticklabels([f"Class {index}" for index in positions])
     axis.set_xlabel("Predicted class")
-    axis.set_ylabel("Test predictions (%)")
+    axis.set_ylabel("Test distribution (%)")
     axis.set_ylim(0, 108)
     axis.set_title(f"{title}\n{merge_label} ResNet / K=3 / test set (n={total:,})", fontweight="bold", pad=10)
+    axis.legend(loc="upper left", frameon=False)
     polish_axes(axis, y_grid=True, x_grid=False)
     figure.tight_layout()
     save_png_pdf(figure, str(output_base), dpi=350)
@@ -238,10 +265,10 @@ def main():
     natural_splits = LOGIT.load_npz_splits(args.natural_data_root / f"{natural_meta['dataset']}.npz")
     alignment = STRICT.validate_alignment(medical_meta, natural_meta, medical_splits, natural_splits)
     args.output_dir.mkdir(parents=True, exist_ok=True)
-    plot_distribution(args.output_dir / "dermamnist_avg_prediction_distribution", medical_counts, "Medical DermaMNIST", "#4F81BD")
-    plot_distribution(args.output_dir / "cifar100_semantic7_avg_prediction_distribution", natural_counts, "Natural CIFAR-100 semantic 7-class control", "#C0504D")
-    write_distribution_csv(args.output_dir / "dermamnist_avg_prediction_distribution.csv", medical_counts)
-    write_distribution_csv(args.output_dir / "cifar100_semantic7_avg_prediction_distribution.csv", natural_counts)
+    plot_distribution(args.output_dir / "dermamnist_avg_prediction_distribution", medical_counts, medical_support, "Medical DermaMNIST", "#4F81BD")
+    plot_distribution(args.output_dir / "cifar100_semantic7_avg_prediction_distribution", natural_counts, natural_support, "Natural CIFAR-100 semantic 7-class control", "#C0504D")
+    write_distribution_csv(args.output_dir / "dermamnist_avg_prediction_distribution.csv", medical_counts, medical_support)
+    write_distribution_csv(args.output_dir / "cifar100_semantic7_avg_prediction_distribution.csv", natural_counts, natural_support)
 
     device = STRICT.resolve_device(args.device)
     domains = {
