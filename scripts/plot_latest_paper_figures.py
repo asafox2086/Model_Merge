@@ -149,6 +149,16 @@ def finite_array(values: list[float], shape: tuple[int, ...], name: str) -> np.n
     return array
 
 
+def parse_metric_pair(value: str, name: str) -> tuple[float, float]:
+    parts = [part.strip() for part in value.split("/")]
+    if len(parts) != 2:
+        raise ValueError(f"{name} is not an ACC / F1 pair: {value}")
+    acc, macro_f1 = (float(part) for part in parts)
+    if not np.isfinite([acc, macro_f1]).all() or not (0 <= acc <= 100) or not (0 <= macro_f1 <= 100):
+        raise ValueError(f"{name} has invalid metric values: {value}")
+    return acc, macro_f1
+
+
 def plot_module_ablation(csv_dir: Path, figure_dir: Path) -> None:
     rows = read_annotated_csv(csv_dir / "消融.csv")
     datasets = ["Blood", "Derma", "Organ-C", "Organ-S", "Ultrasound"]
@@ -287,9 +297,13 @@ def plot_internal_ablations(csv_dir: Path, figure_dir: Path) -> None:
     diagnostic = read_annotated_csv(csv_dir / "诊断原型重建内部消融.csv")
     prevalence = read_annotated_csv(csv_dir / "长尾患病率校准内部消融.csv")
     for rows, name in [(diagnostic, "diagnostic"), (prevalence, "prevalence")]:
-        values = finite_array([float(row["Avg ACC (%)"]) for row in rows], (len(rows),), name)
+        values = finite_array(
+            [metric for row in rows for metric in parse_metric_pair(row["Avg ACC / F1 (%)"], f"{name}:{row['Setting']}")],
+            (2 * len(rows),),
+            name,
+        )
         if (values < 0).any() or (values > 100).any():
-            raise ValueError(f"{name} accuracy is outside [0, 100]")
+            raise ValueError(f"{name} metrics are outside [0, 100]")
 
     setup_style("dashboard")
     plt.rcParams.update(
@@ -299,6 +313,7 @@ def plot_internal_ablations(csv_dir: Path, figure_dir: Path) -> None:
             "axes.labelsize": 7.5,
             "xtick.labelsize": 6.8,
             "ytick.labelsize": 7.0,
+            "legend.fontsize": 6.4,
             "axes.linewidth": 0.7,
             "grid.linewidth": 0.55,
         }
@@ -306,59 +321,81 @@ def plot_internal_ablations(csv_dir: Path, figure_dir: Path) -> None:
     fig, axes = plt.subplots(
         1,
         2,
-        figsize=(4.15, 1.95),
+        figsize=(4.45, 2.22),
         dpi=300,
-        gridspec_kw={"width_ratios": [1.2, 1.45]},
+        gridspec_kw={"width_ratios": [1.2, 1.05]},
     )
     panels = [
         (axes[0], diagnostic, "DPR"),
         (axes[1], prevalence, "LPC"),
     ]
+    legend_handles = None
     for axis, rows, title in panels:
         settings = [row["Setting"] for row in rows]
         labels = [INTERNAL_ABLATION_ABBREVIATIONS.get(setting, setting) for setting in settings]
-        values = np.asarray([float(row["Avg ACC (%)"]) for row in rows])
-        colors = []
-        for index, setting in enumerate(settings):
-            if setting == "LAMP-Merge":
-                colors.append(PAPER_COLORS["LAMP-Merge"])
-            elif "prevalence" in setting.lower():
-                colors.append("#4F81BD" if index % 2 else "#9BBB59")
-            elif index <= 4:
-                colors.append(["#4F81BD", "#5B9BD5", "#8FAADC", "#4472C4"][max(0, index - 1) % 4])
-            else:
-                colors.append(["#70AD47", "#A9D18E", "#548235"][index % 3])
+        metric_pairs = np.asarray(
+            [parse_metric_pair(row["Avg ACC / F1 (%)"], f"{title}:{row['Setting']}") for row in rows],
+            dtype=float,
+        )
+        acc_values = metric_pairs[:, 0]
+        f1_values = metric_pairs[:, 1]
         y = np.arange(len(labels))
-        bars = axis.barh(
-            y,
-            values,
-            color=colors,
-            edgecolor=[darken_color(color, 0.65) for color in colors],
+        height = 0.34
+        acc_bars = axis.barh(
+            y - height / 2,
+            acc_values,
+            height=height,
+            color="#4F81BD",
+            edgecolor=darken_color("#4F81BD", 0.65),
             linewidth=0.7,
             zorder=3,
+            label="ACC",
         )
+        f1_bars = axis.barh(
+            y + height / 2,
+            f1_values,
+            height=height,
+            color="#F79646",
+            edgecolor=darken_color("#F79646", 0.65),
+            linewidth=0.7,
+            zorder=3,
+            label="Macro-F1",
+        )
+        legend_handles = (acc_bars[0], f1_bars[0])
         axis.set_yticks(y)
         axis.set_yticklabels(labels)
         axis.invert_yaxis()
-        if title == "DPR":
-            axis.set_xlim(0, 85)
-        else:
-            axis.set_xlim(55, 65)
-        axis.set_xlabel("Mean ACC (%)")
+        axis.set_xlim(0, 85)
+        axis.set_xlabel("Mean score (%)")
         axis.set_title(title, fontweight="bold", pad=3)
-        for bar, value in zip(bars, values):
-            axis.text(
-                value + 0.7,
-                bar.get_y() + bar.get_height() / 2,
-                f"{value:.2f}",
-                va="center",
-                fontsize=6.3,
-            )
+        for bars, values in [(acc_bars, acc_values), (f1_bars, f1_values)]:
+            for bar, value in zip(bars, values):
+                axis.text(
+                    value + 0.75,
+                    bar.get_y() + bar.get_height() / 2,
+                    f"{value:.1f}",
+                    va="center",
+                    fontsize=5.8,
+                )
         polish_axes(axis, y_grid=False, x_grid=True)
         for spine in axis.spines.values():
             spine.set_linewidth(0.7)
 
+    if legend_handles is None:
+        raise ValueError("No internal ablation bars were plotted")
+    fig.legend(
+        legend_handles,
+        ["ACC", "Macro-F1"],
+        loc="lower center",
+        bbox_to_anchor=(0.5, 0.012),
+        ncol=2,
+        frameon=False,
+        handlelength=1.3,
+        handletextpad=0.35,
+        columnspacing=1.0,
+    )
     fig.tight_layout(w_pad=0.7, pad=0.25)
+    fig.subplots_adjust(bottom=0.2)
     save_png(fig, str(figure_dir / "02_internal_module_ablations"), dpi=350)
     plt.close(fig)
 
