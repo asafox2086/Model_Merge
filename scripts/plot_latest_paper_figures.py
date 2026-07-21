@@ -56,6 +56,13 @@ INTERNAL_ABLATION_ABBREVIATIONS = {
 }
 
 
+def expand_interval(limits: tuple[float, float], factor: float) -> tuple[float, float]:
+    lower, upper = limits
+    center = (lower + upper) / 2
+    half_span = (upper - lower) * factor / 2
+    return center - half_span, center + half_span
+
+
 def read_annotated_csv(path: Path) -> list[dict[str, str]]:
     with path.open(newline="", encoding="utf-8") as handle:
         reader = csv.reader(handle)
@@ -534,18 +541,18 @@ def plot_hparams(csv_dir: Path, figure_dir: Path) -> None:
         plot_hparam_curves(
             axes[0],
             diagnostic,
-            "Evidence exponent gamma",
-            "Prototype-head scale s",
+            "Support exponent gamma",
+            "Prototype head scale s",
             0.55,
             18.75,
             "DPR",
             r"Prototype-head scale $s$",
             r"\gamma",
-            [("Full configuration grid", value) for value in (0.45, 0.5, 0.55, 0.6, 0.65)],
+            [("Full configuration grid", value) for value in (0.4, 0.45, 0.5, 0.55, 0.6)],
             legend_location="lower left",
             legend_anchor=(0.01, 0.02),
             x_limits=(13.25, 24.25),
-            y_limits=(61.3, 62.7),
+            y_limits=expand_interval((61.3, 62.7), 3.0),
         )
     else:
         dpr_axis = axes[0]
@@ -573,13 +580,14 @@ def plot_hparams(csv_dir: Path, figure_dir: Path) -> None:
             ("Full configuration grid", 3.0),
             ("Full configuration grid", 3.5),
         ],
-        (60.6, 63.4),
+        expand_interval((60.6, 63.4), 3.0),
         (3.75, 5.25),
         legend_location="lower center",
         legend_anchor=(0.5, 0.05),
     )
     for axis in axes:
-        axis.set_yticks(np.arange(61.0, 63.1, 1.0))
+        lower, upper = axis.get_ylim()
+        axis.set_yticks(np.linspace(lower, upper, 5))
         for spine in axis.spines.values():
             spine.set_linewidth(0.8)
     fig.tight_layout(w_pad=0.65, pad=0.35)
