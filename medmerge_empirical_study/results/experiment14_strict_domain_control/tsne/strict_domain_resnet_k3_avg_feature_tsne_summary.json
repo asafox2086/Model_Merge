@@ -1,0 +1,116 @@
+{
+  "analysis": "separate t-SNE embeddings of AVG classifier-input features",
+  "merge_weighting": "uniform",
+  "tsne": {
+    "seed": 1701,
+    "perplexity": 30.0,
+    "init": "pca",
+    "learning_rate": "auto"
+  },
+  "alignment": {
+    "shared_hyperparameters": {
+      "model": "resnet",
+      "num_clients": 3,
+      "num_classes": 7,
+      "in_channels": 3,
+      "epochs": 50,
+      "batch_size": 64,
+      "lr": 0.001,
+      "weight_decay": 0.0001,
+      "image_size": 224,
+      "pretrained": true,
+      "seed": 42
+    },
+    "client_classes": {
+      "0": [
+        3,
+        4,
+        0
+      ],
+      "1": [
+        2,
+        1
+      ],
+      "2": [
+        6,
+        5
+      ]
+    },
+    "client_class_counts": {
+      "0": {
+        "3": 80,
+        "4": 779,
+        "0": 228
+      },
+      "1": {
+        "2": 769,
+        "1": 359
+      },
+      "2": {
+        "6": 99,
+        "5": 4693
+      }
+    },
+    "split_class_counts": {
+      "train": [
+        228,
+        359,
+        769,
+        80,
+        779,
+        4693,
+        99
+      ],
+      "val": [
+        33,
+        52,
+        110,
+        12,
+        111,
+        671,
+        14
+      ],
+      "test": [
+        66,
+        103,
+        220,
+        23,
+        223,
+        1341,
+        29
+      ]
+    }
+  },
+  "domains": {
+    "medical_dermamnist": {
+      "dataset": "dermamnist_224",
+      "test_samples": 2005,
+      "feature_dimension": 512,
+      "checkpoint_sha256": {
+        "client_0.pt": "3b9f59a68410627906ae5c300379be1b4195e98b33c28ad9b0b2c1a7edaf0780",
+        "client_1.pt": "160ec9266e317f73026273bb3a37f82c63b91be9817edcc91eb0d5e5be446db6",
+        "client_2.pt": "e945e642563ad69f3ca72d049897de764f9f2700a2db84e67d95e01e82bd9589"
+      },
+      "avg_weights": [
+        0.3333333333333333,
+        0.3333333333333333,
+        0.3333333333333333
+      ]
+    },
+    "natural_cifar": {
+      "dataset": "cifar7_derma_strict",
+      "test_samples": 2005,
+      "feature_dimension": 512,
+      "checkpoint_sha256": {
+        "client_0.pt": "1e1aefb3dc2d4369f4aaa8e7e10dfc6536f610e4297780786c60e4afadc6f691",
+        "client_1.pt": "7b46062f83ee9fa716a5ded08a8181530e9b3a277055f753ec50e1ce4537d1b1",
+        "client_2.pt": "7d05c4128dd9d468c0509e96f5ef06cc283642440888ca370dfe709adbdcf46a"
+      },
+      "avg_weights": [
+        0.3333333333333333,
+        0.3333333333333333,
+        0.3333333333333333
+      ]
+    }
+  }
+}
