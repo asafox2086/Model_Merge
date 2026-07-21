@@ -2,6 +2,7 @@
 \PassOptionsToPackage{table}{xcolor}
 \documentclass[letterpaper]{article} % DO NOT CHANGE THIS
 \usepackage[submission]{aaai2026}  % DO NOT CHANGE THIS
+% \usepackage{aaai2026}
 \usepackage{times}  % DO NOT CHANGE THIS
 \usepackage{helvet}  % DO NOT CHANGE THIS
 \usepackage{courier}  % DO NOT CHANGE THIS
@@ -133,82 +134,32 @@
 % proceedings, working notes, and technical reports.
 %
 
-% Title
 
-% Your title must be in mixed case, not sentence case.
-% That means all verbs (including short verbs like be, is, using,and go),
-% nouns, adverbs, adjectives should be capitalized, including both words in hyphenated terms, while
-% articles, conjunctions, and prepositions are lower case unless they
-% directly follow a colon or long dash
-
-\title{LAMP-Merge: Long-tail-Aware Medical Prototype Merging for One-shot Asynchronous Clinical Models}
-\author{
-    %Authors
-    % All authors must be in the same font size and format.
-    Written by AAAI Press Staff\textsuperscript{\rm 1}\thanks{With help from the AAAI Publications Committee.}\\
-    AAAI Style Contributions by Pater Patel Schneider,
-    Sunil Issar,\\
-    J. Scott Penberthy,
-    George Ferguson,
-    Hans Guesgen,
-    Francisco Cruz\equalcontrib,
-    Marc Pujol-Gonzalez\equalcontrib
-}
-\affiliations{
-    %Afiliations
-    \textsuperscript{\rm 1}Association for the Advancement of Artificial Intelligence\\
-    % If you have multiple authors and multiple affiliations
-    % use superscripts in text and roman font to identify them.
-    % For example,
-
-    % Sunil Issar\textsuperscript{\rm 2},
-    % J. Scott Penberthy\textsuperscript{\rm 3},
-    % George Ferguson\textsuperscript{\rm 4},
-    % Hans Guesgen\textsuperscript{\rm 5}
-    % Note that the comma should be placed after the superscript
-
-    1101 Pennsylvania Ave, NW Suite 300\\
-    Washington, DC 20004 USA\\
-    % email address must be in roman text type, not monospace or sans serif
-    proceedings-questions@aaai.org
-%
-% See more examples next
-}
-
-%Example, Single Author, ->> remove \iffalse,\fi and place them surrounding AAAI title to use it
-\iffalse
-\title{My Publication Title --- Single Author}
-\author {
-    Author Name
-}
-\affiliations{
-    Affiliation\\
-    Affiliation Line 2\\
-    name@example.com
-}
-\fi
-
-\iffalse
 %Example, Multiple Authors, ->> remove \iffalse,\fi and place them surrounding AAAI title to use it
-\title{My Publication Title --- Multiple Authors}
+\title{LAMP-Merge: Long-tail-Aware Medical Prototype Merging for One-shot Asynchronous Clinical Models}
 \author {
-    % Authors
-    First Author Name\textsuperscript{\rm 1},
-    Second Author Name\textsuperscript{\rm 2},
-    Third Author Name\textsuperscript{\rm 1}
+    Wenjin Hu\equalcontrib\textsuperscript{\rm 1},
+    Yipan Wei\equalcontrib\textsuperscript{\rm 1},
+    Yapeng Li\textsuperscript{\rm 1},
+    Zengmao Wang\textsuperscript{\rm 1} ,
+    Bo Du\textsuperscript{\rm 1}
 }
+
 \affiliations {
-    % Affiliations
-    \textsuperscript{\rm 1}Affiliation 1\\
-    \textsuperscript{\rm 2}Affiliation 2\\
-    firstAuthor@affiliation1.com, secondAuthor@affilation2.com, thirdAuthor@affiliation1.com
+    \textsuperscript{\rm 1}School of Computer Science, Wuhan University,
+    Wuhan, Hubei, China\\
+    wenjinhu@whu.edu.cn, yipanwei@whu.edu.cn,
+    yapengli@whu.edu.cn, dubo@whu.edu.cn,
+    wangzengmao@whu.edu.cn
 }
-\fi
+
+
+
 
 
 % REMOVE THIS: bibentry
 % This is only needed to show inline citations in the guidelines document. You should not need it and can safely delete it.
-\usepackage{bibentry}
+% \usepackage{bibentry}
 % END REMOVE bibentry
 
 \begin{document}
@@ -236,7 +187,8 @@ Federated learning~\cite{pmlr-v54-mcmahan17a,li2020fedprox,karimireddy2020scaffo
 \begin{figure}[!t]
     \centering
     \includegraphics[width=0.96\linewidth]{figures/intro.png}
-    \caption{In multicenter healthcare settings, individual clients typically observe only a subset of the global diagnostic space. Conventional parameter-level model-merging methods can therefore cause the merged global model's predictions to concentrate on a small number of dominant classes.}
+    \caption{\textbf{Motivation.} Unlike natural-image clients that share overlapping visual evidence, medical clients each observe only part of the diagnostic space, so parameter-level merging collapses the global model onto a few dominant classes. This reflects two observations: diagnostic evidence is fragmented across isolated clients, and medical prevalence is long-tailed---under which a collapsed model can still report deceptively high accuracy.}
+ 
     \label{fig:intro-collapse}
 \end{figure}
 
@@ -253,7 +205,8 @@ To address these issues, we propose \textbf{LAMP-Merge, a long-tail-aware medica
 \begin{figure*}[!t]
     \centering
     \includegraphics[width=0.92\textwidth,height=0.34\textheight]{figures/method.png}
-    \caption{Local models from multicenter hospitals typically contain only partial diagnostic knowledge, while raw medical images cannot be centrally shared. LAMP-Merge reconstructs a privacy-friendly global medical classifier through DPR and LPC, without accessing raw data or requiring multi-round federated optimization.}
+    \caption{\textbf{Overview of LAMP-Merge.} Each hospital uploads only class-level statistics---reference-space prototypes with sample support and diagnosis prevalence counts---while raw images stay local. On the server, Diagnostic Prototype Reconstruction (DPR) aggregates the prototypes by support-aware weighting into a diagnostic head $\mathbf{w}_c$, and Long-tail Prevalence Calibration (LPC) adds a gated, bounded log-prior bias $b_c$, giving the scoring rule $\ell_c(x)=\mathbf{w}_c^{\top}\phi_0(T(x))+\mathbf{1}[r>\tau]\,b_c$ in a single-shot merge without raw-data sharing or federated rounds.}
+ 
     \label{fig_method}
 \end{figure*}
 
@@ -388,7 +341,9 @@ The final scoring function of LAMP-Merge integrates the diagnostic prototype rec
 
 \subsubsection{(1) Evaluation Datasets:}
 
-We evaluate the merged models on five representative MedMNIST v2 benchmarks\cite{yang2023medmnist}: Blood, Derma, Organ-C, Organ-S, and Ultrasound. They cover blood-cell microscopy, dermoscopy, abdominal CT, and ultrasound image classification (detailed dataset descriptions are provided in the Appendix).
+We evaluate the merged models on five representative MedMNIST v2 benchmarks\cite{yang2023medmnist}: Blood, Derma, Organ-C, Organ-S, and Ultrasound. They cover blood-cell microscopy, dermoscopy, abdominal CT, and ultrasound image classification, and together span different class counts and prevalence profiles.
+
+
 
 \begin{table}[!t]
 \centering
@@ -443,140 +398,60 @@ Tables~\ref{tab:client-avg-resnet}--\ref{tab:client-avg-swin-tiny} report the fu
 \begin{table*}[!t]
 \centering
 \renewcommand{\arraystretch}{1.35}
-\caption{Client-average test accuracy (\%) on ResNet. Each entry averages the three Dirichlet settings for a fixed client number; Avg denotes the mean over $K=3,5,7$ within the corresponding dataset.}
+\caption{Client-average test accuracy and Macro-F1 (\%) on ResNet. Each entry averages the three Dirichlet settings for a fixed client number; Avg denotes the mean Accuracy over $K=3,5,7$ within the corresponding dataset; F1 denotes Macro-F1 averaged over the same cells.}
 \label{tab:client-avg-resnet}
-\resizebox{0.90\textwidth}{!}{%
-\begin{tabular}{l||ccc:c|ccc:c|ccc:c|ccc:c|ccc:c}
+\resizebox{\textwidth}{!}{%
+\begin{tabular}{l||ccc:cc|ccc:cc|ccc:cc|ccc:cc|ccc:cc}
 \noalign{\hrule height 1.25pt}
 \rowcolor[HTML]{F2F2F2}
  &
-\multicolumn{4}{c|}{\textbf{Blood}} &
-\multicolumn{4}{c|}{\textbf{Derma}} &
-\multicolumn{4}{c|}{\textbf{Organ-C}} &
-\multicolumn{4}{c|}{\textbf{Organ-S}} &
-\multicolumn{4}{c}{\textbf{Ultrasound}} \\
+\multicolumn{5}{c|}{\textbf{Blood}} &
+\multicolumn{5}{c|}{\textbf{Derma}} &
+\multicolumn{5}{c|}{\textbf{Organ-C}} &
+\multicolumn{5}{c|}{\textbf{Organ-S}} &
+\multicolumn{5}{c}{\textbf{Ultrasound}} \\
 \rowcolor[HTML]{F2F2F2}
 \multirow{-2}{*}{\textbf{Method}}
-& \textbf{$K=3$} & \textbf{$K=5$} & \textbf{$K=7$} & \textbf{Avg}
-& \textbf{$K=3$} & \textbf{$K=5$} & \textbf{$K=7$} & \textbf{Avg}
-& \textbf{$K=3$} & \textbf{$K=5$} & \textbf{$K=7$} & \textbf{Avg}
-& \textbf{$K=3$} & \textbf{$K=5$} & \textbf{$K=7$} & \textbf{Avg}
-& \textbf{$K=3$} & \textbf{$K=5$} & \textbf{$K=7$} & \textbf{Avg} \\
+& \textbf{$K=3$} & \textbf{$K=5$} & \textbf{$K=7$} & \textbf{Avg} & \textbf{F1}
+& \textbf{$K=3$} & \textbf{$K=5$} & \textbf{$K=7$} & \textbf{Avg} & \textbf{F1}
+& \textbf{$K=3$} & \textbf{$K=5$} & \textbf{$K=7$} & \textbf{Avg} & \textbf{F1}
+& \textbf{$K=3$} & \textbf{$K=5$} & \textbf{$K=7$} & \textbf{Avg} & \textbf{F1}
+& \textbf{$K=3$} & \textbf{$K=5$} & \textbf{$K=7$} & \textbf{Avg} & \textbf{F1} \\
 \hline \hline
 
-Weight Avg. &
-33.45 & 24.67 & 28.22 & 28.78 &
-62.91 & 47.00 & 62.44 & 57.45 &
-22.61 & 17.72 & 13.96 & 18.10 &
-28.64 & 17.94 & 24.75 & 23.78 &
-24.35 & 15.81 & 15.42 & 18.53 \\
+Weight Avg. & 33.45 & 24.67 & 28.22 & 28.78 & 18.14 & 62.91 & 47.00 & 62.44 & 57.45 & 12.97 & 22.61 & 17.72 & 13.96 & 18.10 & 9.26 & 28.64 & 17.94 & 24.75 & 23.78 & 11.64 & 24.35 & 15.81 & 15.42 & 18.53 & 7.81 \\
 
 \rowcolor{gray!10}
-TIES\pub{NeurIPS 2023} &
-26.01 & 18.72 & 17.87 & 20.87 &
-59.95 & 48.41 & 64.84 & 57.73 &
-26.50 & 16.84 & 21.18 & 21.51 &
-19.81 & 19.15 & 18.74 & 19.23 &
-34.77 & 19.89 & 18.54 & 24.40 \\
+TIES\pub{NeurIPS 2023} & 26.01 & 18.72 & 17.87 & 20.87 & 9.48 & 59.95 & 48.41 & 64.84 & 57.73 & 12.95 & 26.50 & 16.84 & 21.18 & 21.51 & 11.50 & 19.81 & 19.15 & 18.74 & 19.23 & 9.18 & 34.77 & 19.89 & 18.54 & 24.40 & 15.00 \\
 
-DARE-Linear\pub{ICML 2024} &
-28.32 & 28.56 & 23.92 & 26.93 &
-63.57 & 48.41 & 62.88 & 58.29 &
-20.18 & 25.88 & 16.50 & 20.85 &
-25.45 & 22.45 & 25.37 & 24.42 &
-21.62 & 17.28 & 16.08 & 18.33 \\
+DARE-Linear\pub{ICML 2024} & 28.32 & 28.56 & 23.92 & 26.93 & 15.12 & 63.57 & 48.41 & 62.88 & 58.29 & 12.86 & 20.18 & 25.88 & 16.50 & 20.85 & 8.47 & 25.45 & 22.45 & 25.37 & 24.42 & 9.61 & 21.62 & 17.28 & 16.08 & 18.33 & 7.53 \\
 
 \rowcolor{gray!10}
-DARE-TIES\pub{ICML 2024} &
-31.94 & 19.35 & 17.80 & 23.03 &
-53.75 & 48.25 & 55.58 & 52.53 &
-18.51 & 15.15 & 18.59 & 17.42 &
-17.90 & 13.52 & 17.30 & 16.24 &
-29.32 & 16.35 & 18.90 & 21.52 \\
+DARE-TIES\pub{ICML 2024} & 31.94 & 19.35 & 17.80 & 23.03 & 10.89 & 53.75 & 48.25 & 55.58 & 52.53 & 10.27 & 18.51 & 15.15 & 18.59 & 17.42 & 7.43 & 17.90 & 13.52 & 17.30 & 16.24 & 8.28 & 29.32 & 16.35 & 18.90 & 21.52 & 12.29 \\
 
-RegMean\pub{ICLR 2023} &
-34.60 & 23.69 & 34.07 & 30.79 &
-58.12 & 28.43 & 50.22 & 45.59 &
-24.05 & 13.40 & 13.88 & 17.11 &
-25.04 & 16.23 & 14.93 & 18.73 &
-22.76 & 16.95 & 13.18 & 17.63 \\
+RegMean\pub{ICLR 2023} & 34.60 & 23.69 & 34.07 & 30.79 & 20.95 & 58.12 & 28.43 & 50.22 & 45.59 & 15.36 & 24.05 & 13.40 & 13.88 & 17.11 & 11.88 & 25.04 & 16.23 & 14.93 & 18.73 & 12.11 & 22.76 & 16.95 & 13.18 & 17.63 & 16.36 \\
 
 \rowcolor{gray!10}
-Fisher\pub{NeurIPS 2022} &
-31.96 & 22.37 & 26.08 & 26.80 &
-67.07 & 67.02 & 66.90 & 67.00 &
-29.73 & 17.41 & 18.12 & 21.75 &
-20.10 & 29.56 & 19.63 & 23.10 &
-23.33 & 18.60 & 25.13 & 22.35 \\
+Fisher\pub{NeurIPS 2022} & 31.96 & 22.37 & 26.08 & 26.80 & 15.59 & 67.07 & 67.02 & 66.90 & 67.00 & 13.58 & 29.73 & 17.41 & 18.12 & 21.75 & 19.37 & 20.10 & 29.56 & 19.63 & 23.10 & 14.57 & 23.33 & 18.60 & 25.13 & 22.35 & 16.13 \\
 
-Breadcrumbs\pub{ECCV 2024} &
-8.54 & 14.17 & 14.60 & 12.44 &
-4.95 & 29.13 & 17.21 & 17.10 &
-7.66 & 6.76 & 6.85 & 7.09 &
-8.02 & 9.48 & 6.03 & 7.84 &
-12.25 & 12.73 & 10.21 & 11.73 \\
+Breadcrumbs\pub{ECCV 2024} & 8.54 & 14.17 & 14.60 & 12.44 & 4.89 & 4.95 & 29.13 & 17.21 & 17.10 & 4.88 & 7.66 & 6.76 & 6.85 & 7.09 & 2.36 & 8.02 & 9.48 & 6.03 & 7.84 & 2.77 & 12.25 & 12.73 & 10.21 & 11.73 & 4.64 \\
 
 \rowcolor{gray!10}
-Model Stock\pub{ECCV 2024} &
-24.20 & 18.24 & 19.75 & 20.73 &
-62.16 & 43.11 & 57.21 & 54.16 &
-12.25 & 12.74 & 11.85 & 12.28 &
-27.42 & 15.78 & 20.12 & 21.11 &
-17.91 & 13.21 & 15.78 & 15.63 \\
+Model Stock\pub{ECCV 2024} & 24.20 & 18.24 & 19.75 & 20.73 & 10.45 & 62.16 & 43.11 & 57.21 & 54.16 & 12.83 & 12.25 & 12.74 & 11.85 & 12.28 & 4.32 & 27.42 & 15.78 & 20.12 & 21.11 & 9.52 & 17.91 & 13.21 & 15.78 & 15.63 & 6.16 \\
 
-Iso-C\pub{ICML 2025} &
-32.78 & 27.48 & 30.23 & 30.16 &
-50.49 & 44.22 & 64.16 & 52.96 &
-23.31 & 16.29 & 13.83 & 17.81 &
-27.36 & 21.18 & 24.53 & 24.36 &
-26.15 & 16.98 & 15.54 & 19.56 \\
+Iso-C\pub{ICML 2025} & 32.78 & 27.48 & 30.23 & 30.16 & 18.57 & 50.49 & 44.22 & 64.16 & 52.96 & 15.17 & 23.31 & 16.29 & 13.83 & 17.81 & 9.03 & 27.36 & 21.18 & 24.53 & 24.36 & 11.61 & 26.15 & 16.98 & 15.54 & 19.56 & 10.15 \\
 
 \rowcolor{gray!10}
-Free-Merging\pub{ICCV 2025} &
-33.45 & 24.67 & 28.22 & 28.78 &
-62.91 & 47.00 & 62.46 & 57.46 &
-22.61 & 17.71 & 13.96 & 18.09 &
-28.63 & 17.93 & 24.75 & 23.77 &
-24.35 & 15.81 & 15.45 & 18.54 \\
+Free-Merging\pub{ICCV 2025} & 33.45 & 24.67 & 28.22 & 28.78 & 18.16 & 62.91 & 47.00 & 62.46 & 57.46 & 12.97 & 22.61 & 17.71 & 13.96 & 18.09 & 9.26 & 28.63 & 17.93 & 24.75 & 23.77 & 11.64 & 24.35 & 15.81 & 15.45 & 18.54 & 7.81 \\
 
-RobustMerge\pub{NeurIPS 2025} &
-34.01 & 24.30 & 22.56 & 26.96 &
-29.56 & 20.85 & 39.42 & 29.94 &
-24.58 & 17.64 & 16.53 & 19.58 &
-26.80 & 22.27 & 23.01 & 24.03 &
-21.89 & 22.31 & 17.07 & 20.42 \\
+RobustMerge\pub{NeurIPS 2025} & 34.01 & 24.30 & 22.56 & 26.96 & 14.18 & 29.56 & 20.85 & 39.42 & 29.94 & 11.63 & 24.58 & 17.64 & 16.53 & 19.58 & 9.93 & 26.80 & 22.27 & 23.01 & 24.03 & 11.61 & 21.89 & 22.31 & 17.07 & 20.42 & 10.42 \\
 
 \rowcolor{gray!10}
-FROM\pub{AAAI 2026} &
-29.89 & 23.06 & 20.52 & 24.49 &
-67.13 & 43.69 & 65.80 & 58.87 &
-23.50 & 15.60 & 15.20 & 18.10 &
-22.07 & 20.87 & 24.76 & 22.57 &
-23.09 & 15.06 & 20.63 & 19.59 \\
+FROM\pub{AAAI 2026} & 29.89 & 23.06 & 20.52 & 24.49 & 12.60 & 67.13 & 43.69 & 65.80 & 58.87 & 12.09 & 23.50 & 15.60 & 15.20 & 18.10 & 9.61 & 22.07 & 20.87 & 24.76 & 22.57 & 10.64 & 23.09 & 15.06 & 20.63 & 19.59 & 9.11 \\
 
 \hline \hline
 \rowcolor[HTML]{FFF9C4}
-\textbf{LAMP-Merge} &
-\textbf{80.01} &
-\textbf{79.94} &
-\textbf{79.92} &
-\textbf{79.95} &
-\textbf{67.55} &
-\textbf{67.63} &
-\textbf{67.63} &
-\textbf{67.60} &
-\textbf{60.05} &
-\textbf{59.94} &
-\textbf{60.07} &
-\textbf{60.02} &
-\textbf{52.98} &
-\textbf{52.79} &
-\textbf{52.81} &
-\textbf{52.86} &
-\textbf{48.07} &
-\textbf{46.75} &
-\textbf{47.35} &
-\textbf{47.39} \\
+\textbf{LAMP-Merge} & \textbf{80.01} & \textbf{79.94} & \textbf{79.92} & \textbf{79.95} & \textbf{78.68} & \textbf{67.55} & \textbf{67.63} & \textbf{67.63} & \textbf{67.60} & \textbf{15.04} & \textbf{60.05} & \textbf{59.94} & \textbf{60.07} & \textbf{60.02} & \textbf{53.14} & \textbf{52.98} & \textbf{52.79} & \textbf{52.81} & \textbf{52.86} & \textbf{42.57} & \textbf{48.07} & \textbf{46.75} & \textbf{47.35} & \textbf{47.39} & \textbf{45.17} \\
 \noalign{\hrule height 1.25pt}
 \end{tabular}%
 }
@@ -585,80 +460,60 @@ FROM\pub{AAAI 2026} &
 \begin{table*}[!t]
 \centering
 \renewcommand{\arraystretch}{1.35}
-\caption{Client-average test accuracy (\%) on ConvNeXt. Each entry averages the three Dirichlet settings for a fixed client number; Avg denotes the mean over $K=3,5,7$ within the corresponding dataset.}
+\caption{Client-average test accuracy and Macro-F1 (\%) on ConvNeXt. Each entry averages the three Dirichlet settings for a fixed client number; Avg denotes the mean Accuracy over $K=3,5,7$ within the corresponding dataset; F1 denotes Macro-F1 averaged over the same cells.}
 \label{tab:client-avg-convnext}
-\resizebox{0.90\textwidth}{!}{%
-\begin{tabular}{l||ccc:c|ccc:c|ccc:c|ccc:c|ccc:c}
+\resizebox{\textwidth}{!}{%
+\begin{tabular}{l||ccc:cc|ccc:cc|ccc:cc|ccc:cc|ccc:cc}
 \noalign{\hrule height 1.25pt}
 \rowcolor[HTML]{F2F2F2}
  &
-\multicolumn{4}{c|}{\textbf{Blood}} &
-\multicolumn{4}{c|}{\textbf{Derma}} &
-\multicolumn{4}{c|}{\textbf{Organ-C}} &
-\multicolumn{4}{c|}{\textbf{Organ-S}} &
-\multicolumn{4}{c}{\textbf{Ultrasound}} \\
+\multicolumn{5}{c|}{\textbf{Blood}} &
+\multicolumn{5}{c|}{\textbf{Derma}} &
+\multicolumn{5}{c|}{\textbf{Organ-C}} &
+\multicolumn{5}{c|}{\textbf{Organ-S}} &
+\multicolumn{5}{c}{\textbf{Ultrasound}} \\
 \rowcolor[HTML]{F2F2F2}
 \multirow{-2}{*}{\textbf{Method}}
-& \textbf{$K=3$} & \textbf{$K=5$} & \textbf{$K=7$} & \textbf{Avg}
-& \textbf{$K=3$} & \textbf{$K=5$} & \textbf{$K=7$} & \textbf{Avg}
-& \textbf{$K=3$} & \textbf{$K=5$} & \textbf{$K=7$} & \textbf{Avg}
-& \textbf{$K=3$} & \textbf{$K=5$} & \textbf{$K=7$} & \textbf{Avg}
-& \textbf{$K=3$} & \textbf{$K=5$} & \textbf{$K=7$} & \textbf{Avg} \\
+& \textbf{$K=3$} & \textbf{$K=5$} & \textbf{$K=7$} & \textbf{Avg} & \textbf{F1}
+& \textbf{$K=3$} & \textbf{$K=5$} & \textbf{$K=7$} & \textbf{Avg} & \textbf{F1}
+& \textbf{$K=3$} & \textbf{$K=5$} & \textbf{$K=7$} & \textbf{Avg} & \textbf{F1}
+& \textbf{$K=3$} & \textbf{$K=5$} & \textbf{$K=7$} & \textbf{Avg} & \textbf{F1}
+& \textbf{$K=3$} & \textbf{$K=5$} & \textbf{$K=7$} & \textbf{Avg} & \textbf{F1} \\
 \hline \hline
 
-Weight Avg. & 15.65 & 11.22 & 13.84 & 13.57 & 29.66 & 48.30 & 66.88 & 48.28 & 10.37 & 12.18 & 9.44 & 10.66 & 13.08 & 10.35 & 14.16 & 12.53 & 15.06 & 15.06 & 12.52 & 14.21 \\
+Weight Avg. & 15.65 & 11.22 & 13.84 & 13.57 & 2.95 & 29.66 & 48.30 & 66.88 & 48.28 & 8.58 & 10.37 & 12.18 & 9.44 & 10.66 & 2.09 & 13.08 & 10.35 & 14.16 & 12.53 & 1.98 & 15.06 & 15.06 & 12.52 & 14.21 & 3.09 \\
 
 \rowcolor{gray!10}
-TIES\pub{NeurIPS 2023} & 17.15 & 12.14 & 15.24 & 14.84 & 29.66 & 17.97 & 27.13 & 24.92 & 12.17 & 7.86 & 7.16 & 9.06 & 11.23 & 7.61 & 7.96 & 8.93 & 15.18 & 14.56 & 12.91 & 14.22 \\
+TIES\pub{NeurIPS 2023} & 17.15 & 12.14 & 15.24 & 14.84 & 3.21 & 29.66 & 17.97 & 27.13 & 24.92 & 5.48 & 12.17 & 7.86 & 7.16 & 9.06 & 2.67 & 11.23 & 7.61 & 7.96 & 8.93 & 2.16 & 15.18 & 14.56 & 12.91 & 14.22 & 3.09 \\
 
-DARE-Linear\pub{ICML 2024} & 17.56 & 11.22 & 13.45 & 14.08 & 27.05 & 48.30 & 48.30 & 41.22 & 10.35 & 6.99 & 10.85 & 9.40 & 12.82 & 10.35 & 7.97 & 10.38 & 15.75 & 15.75 & 12.64 & 14.71 \\
-
-\rowcolor{gray!10}
-DARE-TIES\pub{ICML 2024} & 10.96 & 15.19 & 14.97 & 13.71 & 9.08 & 27.98 & 24.51 & 20.52 & 13.05 & 13.46 & 7.70 & 11.40 & 10.96 & 9.46 & 7.09 & 9.17 & 14.56 & 12.97 & 15.00 & 14.18 \\
-
-RegMean\pub{ICLR 2023} & 15.65 & 8.17 & 18.56 & 14.13 & 26.33 & 7.73 & 27.20 & 20.42 & 11.43 & 10.17 & 7.68 & 9.76 & 10.14 & 12.59 & 10.38 & 11.04 & 15.75 & 15.39 & 15.00 & 15.38 \\
+DARE-Linear\pub{ICML 2024} & 17.56 & 11.22 & 13.45 & 14.08 & 3.05 & 27.05 & 48.30 & 48.30 & 41.22 & 7.41 & 10.35 & 6.99 & 10.85 & 9.40 & 1.79 & 12.82 & 10.35 & 7.97 & 10.38 & 1.73 & 15.75 & 15.75 & 12.64 & 14.71 & 3.19 \\
 
 \rowcolor{gray!10}
-Fisher\pub{NeurIPS 2022} & 15.65 & 9.99 & 11.89 & 12.51 & 48.25 & 26.38 & 29.71 & 34.78 & 10.03 & 9.74 & 9.15 & 9.64 & 6.04 & 5.17 & 8.43 & 6.55 & 16.95 & 13.60 & 14.56 & 15.04 \\
+DARE-TIES\pub{ICML 2024} & 10.96 & 15.19 & 14.97 & 13.71 & 3.41 & 9.08 & 27.98 & 24.51 & 20.52 & 4.91 & 13.05 & 13.46 & 7.70 & 11.40 & 3.11 & 10.96 & 9.46 & 7.09 & 9.17 & 2.55 & 14.56 & 12.97 & 15.00 & 14.18 & 3.09 \\
 
-Breadcrumbs\pub{ECCV 2024} & 15.16 & 13.66 & 11.63 & 13.48 & 5.24 & 27.66 & 46.30 & 26.40 & 10.31 & 14.44 & 15.74 & 13.50 & 15.16 & 15.54 & 20.77 & 17.16 & 13.84 & 13.63 & 13.63 & 13.70 \\
-
-\rowcolor{gray!10}
-Model Stock\pub{ECCV 2024} & 17.56 & 11.44 & 17.78 & 15.59 & 29.66 & 48.30 & 66.88 & 48.28 & 12.76 & 12.18 & 13.85 & 12.93 & 13.08 & 10.35 & 19.35 & 14.26 & 15.75 & 12.91 & 14.79 & 14.48 \\
-
-Iso-C\pub{ICML 2025} & 19.47 & 18.65 & 14.80 & 17.64 & 29.71 & 48.30 & 66.88 & 48.30 & 9.91 & 6.99 & 9.45 & 8.78 & 7.89 & 14.77 & 8.67 & 10.44 & 15.18 & 12.91 & 16.05 & 14.71 \\
+RegMean\pub{ICLR 2023} & 15.65 & 8.17 & 18.56 & 14.13 & 3.71 & 26.33 & 7.73 & 27.20 & 20.42 & 3.99 & 11.43 & 10.17 & 7.68 & 9.76 & 2.68 & 10.14 & 12.59 & 10.38 & 11.04 & 3.95 & 15.75 & 15.39 & 15.00 & 15.38 & 3.21 \\
 
 \rowcolor{gray!10}
-Free-Merging\pub{ICCV 2025} & 15.75 & 11.90 & 13.84 & 13.83 & 29.71 & 48.30 & 66.88 & 48.30 & 9.06 & 12.18 & 13.85 & 11.70 & 13.08 & 10.35 & 14.16 & 12.53 & 15.06 & 12.91 & 16.95 & 14.97 \\
+Fisher\pub{NeurIPS 2022} & 15.65 & 9.99 & 11.89 & 12.51 & 2.78 & 48.25 & 26.38 & 29.71 & 34.78 & 6.39 & 10.03 & 9.74 & 9.15 & 9.64 & 2.51 & 6.04 & 5.17 & 8.43 & 6.55 & 2.13 & 16.95 & 13.60 & 14.56 & 15.04 & 3.39 \\
 
-RobustMerge\pub{NeurIPS 2025} & 14.10 & 14.05 & 7.52 & 11.89 & 9.08 & 45.07 & 48.30 & 34.15 & 13.94 & 12.18 & 17.93 & 14.68 & 23.54 & 9.61 & 20.77 & 17.97 & 13.00 & 11.35 & 13.63 & 12.66 \\
+Breadcrumbs\pub{ECCV 2024} & 15.16 & 13.66 & 11.63 & 13.48 & 2.93 & 5.24 & 27.66 & 46.30 & 26.40 & 4.90 & 10.31 & 14.44 & 15.74 & 13.50 & 2.38 & 15.16 & 15.54 & 20.77 & 17.16 & 2.62 & 13.84 & 13.63 & 13.63 & 13.70 & 3.00 \\
 
 \rowcolor{gray!10}
-FROM\pub{AAAI 2026} & 15.65 & 10.83 & 16.71 & 14.40 & 29.66 & 34.06 & 45.69 & 36.47 & 12.32 & 12.24 & 6.50 & 10.35 & 13.24 & 11.05 & 8.97 & 11.09 & 15.75 & 15.78 & 10.87 & 14.13 \\
+Model Stock\pub{ECCV 2024} & 17.56 & 11.44 & 17.78 & 15.59 & 3.35 & 29.66 & 48.30 & 66.88 & 48.28 & 8.58 & 12.76 & 12.18 & 13.85 & 12.93 & 2.60 & 13.08 & 10.35 & 19.35 & 14.26 & 2.21 & 15.75 & 12.91 & 14.79 & 14.48 & 3.15 \\
+
+Iso-C\pub{ICML 2025} & 19.47 & 18.65 & 14.80 & 17.64 & 3.74 & 29.71 & 48.30 & 66.88 & 48.30 & 8.59 & 9.91 & 6.99 & 9.45 & 8.78 & 1.67 & 7.89 & 14.77 & 8.67 & 10.44 & 2.20 & 15.18 & 12.91 & 16.05 & 14.71 & 3.21 \\
+
+\rowcolor{gray!10}
+Free-Merging\pub{ICCV 2025} & 15.75 & 11.90 & 13.84 & 13.83 & 2.99 & 29.71 & 48.30 & 66.88 & 48.30 & 8.59 & 9.06 & 12.18 & 13.85 & 11.70 & 1.87 & 13.08 & 10.35 & 14.16 & 12.53 & 1.98 & 15.06 & 12.91 & 16.95 & 14.97 & 3.34 \\
+
+RobustMerge\pub{NeurIPS 2025} & 14.10 & 14.05 & 7.52 & 11.89 & 2.62 & 9.08 & 45.07 & 48.30 & 34.15 & 6.24 & 13.94 & 12.18 & 17.93 & 14.68 & 2.32 & 23.54 & 9.61 & 20.77 & 17.97 & 2.72 & 13.00 & 11.35 & 13.63 & 12.66 & 2.80 \\
+
+\rowcolor{gray!10}
+FROM\pub{AAAI 2026} & 15.65 & 10.83 & 16.71 & 14.40 & 3.11 & 29.66 & 34.06 & 45.69 & 36.47 & 7.39 & 12.32 & 12.24 & 6.50 & 10.35 & 2.28 & 13.24 & 11.05 & 8.97 & 11.09 & 2.54 & 15.75 & 15.78 & 10.87 & 14.13 & 3.08 \\
 
 \hline \hline
 \rowcolor[HTML]{FFF9C4}
-\textbf{LAMP-Merge} &
-\textbf{84.85} &
-\textbf{84.87} &
-\textbf{84.98} &
-\textbf{84.90} &
-\textbf{59.68} &
-\textbf{58.77} &
-\textbf{59.42} &
-\textbf{59.29} &
-\textbf{65.41} &
-\textbf{65.33} &
-\textbf{65.51} &
-\textbf{65.42} &
-\textbf{60.55} &
-\textbf{60.50} &
-\textbf{60.66} &
-\textbf{60.57} &
-\textbf{43.07} &
-\textbf{42.80} &
-\textbf{42.41} &
-\textbf{42.76} \\
+\textbf{LAMP-Merge} & \textbf{84.85} & \textbf{84.87} & \textbf{84.98} & \textbf{84.90} & \textbf{83.48} & \textbf{59.68} & \textbf{58.77} & \textbf{59.42} & \textbf{59.29} & \textbf{33.33} & \textbf{65.41} & \textbf{65.33} & \textbf{65.51} & \textbf{65.42} & \textbf{63.17} & \textbf{60.55} & \textbf{60.50} & \textbf{60.66} & \textbf{60.57} & \textbf{56.04} & \textbf{43.07} & \textbf{42.80} & \textbf{42.41} & \textbf{42.76} & \textbf{40.72} \\
 \end{tabular}%
 }
 \end{table*}
@@ -666,80 +521,60 @@ FROM\pub{AAAI 2026} & 15.65 & 10.83 & 16.71 & 14.40 & 29.66 & 34.06 & 45.69 & 36
 \begin{table*}[!t]
 \centering
 \renewcommand{\arraystretch}{1.35}
-\caption{Client-average test accuracy (\%) on ViT-Tiny. Each entry averages the three Dirichlet settings for a fixed client number; Avg denotes the mean over $K=3,5,7$ within the corresponding dataset.}
+\caption{Client-average test accuracy and Macro-F1 (\%) on ViT-Tiny. Each entry averages the three Dirichlet settings for a fixed client number; Avg denotes the mean Accuracy over $K=3,5,7$ within the corresponding dataset; F1 denotes Macro-F1 averaged over the same cells.}
 \label{tab:client-avg-vit-t}
-\resizebox{0.90\textwidth}{!}{%
-\begin{tabular}{l||ccc:c|ccc:c|ccc:c|ccc:c|ccc:c}
+\resizebox{\textwidth}{!}{%
+\begin{tabular}{l||ccc:cc|ccc:cc|ccc:cc|ccc:cc|ccc:cc}
 \noalign{\hrule height 1.25pt}
 \rowcolor[HTML]{F2F2F2}
  &
-\multicolumn{4}{c|}{\textbf{Blood}} &
-\multicolumn{4}{c|}{\textbf{Derma}} &
-\multicolumn{4}{c|}{\textbf{Organ-C}} &
-\multicolumn{4}{c|}{\textbf{Organ-S}} &
-\multicolumn{4}{c}{\textbf{Ultrasound}} \\
+\multicolumn{5}{c|}{\textbf{Blood}} &
+\multicolumn{5}{c|}{\textbf{Derma}} &
+\multicolumn{5}{c|}{\textbf{Organ-C}} &
+\multicolumn{5}{c|}{\textbf{Organ-S}} &
+\multicolumn{5}{c}{\textbf{Ultrasound}} \\
 \rowcolor[HTML]{F2F2F2}
 \multirow{-2}{*}{\textbf{Method}}
-& \textbf{$K=3$} & \textbf{$K=5$} & \textbf{$K=7$} & \textbf{Avg}
-& \textbf{$K=3$} & \textbf{$K=5$} & \textbf{$K=7$} & \textbf{Avg}
-& \textbf{$K=3$} & \textbf{$K=5$} & \textbf{$K=7$} & \textbf{Avg}
-& \textbf{$K=3$} & \textbf{$K=5$} & \textbf{$K=7$} & \textbf{Avg}
-& \textbf{$K=3$} & \textbf{$K=5$} & \textbf{$K=7$} & \textbf{Avg} \\
+& \textbf{$K=3$} & \textbf{$K=5$} & \textbf{$K=7$} & \textbf{Avg} & \textbf{F1}
+& \textbf{$K=3$} & \textbf{$K=5$} & \textbf{$K=7$} & \textbf{Avg} & \textbf{F1}
+& \textbf{$K=3$} & \textbf{$K=5$} & \textbf{$K=7$} & \textbf{Avg} & \textbf{F1}
+& \textbf{$K=3$} & \textbf{$K=5$} & \textbf{$K=7$} & \textbf{Avg} & \textbf{F1}
+& \textbf{$K=3$} & \textbf{$K=5$} & \textbf{$K=7$} & \textbf{Avg} & \textbf{F1} \\
 \hline \hline
 
-Weight Avg. & 13.43 & 10.82 & 11.60 & 11.95 & 46.38 & 43.69 & 36.96 & 42.34 & 16.57 & 10.43 & 9.52 & 12.17 & 8.44 & 8.52 & 17.10 & 11.35 & 14.50 & 13.27 & 18.84 & 15.54 \\
+Weight Avg. & 13.43 & 10.82 & 11.60 & 11.95 & 3.19 & 46.38 & 43.69 & 36.96 & 42.34 & 9.35 & 16.57 & 10.43 & 9.52 & 12.17 & 5.16 & 8.44 & 8.52 & 17.10 & 11.35 & 3.95 & 14.50 & 13.27 & 18.84 & 15.54 & 4.90 \\
 
 \rowcolor{gray!10}
-TIES\pub{NeurIPS 2023} & 7.96 & 14.21 & 12.85 & 11.67 & 47.80 & 34.98 & 46.15 & 42.98 & 13.41 & 12.23 & 9.53 & 11.72 & 11.92 & 10.02 & 15.97 & 12.64 & 20.01 & 13.06 & 10.18 & 14.42 \\
+TIES\pub{NeurIPS 2023} & 7.96 & 14.21 & 12.85 & 11.67 & 3.99 & 47.80 & 34.98 & 46.15 & 42.98 & 8.61 & 13.41 & 12.23 & 9.53 & 11.72 & 4.88 & 11.92 & 10.02 & 15.97 & 12.64 & 4.19 & 20.01 & 13.06 & 10.18 & 14.42 & 5.60 \\
 
-DARE-Linear\pub{ICML 2024} & 23.97 & 11.29 & 13.87 & 16.38 & 28.50 & 10.02 & 12.04 & 16.85 & 15.34 & 9.46 & 7.04 & 10.61 & 7.48 & 5.49 & 16.11 & 9.69 & 13.66 & 10.51 & 14.35 & 12.84 \\
-
-\rowcolor{gray!10}
-DARE-TIES\pub{ICML 2024} & 7.35 & 11.89 & 11.46 & 10.23 & 27.35 & 45.02 & 35.28 & 35.88 & 12.52 & 9.03 & 10.33 & 10.63 & 5.41 & 8.74 & 5.91 & 6.69 & 14.47 & 11.20 & 10.42 & 12.03 \\
-
-RegMean\pub{ICLR 2023} & 17.48 & 14.17 & 12.90 & 14.85 & 51.14 & 36.67 & 66.58 & 51.46 & 12.50 & 9.64 & 9.83 & 10.66 & 12.63 & 7.17 & 10.68 & 10.16 & 14.91 & 13.84 & 11.44 & 13.40 \\
+DARE-Linear\pub{ICML 2024} & 23.97 & 11.29 & 13.87 & 16.38 & 6.59 & 28.50 & 10.02 & 12.04 & 16.85 & 4.91 & 15.34 & 9.46 & 7.04 & 10.61 & 4.61 & 7.48 & 5.49 & 16.11 & 9.69 & 3.38 & 13.66 & 10.51 & 14.35 & 12.84 & 3.16 \\
 
 \rowcolor{gray!10}
-Fisher\pub{NeurIPS 2022} & 11.66 & 15.12 & 19.44 & 15.41 & 47.80 & 20.42 & 48.20 & 38.81 & 7.99 & 10.72 & 14.24 & 10.98 & 8.56 & 12.18 & 12.22 & 10.99 & 16.11 & 13.15 & 14.20 & 14.49 \\
+DARE-TIES\pub{ICML 2024} & 7.35 & 11.89 & 11.46 & 10.23 & 2.77 & 27.35 & 45.02 & 35.28 & 35.88 & 8.14 & 12.52 & 9.03 & 10.33 & 10.63 & 4.49 & 5.41 & 8.74 & 5.91 & 6.69 & 2.29 & 14.47 & 11.20 & 10.42 & 12.03 & 3.96 \\
 
-Breadcrumbs\pub{ECCV 2024} & 13.63 & 10.39 & 13.00 & 12.34 & 4.89 & 25.72 & 6.07 & 12.23 & 7.73 & 10.00 & 16.44 & 11.39 & 12.37 & 4.83 & 12.19 & 9.80 & 13.60 & 11.41 & 15.24 & 13.42 \\
-
-\rowcolor{gray!10}
-Model Stock\pub{ECCV 2024} & 19.40 & 11.20 & 11.34 & 13.98 & 38.05 & 30.79 & 27.35 & 32.06 & 14.88 & 12.27 & 12.15 & 13.10 & 8.93 & 8.59 & 18.67 & 12.06 & 15.99 & 18.09 & 16.41 & 16.83 \\
-
-Iso-C\pub{ICML 2025} & 12.34 & 14.83 & 10.18 & 12.45 & 57.09 & 45.29 & 23.06 & 41.81 & 10.84 & 5.67 & 8.97 & 8.49 & 6.11 & 5.31 & 10.81 & 7.41 & 14.17 & 15.27 & 18.69 & 16.04 \\
+RegMean\pub{ICLR 2023} & 17.48 & 14.17 & 12.90 & 14.85 & 5.71 & 51.14 & 36.67 & 66.58 & 51.46 & 10.14 & 12.50 & 9.64 & 9.83 & 10.66 & 3.98 & 12.63 & 7.17 & 10.68 & 10.16 & 3.62 & 14.91 & 13.84 & 11.44 & 13.40 & 6.24 \\
 
 \rowcolor{gray!10}
-Free-Merging\pub{ICCV 2025} & 19.89 & 14.57 & 13.92 & 16.13 & 46.30 & 47.70 & 38.55 & 44.18 & 14.25 & 9.80 & 7.59 & 10.55 & 7.27 & 9.14 & 16.43 & 10.95 & 14.05 & 15.93 & 16.47 & 15.48 \\
+Fisher\pub{NeurIPS 2022} & 11.66 & 15.12 & 19.44 & 15.41 & 4.34 & 47.80 & 20.42 & 48.20 & 38.81 & 8.61 & 7.99 & 10.72 & 14.24 & 10.98 & 4.44 & 8.56 & 12.18 & 12.22 & 10.99 & 4.68 & 16.11 & 13.15 & 14.20 & 14.49 & 5.96 \\
 
-RobustMerge\pub{NeurIPS 2025} & 14.82 & 10.70 & 14.25 & 13.26 & 3.47 & 27.68 & 17.24 & 16.13 & 9.54 & 6.17 & 14.38 & 10.03 & 12.60 & 7.07 & 12.17 & 10.61 & 16.98 & 18.54 & 15.63 & 17.05 \\
+Breadcrumbs\pub{ECCV 2024} & 13.63 & 10.39 & 13.00 & 12.34 & 3.24 & 4.89 & 25.72 & 6.07 & 12.23 & 3.29 & 7.73 & 10.00 & 16.44 & 11.39 & 4.22 & 12.37 & 4.83 & 12.19 & 9.80 & 3.23 & 13.60 & 11.41 & 15.24 & 13.42 & 3.85 \\
 
 \rowcolor{gray!10}
-FROM\pub{AAAI 2026} & 18.02 & 7.81 & 14.05 & 13.29 & 46.95 & 51.21 & 66.88 & 55.01 & 21.48 & 13.01 & 9.72 & 14.74 & 7.72 & 7.98 & 14.85 & 10.18 & 18.36 & 17.43 & 17.76 & 17.85 \\
+Model Stock\pub{ECCV 2024} & 19.40 & 11.20 & 11.34 & 13.98 & 4.50 & 38.05 & 30.79 & 27.35 & 32.06 & 7.42 & 14.88 & 12.27 & 12.15 & 13.10 & 6.10 & 8.93 & 8.59 & 18.67 & 12.06 & 4.51 & 15.99 & 18.09 & 16.41 & 16.83 & 5.55 \\
+
+Iso-C\pub{ICML 2025} & 12.34 & 14.83 & 10.18 & 12.45 & 4.24 & 57.09 & 45.29 & 23.06 & 41.81 & 10.06 & 10.84 & 5.67 & 8.97 & 8.49 & 4.09 & 6.11 & 5.31 & 10.81 & 7.41 & 3.34 & 14.17 & 15.27 & 18.69 & 16.04 & 6.93 \\
+
+\rowcolor{gray!10}
+Free-Merging\pub{ICCV 2025} & 19.89 & 14.57 & 13.92 & 16.13 & 6.22 & 46.30 & 47.70 & 38.55 & 44.18 & 8.99 & 14.25 & 9.80 & 7.59 & 10.55 & 4.18 & 7.27 & 9.14 & 16.43 & 10.95 & 3.68 & 14.05 & 15.93 & 16.47 & 15.48 & 4.71 \\
+
+RobustMerge\pub{NeurIPS 2025} & 14.82 & 10.70 & 14.25 & 13.26 & 3.30 & 3.47 & 27.68 & 17.24 & 16.13 & 4.94 & 9.54 & 6.17 & 14.38 & 10.03 & 3.77 & 12.60 & 7.07 & 12.17 & 10.61 & 3.32 & 16.98 & 18.54 & 15.63 & 17.05 & 6.16 \\
+
+\rowcolor{gray!10}
+FROM\pub{AAAI 2026} & 18.02 & 7.81 & 14.05 & 13.29 & 4.65 & 46.95 & 51.21 & 66.88 & 55.01 & 10.46 & 21.48 & 13.01 & 9.72 & 14.74 & 6.41 & 7.72 & 7.98 & 14.85 & 10.18 & 3.94 & 18.36 & 17.43 & 17.76 & 17.85 & 7.80 \\
 
 \hline \hline
 \rowcolor[HTML]{FFF9C4}
-\textbf{LAMP-Merge} &
-\textbf{85.21} &
-\textbf{85.06} &
-\textbf{84.98} &
-\textbf{85.09} &
-\textbf{59.45} &
-\textbf{59.32} &
-\textbf{59.83} &
-\textbf{59.53} &
-\textbf{58.78} &
-\textbf{58.40} &
-\textbf{58.29} &
-\textbf{58.49} &
-\textbf{54.39} &
-\textbf{54.51} &
-\textbf{54.65} &
-\textbf{54.52} &
-\textbf{46.12} &
-\textbf{45.97} &
-\textbf{45.94} &
-\textbf{46.01} \\
+\textbf{LAMP-Merge} & \textbf{85.21} & \textbf{85.06} & \textbf{84.98} & \textbf{85.09} & \textbf{82.95} & \textbf{59.45} & \textbf{59.32} & \textbf{59.83} & \textbf{59.53} & \textbf{36.68} & \textbf{58.78} & \textbf{58.40} & \textbf{58.29} & \textbf{58.49} & \textbf{57.04} & \textbf{54.39} & \textbf{54.51} & \textbf{54.65} & \textbf{54.52} & \textbf{52.18} & \textbf{46.12} & \textbf{45.97} & \textbf{45.94} & \textbf{46.01} & \textbf{42.22} \\
 \end{tabular}%
 }
 \end{table*}
@@ -747,80 +582,60 @@ FROM\pub{AAAI 2026} & 18.02 & 7.81 & 14.05 & 13.29 & 46.95 & 51.21 & 66.88 & 55.
 \begin{table*}[!t]
 \centering
 \renewcommand{\arraystretch}{1.35}
-\caption{Client-average test accuracy (\%) on Swin-Tiny. Each entry averages the three Dirichlet settings for a fixed client number; Avg denotes the mean over $K=3,5,7$ within the corresponding dataset.}
+\caption{Client-average test accuracy and Macro-F1 (\%) on Swin-Tiny. Each entry averages the three Dirichlet settings for a fixed client number; Avg denotes the mean Accuracy over $K=3,5,7$ within the corresponding dataset; F1 denotes Macro-F1 averaged over the same cells.}
 \label{tab:client-avg-swin-tiny}
-\resizebox{0.90\textwidth}{!}{%
-\begin{tabular}{l||ccc:c|ccc:c|ccc:c|ccc:c|ccc:c}
+\resizebox{\textwidth}{!}{%
+\begin{tabular}{l||ccc:cc|ccc:cc|ccc:cc|ccc:cc|ccc:cc}
 \noalign{\hrule height 1.25pt}
 \rowcolor[HTML]{F2F2F2}
  &
-\multicolumn{4}{c|}{\textbf{Blood}} &
-\multicolumn{4}{c|}{\textbf{Derma}} &
-\multicolumn{4}{c|}{\textbf{Organ-C}} &
-\multicolumn{4}{c|}{\textbf{Organ-S}} &
-\multicolumn{4}{c}{\textbf{Ultrasound}} \\
+\multicolumn{5}{c|}{\textbf{Blood}} &
+\multicolumn{5}{c|}{\textbf{Derma}} &
+\multicolumn{5}{c|}{\textbf{Organ-C}} &
+\multicolumn{5}{c|}{\textbf{Organ-S}} &
+\multicolumn{5}{c}{\textbf{Ultrasound}} \\
 \rowcolor[HTML]{F2F2F2}
 \multirow{-2}{*}{\textbf{Method}}
-& \textbf{$K=3$} & \textbf{$K=5$} & \textbf{$K=7$} & \textbf{Avg}
-& \textbf{$K=3$} & \textbf{$K=5$} & \textbf{$K=7$} & \textbf{Avg}
-& \textbf{$K=3$} & \textbf{$K=5$} & \textbf{$K=7$} & \textbf{Avg}
-& \textbf{$K=3$} & \textbf{$K=5$} & \textbf{$K=7$} & \textbf{Avg}
-& \textbf{$K=3$} & \textbf{$K=5$} & \textbf{$K=7$} & \textbf{Avg} \\
+& \textbf{$K=3$} & \textbf{$K=5$} & \textbf{$K=7$} & \textbf{Avg} & \textbf{F1}
+& \textbf{$K=3$} & \textbf{$K=5$} & \textbf{$K=7$} & \textbf{Avg} & \textbf{F1}
+& \textbf{$K=3$} & \textbf{$K=5$} & \textbf{$K=7$} & \textbf{Avg} & \textbf{F1}
+& \textbf{$K=3$} & \textbf{$K=5$} & \textbf{$K=7$} & \textbf{Avg} & \textbf{F1}
+& \textbf{$K=3$} & \textbf{$K=5$} & \textbf{$K=7$} & \textbf{Avg} & \textbf{F1} \\
 \hline \hline
 
-Weight Avg. & 15.65 & 11.86 & 15.24 & 14.25 & 45.69 & 48.30 & 66.88 & 53.62 & 10.68 & 12.94 & 7.87 & 10.50 & 6.82 & 6.04 & 13.81 & 8.89 & 15.27 & 12.94 & 14.65 & 14.29 \\
+Weight Avg. & 15.65 & 11.86 & 15.24 & 14.25 & 3.18 & 45.69 & 48.30 & 66.88 & 53.62 & 9.33 & 10.68 & 12.94 & 7.87 & 10.50 & 2.48 & 6.82 & 6.04 & 13.81 & 8.89 & 1.76 & 15.27 & 12.94 & 14.65 & 14.29 & 3.18 \\
 
 \rowcolor{gray!10}
-TIES\pub{NeurIPS 2023} & 9.72 & 11.90 & 13.84 & 11.82 & 8.41 & 7.80 & 66.88 & 27.70 & 11.60 & 7.02 & 9.34 & 9.32 & 7.34 & 6.07 & 11.07 & 8.16 & 16.95 & 13.03 & 12.61 & 14.20 \\
+TIES\pub{NeurIPS 2023} & 9.72 & 11.90 & 13.84 & 11.82 & 2.60 & 8.41 & 7.80 & 66.88 & 27.70 & 5.22 & 11.60 & 7.02 & 9.34 & 9.32 & 2.41 & 7.34 & 6.07 & 11.07 & 8.16 & 1.92 & 16.95 & 13.03 & 12.61 & 14.20 & 4.13 \\
 
-DARE-Linear\pub{ICML 2024} & 15.65 & 11.61 & 18.25 & 15.17 & 45.69 & 27.71 & 46.30 & 39.90 & 11.55 & 12.72 & 7.76 & 10.68 & 6.40 & 7.20 & 13.81 & 9.14 & 17.43 & 15.36 & 14.97 & 15.92 \\
-
-\rowcolor{gray!10}
-DARE-TIES\pub{ICML 2024} & 13.84 & 11.62 & 13.84 & 13.10 & 29.61 & 26.38 & 66.88 & 40.96 & 12.76 & 7.74 & 11.16 & 10.55 & 11.94 & 4.34 & 12.30 & 9.53 & 17.91 & 13.51 & 13.00 & 14.81 \\
-
-RegMean\pub{ICLR 2023} & 13.74 & 17.15 & 15.78 & 15.56 & 27.05 & 46.30 & 45.69 & 39.68 & 14.11 & 7.73 & 8.11 & 9.98 & 12.15 & 8.21 & 9.26 & 9.87 & 14.65 & 11.05 & 17.79 & 14.50 \\
+DARE-Linear\pub{ICML 2024} & 15.65 & 11.61 & 18.25 & 15.17 & 3.87 & 45.69 & 27.71 & 46.30 & 39.90 & 7.09 & 11.55 & 12.72 & 7.76 & 10.68 & 2.48 & 6.40 & 7.20 & 13.81 & 9.14 & 2.00 & 17.43 & 15.36 & 14.97 & 15.92 & 4.22 \\
 
 \rowcolor{gray!10}
-Fisher\pub{NeurIPS 2022} & 16.33 & 17.56 & 15.65 & 16.51 & 45.82 & 6.52 & 47.18 & 33.17 & 8.14 & 8.99 & 9.78 & 8.97 & 6.51 & 6.50 & 10.92 & 7.98 & 17.46 & 11.65 & 17.55 & 15.55 \\
+DARE-TIES\pub{ICML 2024} & 13.84 & 11.62 & 13.84 & 13.10 & 2.85 & 29.61 & 26.38 & 66.88 & 40.96 & 7.34 & 12.76 & 7.74 & 11.16 & 10.55 & 2.71 & 11.94 & 4.34 & 12.30 & 9.53 & 3.01 & 17.91 & 13.51 & 13.00 & 14.81 & 3.66 \\
 
-Breadcrumbs\pub{ECCV 2024} & 15.00 & 13.65 & 15.37 & 14.67 & 6.47 & 27.71 & 7.15 & 13.78 & 14.45 & 17.83 & 16.60 & 16.29 & 23.54 & 20.77 & 21.11 & 21.81 & 14.50 & 13.12 & 16.53 & 14.72 \\
-
-\rowcolor{gray!10}
-Model Stock\pub{ECCV 2024} & 13.74 & 14.40 & 17.15 & 15.10 & 45.69 & 27.71 & 48.25 & 40.55 & 11.10 & 7.71 & 14.04 & 10.95 & 6.71 & 11.06 & 17.14 & 11.64 & 15.39 & 12.73 & 18.69 & 15.60 \\
-
-Iso-C\pub{ICML 2025} & 14.30 & 17.22 & 17.00 & 16.17 & 30.99 & 28.40 & 51.74 & 37.04 & 13.02 & 13.27 & 14.69 & 13.66 & 15.45 & 17.27 & 18.80 & 17.17 & 17.55 & 17.31 & 17.91 & 17.59 \\
+RegMean\pub{ICLR 2023} & 13.74 & 17.15 & 15.78 & 15.56 & 3.37 & 27.05 & 46.30 & 45.69 & 39.68 & 7.03 & 14.11 & 7.73 & 8.11 & 9.98 & 3.12 & 12.15 & 8.21 & 9.26 & 9.87 & 2.29 & 14.65 & 11.05 & 17.79 & 14.50 & 6.29 \\
 
 \rowcolor{gray!10}
-Free-Merging\pub{ICCV 2025} & 11.54 & 8.61 & 18.40 & 12.85 & 45.69 & 48.30 & 66.88 & 53.62 & 9.59 & 13.77 & 8.90 & 10.75 & 6.82 & 4.97 & 10.62 & 7.47 & 15.18 & 15.75 & 15.99 & 15.64 \\
+Fisher\pub{NeurIPS 2022} & 16.33 & 17.56 & 15.65 & 16.51 & 3.49 & 45.82 & 6.52 & 47.18 & 33.17 & 7.14 & 8.14 & 8.99 & 9.78 & 8.97 & 2.64 & 6.51 & 6.50 & 10.92 & 7.98 & 2.77 & 17.46 & 11.65 & 17.55 & 15.55 & 4.63 \\
 
-RobustMerge\pub{NeurIPS 2025} & 13.74 & 14.09 & 16.70 & 14.84 & 23.77 & 27.71 & 5.04 & 18.84 & 16.01 & 14.42 & 19.60 & 16.68 & 16.73 & 11.51 & 20.77 & 16.34 & 17.61 & 13.15 & 16.29 & 15.68 \\
+Breadcrumbs\pub{ECCV 2024} & 15.00 & 13.65 & 15.37 & 14.67 & 3.48 & 6.47 & 27.71 & 7.15 & 13.78 & 3.59 & 14.45 & 17.83 & 16.60 & 16.29 & 3.49 & 23.54 & 20.77 & 21.11 & 21.81 & 3.38 & 14.50 & 13.12 & 16.53 & 14.72 & 4.28 \\
 
 \rowcolor{gray!10}
-FROM\pub{AAAI 2026} & 15.65 & 14.95 & 16.71 & 15.77 & 45.69 & 29.71 & 66.88 & 47.43 & 11.74 & 12.20 & 10.51 & 11.48 & 11.33 & 10.16 & 13.80 & 11.76 & 15.39 & 12.52 & 14.76 & 14.22 \\
+Model Stock\pub{ECCV 2024} & 13.74 & 14.40 & 17.15 & 15.10 & 3.41 & 45.69 & 27.71 & 48.25 & 40.55 & 7.32 & 11.10 & 7.71 & 14.04 & 10.95 & 2.59 & 6.71 & 11.06 & 17.14 & 11.64 & 3.04 & 15.39 & 12.73 & 18.69 & 15.60 & 4.69 \\
+
+Iso-C\pub{ICML 2025} & 14.30 & 17.22 & 17.00 & 16.17 & 7.83 & 30.99 & 28.40 & 51.74 & 37.04 & 8.63 & 13.02 & 13.27 & 14.69 & 13.66 & 6.64 & 15.45 & 17.27 & 18.80 & 17.17 & 8.22 & 17.55 & 17.31 & 17.91 & 17.59 & 7.56 \\
+
+\rowcolor{gray!10}
+Free-Merging\pub{ICCV 2025} & 11.54 & 8.61 & 18.40 & 12.85 & 4.03 & 45.69 & 48.30 & 66.88 & 53.62 & 9.33 & 9.59 & 13.77 & 8.90 & 10.75 & 2.54 & 6.82 & 4.97 & 10.62 & 7.47 & 1.34 & 15.18 & 15.75 & 15.99 & 15.64 & 4.70 \\
+
+RobustMerge\pub{NeurIPS 2025} & 13.74 & 14.09 & 16.70 & 14.84 & 3.26 & 23.77 & 27.71 & 5.04 & 18.84 & 3.64 & 16.01 & 14.42 & 19.60 & 16.68 & 3.74 & 16.73 & 11.51 & 20.77 & 16.34 & 3.89 & 17.61 & 13.15 & 16.29 & 15.68 & 4.91 \\
+
+\rowcolor{gray!10}
+FROM\pub{AAAI 2026} & 15.65 & 14.95 & 16.71 & 15.77 & 3.38 & 45.69 & 29.71 & 66.88 & 47.43 & 8.37 & 11.74 & 12.20 & 10.51 & 11.48 & 2.86 & 11.33 & 10.16 & 13.80 & 11.76 & 3.20 & 15.39 & 12.52 & 14.76 & 14.22 & 3.98 \\
 
 \hline \hline
 \rowcolor[HTML]{FFF9C4}
-\textbf{LAMP-Merge} &
-\textbf{77.38} &
-\textbf{77.34} &
-\textbf{77.17} &
-\textbf{77.30} &
-\textbf{63.24} &
-\textbf{63.18} &
-\textbf{63.09} &
-\textbf{63.17} &
-\textbf{68.49} &
-\textbf{68.17} &
-\textbf{68.12} &
-\textbf{68.26} &
-\textbf{62.58} &
-\textbf{62.80} &
-\textbf{62.84} &
-\textbf{62.74} &
-\textbf{47.71} &
-\textbf{48.70} &
-\textbf{48.40} &
-\textbf{48.27} \\
+\textbf{LAMP-Merge} & \textbf{77.38} & \textbf{77.34} & \textbf{77.17} & \textbf{77.30} & \textbf{75.77} & \textbf{63.24} & \textbf{63.18} & \textbf{63.09} & \textbf{63.17} & \textbf{27.95} & \textbf{68.49} & \textbf{68.17} & \textbf{68.12} & \textbf{68.26} & \textbf{65.51} & \textbf{62.58} & \textbf{62.80} & \textbf{62.84} & \textbf{62.74} & \textbf{58.35} & \textbf{47.71} & \textbf{48.70} & \textbf{48.40} & \textbf{48.27} & \textbf{46.31} \\
 \end{tabular}%
 }
 \end{table*}
@@ -828,35 +643,34 @@ FROM\pub{AAAI 2026} & 15.65 & 14.95 & 16.71 & 15.77 & 45.69 & 29.71 & 66.88 & 47
 
 \subsection{Ablation Study}
 
-To assess DPR and LPC, we conduct module ablations under the main experimental configuration. Weight averaging, weight averaging + DPR, and full LAMP-Merge obtain mean ACC of 22.04\%, 58.91\%, and 62.21\%, respectively; Fig.~\ref{fig:baseline-2x2-ablation} further reports strict $2\times2$ TIES/DARE controls.
+To assess DPR and LPC, we conduct module ablations under the main experimental configuration. Weight averaging, weight averaging + DPR, and full LAMP-Merge obtain mean ACC of 22.04\%, 58.91\%, and 62.21\%, respectively; Fig.~\ref{fig:baseline-2x2-ablation} further reports the results that use TIES/DARE as baselines.
 
 \subsubsection{1) Effectiveness of DPR}
-To identify the necessary components of DPR, we retain LPC and replace its prototype semantics with classifier-head aggregation (CHA), global-feature mean (GFM), support-only synthetic head (SSH), or shuffled-label prototype (SLP). These settings test head directions, class conditioning, synthetic directions, and label--prototype alignment. We also replace its client-support weighting with uniform client weight (UCW), binary support only (BSO), or global client-size weight (GCSW), which test the reliability assigned to each observed class.
-
+To identify the necessary components of DPR, we retain LPC and probe two design axes. The first axis alters the \emph{prototype semantics}: classifier-head aggregation (CHA) swaps each class prototype for the local classifier-head direction, testing whether independently trained heads already share a class-aligned representation; global-feature mean (GFM) reuses one class-agnostic feature mean for every class, testing whether generic client appearance alone can drive merging; support-only synthetic head (SSH) keeps the cosine-head interface but fills it with a fixed random unit vector, testing whether the head form or support counts suffice without diagnostic content; and shuffled-label prototype (SLP) permutes prototypes across labels, testing whether class evidence must be assigned to the correct output class. The second axis alters the \emph{client-support weighting}: uniform client weight (UCW) credits every observing client equally regardless of sample count; binary support only (BSO) collapses both support and prevalence to presence indicators, removing all frequency information; and global client-size weight (GCSW) weights by a client's total size rather than its class-specific support. These probe how reliably each observed class should be credited.
 
 \begin{table}[!t]
 \centering
-\caption{DPR internal ablation by dataset. Each entry averages all backbones, client counts, and Dirichlet settings; Avg averages the five datasets.}
+\caption{DPR internal ablation by dataset. Each entry averages all backbones, client counts, and Dirichlet settings; Avg averages the five-dataset Accuracy and F1 reports Macro-F1 over the same full scope.}
 \label{tab:diagnostic-internal-ablation}
 \scriptsize
 \renewcommand{\arraystretch}{1.20}
 \setlength{\tabcolsep}{2.4pt}
 \resizebox{\columnwidth}{!}{%
-\begin{tabular}{clccccc:c}
+\begin{tabular}{clccccc:cc}
 \noalign{\hrule height 1.25pt}
 \rowcolor[HTML]{F2F2F2}
-\textbf{Category} & \textbf{Setting} & \textbf{Blood} & \textbf{Derma} & \textbf{Organ-C} & \textbf{Organ-S} & \textbf{US} & \textbf{Avg} \\
+\textbf{Category} & \textbf{Setting} & \textbf{Blood} & \textbf{Derma} & \textbf{Organ-C} & \textbf{Organ-S} & \textbf{US} & \textbf{Avg} & \textbf{F1} \\
 \hline \hline
-\multirow{4}{*}{\shortstack{Prototype\\semantics}} & CHA & 18.95 & 56.14 & 17.74 & 18.88 & 16.43 & 25.63 \\
- & \cellcolor{gray!10}GFM & \cellcolor{gray!10}8.88 & \cellcolor{gray!10}66.88 & \cellcolor{gray!10}22.33 & \cellcolor{gray!10}23.54 & \cellcolor{gray!10}10.87 & \cellcolor{gray!10}26.50 \\
- & SSH & 11.62 & 17.29 & 7.08 & 7.74 & 10.69 & 10.89 \\
- & \cellcolor{gray!10}SLP & \cellcolor{gray!10}24.46 & \cellcolor{gray!10}28.73 & \cellcolor{gray!10}14.18 & \cellcolor{gray!10}16.25 & \cellcolor{gray!10}14.25 & \cellcolor{gray!10}19.57 \\
+\multirow{4}{*}{\shortstack{Prototype\\semantics}} & CHA & 18.95 & 56.14 & 17.74 & 18.88 & 16.43 & 25.63  & 9.34 \\
+ & \cellcolor{gray!10}GFM & \cellcolor{gray!10}8.88 & \cellcolor{gray!10}66.88 & \cellcolor{gray!10}22.33 & \cellcolor{gray!10}23.54 & \cellcolor{gray!10}10.87 & \cellcolor{gray!10}26.50  & \cellcolor{gray!10}4.47 \\
+ & SSH & 11.62 & 17.29 & 7.08 & 7.74 & 10.69 & 10.89  & 5.77 \\
+ & \cellcolor{gray!10}SLP & \cellcolor{gray!10}24.46 & \cellcolor{gray!10}28.73 & \cellcolor{gray!10}14.18 & \cellcolor{gray!10}16.25 & \cellcolor{gray!10}14.25 & \cellcolor{gray!10}19.57  & \cellcolor{gray!10}13.10 \\
 \hdashline
-\multirow{3}{*}{\shortstack{Client-support\\weighting}} & UCW & 78.03 & 59.61 & 58.36 & 53.86 & 41.79 & 58.33 \\
- & \cellcolor{gray!10}BSO & \cellcolor{gray!10}78.03 & \cellcolor{gray!10}44.96 & \cellcolor{gray!10}57.86 & \cellcolor{gray!10}53.24 & \cellcolor{gray!10}41.79 & \cellcolor{gray!10}55.18 \\
- & GCSW & 78.45 & 62.48 & 59.11 & 53.79 & 43.13 & 59.39 \\
+\multirow{3}{*}{\shortstack{Client-support\\weighting}} & UCW & 78.03 & 59.61 & 58.36 & 53.86 & 41.79 & 58.33  & 48.42 \\
+ & \cellcolor{gray!10}BSO & \cellcolor{gray!10}78.03 & \cellcolor{gray!10}44.96 & \cellcolor{gray!10}57.86 & \cellcolor{gray!10}53.24 & \cellcolor{gray!10}41.79 & \cellcolor{gray!10}55.18  & \cellcolor{gray!10}49.02 \\
+ & GCSW & 78.45 & 62.48 & 59.11 & 53.79 & 43.13 & 59.39  & 48.74 \\
 \hline \hline
- & \cellcolor[HTML]{FFF9C4}\textbf{LAMP} & \cellcolor[HTML]{FFF9C4}\textbf{81.81} & \cellcolor[HTML]{FFF9C4}\textbf{62.40} & \cellcolor[HTML]{FFF9C4}\textbf{63.05} & \cellcolor[HTML]{FFF9C4}\textbf{57.67} & \cellcolor[HTML]{FFF9C4}\textbf{46.11} & \cellcolor[HTML]{FFF9C4}\textbf{62.21} \\
+ & \cellcolor[HTML]{FFF9C4}\textbf{LAMP} & \cellcolor[HTML]{FFF9C4}\textbf{81.81} & \cellcolor[HTML]{FFF9C4}\textbf{62.40} & \cellcolor[HTML]{FFF9C4}\textbf{63.05} & \cellcolor[HTML]{FFF9C4}\textbf{57.67} & \cellcolor[HTML]{FFF9C4}\textbf{46.11} & \cellcolor[HTML]{FFF9C4}\textbf{62.21}  & \cellcolor[HTML]{FFF9C4}\textbf{52.81} \\
 \noalign{\hrule height 1.25pt}
 \end{tabular}
 }
@@ -871,23 +685,23 @@ Table~\ref{tab:diagnostic-internal-ablation} and Fig.~\ref{fig:internal_module_a
 
 \begin{table}[!t]
 \centering
-\caption{LPC internal ablation by dataset. UPP uses a uniform prior, AOC removes the activation gate, and CBP averages client-normalized priors. Each entry averages all backbones, client counts, and Dirichlet settings; Avg averages the five datasets.}
+\caption{LPC internal ablation by dataset. UPP uses a uniform prior, AOC removes the activation gate, and CBP averages client-normalized priors. Each entry averages all backbones, client counts, and Dirichlet settings; Avg averages the five-dataset Accuracy and F1 reports Macro-F1 where prediction diagnostics are available.}
 \label{tab:prevalence-internal-ablation}
 \scriptsize
 \renewcommand{\arraystretch}{1.20}
 \setlength{\tabcolsep}{2.4pt}
 \resizebox{\columnwidth}{!}{%
-\begin{tabular}{lccccc:c}
+\begin{tabular}{lccccc:cc}
 \noalign{\hrule height 1.25pt}
 \rowcolor[HTML]{F2F2F2}
-\textbf{Setting} & \textbf{Blood} & \textbf{Derma} & \textbf{Organ-C} & \textbf{Organ-S} & \textbf{US} & \textbf{Avg} \\
+\textbf{Setting} & \textbf{Blood} & \textbf{Derma} & \textbf{Organ-C} & \textbf{Organ-S} & \textbf{US} & \textbf{Avg} & \textbf{F1} \\
 \hline \hline
-UPP & 81.81 & 46.58 & 62.57 & 57.50 & 46.11 & 58.91 \\
-AOC & 80.57 & 62.40 & 63.05 & 57.67 & 45.80 & 61.90 \\
-CBP & 81.25 & 49.61 & 62.10 & 57.12 & 44.76 & 58.97 \\
+UPP & 81.81 & 46.58 & 62.57 & 57.50 & 46.11 & 58.91  & 53.52 \\
+AOC & 80.57 & 62.40 & 63.05 & 57.67 & 45.80 & 61.90  & -- \\
+CBP & 81.25 & 49.61 & 62.10 & 57.12 & 44.76 & 58.97  & -- \\
 \hline \hline
 \rowcolor[HTML]{FFF9C4}
-\textbf{LAMP-Merge} & \textbf{81.81} & \textbf{62.40} & \textbf{63.05} & \textbf{57.67} & \textbf{46.11} & \textbf{62.21} \\
+\textbf{LAMP-Merge} & \textbf{81.81} & \textbf{62.40} & \textbf{63.05} & \textbf{57.67} & \textbf{46.11} & \textbf{62.21}  & \textbf{52.81} \\
 \noalign{\hrule height 1.25pt}
 \end{tabular}
 }
@@ -896,11 +710,12 @@ CBP & 81.25 & 49.61 & 62.10 & 57.12 & 44.76 & 58.97 \\
 \begin{figure}[!t]
     \centering
     \includegraphics[width=\columnwidth]{figures/02_internal_module_ablations.png}
-    \caption{Internal ablations of DPR and LPC. Definitions of the plotted abbreviations are provided in the supplementary ablation configurations.}
+    \caption{Internal ablations of DPR and LPC. The plotted abbreviations are defined in the ablation text above.}
+ 
     \label{fig:internal_module_ablations}
 \end{figure}
 
-To evaluate LPC, we retain DPR and compare its empirical prior with the uniform prevalence prior (UPP), always-on calibration (AOC), and client-balanced prior (CBP) across the full experimental setting. UPP tests whether measured medical prevalence is useful, AOC tests the activation gate, and CBP tests whether equal client influence can replace sample-weighted prevalence.
+To evaluate LPC, we retain DPR and compare its empirical prior against three controls across the full experimental setting. Uniform prevalence prior (UPP) replaces the measured class distribution with a flat prior, testing whether calibration should ignore observed prevalence altogether. Always-on calibration (AOC) removes the long-tail activation gate so the prior is applied to every configuration, testing whether the gate is a useful safeguard against calibrating near-balanced cases. Client-balanced prior (CBP) estimates the prior by averaging each client's normalized prevalence with equal weight, testing whether equal client influence can replace a sample-count-weighted prevalence estimate.
 
 Table~\ref{tab:prevalence-internal-ablation} and Fig.~\ref{fig:internal_module_ablations} show that LAMP-Merge is best and every control reduces ACC. This demonstrates that calibrated empirical prevalence and client-size-aware aggregation complement DPR.
 
@@ -911,8 +726,15 @@ Table~\ref{tab:prevalence-internal-ablation} and Fig.~\ref{fig:internal_module_a
 \label{fig:baseline-2x2-ablation}
 \end{figure}
 
-\subsection{Prediction-collapse Diagnostics}
-Because raw ACC can hide single-class predictions on long-tailed data, we additionally report collapse ratio, effective predicted classes, and predicted--true total variation\cite{BUDA2018249,5597285}.
+\subsection{Innovative prediction-collapse Diagnostics}
+Because raw ACC can hide single-class predictions on long-tailed data, we additionally report collapse ratio, effective predicted classes, and predicted--true total variation\cite{BUDA2018249,5597285}. With $q_c$ and $\bar{q}_c$ the predicted and true class distributions over the test set, the three diagnostics are
+\begin{equation}
+\begin{array}{c}
+\rho=\max_c q_c,\qquad C_{\mathrm{eff}}=\exp\left(-\sum_c q_c\log q_c\right),\\[3pt]
+\mathrm{TV}(q,\bar{q})=\frac{1}{2}\sum_c|q_c-\bar{q}_c|.
+\end{array}
+\end{equation}
+Lower $\rho$ and TV and higher $C_{\mathrm{eff}}$ indicate weaker prediction collapse.
 
 \begin{table}[!t]
 \centering
@@ -971,8 +793,8 @@ This single-factor ablation varies DPR's prototype-head scale \(s\) under severa
 We study one-shot medical model merging without raw-image sharing or federated rounds. Under incomplete local coverage, generic merges can collapse predictions, while raw ACC may conceal failure on long-tailed data. Across full-scope experiments, DPR restores class-level directions and LPC retains clinically meaningful prevalence without reintroducing collapse. Together, they offer a class-level interface for privacy-constrained collaboration.
 
 \bibliography{aaai2026}
-\appendix
-\def\appendixinmain{}
-\input{appendix}
+% \appendix
+% \def\appendixinmain{}
+% \input{appendix}
 
 \end{document}

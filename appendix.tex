@@ -10,6 +10,9 @@
 \usepackage{graphicx}
 \usepackage{natbib}
 \usepackage{caption}
+\usepackage{amsmath}
+\usepackage{amssymb}
+\usepackage{amsthm}
 \usepackage{algorithm}
 \usepackage{algorithmic}
 \usepackage[table]{xcolor}
@@ -19,17 +22,40 @@
 \frenchspacing
 \setlength{\pdfpagewidth}{8.5in}
 \setlength{\pdfpageheight}{11in}
+\setcounter{secnumdepth}{3} % number appendix sections so cross-references resolve
+
+% Theorem-like environments for the analysis section.
+\theoremstyle{definition}
+\newtheorem{assumption}{Assumption}
+\theoremstyle{plain}
+\newtheorem{proposition}{Proposition}
+\newtheorem{lemma}{Lemma}
+
+\title{Supplementary Material\\[2pt]
+\large LAMP-Merge: Long-tail-Aware Medical Prototype Merging\\
+for One-shot Asynchronous Clinical Models}
+\author{}
+\date{}
+
 \begin{document}
+\maketitle
 \appendix
 \fi
 
-\section{Supplementary Results and Analysis}
+\section{Overview of the Supplementary Material}
+
+This document is the self-contained supplement to the main paper. It is organized as follows.
+Section~\ref{app:datasets} gives a detailed, per-class description of the five MedMNIST~v2 benchmarks used in all experiments, including the exact training, validation, and test split sizes and representative samples.
+Section~\ref{app:ablation-configurations} specifies, for every internal ablation reported in the main paper, the exact quantity that is substituted in the LAMP-Merge pipeline, together with its measured effect; this makes each ablation label reproducible from the equations alone.
+Section~\ref{app:theory} develops the theoretical analysis behind the two modules: it states the estimation assumptions explicitly and proves (i) a bias--variance bound for the reconstructed prototypes, (ii) a sufficient condition under which prototype reconstruction preserves pairwise class margins, and (iii) the boundedness and gauge-invariance of the prevalence correction.
+Section~\ref{app:metric-geometry} defines the prediction-collapse metrics, and Section~\ref{app:repro} records the hyperparameter grid used for the sensitivity study.
+Notation follows the main paper: $K$ clients index $i$, $C$ diagnosis classes index $c$, $n_{i,c}$ is client $i$'s support for class $c$, $m_{i,c}$ its prevalence count, and $\phi_0(T(\cdot))$ the frozen reference encoder applied to the evaluation transform $T$.
+
+\section{Dataset Details}
+\label{app:datasets}
 \FloatBarrier
 
-\subsection{Detailed Dataset Description}
-\label{app:datasets}
-
-The experiments use five MedMNIST v2 benchmarks~\cite{yang2023medmnist}. They were selected to cover microscopy, dermoscopy, CT, and ultrasound while varying the number of diagnostic classes and the prevalence profile. Table~\ref{tab:dataset-statistics} reports the exact split sizes used by the experiments; the descriptions below clarify the recognition problem represented by each benchmark.
+The experiments use five MedMNIST~v2 benchmarks~\citep{yang2023medmnist}. They were selected to cover microscopy, dermoscopy, CT, and ultrasound while varying the number of diagnostic classes and the prevalence profile. The per-class tables in this section (Tables~\ref{tab:appendix-blood-classes}--\ref{tab:appendix-ultrasound-classes}) report the exact training, validation, and test split sizes used by the experiments; the descriptions below clarify the recognition problem represented by each benchmark.
 
 \paragraph{Blood.} BloodMNIST is an eight-class microscopy benchmark for recognizing peripheral blood-cell morphology. Its classes include granulocytes, lymphocytes, and other cells with visually similar staining patterns. Fine-grained morphology makes it a useful stress test for whether a merged classifier preserves class-specific directions rather than concentrating its predictions on a small subset of cells.
 
@@ -37,7 +63,7 @@ The experiments use five MedMNIST v2 benchmarks~\cite{yang2023medmnist}. They we
 
 \paragraph{Organ-C and Organ-S.} OrganCMNIST and OrganSMNIST provide 11-way abdominal CT organ recognition in coronal and sagittal views, respectively. The two views share the same broad task but change the visible anatomy and image geometry, testing robustness across CT planes.
 
-\paragraph{Ultrasound.} UltrasoundMNIST is an eight-class ultrasound-structure benchmark. Speckle noise, low contrast, and view-dependent boundaries make it particularly suitable for the prediction-collapse diagnostics and the per-class gap visualization in Fig.~\ref{fig:visual-chaosheng_predict}.
+\paragraph{Ultrasound.} UltrasoundMNIST is an eight-class ultrasound-structure benchmark. Speckle noise, low contrast, and view-dependent boundaries make it particularly suitable for the prediction-collapse diagnostics and the per-class gap visualization reported in the main paper.
 
 \newcommand{\classsample}[2]{\makebox[1.05cm][c]{\raisebox{-0.16cm}{\includegraphics[width=0.95cm,height=0.52cm,keepaspectratio]{figures/appendix_sample_#1_#2.png}}}}
 \newcommand{\datasetlabel}[1]{\makebox[1.35cm][c]{#1}}
@@ -49,7 +75,7 @@ The experiments use five MedMNIST v2 benchmarks~\cite{yang2023medmnist}. They we
 \renewcommand{\arraystretch}{1.25}
 \setlength{\tabcolsep}{3.8pt}
 \resizebox{\columnwidth}{!}{%
-\begin{tabular}{>{\columncolor{white}}clrrrr:c}
+\begin{tabular}{>{\cellcolor{white}}clrrrr:c}
 \noalign{\hrule height 1.25pt}
 \rowcolor[HTML]{F2F2F2}
 \multicolumn{1}{c}{\textbf{Dataset}} & \textbf{Class} & \textbf{Train} & \textbf{Val} & \textbf{Test} & \textbf{Total} & \textbf{Sample} \\
@@ -75,7 +101,7 @@ The experiments use five MedMNIST v2 benchmarks~\cite{yang2023medmnist}. They we
 \renewcommand{\arraystretch}{1.25}
 \setlength{\tabcolsep}{3.8pt}
 \resizebox{\columnwidth}{!}{%
-\begin{tabular}{>{\columncolor{white}}clrrrr:c}
+\begin{tabular}{>{\cellcolor{white}}clrrrr:c}
 \noalign{\hrule height 1.25pt}
 \rowcolor[HTML]{F2F2F2}
 \multicolumn{1}{c}{\textbf{Dataset}} & \textbf{Class} & \textbf{Train} & \textbf{Val} & \textbf{Test} & \textbf{Total} & \textbf{Sample} \\
@@ -100,7 +126,7 @@ The experiments use five MedMNIST v2 benchmarks~\cite{yang2023medmnist}. They we
 \renewcommand{\arraystretch}{1.25}
 \setlength{\tabcolsep}{3.8pt}
 \resizebox{\columnwidth}{!}{%
-\begin{tabular}{>{\columncolor{white}}clrrrr:c}
+\begin{tabular}{>{\cellcolor{white}}clrrrr:c}
 \noalign{\hrule height 1.25pt}
 \rowcolor[HTML]{F2F2F2}
 \multicolumn{1}{c}{\textbf{Dataset}} & \textbf{Class} & \textbf{Train} & \textbf{Val} & \textbf{Test} & \textbf{Total} & \textbf{Sample} \\
@@ -129,7 +155,7 @@ The experiments use five MedMNIST v2 benchmarks~\cite{yang2023medmnist}. They we
 \renewcommand{\arraystretch}{1.25}
 \setlength{\tabcolsep}{3.8pt}
 \resizebox{\columnwidth}{!}{%
-\begin{tabular}{>{\columncolor{white}}clrrrr:c}
+\begin{tabular}{>{\cellcolor{white}}clrrrr:c}
 \noalign{\hrule height 1.25pt}
 \rowcolor[HTML]{F2F2F2}
 \multicolumn{1}{c}{\textbf{Dataset}} & \textbf{Class} & \textbf{Train} & \textbf{Val} & \textbf{Test} & \textbf{Total} & \textbf{Sample} \\
@@ -158,7 +184,7 @@ The experiments use five MedMNIST v2 benchmarks~\cite{yang2023medmnist}. They we
 \renewcommand{\arraystretch}{1.25}
 \setlength{\tabcolsep}{3.8pt}
 \resizebox{\columnwidth}{!}{%
-\begin{tabular}{>{\columncolor{white}}clrrrr:c}
+\begin{tabular}{>{\cellcolor{white}}clrrrr:c}
 \noalign{\hrule height 1.25pt}
 \rowcolor[HTML]{F2F2F2}
 \multicolumn{1}{c}{\textbf{Dataset}} & \textbf{Class} & \textbf{Train} & \textbf{Val} & \textbf{Test} & \textbf{Total} & \textbf{Sample} \\
@@ -176,12 +202,12 @@ The experiments use five MedMNIST v2 benchmarks~\cite{yang2023medmnist}. They we
 }
 \end{table}
 
-\subsection{Detailed Ablation Configurations and Interpretation}
+\section{Ablation Configurations and Interpretation}
 \label{app:ablation-configurations}
 
-All internal ablations use the same five datasets, four backbones, client counts, and Dirichlet settings as the main experiment. Thus, a change in Table~\ref{tab:diagnostic-internal-ablation} or Table~\ref{tab:prevalence-internal-ablation} isolates one design choice while holding the remaining LAMP-Merge pipeline fixed.
+All internal ablations use the same five datasets, four backbones, client counts, and Dirichlet settings as the main experiment. Thus, each row of the DPR and LPC internal-ablation tables in the main paper isolates one design choice while holding the remaining LAMP-Merge pipeline fixed. Below we specify, for every ablation label, the exact quantity that is substituted and the mean accuracy it attains; the LAMP-Merge operating point attains $62.21\%$ mean accuracy under the same protocol and serves as the reference throughout.
 
-\subsubsection{Diagnostic Prototype Reconstruction}
+\subsection{Diagnostic Prototype Reconstruction}
 
 For class \(c\), DPR aggregates reference-space prototypes as
 \begin{equation}
@@ -220,7 +246,7 @@ Here \(N_i=\sum_k n_{i,k}\) is the total support of client \(i\). GCSW tests whe
 
 \paragraph{DPR summary.} The semantic controls cause large reductions (35.71--51.32 points), while the weighting controls cause smaller but consistent reductions (2.82--7.03 points). Together, these results support the two parts of Eq.~\ref{eq:appendix-dpr}: class-conditioned shared-space evidence provides the discriminative direction, and class-specific support determines how reliably each client contributes to that direction.
 
-\subsubsection{Long-tail Prevalence Calibration}
+\subsection{Long-tail Prevalence Calibration}
 
 LPC estimates an empirical prior and adds a centered, gated log-prior bias after DPR:
 \begin{equation}
@@ -246,54 +272,124 @@ It tests whether each client should contribute equally regardless of sample volu
 
 \paragraph{LPC summary.} Every LPC control is below the 62.21\% LAMP-Merge mean. UPP and CBP show that both prevalence information and its sample-size weighting matter; AOC shows that the activation criterion is a targeted safeguard rather than the primary source of the gain. Hence LPC calibrates DPR's restored class directions instead of replacing them with a prior.
 
-\subsection{Additional Analysis of DPR and LPC}
+\section{Theoretical Analysis}
+\label{app:theory}
 
-\subsubsection{Prototype estimation and class margins}
+This section makes precise the two claims that motivate LAMP-Merge: that support-aware prototype aggregation controls the estimation error of the reconstructed class directions (Sec.~\ref{app:theory-dpr}), and that the centered, gated log-prior of LPC is a \emph{bounded} correction that adjusts, rather than overrides, those directions (Sec.~\ref{app:theory-lpc}). We work throughout in the shared reference space induced by the frozen encoder $\phi_0(T(\cdot))$, so that all client prototypes live in a common coordinate system and can be compared directly.
 
-Let \(\mu_c^\star\) be the population class mean in the shared reference space. For client-level class estimates with bounded second moments, the mean-squared error of the aggregated prototype obeys
+\subsection{Assumptions}
+
+\begin{assumption}[Within-client sampling]
+\label{as:sampling}
+Fix a class $c$. For every client $i$ with support $n_{i,c}>0$, the reference features $\{\phi_0(T(x)):(x,y)\in D_{i},\,y=c\}$ are i.i.d.\ draws from a client-conditional distribution with mean $\mu_{i,c}^{\star}:=\mathrm{E}[\phi_0(T(x))\mid y=c,\text{client }i]$ and covariance $\Sigma_{i,c}$ satisfying $\operatorname{tr}(\Sigma_{i,c})\le\sigma_c^{2}$. Features drawn by different clients are mutually independent.
+\end{assumption}
+
+\begin{assumption}[Prevalence positivity]
+\label{as:prevalence}
+The global prior of Eq.~\ref{eq:appendix-lpc} satisfies $\pi_c\in[\pi_{\min},\pi_{\max}]\subseteq(0,1]$ for all $c$, with $\pi_{\min}>0$.
+\end{assumption}
+
+Assumption~\ref{as:sampling} is the standard i.i.d.\ model applied \emph{within} each client-class stratum; cross-client independence reflects that hospitals sample patients separately. It does not assume that the client means agree: $\mu_{i,c}^{\star}$ may differ across $i$ because of scanner or population shift, and this discrepancy is exactly the bias term isolated below. Assumption~\ref{as:prevalence} holds whenever every class is observed at the population level; in practice the additive count in $e_{i,c}$ and the empirical prior keep $\pi_{\min}>0$.
+
+\subsection{Prototype estimation and class margins}
+\label{app:theory-dpr}
+
+Recall from Eq.~\ref{eq:appendix-dpr} that the reconstructed prototype is the client mixture $p_c=\sum_{i}\alpha_{i,c}\mu_{i,c}$, where $\mu_{i,c}=n_{i,c}^{-1}\sum_{y=c}\phi_0(T(x))$ is the empirical client-class mean and $\alpha_{i,c}\ge0$, $\sum_i\alpha_{i,c}=1$, with $\alpha_{i,c}=0$ whenever $n_{i,c}=0$. Let $\mu_c^{\star}$ denote the target population mean for class $c$ in the reference space, and define the aggregation bias
 \begin{equation}
-\mathrm{E}\|p_c-\mu_c^\star\|_2^2
-\leq\sum_i\alpha_{i,c}^2\frac{\sigma_c^2}{n_{i,c}}+\mathrm{Bias}_c^2.
+\mathrm{Bias}_c:=\Big\|\sum_{i}\alpha_{i,c}\,\mu_{i,c}^{\star}-\mu_c^{\star}\Big\|_2 .
+\end{equation}
+
+\begin{proposition}[Bias--variance bound]
+\label{prop:bound}
+Under Assumption~\ref{as:sampling},
+\begin{equation}
+\mathrm{E}\big\|p_c-\mu_c^{\star}\big\|_2^{2}
+\;\le\;\sigma_c^{2}\sum_{i:\,n_{i,c}>0}\frac{\alpha_{i,c}^{2}}{n_{i,c}}
+\;+\;\mathrm{Bias}_c^{2}.
 \label{eq:prototype-bound}
 \end{equation}
-The first term is a variance contribution: it decreases with support \(n_{i,c}\), but only clients that observed class \(c\) may contribute. The second term represents systematic mismatch between a local class estimate and the shared-space population mean. Equation~\ref{eq:prototype-bound} explains both support-related controls: UCW ignores unequal estimation variance, whereas GCSW confuses total client size with the support relevant to class \(c\).
+\end{proposition}
 
-For a reference feature \(z=\phi_0(T(x))\), consider two candidate classes \(c\) and \(d\). The population margin is
+\begin{proof}
+Write $p_c-\mu_c^{\star}=(p_c-\mathrm{E}\,p_c)+(\mathrm{E}\,p_c-\mu_c^{\star})$. Since each $\mu_{i,c}$ is an average of $n_{i,c}$ i.i.d.\ features, $\mathrm{E}\,\mu_{i,c}=\mu_{i,c}^{\star}$ and $\mathrm{E}\,p_c=\sum_i\alpha_{i,c}\mu_{i,c}^{\star}$, so the second term has norm $\mathrm{Bias}_c$. The two terms are orthogonal in expectation because $\mathrm{E}[p_c-\mathrm{E}\,p_c]=0$, giving
+$\mathrm{E}\|p_c-\mu_c^{\star}\|_2^{2}=\mathrm{E}\|p_c-\mathrm{E}\,p_c\|_2^{2}+\mathrm{Bias}_c^{2}$.
+By cross-client independence (Assumption~\ref{as:sampling}) the variance term factorizes over clients,
 \begin{equation}
-\Delta_{c,d}(x)=(\mu_c^\star)^\top z-(\mu_d^\star)^\top z.
+\mathrm{E}\|p_c-\mathrm{E}\,p_c\|_2^{2}
+=\sum_{i}\alpha_{i,c}^{2}\,\mathrm{E}\|\mu_{i,c}-\mu_{i,c}^{\star}\|_2^{2},
 \end{equation}
-If
+and for an average of $n_{i,c}$ i.i.d.\ vectors $\mathrm{E}\|\mu_{i,c}-\mu_{i,c}^{\star}\|_2^{2}=\operatorname{tr}(\Sigma_{i,c})/n_{i,c}\le\sigma_c^{2}/n_{i,c}$. Terms with $n_{i,c}=0$ carry $\alpha_{i,c}=0$ and drop out, yielding \eqref{eq:prototype-bound}.
+\end{proof}
+
+Proposition~\ref{prop:bound} makes the role of the support-aware weight explicit. The variance term $\sigma_c^2\sum_i\alpha_{i,c}^2/n_{i,c}$ is minimized, for fixed support, by concentrating $\alpha_{i,c}$ on clients with large $n_{i,c}$, which is precisely what $e_{i,c}=(n_{i,c}+1)^{\gamma}\mathbf{1}[n_{i,c}>0]$ does; the indicator forces $\alpha_{i,c}=0$ for clients that never observed class $c$, keeping absent-class noise out of the sum. This is the quantity the weighting controls perturb: \textbf{UCW} sets $\alpha_{i,c}\propto\mathbf{1}[n_{i,c}>0]$ and so ignores the unequal variances $\sigma_c^2/n_{i,c}$, while \textbf{GCSW} weights by the total size $N_i=\sum_k n_{i,k}$ and thus couples the class-$c$ variance to support the client accumulated on \emph{other} classes. Both raise the bound in \eqref{eq:prototype-bound} relative to class-specific support weighting, matching their measured drops ($3.88$ and $2.82$ points).
+
+We now translate a small prototype error into preserved decision ordering. For a reference feature $z=\phi_0(T(x))$ define the population and reconstructed prototype margins between classes $c$ and $d$,
 \begin{equation}
-\|p_c-\mu_c^\star\|_2+\|p_d-\mu_d^\star\|_2
-<\frac{\Delta_{c,d}(x)}{\|z\|_2},
+\Delta_{c,d}(x)=(\mu_c^{\star}-\mu_d^{\star})^{\top}z,\qquad
+\widehat{\Delta}_{c,d}(x)=(p_c-p_d)^{\top}z .
+\end{equation}
+
+\begin{proposition}[Margin preservation]
+\label{prop:margin}
+Fix $x$ with $z\neq0$ and suppose $\Delta_{c,d}(x)>0$. If
+\begin{equation}
+\|p_c-\mu_c^{\star}\|_2+\|p_d-\mu_d^{\star}\|_2
+\;<\;\frac{\Delta_{c,d}(x)}{\|z\|_2},
 \label{eq:margin-condition}
 \end{equation}
-then the reconstructed prototypes preserve the ordering between \(c\) and \(d\). Thus, class-specific aggregation is not intended to reproduce arbitrary local heads: it reduces prototype error sufficiently to retain discriminative class margins. The large losses for CHA, GFM, SSH, and SLP are consistent with breaking precisely this semantic margin mechanism.
+then $\widehat{\Delta}_{c,d}(x)>0$; that is, the prototype classifier ranks $c$ above $d$ exactly as the population prototypes do.
+\end{proposition}
 
-\subsubsection{Bounded prevalence correction}
+\begin{proof}
+By linearity and the Cauchy--Schwarz inequality,
+\begin{align}
+|\widehat{\Delta}_{c,d}(x)-\Delta_{c,d}(x)|
+&=\big|(p_c-\mu_c^{\star})^{\top}z-(p_d-\mu_d^{\star})^{\top}z\big|\notag\\
+&\le\big(\|p_c-\mu_c^{\star}\|_2+\|p_d-\mu_d^{\star}\|_2\big)\|z\|_2 .
+\end{align}
+Under \eqref{eq:margin-condition} the right-hand side is strictly below $\Delta_{c,d}(x)$, hence $\widehat{\Delta}_{c,d}(x)>\Delta_{c,d}(x)-\Delta_{c,d}(x)=0$.
+\end{proof}
 
-The centering in Eq.~\ref{eq:appendix-lpc} removes the uniform component of the log prior. Therefore only relative scores change, with
+The cosine head $w_c=s\,p_c/\|p_c\|_2$ used by LAMP-Merge scores in the direction of $p_c$, so Proposition~\ref{prop:margin} is the relevant guarantee: whenever DPR drives the per-class error below half the population margin (in the metric of \eqref{eq:margin-condition}), the reconstructed head reproduces the population ranking. Proposition~\ref{prop:bound} shows that this error \emph{can} be made small by class-specific support weighting; Proposition~\ref{prop:margin} shows why doing so matters. The four semantic controls break the antecedent rather than the conclusion: \textbf{CHA} and \textbf{GFM} replace $\mu_{i,c}$ by quantities whose expectation is not $\mu_c^{\star}$ (an uncontrolled $\mathrm{Bias}_c$), \textbf{SSH} discards $\mu_{i,c}$ for a data-independent vector (so $\Delta_{c,d}$ carries no signal), and \textbf{SLP} permutes prototypes across labels, replacing $\Delta_{c,d}$ by $\Delta_{\sigma(c),\sigma(d)}$; each destroys the margin the proposition relies on, consistent with their large losses ($35.71$--$51.32$ points).
+
+\subsection{Bounded prevalence correction}
+\label{app:theory-lpc}
+
+We finally show that LPC is a bounded, gauge-fixed adjustment. Recall the centered log-prior bias $b_c=\lambda\big(\log\pi_c-\tfrac1C\sum_k\log\pi_k\big)$ from Eq.~\ref{eq:appendix-lpc}.
+
+\begin{proposition}[Zero-sum, invariance, and boundedness]
+\label{prop:lpc}
+Under Assumption~\ref{as:prevalence}, the bias satisfies:
+\begin{enumerate}
+\item[(i)] \emph{Zero-sum:} $\sum_{c=1}^{C}b_c=0$, so the correction adds no uniform shift to the logits.
+\item[(ii)] \emph{Gauge invariance:} $b_c-b_d=\lambda\log(\pi_c/\pi_d)$, independent of the centering constant; adding any constant to all class logits leaves every pairwise comparison, and hence the $\arg\max$, unchanged.
+\item[(iii)] \emph{Boundedness:} $|b_c|\le\lambda\log(\pi_{\max}/\pi_{\min})$ and $|b_c-b_d|\le\lambda\log(\pi_{\max}/\pi_{\min})$ for all $c,d$.
+\end{enumerate}
+\end{proposition}
+
+\begin{proof}
+(i) $\sum_c b_c=\lambda\big(\sum_c\log\pi_c-C\cdot\tfrac1C\sum_k\log\pi_k\big)=0$.
+(ii) The centering term is common to $b_c$ and $b_d$ and cancels, leaving $b_c-b_d=\lambda(\log\pi_c-\log\pi_d)$; since softmax and $\arg\max$ depend only on logit differences, the shared constant is irrelevant.
+(iii) Writing $\bar\ell=\tfrac1C\sum_k\log\pi_k$, we have $\log\pi_{\min}\le\bar\ell\le\log\pi_{\max}$, so $|\log\pi_c-\bar\ell|\le\log\pi_{\max}-\log\pi_{\min}=\log(\pi_{\max}/\pi_{\min})$; multiply by $\lambda$. The pairwise bound follows from $|\log\pi_c-\log\pi_d|\le\log(\pi_{\max}/\pi_{\min})$.
+\end{proof}
+
+Combining Propositions~\ref{prop:margin} and~\ref{prop:lpc} shows the two modules compose without conflict. The score used at test time is $\ell_c(x)=w_c^{\top}z+\mathbf{1}[r>\tau]\,b_c$, so calibration shifts the pairwise margin by at most $|b_c-b_d|\le\lambda\log(\pi_{\max}/\pi_{\min})$. Hence whenever the DPR margin already exceeds this bound, the class ordering is unchanged by LPC:
 \begin{equation}
-b_c-b_d=\lambda\log\frac{\pi_c}{\pi_d}.
+\widehat{\Delta}_{c,d}(x)\;>\;\lambda\log\frac{\pi_{\max}}{\pi_{\min}}
+\;\Longrightarrow\;
+\ell_c(x)>\ell_d(x).
 \end{equation}
-The gate \(\mathbf{1}[r>\tau]\) applies this relative correction only under sufficient prevalence imbalance, and the finite \(\lambda\) bounds its magnitude. DPR consequently supplies the class directions, while LPC adjusts the decision boundary only when the empirical class prevalence provides relevant evidence. This division also explains why a prevalence-only mechanism cannot solve the semantic controls in Table~\ref{tab:diagnostic-internal-ablation}.
+The correction therefore acts only on near-ties, tipping them toward the more prevalent class, and cannot override a confident reconstructed direction; the gate $\mathbf{1}[r>\tau]$ with $r=C\max_c\pi_c$ additionally switches it off when the configuration is close to balanced. This is the formal counterpart of the empirical finding that a prevalence-only mechanism cannot recover the semantic controls: by (i)--(ii) the bias contributes no class-discriminative direction of its own, and by (iii) its influence is bounded, so it can calibrate the directions DPR supplies but cannot substitute for them.
 
-\subsection{Metric Definitions}
+\section{Metric Definitions}
 \label{app:metric-geometry}
 
-Let \(y_n\) and \(\hat{y}_n\) denote the true and predicted labels of sample \(n\), respectively. Let \(q_c=N^{-1}\sum_n\mathbf{1}[\hat{y}_n=c]\) be the predicted class distribution and \(p_c=N^{-1}\sum_n\mathbf{1}[y_n=c]\) the true distribution. The prediction-collapse diagnostics are
-\begin{equation}
-\rho=\max_c q_c,\qquad
-C_{\mathrm{eff}}=\exp\left(-\sum_cq_c\log q_c\right).
-\end{equation}
-\begin{equation}
-\mathrm{TV}(q,p)=\frac{1}{2}\sum_c|q_c-p_c|.
-\end{equation}
-The collapse ratio \(\rho\) measures the largest predicted-class share, \(C_{\mathrm{eff}}\) measures the effective number of classes used by the predictor, and TV measures distributional disagreement with the labels. Lower \(\rho\) and TV and higher \(C_{\mathrm{eff}}\) are preferred. The absolute per-class gaps in Fig.~\ref{fig:visual-chaosheng_predict} are \(|q_c-p_c|\) in percentage points and expose which classes contribute to TV.
+Let \(y_n\) and \(\hat{y}_n\) denote the true and predicted labels of sample \(n\), respectively. Let \(q_c=N^{-1}\sum_n\mathbf{1}[\hat{y}_n=c]\) be the predicted class distribution and \(\bar{q}_c=N^{-1}\sum_n\mathbf{1}[y_n=c]\) the true distribution, as in the main-text collapse diagnostics. The collapse ratio \(\rho=\max_c q_c\) measures the largest predicted-class share, \(C_{\mathrm{eff}}=\exp(-\sum_c q_c\log q_c)\) measures the effective number of classes used by the predictor, and \(\mathrm{TV}(q,\bar{q})=\frac{1}{2}\sum_c|q_c-\bar{q}_c|\) measures distributional disagreement with the labels. Lower \(\rho\) and TV and higher \(C_{\mathrm{eff}}\) are preferred. The absolute per-class gaps visualized in the main paper are \(|q_c-\bar{q}_c|\) in percentage points and expose which classes contribute to TV.
 
-\subsection{Hyperparameter-Sweep Reproducibility}
+\section{Hyperparameter-Sweep Reproducibility}
+\label{app:repro}
 
-Every point in Fig.~\ref{fig:hparam-analysis} is a completed \textbf{full-scope experiment} covering five datasets, four backbones, three client counts, and three Dirichlet settings. The plotted curves retain measured points in ascending parameter order; no smoothing, interpolation, or best-run selection is applied. The LPC curves combine the completed \(\tau\in\{2.0,2.5,3.0\}\) grid with newly completed \(\tau\in\{1.5,3.5\}\) sweeps; the calibration strengths span \(\lambda\in\{3.00,3.25,\ldots,5.25\}\), with \(\gamma=0.55\) and \(s=18.75\) fixed. DPR completion records are plotted only after the full grid point has succeeded. The selected operating point is \(\gamma=0.55\), \(s=18.75\), \(\tau=2.5\), and \(\lambda=4.25\), making its reported value traceable to the same completed grid as its neighboring points.
+Every point in the hyperparameter-sensitivity study of the main paper is a completed \textbf{full-scope experiment} covering five datasets, four backbones, three client counts, and three Dirichlet settings. The plotted curves retain measured points in ascending parameter order; no smoothing, interpolation, or best-run selection is applied. The LPC grid records \(\tau\in\{2.0,2.5,3.0\}\) and calibration strengths \(\lambda\in\{3.00,3.25,\ldots,5.25\}\), with \(\gamma=0.55\) and \(s=18.75\) fixed. DPR completion records are plotted only after the full grid point has succeeded. The selected operating point is \(\gamma=0.55\), \(s=18.75\), \(\tau=2.5\), and \(\lambda=4.25\), making its reported value traceable to the same completed grid as its neighboring points.
 
 \ifdefined\appendixinmain
 \else

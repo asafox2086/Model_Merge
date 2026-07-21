@@ -1,10 +1,10 @@
-说明,本表对应 DPR 内部消融；各设置保留 LPC，仅替换诊断原型语义或类别支持权重。每个数据集数值对四个 backbone、K=3/5/7 和三个 beta 设置取平均，单位为 ACC 百分比。
-Setting,Mode,Blood ACC (%),Derma ACC (%),Organ-C ACC (%),Organ-S ACC (%),Ultrasound ACC (%),Avg ACC (%)
-Classifier-head aggregation,prototype_head_agg,18.95,56.14,17.74,18.88,16.43,25.63
-Global-feature mean,global_feature_mean,8.88,66.88,22.33,23.54,10.87,26.50
-Support-only synthetic head,support_only,11.62,17.29,7.08,7.74,10.69,10.89
-Shuffled-label prototype,prototype_shuffle,24.46,28.73,14.18,16.25,14.25,19.57
-Uniform client weight,uniform_client_weight,78.03,59.61,58.36,53.86,41.79,58.33
-Binary support only,binary_support,78.03,44.96,57.86,53.24,41.79,55.18
-Global client-size weight,global_client_size_weight,78.45,62.48,59.11,53.79,43.13,59.39
-LAMP-Merge,full,81.81,62.40,63.05,57.67,46.11,62.21
+说明,本表对应 DPR 内部消融；各设置保留 LPC，仅替换诊断原型语义或类别支持权重。每个数据集数值对四个 backbone、K=3/5/7 和三个 beta 设置取平均，单位为 ACC 与 Macro-F1 百分比。
+Setting,Mode,Blood ACC (%),Derma ACC (%),Organ-C ACC (%),Organ-S ACC (%),Ultrasound ACC (%),Avg ACC (%),Macro-F1 (%)
+Classifier-head aggregation,prototype_head_agg,18.95,56.14,17.74,18.88,16.43,25.63,9.34
+Global-feature mean,global_feature_mean,8.88,66.88,22.33,23.54,10.87,26.50,4.47
+Support-only synthetic head,support_only,11.62,17.29,7.08,7.74,10.69,10.89,5.77
+Shuffled-label prototype,prototype_shuffle,24.46,28.73,14.18,16.25,14.25,19.57,13.10
+Uniform client weight,uniform_client_weight,78.03,59.61,58.36,53.86,41.79,58.33,48.42
+Binary support only,binary_support,78.03,44.96,57.86,53.24,41.79,55.18,49.02
+Global client-size weight,global_client_size_weight,78.45,62.48,59.11,53.79,43.13,59.39,48.74
+LAMP-Merge,full,81.81,62.40,63.05,57.67,46.11,62.21,52.81
