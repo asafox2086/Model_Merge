@@ -1,0 +1,100 @@
+{
+  "task_type": "small",
+  "dataset": "svhn7_derma_strict_full_noreplace",
+  "model": "resnet",
+  "train_mode": "natural_partial_label_probe",
+  "num_clients": 3,
+  "beta": 0.0,
+  "seed": 42,
+  "num_classes": 7,
+  "observed_num_classes": 7,
+  "in_channels": 3,
+  "epochs": 50,
+  "batch_size": 64,
+  "lr": 0.001,
+  "weight_decay": 0.0001,
+  "image_size": 224,
+  "pretrained": true,
+  "client_classes": {
+    "0": [
+      3,
+      4,
+      0
+    ],
+    "1": [
+      2,
+      1
+    ],
+    "2": [
+      6,
+      5
+    ]
+  },
+  "group_class_counts": {
+    "0": {
+      "3": 80,
+      "4": 779,
+      "0": 228
+    },
+    "1": {
+      "2": 769,
+      "1": 359
+    },
+    "2": {
+      "6": 99,
+      "5": 4693
+    }
+  },
+  "clients": [
+    {
+      "client_id": 0,
+      "num_samples": 1087,
+      "classes": [
+        3,
+        4,
+        0
+      ],
+      "sampled_class_counts": {
+        "3": 80,
+        "4": 779,
+        "0": 228
+      },
+      "best_val_acc": 0.15353937447071075,
+      "test_acc": 0.1521196961402893,
+      "test_loss": 6.628472430688188,
+      "checkpoint": "client_0.pt"
+    },
+    {
+      "client_id": 1,
+      "num_samples": 1128,
+      "classes": [
+        2,
+        1
+      ],
+      "sampled_class_counts": {
+        "2": 769,
+        "1": 359
+      },
+      "best_val_acc": 0.15852442383766174,
+      "test_acc": 0.15112219750881195,
+      "test_loss": 9.288840579986573,
+      "checkpoint": "client_1.pt"
+    },
+    {
+      "client_id": 2,
+      "num_samples": 4792,
+      "classes": [
+        6,
+        5
+      ],
+      "sampled_class_counts": {
+        "6": 99,
+        "5": 4693
+      },
+      "best_val_acc": 0.6819541454315186,
+      "test_acc": 0.6768079996109009,
+      "test_loss": 2.8877256869080656,
+      "checkpoint": "client_2.pt"
+    }
+  ]
+}

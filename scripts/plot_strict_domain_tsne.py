@@ -40,6 +40,7 @@ def parse_args():
     parser.add_argument("--natural-hub-dir", type=Path, required=True)
     parser.add_argument("--natural-data-root", type=Path, required=True)
     parser.add_argument("--output-dir", type=Path, required=True)
+    parser.add_argument("--splits", nargs="+", choices=("train", "val", "test"), default=("test",))
     parser.add_argument("--batch-size", type=int, default=128)
     parser.add_argument("--device", default="cuda:0")
     parser.add_argument("--seed", type=int, default=1701)
@@ -176,15 +177,8 @@ def load_average_model(meta, hub_dir, device, merge_weighting):
     return model, checkpoint_paths, normalized_weights
 
 
-def extract_classifier_features(model, meta, data_root, device, batch_size):
+def extract_classifier_features(model, meta, data_root, device, batch_size, split_names):
     splits = load_npz_splits(Path(data_root) / f"{meta['dataset']}.npz")
-    test_split = splits["test"]
-    dataset = NpzTensorDataset(
-        test_split.images,
-        test_split.labels,
-        transform=build_transform(meta, test_split.images),
-    )
-    loader = DataLoader(dataset, batch_size=batch_size, shuffle=False, num_workers=0, pin_memory=device.type == "cuda")
     classifier = model.get_classifier()
     if not isinstance(classifier, torch.nn.Module):
         raise TypeError(f"Expected a classifier module, got {type(classifier).__name__}")
@@ -196,15 +190,31 @@ def extract_classifier_features(model, meta, data_root, device, batch_size):
     handle = classifier.register_forward_pre_hook(capture_features)
     features = []
     labels = []
+    sample_splits = []
     try:
-        with torch.no_grad():
-            for images, targets in loader:
-                _ = model(images.to(device, non_blocking=True))
-                features.append(captured["features"].cpu().float().numpy())
-                labels.append(targets.numpy().reshape(-1))
+        for split_name in split_names:
+            data_split = splits[split_name]
+            dataset = NpzTensorDataset(
+                data_split.images,
+                data_split.labels,
+                transform=build_transform(meta, data_split.images),
+            )
+            loader = DataLoader(
+                dataset,
+                batch_size=batch_size,
+                shuffle=False,
+                num_workers=0,
+                pin_memory=device.type == "cuda",
+            )
+            with torch.no_grad():
+                for images, targets in loader:
+                    _ = model(images.to(device, non_blocking=True))
+                    features.append(captured["features"].cpu().float().numpy())
+                    labels.append(targets.numpy().reshape(-1))
+                    sample_splits.extend([split_name] * len(targets))
     finally:
         handle.remove()
-    return np.concatenate(features), np.concatenate(labels).astype(np.int64)
+    return np.concatenate(features), np.concatenate(labels).astype(np.int64), sample_splits
 
 
 def run_tsne(features, seed, perplexity):
@@ -290,7 +300,7 @@ def plot_domain_comparison(out_base, embeddings):
 
 
 def write_coordinates(path, rows):
-    fields = ["domain", "dataset", "sample_index", "true_label", "tsne_x", "tsne_y"]
+    fields = ["domain", "dataset", "split", "sample_index", "true_label", "tsne_x", "tsne_y"]
     with Path(path).open("w", newline="", encoding="utf-8") as handle:
         writer = csv.DictWriter(handle, fieldnames=fields, lineterminator="\n")
         writer.writeheader()
@@ -312,13 +322,17 @@ def main():
     rows = []
     summaries = {}
     embeddings = []
+    natural_domain = "natural_svhn" if natural_meta["dataset"].startswith("svhn") else "natural_cifar"
+    natural_display_name = "Natural SVHN" if natural_domain == "natural_svhn" else "Natural CIFAR"
     domains = [
         ("medical_dermamnist", "Medical DermaMNIST", medical_meta, args.medical_hub_dir, args.medical_data_root),
-        ("natural_cifar", "Natural CIFAR", natural_meta, args.natural_hub_dir, args.natural_data_root),
+        (natural_domain, natural_display_name, natural_meta, args.natural_hub_dir, args.natural_data_root),
     ]
     for domain, display_name, meta, hub_dir, data_root in domains:
         model, checkpoint_paths, normalized_weights = load_average_model(meta, hub_dir, device, args.merge_weighting)
-        features, labels = extract_classifier_features(model, meta, data_root, device, args.batch_size)
+        features, labels, sample_splits = extract_classifier_features(
+            model, meta, data_root, device, args.batch_size, args.splits
+        )
         coordinates = run_tsne(features, args.seed, args.perplexity)
         plot_embedding(
             args.output_dir / f"{domain}_resnet_k3_avg_feature_tsne",
@@ -331,6 +345,7 @@ def main():
             {
                 "domain": domain,
                 "dataset": meta["dataset"],
+                "split": sample_splits[sample_index],
                 "sample_index": sample_index,
                 "true_label": int(labels[sample_index]),
                 "tsne_x": f"{coordinates[sample_index, 0]:.6f}",
@@ -340,7 +355,8 @@ def main():
         )
         summaries[domain] = {
             "dataset": meta["dataset"],
-            "test_samples": int(len(labels)),
+            "sample_splits": list(args.splits),
+            "samples": int(len(labels)),
             "feature_dimension": int(features.shape[1]),
             "checkpoint_sha256": {path.name: state_hash(path) for path in checkpoint_paths},
             "avg_weights": normalized_weights,

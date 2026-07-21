@@ -1,0 +1,126 @@
+{
+  "analysis": "separate t-SNE embeddings of AVG classifier-input features",
+  "merge_weighting": "uniform",
+  "tsne": {
+    "seed": 1701,
+    "perplexity": 30.0,
+    "init": "pca",
+    "learning_rate": "auto"
+  },
+  "alignment": {
+    "shared_hyperparameters": {
+      "model": "resnet",
+      "num_clients": 3,
+      "num_classes": 7,
+      "in_channels": 3,
+      "epochs": 50,
+      "batch_size": 64,
+      "lr": 0.001,
+      "weight_decay": 0.0001,
+      "image_size": 224,
+      "pretrained": true,
+      "seed": 42
+    },
+    "client_classes": {
+      "0": [
+        3,
+        4,
+        0
+      ],
+      "1": [
+        2,
+        1
+      ],
+      "2": [
+        6,
+        5
+      ]
+    },
+    "client_class_counts": {
+      "0": {
+        "3": 80,
+        "4": 779,
+        "0": 228
+      },
+      "1": {
+        "2": 769,
+        "1": 359
+      },
+      "2": {
+        "6": 99,
+        "5": 4693
+      }
+    },
+    "split_class_counts": {
+      "train": [
+        228,
+        359,
+        769,
+        80,
+        779,
+        4693,
+        99
+      ],
+      "val": [
+        33,
+        52,
+        110,
+        12,
+        111,
+        671,
+        14
+      ],
+      "test": [
+        66,
+        103,
+        220,
+        23,
+        223,
+        1341,
+        29
+      ]
+    }
+  },
+  "domains": {
+    "medical_dermamnist": {
+      "dataset": "dermamnist_224_strict_full_noreplace",
+      "sample_splits": [
+        "train",
+        "val",
+        "test"
+      ],
+      "samples": 10015,
+      "feature_dimension": 512,
+      "checkpoint_sha256": {
+        "client_0.pt": "0259650d2fa491d77031c14b69041bb714b4b2db44133d289bb11047d9997908",
+        "client_1.pt": "7808e603986dec6cc450f3d075806df07ed7d27835681de340c21a5abab48b22",
+        "client_2.pt": "b61c57e953c146cb44af75724d43a36a43c57321b0cdcab29c2cdb92514d7edc"
+      },
+      "avg_weights": [
+        0.3333333333333333,
+        0.3333333333333333,
+        0.3333333333333333
+      ]
+    },
+    "natural_svhn": {
+      "dataset": "svhn7_derma_strict_full_noreplace",
+      "sample_splits": [
+        "train",
+        "val",
+        "test"
+      ],
+      "samples": 10015,
+      "feature_dimension": 512,
+      "checkpoint_sha256": {
+        "client_0.pt": "ffce61c111726f319aab0bdf3cc0cd6e912fb1fb632bf3f987a74d010a1923b9",
+        "client_1.pt": "7bb5c7e59d8adf855c53c1e6dfce506f492bfc2555e4b9e03f3eb85a471de6cc",
+        "client_2.pt": "2419ca5af2fc95f54501effacaddfd20c05cda591903f394feb22f466174fd50"
+      },
+      "avg_weights": [
+        0.3333333333333333,
+        0.3333333333333333,
+        0.3333333333333333
+      ]
+    }
+  }
+}

@@ -1,0 +1,100 @@
+{
+  "task_type": "small",
+  "dataset": "dermamnist_224_strict_full_noreplace",
+  "model": "resnet",
+  "train_mode": "natural_partial_label_probe",
+  "num_clients": 3,
+  "beta": 0.0,
+  "seed": 42,
+  "num_classes": 7,
+  "observed_num_classes": 7,
+  "in_channels": 3,
+  "epochs": 50,
+  "batch_size": 64,
+  "lr": 0.001,
+  "weight_decay": 0.0001,
+  "image_size": 224,
+  "pretrained": true,
+  "client_classes": {
+    "0": [
+      3,
+      4,
+      0
+    ],
+    "1": [
+      2,
+      1
+    ],
+    "2": [
+      6,
+      5
+    ]
+  },
+  "group_class_counts": {
+    "0": {
+      "3": 80,
+      "4": 779,
+      "0": 228
+    },
+    "1": {
+      "2": 769,
+      "1": 359
+    },
+    "2": {
+      "6": 99,
+      "5": 4693
+    }
+  },
+  "clients": [
+    {
+      "client_id": 0,
+      "num_samples": 1087,
+      "classes": [
+        3,
+        4,
+        0
+      ],
+      "sampled_class_counts": {
+        "3": 80,
+        "4": 779,
+        "0": 228
+      },
+      "best_val_acc": 0.14157527685165405,
+      "test_acc": 0.1396508663892746,
+      "test_loss": 7.8694009600137536,
+      "checkpoint": "client_0.pt"
+    },
+    {
+      "client_id": 1,
+      "num_samples": 1128,
+      "classes": [
+        2,
+        1
+      ],
+      "sampled_class_counts": {
+        "2": 769,
+        "1": 359
+      },
+      "best_val_acc": 0.15852442383766174,
+      "test_acc": 0.15610972046852112,
+      "test_loss": 8.63178488857431,
+      "checkpoint": "client_1.pt"
+    },
+    {
+      "client_id": 2,
+      "num_samples": 4792,
+      "classes": [
+        6,
+        5
+      ],
+      "sampled_class_counts": {
+        "6": 99,
+        "5": 4693
+      },
+      "best_val_acc": 0.6799601316452026,
+      "test_acc": 0.6793017387390137,
+      "test_loss": 2.9281063224906636,
+      "checkpoint": "client_2.pt"
+    }
+  ]
+}
