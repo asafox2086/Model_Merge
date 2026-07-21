@@ -41,6 +41,7 @@ def parse_args():
     parser.add_argument("--natural-data-root", type=Path, required=True)
     parser.add_argument("--output-dir", type=Path, required=True)
     parser.add_argument("--splits", nargs="+", choices=("train", "val", "test"), default=("test",))
+    parser.add_argument("--max-per-class", type=int)
     parser.add_argument("--batch-size", type=int, default=128)
     parser.add_argument("--device", default="cuda:0")
     parser.add_argument("--seed", type=int, default=1701)
@@ -231,6 +232,20 @@ def run_tsne(features, seed, perplexity):
     ).fit_transform(features)
 
 
+def balance_classes(features, labels, sample_splits, max_per_class, seed):
+    if max_per_class is None:
+        return features, labels, sample_splits
+    if max_per_class <= 0:
+        raise ValueError("max-per-class must be positive")
+    rng = np.random.default_rng(seed)
+    selected = []
+    for class_index in np.unique(labels):
+        candidates = np.flatnonzero(labels == class_index)
+        selected.append(rng.choice(candidates, size=min(max_per_class, len(candidates)), replace=False))
+    indices = rng.permutation(np.concatenate(selected))
+    return features[indices], labels[indices], [sample_splits[index] for index in indices]
+
+
 def validate_embedding(coordinates, labels):
     coordinates = np.asarray(coordinates)
     labels = np.asarray(labels)
@@ -343,14 +358,21 @@ def main():
         features, labels, sample_splits = extract_classifier_features(
             model, meta, data_root, device, args.batch_size, args.splits
         )
+        features, labels, sample_splits = balance_classes(
+            features, labels, sample_splits, args.max_per_class, args.seed
+        )
         coordinates = run_tsne(features, args.seed, args.perplexity)
+        sampling_note = ""
+        if args.max_per_class is not None:
+            sampling_note = f"\nBalanced {'+'.join(args.splits)} / {args.max_per_class} per class"
+        title = f"{display_name}\nResNet / K=3 / {args.merge_weighting} AVG{sampling_note}"
         plot_embedding(
             args.output_dir / f"{domain}_resnet_k3_avg_feature_tsne",
             coordinates,
             labels,
-            f"{display_name}\nResNet / K=3 / {args.merge_weighting} AVG",
+            title,
         )
-        embeddings.append((f"{display_name}\nResNet / K=3 / {args.merge_weighting} AVG", coordinates, labels))
+        embeddings.append((title, coordinates, labels))
         rows.extend(
             {
                 "domain": domain,
@@ -367,6 +389,7 @@ def main():
             "dataset": meta["dataset"],
             "sample_splits": list(args.splits),
             "samples": int(len(labels)),
+            "class_counts": class_counts(labels),
             "feature_dimension": int(features.shape[1]),
             "checkpoint_sha256": {path.name: state_hash(path) for path in checkpoint_paths},
             "avg_weights": normalized_weights,
@@ -381,6 +404,7 @@ def main():
         "analysis": "separate t-SNE embeddings of AVG classifier-input features",
         "merge_weighting": args.merge_weighting,
         "tsne": {"seed": args.seed, "perplexity": args.perplexity, "init": "pca", "learning_rate": "auto"},
+        "max_per_class": args.max_per_class,
         "alignment": alignment,
         "domains": summaries,
     }
