@@ -755,19 +755,19 @@ RADAR_METHOD_LABELS = {
 RADAR_METHOD_ORDER = list(RADAR_METHOD_LABELS)
 RADAR_AXES = ["ACC", "F1", "AUC"]
 RADAR_METHOD_STYLES = {
-    "Weight Avg": {"color": "#9E9E9E", "marker": "o", "linestyle": "-", "linewidth": 1.05},
-    "TIES": {"color": "#6E9E5E", "marker": "s", "linestyle": "--", "linewidth": 1.05},
-    "DARE-Linear": {"color": "#5A86C9", "marker": "^", "linestyle": "-.", "linewidth": 1.05},
-    "DARE-TIES": {"color": "#3F6DB5", "marker": "v", "linestyle": ":", "linewidth": 1.05},
-    "RegMean": {"color": "#D28B57", "marker": "D", "linestyle": "-", "linewidth": 1.05},
-    "Fisher": {"color": "#B35C7B", "marker": "P", "linestyle": "--", "linewidth": 1.05},
-    "Breadcrumbs": {"color": "#8A72B7", "marker": "X", "linestyle": "-.", "linewidth": 1.05},
-    "Model Stock": {"color": "#2F9F9B", "marker": "h", "linestyle": ":", "linewidth": 1.05},
-    "FROM": {"color": "#94703B", "marker": "<", "linestyle": "-", "linewidth": 1.05},
-    "Iso-C": {"color": "#C45A51", "marker": ">", "linestyle": "--", "linewidth": 1.05},
-    "FreeMerge": {"color": "#94C55F", "marker": "8", "linestyle": "-.", "linewidth": 1.05},
-    "RobustMerge": {"color": "#7A5BBF", "marker": "p", "linestyle": ":", "linewidth": 1.05},
-    "LAMP-Merge": {"color": "#FFC000", "marker": "*", "linestyle": "-", "linewidth": 2.9},
+    "Weight Avg": {"color": "#7F7F7F", "marker": "o", "linestyle": "-", "linewidth": 0.95},
+    "TIES": {"color": "#4E79A7", "marker": "s", "linestyle": "--", "linewidth": 0.95},
+    "DARE-Linear": {"color": "#59A14F", "marker": "^", "linestyle": "-.", "linewidth": 0.95},
+    "DARE-TIES": {"color": "#76B7B2", "marker": "v", "linestyle": ":", "linewidth": 0.95},
+    "RegMean": {"color": "#F28E2B", "marker": "D", "linestyle": "-", "linewidth": 0.95},
+    "Fisher": {"color": "#B07AA1", "marker": "P", "linestyle": "--", "linewidth": 0.95},
+    "Breadcrumbs": {"color": "#9C755F", "marker": "X", "linestyle": "-.", "linewidth": 0.95},
+    "Model Stock": {"color": "#499894", "marker": "h", "linestyle": ":", "linewidth": 0.95},
+    "FROM": {"color": "#8CD17D", "marker": "<", "linestyle": "-", "linewidth": 0.95},
+    "Iso-C": {"color": "#E15759", "marker": ">", "linestyle": "--", "linewidth": 0.95},
+    "FreeMerge": {"color": "#BAB0AC", "marker": "8", "linestyle": "-.", "linewidth": 0.95},
+    "RobustMerge": {"color": "#79706E", "marker": "p", "linestyle": ":", "linewidth": 0.95},
+    "LAMP-Merge": {"color": "#F5B000", "marker": "*", "linestyle": "-", "linewidth": 2.75},
 }
 
 
@@ -862,36 +862,38 @@ def draw_metric_radar(
     closed_angles = np.concatenate([angles, angles[:1]])
     all_values = np.concatenate(list(series.values()))
     lower, upper, ticks = radar_axis_limits(all_values)
+    axis.set_facecolor("#FAFAFA")
     axis.set_theta_offset(np.pi / 2)
     axis.set_theta_direction(-1)
     axis.set_xticks(angles)
-    axis.set_xticklabels(labels, fontsize=6.2)
-    axis.tick_params(axis="x", pad=2.0)
+    axis.set_xticklabels(labels, fontsize=6.3, fontweight="semibold")
+    axis.tick_params(axis="x", pad=1.0)
     axis.set_ylim(lower, upper)
     axis.set_yticks(ticks)
-    axis.set_yticklabels([f"{tick:.0f}" for tick in ticks], fontsize=5.3)
-    axis.set_rlabel_position(10)
-    axis.grid(True, linestyle="-", color="#D6D6D6", alpha=0.72, linewidth=0.55)
+    axis.set_yticklabels([f"{tick:.0f}" for tick in ticks], fontsize=5.1, color="#4D4D4D")
+    axis.set_rlabel_position(14)
+    axis.grid(True, linestyle="-", color="#D9D9D9", alpha=0.8, linewidth=0.5)
     axis.spines["polar"].set_color("#1F1F1F")
     axis.spines["polar"].set_linewidth(0.85)
     for name, values in series.items():
         closed_values = np.concatenate([values, values[:1]])
         style = RADAR_METHOD_STYLES[name]
+        is_lamp = name == "LAMP-Merge"
         axis.plot(
             closed_angles,
             closed_values,
             color=style["color"],
-            marker=style["marker"],
+            marker=style["marker"] if is_lamp else None,
             linestyle=style["linestyle"],
-            markersize=2.4 if name != "LAMP-Merge" else 4.8,
-            linewidth=0.85 if name != "LAMP-Merge" else style["linewidth"],
+            markersize=4.6 if is_lamp else 0.0,
+            linewidth=0.82 if not is_lamp else style["linewidth"],
             label=name,
-            alpha=0.50 if name != "LAMP-Merge" else 1.0,
-            zorder=5 if name == "LAMP-Merge" else 3,
+            alpha=0.48 if not is_lamp else 1.0,
+            zorder=6 if is_lamp else 3,
         )
-        if name == "LAMP-Merge":
+        if is_lamp:
             axis.fill(closed_angles, closed_values, color=style["color"], alpha=0.055, zorder=1)
-    axis.set_title(metric, fontsize=8.8, fontweight="bold", pad=0.2)
+    axis.set_title(metric, fontsize=8.6, fontweight="bold", pad=0.0)
     if show_legend:
         axis.legend(
             loc="center left",
@@ -928,7 +930,7 @@ def plot_dataset_radars(csv_dir: Path, figure_dir: Path) -> None:
     for backbone in backbones:
         if not any(row["Backbone"] == backbone for row in rows):
             continue
-        fig, axes = plt.subplots(1, 3, figsize=(7.35, 2.72), dpi=300, subplot_kw={"projection": "polar"})
+        fig, axes = plt.subplots(1, 3, figsize=(7.25, 2.55), dpi=300, subplot_kw={"projection": "polar"})
         flat_axes = list(axes.ravel())
         figure_handles = None
         figure_labels = None
@@ -950,13 +952,13 @@ def plot_dataset_radars(csv_dir: Path, figure_dir: Path) -> None:
             bbox_to_anchor=(0.5, 0.015),
             ncol=7,
             frameon=False,
-            fontsize=5.35,
-            handlelength=1.25,
-            columnspacing=0.52,
+            fontsize=5.15,
+            handlelength=1.5,
+            columnspacing=0.55,
             labelspacing=0.22,
         )
-        fig.suptitle(backbone, fontsize=11.4, fontweight="bold", y=0.975)
-        fig.subplots_adjust(left=0.04, right=0.985, bottom=0.245, top=0.75, wspace=0.055)
+        fig.suptitle(backbone, fontsize=10.6, fontweight="bold", y=0.972)
+        fig.subplots_adjust(left=0.038, right=0.985, bottom=0.245, top=0.755, wspace=0.065)
         out_base = out_dir / f"{backbone.lower().replace('-', '_')}_radar"
         save_png(fig, str(out_base), dpi=350)
         fig.savefig(str(out_base) + ".pdf", bbox_inches="tight")
