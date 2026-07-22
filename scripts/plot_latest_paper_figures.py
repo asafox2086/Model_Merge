@@ -865,15 +865,15 @@ def draw_metric_radar(
     axis.set_theta_offset(np.pi / 2)
     axis.set_theta_direction(-1)
     axis.set_xticks(angles)
-    axis.set_xticklabels(labels, fontsize=6.4)
+    axis.set_xticklabels(labels, fontsize=6.2)
     axis.tick_params(axis="x", pad=2.0)
     axis.set_ylim(lower, upper)
     axis.set_yticks(ticks)
     axis.set_yticklabels([f"{tick:.0f}" for tick in ticks], fontsize=5.3)
     axis.set_rlabel_position(10)
-    axis.grid(True, linestyle="--", color="#BFBFBF", alpha=0.62, linewidth=0.7)
-    axis.spines["polar"].set_color("black")
-    axis.spines["polar"].set_linewidth(0.9)
+    axis.grid(True, linestyle="-", color="#D6D6D6", alpha=0.72, linewidth=0.55)
+    axis.spines["polar"].set_color("#1F1F1F")
+    axis.spines["polar"].set_linewidth(0.85)
     for name, values in series.items():
         closed_values = np.concatenate([values, values[:1]])
         style = RADAR_METHOD_STYLES[name]
@@ -886,7 +886,7 @@ def draw_metric_radar(
             markersize=2.4 if name != "LAMP-Merge" else 4.8,
             linewidth=0.85 if name != "LAMP-Merge" else style["linewidth"],
             label=name,
-            alpha=0.58 if name != "LAMP-Merge" else 1.0,
+            alpha=0.50 if name != "LAMP-Merge" else 1.0,
             zorder=5 if name == "LAMP-Merge" else 3,
         )
         if name == "LAMP-Merge":
@@ -928,7 +928,7 @@ def plot_dataset_radars(csv_dir: Path, figure_dir: Path) -> None:
     for backbone in backbones:
         if not any(row["Backbone"] == backbone for row in rows):
             continue
-        fig, axes = plt.subplots(1, 3, figsize=(7.35, 2.62), dpi=300, subplot_kw={"projection": "polar"})
+        fig, axes = plt.subplots(1, 3, figsize=(7.35, 2.72), dpi=300, subplot_kw={"projection": "polar"})
         flat_axes = list(axes.ravel())
         figure_handles = None
         figure_labels = None
@@ -947,16 +947,16 @@ def plot_dataset_radars(csv_dir: Path, figure_dir: Path) -> None:
             figure_handles,
             figure_labels,
             loc="lower center",
-            bbox_to_anchor=(0.5, 0.005),
+            bbox_to_anchor=(0.5, 0.015),
             ncol=7,
             frameon=False,
-            fontsize=5.45,
+            fontsize=5.35,
             handlelength=1.25,
             columnspacing=0.52,
             labelspacing=0.22,
         )
-        fig.text(0.035, 0.975, backbone, ha="left", va="top", fontsize=10.6, fontweight="bold")
-        fig.subplots_adjust(left=0.035, right=0.985, bottom=0.24, top=0.81, wspace=0.055)
+        fig.suptitle(backbone, fontsize=11.4, fontweight="bold", y=0.975)
+        fig.subplots_adjust(left=0.04, right=0.985, bottom=0.245, top=0.75, wspace=0.055)
         out_base = out_dir / f"{backbone.lower().replace('-', '_')}_radar"
         save_png(fig, str(out_base), dpi=350)
         fig.savefig(str(out_base) + ".pdf", bbox_inches="tight")
