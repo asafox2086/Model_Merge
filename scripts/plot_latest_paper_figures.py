@@ -753,7 +753,22 @@ RADAR_METHOD_LABELS = {
 }
 
 RADAR_METHOD_ORDER = list(RADAR_METHOD_LABELS)
-RADAR_AXES = ["ACC", "SEN", "AUC", "F1"]
+RADAR_AXES = ["ACC", "F1", "AUC"]
+RADAR_METHOD_STYLES = {
+    "Weight Avg": {"color": "#9E9E9E", "marker": "o", "linestyle": "-", "linewidth": 1.05},
+    "TIES": {"color": "#6E9E5E", "marker": "s", "linestyle": "--", "linewidth": 1.05},
+    "DARE-Linear": {"color": "#5A86C9", "marker": "^", "linestyle": "-.", "linewidth": 1.05},
+    "DARE-TIES": {"color": "#3F6DB5", "marker": "v", "linestyle": ":", "linewidth": 1.05},
+    "RegMean": {"color": "#D28B57", "marker": "D", "linestyle": "-", "linewidth": 1.05},
+    "Fisher": {"color": "#B35C7B", "marker": "P", "linestyle": "--", "linewidth": 1.05},
+    "Breadcrumbs": {"color": "#8A72B7", "marker": "X", "linestyle": "-.", "linewidth": 1.05},
+    "Model Stock": {"color": "#2F9F9B", "marker": "h", "linestyle": ":", "linewidth": 1.05},
+    "FROM": {"color": "#94703B", "marker": "<", "linestyle": "-", "linewidth": 1.05},
+    "Iso-C": {"color": "#C45A51", "marker": ">", "linestyle": "--", "linewidth": 1.05},
+    "FreeMerge": {"color": "#94C55F", "marker": "8", "linestyle": "-.", "linewidth": 1.05},
+    "RobustMerge": {"color": "#7A5BBF", "marker": "p", "linestyle": ":", "linewidth": 1.05},
+    "LAMP-Merge": {"color": "#FFC000", "marker": "*", "linestyle": "-", "linewidth": 2.9},
+}
 
 
 def load_dataset_radar_rows(csv_dir: Path) -> list[dict[str, str]]:
@@ -776,15 +791,14 @@ def load_dataset_radar_rows(csv_dir: Path) -> list[dict[str, str]]:
             method = row.get("method", "")
             if dataset not in RADAR_DATASET_LABELS or backbone not in RADAR_BACKBONE_LABELS or method not in RADAR_METHOD_LABELS:
                 continue
-            if not row.get("accuracy") or not row.get("balanced_accuracy") or not row.get("macro_f1"):
+            if not row.get("accuracy") or not row.get("macro_f1"):
                 continue
             if "macro_auc" not in row or row.get("macro_auc", "") == "":
                 continue
             key = (RADAR_BACKBONE_LABELS[backbone], RADAR_DATASET_LABELS[dataset], RADAR_METHOD_LABELS[method])
             grouped[key]["ACC"].append(float(row["accuracy"]) * 100.0)
-            grouped[key]["SEN"].append(float(row["balanced_accuracy"]) * 100.0)
-            grouped[key]["AUC"].append(float(row["macro_auc"]) * 100.0)
             grouped[key]["F1"].append(float(row["macro_f1"]) * 100.0)
+            grouped[key]["AUC"].append(float(row["macro_auc"]) * 100.0)
 
     output_rows: list[dict[str, str]] = []
     for backbone in RADAR_BACKBONE_LABELS.values():
@@ -801,9 +815,8 @@ def load_dataset_radar_rows(csv_dir: Path) -> list[dict[str, str]]:
                         "Method": method,
                         "Cases": str(len(metrics["ACC"])),
                         "ACC (%)": f"{np.mean(metrics['ACC']):.2f}",
-                        "SEN (%)": f"{np.mean(metrics['SEN']):.2f}",
-                        "AUC (%)": f"{np.mean(metrics['AUC']):.2f}",
                         "F1 (%)": f"{np.mean(metrics['F1']):.2f}",
+                        "AUC (%)": f"{np.mean(metrics['AUC']):.2f}",
                     }
                 )
     return output_rows
@@ -816,14 +829,13 @@ def write_dataset_radar_csv(rows: list[dict[str, str]], path: Path) -> None:
         "Method",
         "Cases",
         "ACC (%)",
-        "SEN (%)",
-        "AUC (%)",
         "F1 (%)",
+        "AUC (%)",
     ]
     path.parent.mkdir(parents=True, exist_ok=True)
     with path.open("w", newline="", encoding="utf-8") as handle:
         writer = csv.DictWriter(handle, fieldnames=fields, lineterminator="\n")
-        handle.write("说明,本表对应 backbone 级雷达图；每张图表示一个 backbone，图内五个子图分别表示五个医学数据集，四个轴为 ACC、SEN、AUC、F1，曲线为 LAMP-Merge 及所有通用模型融合基线。数值对 K=3/5/7 和三个 beta 设置取平均。\n")
+        handle.write("说明,本表对应 backbone 级雷达图；每张图表示一个 backbone，图内三个子图分别表示 ACC、F1、AUC，雷达图五个顶点为五个医学数据集，曲线为 LAMP-Merge 及所有通用模型融合基线。数值对 K=3/5/7 和三个 beta 设置取平均。\n")
         writer.writeheader()
         writer.writerows(rows)
 
@@ -839,9 +851,9 @@ def radar_axis_limits(values: np.ndarray) -> tuple[float, float, np.ndarray]:
     return lower, upper, ticks
 
 
-def draw_dataset_radar(
+def draw_metric_radar(
     axis: plt.Axes,
-    dataset: str,
+    metric: str,
     labels: list[str],
     series: dict[str, np.ndarray],
     show_legend: bool = False,
@@ -853,45 +865,31 @@ def draw_dataset_radar(
     axis.set_theta_offset(np.pi / 2)
     axis.set_theta_direction(-1)
     axis.set_xticks(angles)
-    axis.set_xticklabels(labels, fontsize=7.4)
+    axis.set_xticklabels(labels, fontsize=7.2)
     axis.tick_params(axis="x", pad=1.0)
     axis.set_ylim(lower, upper)
     axis.set_yticks(ticks)
-    axis.set_yticklabels([f"{tick:.0f}" for tick in ticks], fontsize=6.2)
-    axis.set_rlabel_position(8)
-    axis.grid(True, linestyle="--", color="#BFBFBF", alpha=0.65, linewidth=0.7)
+    axis.set_yticklabels([f"{tick:.0f}" for tick in ticks], fontsize=6.0)
+    axis.set_rlabel_position(10)
+    axis.grid(True, linestyle="--", color="#BFBFBF", alpha=0.62, linewidth=0.7)
     axis.spines["polar"].set_color("black")
     axis.spines["polar"].set_linewidth(0.9)
-    styles = {
-        "Weight Avg": {"color": "#A6A6A6", "marker": "o", "linewidth": 1.3},
-        "TIES": {"color": "#70AD47", "marker": "s", "linewidth": 1.25},
-        "DARE-Linear": {"color": "#5B9BD5", "marker": "^", "linewidth": 1.25},
-        "DARE-TIES": {"color": "#4472C4", "marker": "v", "linewidth": 1.25},
-        "RegMean": {"color": "#ED7D31", "marker": "D", "linewidth": 1.25},
-        "Fisher": {"color": "#A64D79", "marker": "P", "linewidth": 1.25},
-        "Breadcrumbs": {"color": "#8064A2", "marker": "X", "linewidth": 1.25},
-        "Model Stock": {"color": "#00A6A6", "marker": "h", "linewidth": 1.25},
-        "FROM": {"color": "#7F6000", "marker": "<", "linewidth": 1.25},
-        "Iso-C": {"color": "#C00000", "marker": ">", "linewidth": 1.25},
-        "FreeMerge": {"color": "#92D050", "marker": "8", "linewidth": 1.25},
-        "RobustMerge": {"color": "#7030A0", "marker": "p", "linewidth": 1.25},
-        "LAMP-Merge": {"color": "#FFC000", "marker": "*", "linewidth": 2.4},
-    }
     for name, values in series.items():
         closed_values = np.concatenate([values, values[:1]])
-        style = styles[name]
+        style = RADAR_METHOD_STYLES[name]
         axis.plot(
             closed_angles,
             closed_values,
             color=style["color"],
             marker=style["marker"],
-            markersize=3.0 if name != "LAMP-Merge" else 5.2,
+            linestyle=style["linestyle"],
+            markersize=3.1 if name != "LAMP-Merge" else 5.4,
             linewidth=style["linewidth"],
             label=name,
-            alpha=0.78 if name != "LAMP-Merge" else 1.0,
+            alpha=0.72 if name != "LAMP-Merge" else 1.0,
             zorder=5 if name == "LAMP-Merge" else 3,
         )
-    axis.set_title(dataset, fontsize=10.8, fontweight="bold", pad=5)
+    axis.set_title(metric, fontsize=11.0, fontweight="bold", pad=6)
     if show_legend:
         axis.legend(
             loc="center left",
@@ -928,36 +926,35 @@ def plot_dataset_radars(csv_dir: Path, figure_dir: Path) -> None:
     for backbone in backbones:
         if not any(row["Backbone"] == backbone for row in rows):
             continue
-        fig, axes = plt.subplots(2, 3, figsize=(9.4, 7.25), dpi=300, subplot_kw={"projection": "polar"})
+        fig, axes = plt.subplots(1, 3, figsize=(12.4, 4.15), dpi=300, subplot_kw={"projection": "polar"})
         flat_axes = list(axes.ravel())
         figure_handles = None
         figure_labels = None
-        for axis, dataset in zip(flat_axes[:5], datasets):
+        for axis, metric in zip(flat_axes, RADAR_AXES):
             series = {
-                method: np.asarray([float(row_by_key[(backbone, dataset, method)][f"{metric} (%)"]) for metric in RADAR_AXES])
+                method: np.asarray([float(row_by_key[(backbone, dataset, method)][f"{metric} (%)"]) for dataset in datasets])
                 for method in methods
-                if (backbone, dataset, method) in row_by_key
+                if all((backbone, dataset, method) in row_by_key for dataset in datasets)
             }
-            draw_dataset_radar(axis, dataset, RADAR_AXES, series, show_legend=False)
+            draw_metric_radar(axis, metric, datasets, series, show_legend=False)
             if figure_handles is None:
                 figure_handles, figure_labels = axis.get_legend_handles_labels()
-        legend_axis = flat_axes[5]
-        legend_axis.set_axis_off()
         if figure_handles is None or figure_labels is None:
             raise ValueError(f"No radar handles were created for {backbone}")
-        legend_axis.legend(
+        fig.legend(
             figure_handles,
             figure_labels,
-            loc="center",
-            ncol=2,
+            loc="lower center",
+            bbox_to_anchor=(0.5, 0.01),
+            ncol=5,
             frameon=False,
-            fontsize=7.4,
-            handlelength=1.45,
-            columnspacing=0.75,
-            labelspacing=0.38,
+            fontsize=6.7,
+            handlelength=1.5,
+            columnspacing=0.8,
+            labelspacing=0.34,
         )
-        fig.suptitle(f"{backbone}", fontsize=14.2, fontweight="bold", y=0.985)
-        fig.tight_layout(rect=(0.0, 0.0, 1.0, 0.94), h_pad=2.0, w_pad=0.45)
+        fig.suptitle(f"{backbone}", fontsize=14.0, fontweight="bold", y=0.985)
+        fig.tight_layout(rect=(0.0, 0.12, 1.0, 0.92), w_pad=0.42)
         out_base = out_dir / f"{backbone.lower().replace('-', '_')}_radar"
         save_png(fig, str(out_base), dpi=350)
         fig.savefig(str(out_base) + ".pdf", bbox_inches="tight")
