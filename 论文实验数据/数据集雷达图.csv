@@ -1,67 +1,67 @@
-说明,本表对应数据集级雷达图；每个雷达图表示一个医学数据集，四个轴为 ACC、SEN、SPE、F1，曲线为 LAMP-Merge 及所有通用模型融合基线。数值对四个 backbone、K=3/5/7 和三个 beta 设置取平均。
-Dataset,Method,Cases,ACC (%),SEN (%),SPE (%),F1 (%)
-Blood,Weight Avg,36,17.14,16.04,88.03,6.87
-Blood,TIES,36,14.80,14.07,87.72,4.82
-Blood,DARE-Linear,36,18.14,15.96,88.09,7.16
-Blood,DARE-TIES,36,15.02,14.32,87.77,4.98
-Blood,RegMean,36,18.93,17.35,88.22,8.43
-Blood,Fisher,36,17.43,15.67,87.98,6.55
-Blood,Breadcrumbs,36,13.23,12.53,87.54,3.64
-Blood,Model Stock,36,16.35,14.38,87.77,5.43
-Blood,FROM,36,16.99,15.15,87.87,5.93
-Blood,Iso-C,36,19.11,17.30,88.20,8.60
-Blood,FreeMerge,36,17.90,17.12,88.21,7.85
-Blood,RobustMerge,36,16.74,15.30,87.91,5.84
-Blood,LAMP-Merge,36,81.92,80.70,97.40,80.22
-Derma,Weight Avg,36,50.42,15.28,86.17,10.06
-Derma,TIES,36,38.33,14.90,85.85,8.06
-Derma,DARE-Linear,36,39.07,14.54,85.88,8.07
-Derma,DARE-TIES,36,37.47,14.89,85.99,7.66
-Derma,RegMean,36,40.08,15.77,86.02,9.13
-Derma,Fisher,36,45.14,14.91,85.99,8.93
-Derma,Breadcrumbs,36,17.37,14.25,85.80,4.17
-Derma,Model Stock,36,43.77,15.03,85.98,9.04
-Derma,FROM,36,49.45,14.95,85.88,9.58
-Derma,Iso-C,36,45.03,16.22,86.13,10.61
-Derma,FreeMerge,36,50.89,15.04,86.07,9.97
-Derma,RobustMerge,36,24.73,15.80,86.09,6.61
-Derma,LAMP-Merge,36,62.41,33.28,90.23,28.25
-Organ-C,Weight Avg,36,12.86,12.30,91.22,4.75
-Organ-C,TIES,36,12.90,13.05,91.33,5.37
-Organ-C,DARE-Linear,36,12.88,11.83,91.23,4.34
-Organ-C,DARE-TIES,36,12.50,12.06,91.26,4.43
-Organ-C,RegMean,36,11.80,12.14,91.23,5.42
-Organ-C,Fisher,36,14.71,14.43,91.49,7.24
-Organ-C,Breadcrumbs,36,12.07,9.30,90.98,3.11
-Organ-C,Model Stock,36,12.31,11.53,91.10,3.90
-Organ-C,FROM,36,13.67,13.05,91.32,5.29
-Organ-C,Iso-C,36,12.19,12.42,91.25,5.36
-Organ-C,FreeMerge,36,12.77,11.92,91.18,4.46
-Organ-C,RobustMerge,36,15.24,11.94,91.25,4.94
-Organ-C,LAMP-Merge,36,63.04,60.14,96.28,59.71
-Organ-S,Weight Avg,36,14.14,12.08,91.21,4.83
-Organ-S,TIES,36,12.24,11.96,91.20,4.36
-Organ-S,DARE-Linear,36,13.41,11.43,91.19,4.18
-Organ-S,DARE-TIES,36,10.41,11.00,91.08,4.03
-Organ-S,RegMean,36,12.01,12.37,91.18,5.49
-Organ-S,Fisher,36,13.63,13.63,91.42,6.04
-Organ-S,Breadcrumbs,36,14.15,8.89,90.96,3.00
-Organ-S,Model Stock,36,14.77,12.06,91.23,4.82
-Organ-S,FROM,36,13.90,12.77,91.25,5.08
-Organ-S,Iso-C,36,14.85,13.15,91.44,6.34
-Organ-S,FreeMerge,36,13.68,11.91,91.20,4.66
-Organ-S,RobustMerge,36,17.24,11.93,91.27,5.38
-Organ-S,LAMP-Merge,36,57.66,51.82,95.64,52.28
-Ultrasound,Weight Avg,36,15.64,14.04,87.74,4.75
-Ultrasound,TIES,36,16.81,15.96,88.02,6.96
-Ultrasound,DARE-Linear,36,15.45,13.72,87.69,4.53
-Ultrasound,DARE-TIES,36,15.64,14.77,87.84,5.75
-Ultrasound,RegMean,36,17.09,15.87,88.04,8.03
-Ultrasound,Fisher,36,18.15,15.95,88.04,7.53
-Ultrasound,Breadcrumbs,36,13.39,12.80,87.56,3.94
-Ultrasound,Model Stock,36,15.64,13.57,87.68,4.89
-Ultrasound,FROM,36,16.45,15.14,87.93,5.99
-Ultrasound,Iso-C,36,16.98,14.96,87.90,6.96
-Ultrasound,FreeMerge,36,16.16,14.13,87.76,5.14
-Ultrasound,RobustMerge,36,16.46,15.03,87.93,6.07
-Ultrasound,LAMP-Merge,36,46.08,45.16,92.31,43.60
+说明,本表对应 backbone 级雷达图；每张图表示一个 backbone，图内五个子图分别表示五个医学数据集，四个轴为 ACC、SEN、AUC、F1，曲线为 LAMP-Merge 及所有通用模型融合基线。数值对 K=3/5/7 和三个 beta 设置取平均。
+Backbone,Dataset,Method,Cases,ACC (%),SEN (%),AUC (%),F1 (%)
+ViT-Tiny,Blood,Weight Avg,9,11.96,13.00,66.47,3.20
+ViT-Tiny,Blood,TIES,9,11.68,12.65,58.88,3.99
+ViT-Tiny,Blood,DARE-Linear,9,16.38,16.15,62.42,6.58
+ViT-Tiny,Blood,DARE-TIES,9,10.23,11.95,48.08,2.77
+ViT-Tiny,Blood,RegMean,9,15.78,15.30,56.13,5.69
+ViT-Tiny,Blood,Fisher,9,15.96,13.81,53.99,5.06
+ViT-Tiny,Blood,Breadcrumbs,9,12.34,12.36,58.21,3.25
+ViT-Tiny,Blood,Model Stock,9,13.98,14.26,63.68,4.50
+ViT-Tiny,Blood,FROM,9,13.29,14.53,61.38,4.65
+ViT-Tiny,Blood,Iso-C,9,12.46,13.95,54.65,4.24
+ViT-Tiny,Blood,FreeMerge,9,16.12,15.70,59.56,6.21
+ViT-Tiny,Blood,RobustMerge,9,13.25,12.55,52.93,3.30
+ViT-Tiny,Blood,LAMP-Merge,9,85.21,83.51,95.86,82.96
+ViT-Tiny,Derma,Weight Avg,9,42.33,15.74,57.99,9.34
+ViT-Tiny,Derma,TIES,9,42.98,13.91,53.10,8.61
+ViT-Tiny,Derma,DARE-Linear,9,16.85,13.69,53.50,4.91
+ViT-Tiny,Derma,DARE-TIES,9,35.88,15.34,49.63,8.14
+ViT-Tiny,Derma,RegMean,9,55.36,14.67,50.00,10.14
+ViT-Tiny,Derma,Fisher,9,39.52,14.85,58.52,8.46
+ViT-Tiny,Derma,Breadcrumbs,9,12.22,14.89,55.43,3.29
+ViT-Tiny,Derma,Model Stock,9,32.08,14.47,61.57,7.43
+ViT-Tiny,Derma,FROM,9,55.01,14.98,53.11,10.46
+ViT-Tiny,Derma,Iso-C,9,41.81,15.42,56.55,10.05
+ViT-Tiny,Derma,FreeMerge,9,44.18,14.74,58.73,8.97
+ViT-Tiny,Derma,RobustMerge,9,15.98,14.87,56.35,4.94
+ViT-Tiny,Derma,LAMP-Merge,9,59.53,49.04,78.00,36.63
+ViT-Tiny,Organ-C,Weight Avg,9,12.17,13.17,67.63,5.15
+ViT-Tiny,Organ-C,TIES,9,11.72,12.92,58.78,4.88
+ViT-Tiny,Organ-C,DARE-Linear,9,10.61,12.00,62.65,4.61
+ViT-Tiny,Organ-C,DARE-TIES,9,10.63,12.63,55.51,4.49
+ViT-Tiny,Organ-C,RegMean,9,10.49,11.06,58.35,3.98
+ViT-Tiny,Organ-C,Fisher,9,9.80,11.28,57.13,4.23
+ViT-Tiny,Organ-C,Breadcrumbs,9,11.39,10.34,58.20,4.22
+ViT-Tiny,Organ-C,Model Stock,9,13.11,14.21,67.29,6.10
+ViT-Tiny,Organ-C,FROM,9,14.74,14.61,64.40,6.41
+ViT-Tiny,Organ-C,Iso-C,9,8.50,11.16,62.32,4.09
+ViT-Tiny,Organ-C,FreeMerge,9,10.55,11.70,65.13,4.18
+ViT-Tiny,Organ-C,RobustMerge,9,10.03,11.22,59.18,3.77
+ViT-Tiny,Organ-C,LAMP-Merge,9,58.49,58.46,85.27,57.06
+ViT-Tiny,Organ-S,Weight Avg,9,11.35,11.91,67.54,3.94
+ViT-Tiny,Organ-S,TIES,9,12.64,11.06,58.48,4.19
+ViT-Tiny,Organ-S,DARE-Linear,9,9.69,11.23,59.95,3.38
+ViT-Tiny,Organ-S,DARE-TIES,9,6.69,8.85,55.11,2.29
+ViT-Tiny,Organ-S,RegMean,9,10.35,10.69,56.70,3.62
+ViT-Tiny,Organ-S,Fisher,9,12.00,12.12,60.62,4.63
+ViT-Tiny,Organ-S,Breadcrumbs,9,9.79,9.69,56.26,3.23
+ViT-Tiny,Organ-S,Model Stock,9,12.06,12.88,66.63,4.51
+ViT-Tiny,Organ-S,FROM,9,10.18,11.61,64.79,3.94
+ViT-Tiny,Organ-S,Iso-C,9,7.42,10.27,63.15,3.34
+ViT-Tiny,Organ-S,FreeMerge,9,10.94,11.26,64.77,3.68
+ViT-Tiny,Organ-S,RobustMerge,9,10.61,10.61,60.27,3.31
+ViT-Tiny,Organ-S,LAMP-Merge,9,54.52,52.65,83.72,52.24
+ViT-Tiny,Ultrasound,Weight Avg,9,15.52,14.29,56.93,4.90
+ViT-Tiny,Ultrasound,TIES,9,14.42,14.35,54.72,5.60
+ViT-Tiny,Ultrasound,DARE-Linear,9,12.84,12.66,54.44,3.16
+ViT-Tiny,Ultrasound,DARE-TIES,9,12.01,12.78,50.10,3.96
+ViT-Tiny,Ultrasound,RegMean,9,15.66,14.42,53.56,6.24
+ViT-Tiny,Ultrasound,Fisher,9,15.42,14.12,54.90,5.70
+ViT-Tiny,Ultrasound,Breadcrumbs,9,13.41,13.07,54.70,3.82
+ViT-Tiny,Ultrasound,Model Stock,9,16.83,14.27,57.83,5.55
+ViT-Tiny,Ultrasound,FROM,9,17.86,16.41,59.49,7.81
+ViT-Tiny,Ultrasound,Iso-C,9,16.05,14.79,58.27,6.94
+ViT-Tiny,Ultrasound,FreeMerge,9,15.47,13.55,56.42,4.70
+ViT-Tiny,Ultrasound,RobustMerge,9,17.06,14.74,57.68,6.16
+ViT-Tiny,Ultrasound,LAMP-Merge,9,46.01,44.91,76.75,42.25

@@ -64,6 +64,7 @@ LAMP_METHODS = {"lamp_merge", "lamp_merge_analysis"}
 METRIC_FIELDS = [
     "accuracy",
     "balanced_accuracy",
+    "macro_auc",
     "macro_f1",
     "mean_precision",
     "loss",
@@ -91,6 +92,7 @@ VECTOR_FIELDS = [
 PLOT_METRICS = [
     ("accuracy", "Accuracy"),
     ("balanced_accuracy", "Balanced Acc."),
+    ("macro_auc", "Macro AUC"),
     ("macro_f1", "Macro F1"),
     ("collapse_ratio", "Collapse Ratio"),
     ("effective_predicted_classes", "Effective Classes"),
@@ -331,11 +333,42 @@ def entropy(dist: np.ndarray) -> float:
     return float(-(nz * np.log(nz)).sum())
 
 
+def binary_roc_auc(targets: np.ndarray, scores: np.ndarray) -> float:
+    targets = targets.astype(bool)
+    num_pos = int(targets.sum())
+    num_neg = int(targets.size - num_pos)
+    if num_pos == 0 or num_neg == 0:
+        return float("nan")
+    order = np.argsort(scores, kind="mergesort")
+    sorted_scores = scores[order]
+    ranks = np.empty(scores.size, dtype=float)
+    start = 0
+    while start < scores.size:
+        end = start + 1
+        while end < scores.size and sorted_scores[end] == sorted_scores[start]:
+            end += 1
+        average_rank = 0.5 * (start + 1 + end)
+        ranks[order[start:end]] = average_rank
+        start = end
+    rank_sum_pos = float(ranks[targets].sum())
+    return float((rank_sum_pos - num_pos * (num_pos + 1) / 2.0) / (num_pos * num_neg))
+
+
+def macro_ovr_auc(labels: np.ndarray, probabilities: np.ndarray, num_classes: int) -> float:
+    values = []
+    for class_index in range(num_classes):
+        auc = binary_roc_auc((labels == class_index).astype(np.int32), probabilities[:, class_index])
+        if np.isfinite(auc):
+            values.append(auc)
+    return float(np.mean(values)) if values else float("nan")
+
+
 def classification_metrics(
     confusion: np.ndarray,
     prob_sum: np.ndarray,
     total_loss: float,
     mean_max_prob_sum: float,
+    macro_auc: float = float("nan"),
 ) -> dict[str, object]:
     total = int(confusion.sum())
     num_classes = int(confusion.shape[0])
@@ -367,6 +400,7 @@ def classification_metrics(
     return {
         "accuracy": float(true_positive.sum() / max(total, 1)),
         "balanced_accuracy": float(recalls[valid].mean()) if valid.any() else 0.0,
+        "macro_auc": float(macro_auc),
         "macro_f1": float(f1[valid].mean()) if valid.any() else 0.0,
         "mean_precision": float(precisions[valid].mean()) if valid.any() else 0.0,
         "loss": float(total_loss / max(total, 1)),
@@ -424,6 +458,8 @@ def evaluate_checkpoint_predictions(
     prob_sum = np.zeros(num_classes, dtype=np.float64)
     total_loss = 0.0
     mean_max_prob_sum = 0.0
+    labels_all: list[np.ndarray] = []
+    probabilities_all: list[np.ndarray] = []
     amp_enabled = str(args.device).startswith("cuda") and device.type == "cuda"
 
     with torch.no_grad():
@@ -444,12 +480,17 @@ def evaluate_checkpoint_predictions(
             mean_max_prob_sum += float(probs.max(dim=1).values.detach().cpu().sum())
             y_np = y.detach().cpu().numpy().astype(int)
             p_np = preds.detach().cpu().numpy().astype(int)
+            labels_all.append(y_np)
+            probabilities_all.append(probs.detach().cpu().float().numpy())
             for target, pred in zip(y_np, p_np):
                 if 0 <= target < num_classes and 0 <= pred < num_classes:
                     confusion[target, pred] += 1
     if device.type == "cuda":
         torch.cuda.empty_cache()
-    return classification_metrics(confusion, prob_sum, total_loss, mean_max_prob_sum)
+    labels = np.concatenate(labels_all, axis=0) if labels_all else np.array([], dtype=int)
+    probabilities = np.concatenate(probabilities_all, axis=0) if probabilities_all else np.empty((0, num_classes))
+    auc = macro_ovr_auc(labels, probabilities, num_classes) if labels.size else float("nan")
+    return classification_metrics(confusion, prob_sum, total_loss, mean_max_prob_sum, macro_auc=auc)
 
 
 def base_result_row(
@@ -911,6 +952,7 @@ def main() -> None:
         "split",
         "accuracy",
         "balanced_accuracy",
+        "macro_auc",
         "macro_f1",
         "mean_precision",
         "loss",

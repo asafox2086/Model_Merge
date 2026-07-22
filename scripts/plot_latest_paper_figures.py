@@ -5,7 +5,6 @@ from __future__ import annotations
 
 import argparse
 import csv
-import json
 import sys
 from collections import defaultdict
 from pathlib import Path
@@ -730,6 +729,13 @@ RADAR_DATASET_LABELS = {
     "chaoshengmnist_224": "Ultrasound",
 }
 
+RADAR_BACKBONE_LABELS = {
+    "resnet": "ResNet",
+    "convnext": "ConvNeXt",
+    "vit_t": "ViT-Tiny",
+    "swin_tiny": "Swin-Tiny",
+}
+
 RADAR_METHOD_LABELS = {
     "avg": "Weight Avg",
     "ties": "TIES",
@@ -743,80 +749,81 @@ RADAR_METHOD_LABELS = {
     "iso_c": "Iso-C",
     "free_merge": "FreeMerge",
     "robustmerge": "RobustMerge",
-    "lamp_merge:full": "LAMP-Merge",
+    "lamp_merge": "LAMP-Merge",
 }
 
 RADAR_METHOD_ORDER = list(RADAR_METHOD_LABELS)
-RADAR_AXES = ["ACC", "SEN", "SPE", "F1"]
-
-
-def macro_specificity(confusion_matrix_json: str) -> float:
-    matrix = np.asarray(json.loads(confusion_matrix_json), dtype=float)
-    total = float(matrix.sum())
-    values = []
-    for class_index in range(matrix.shape[0]):
-        tp = matrix[class_index, class_index]
-        fp = matrix[:, class_index].sum() - tp
-        fn = matrix[class_index, :].sum() - tp
-        tn = total - tp - fp - fn
-        denominator = tn + fp
-        if denominator > 0:
-            values.append(tn / denominator)
-    return float(np.mean(values)) if values else float("nan")
+RADAR_AXES = ["ACC", "SEN", "AUC", "F1"]
 
 
 def load_dataset_radar_rows(csv_dir: Path) -> list[dict[str, str]]:
-    diagnostics_path = ROOT / "My_merge_ret" / "reports" / "prediction_diagnostics_full.csv"
-    grouped: dict[tuple[str, str], dict[str, list[float]]] = defaultdict(lambda: defaultdict(list))
+    auc_path = ROOT / "My_merge_ret" / "reports" / "prediction_diagnostics_auc.csv"
+    vit_tiny_auc_path = ROOT / "My_merge_ret" / "reports" / "prediction_diagnostics_auc_vit_tiny.csv"
+    diagnostics_path = (
+        auc_path
+        if auc_path.exists()
+        else vit_tiny_auc_path
+        if vit_tiny_auc_path.exists()
+        else ROOT / "My_merge_ret" / "reports" / "prediction_diagnostics_full.csv"
+    )
+    grouped: dict[tuple[str, str, str], dict[str, list[float]]] = defaultdict(lambda: defaultdict(list))
     with diagnostics_path.open(newline="", encoding="utf-8") as handle:
         for row in csv.DictReader(handle):
             if row.get("status", "").upper() != "OK":
                 continue
             dataset = row.get("dataset", "")
+            backbone = row.get("model", "")
             method = row.get("method", "")
-            if dataset not in RADAR_DATASET_LABELS or method not in RADAR_METHOD_LABELS:
+            if dataset not in RADAR_DATASET_LABELS or backbone not in RADAR_BACKBONE_LABELS or method not in RADAR_METHOD_LABELS:
                 continue
-            key = (RADAR_DATASET_LABELS[dataset], RADAR_METHOD_LABELS[method])
+            if not row.get("accuracy") or not row.get("balanced_accuracy") or not row.get("macro_f1"):
+                continue
+            if "macro_auc" not in row or row.get("macro_auc", "") == "":
+                continue
+            key = (RADAR_BACKBONE_LABELS[backbone], RADAR_DATASET_LABELS[dataset], RADAR_METHOD_LABELS[method])
             grouped[key]["ACC"].append(float(row["accuracy"]) * 100.0)
             grouped[key]["SEN"].append(float(row["balanced_accuracy"]) * 100.0)
-            grouped[key]["SPE"].append(macro_specificity(row["confusion_matrix_json"]) * 100.0)
+            grouped[key]["AUC"].append(float(row["macro_auc"]) * 100.0)
             grouped[key]["F1"].append(float(row["macro_f1"]) * 100.0)
 
     output_rows: list[dict[str, str]] = []
-    for dataset in RADAR_DATASET_LABELS.values():
-        for method_key in RADAR_METHOD_ORDER:
-            method = RADAR_METHOD_LABELS[method_key]
-            metrics = grouped.get((dataset, method))
-            if not metrics:
-                continue
-            output_rows.append(
-                {
-                    "Dataset": dataset,
-                    "Method": method,
-                    "Cases": str(len(metrics["ACC"])),
-                    "ACC (%)": f"{np.mean(metrics['ACC']):.2f}",
-                    "SEN (%)": f"{np.mean(metrics['SEN']):.2f}",
-                    "SPE (%)": f"{np.mean(metrics['SPE']):.2f}",
-                    "F1 (%)": f"{np.mean(metrics['F1']):.2f}",
-                }
-            )
+    for backbone in RADAR_BACKBONE_LABELS.values():
+        for dataset in RADAR_DATASET_LABELS.values():
+            for method_key in RADAR_METHOD_ORDER:
+                method = RADAR_METHOD_LABELS[method_key]
+                metrics = grouped.get((backbone, dataset, method))
+                if not metrics:
+                    continue
+                output_rows.append(
+                    {
+                        "Backbone": backbone,
+                        "Dataset": dataset,
+                        "Method": method,
+                        "Cases": str(len(metrics["ACC"])),
+                        "ACC (%)": f"{np.mean(metrics['ACC']):.2f}",
+                        "SEN (%)": f"{np.mean(metrics['SEN']):.2f}",
+                        "AUC (%)": f"{np.mean(metrics['AUC']):.2f}",
+                        "F1 (%)": f"{np.mean(metrics['F1']):.2f}",
+                    }
+                )
     return output_rows
 
 
 def write_dataset_radar_csv(rows: list[dict[str, str]], path: Path) -> None:
     fields = [
+        "Backbone",
         "Dataset",
         "Method",
         "Cases",
         "ACC (%)",
         "SEN (%)",
-        "SPE (%)",
+        "AUC (%)",
         "F1 (%)",
     ]
     path.parent.mkdir(parents=True, exist_ok=True)
     with path.open("w", newline="", encoding="utf-8") as handle:
         writer = csv.DictWriter(handle, fieldnames=fields, lineterminator="\n")
-        handle.write("说明,本表对应数据集级雷达图；每个雷达图表示一个医学数据集，四个轴为 ACC、SEN、SPE、F1，曲线为 LAMP-Merge 及所有通用模型融合基线。数值对四个 backbone、K=3/5/7 和三个 beta 设置取平均。\n")
+        handle.write("说明,本表对应 backbone 级雷达图；每张图表示一个 backbone，图内五个子图分别表示五个医学数据集，四个轴为 ACC、SEN、AUC、F1，曲线为 LAMP-Merge 及所有通用模型融合基线。数值对 K=3/5/7 和三个 beta 设置取平均。\n")
         writer.writeheader()
         writer.writerows(rows)
 
@@ -899,9 +906,10 @@ def draw_dataset_radar(
 def plot_dataset_radars(csv_dir: Path, figure_dir: Path) -> None:
     rows = load_dataset_radar_rows(csv_dir)
     write_dataset_radar_csv(rows, csv_dir / "数据集雷达图.csv")
+    backbones = list(RADAR_BACKBONE_LABELS.values())
     datasets = list(RADAR_DATASET_LABELS.values())
     methods = [RADAR_METHOD_LABELS[key] for key in RADAR_METHOD_ORDER]
-    row_by_key = {(row["Dataset"], row["Method"]): row for row in rows}
+    row_by_key = {(row["Backbone"], row["Dataset"], row["Method"]): row for row in rows}
     setup_style("dashboard")
     plt.rcParams.update(
         {
@@ -912,59 +920,55 @@ def plot_dataset_radars(csv_dir: Path, figure_dir: Path) -> None:
             "legend.fontsize": 8.2,
         }
     )
-    fig, axes = plt.subplots(1, len(datasets), figsize=(15.6, 3.65), dpi=300, subplot_kw={"projection": "polar"})
-    figure_handles = None
-    for index, (axis, dataset) in enumerate(zip(axes, datasets)):
-        series = {
-            method: np.asarray([float(row_by_key[(dataset, method)][f"{metric} (%)"]) for metric in RADAR_AXES])
-            for method in methods
-            if (dataset, method) in row_by_key
-        }
-        draw_dataset_radar(axis, dataset, RADAR_AXES, series, show_legend=False)
-        if figure_handles is None:
-            figure_handles, figure_labels = axis.get_legend_handles_labels()
-    if figure_handles is None:
-        raise ValueError("No dataset radar handles were created")
-    fig.legend(
-        figure_handles,
-        figure_labels,
-        loc="upper center",
-        bbox_to_anchor=(0.5, 1.04),
-        ncol=7,
-        frameon=False,
-        fontsize=7.3,
-        handlelength=1.55,
-        columnspacing=0.95,
-    )
-    fig.text(
-        0.5,
-        0.005,
-        "Dataset-level radar comparison of LAMP-Merge and model-merging baselines.",
-        ha="center",
-        va="bottom",
-        fontsize=11.0,
-        fontstyle="italic",
-    )
-    fig.tight_layout(rect=(0, 0.12, 1, 0.84), w_pad=0.8)
-    save_png(fig, str(figure_dir / "09_dataset_radar_effects"), dpi=350)
-    fig.savefig(figure_dir / "09_dataset_radar_effects.pdf", bbox_inches="tight")
-    plt.close(fig)
 
-    single_dir = figure_dir / "dataset_radars"
-    single_dir.mkdir(parents=True, exist_ok=True)
-    for dataset in datasets:
-        fig, axis = plt.subplots(1, 1, figsize=(6.7, 3.85), dpi=300, subplot_kw={"projection": "polar"})
-        series = {
-            method: np.asarray([float(row_by_key[(dataset, method)][f"{metric} (%)"]) for metric in RADAR_AXES])
-            for method in methods
-            if (dataset, method) in row_by_key
-        }
-        draw_dataset_radar(axis, dataset, RADAR_AXES, series, show_legend=True)
-        fig.tight_layout(rect=(0.02, 0.02, 0.76, 1))
-        out_base = single_dir / f"{dataset.lower().replace('-', '_')}_radar"
+    out_dir = figure_dir / "backbone_radars"
+    out_dir.mkdir(parents=True, exist_ok=True)
+    first_out_base: Path | None = None
+    for backbone in backbones:
+        if not any(row["Backbone"] == backbone for row in rows):
+            continue
+        fig, axes = plt.subplots(3, 2, figsize=(8.2, 10.0), dpi=300, subplot_kw={"projection": "polar"})
+        flat_axes = list(axes.ravel())
+        figure_handles = None
+        figure_labels = None
+        for axis, dataset in zip(flat_axes[:5], datasets):
+            series = {
+                method: np.asarray([float(row_by_key[(backbone, dataset, method)][f"{metric} (%)"]) for metric in RADAR_AXES])
+                for method in methods
+                if (backbone, dataset, method) in row_by_key
+            }
+            draw_dataset_radar(axis, dataset, RADAR_AXES, series, show_legend=False)
+            if figure_handles is None:
+                figure_handles, figure_labels = axis.get_legend_handles_labels()
+        legend_axis = flat_axes[5]
+        legend_axis.set_axis_off()
+        if figure_handles is None or figure_labels is None:
+            raise ValueError(f"No radar handles were created for {backbone}")
+        legend_axis.legend(
+            figure_handles,
+            figure_labels,
+            loc="center",
+            ncol=2,
+            frameon=False,
+            fontsize=8.0,
+            handlelength=1.45,
+            columnspacing=0.9,
+            labelspacing=0.55,
+        )
+        fig.suptitle(f"{backbone}", fontsize=16.0, fontweight="bold", y=0.99)
+        fig.tight_layout(rect=(0.0, 0.0, 1.0, 0.965), h_pad=1.3, w_pad=1.2)
+        out_base = out_dir / f"{backbone.lower().replace('-', '_')}_radar"
         save_png(fig, str(out_base), dpi=350)
         fig.savefig(str(out_base) + ".pdf", bbox_inches="tight")
         plt.close(fig)
+        if first_out_base is None:
+            first_out_base = out_base
+
+    if first_out_base is not None:
+        import shutil
+
+        shutil.copyfile(str(first_out_base) + ".png", figure_dir / "09_dataset_radar_effects.png")
+        shutil.copyfile(str(first_out_base) + ".pdf", figure_dir / "09_dataset_radar_effects.pdf")
 
 
 def main() -> None:
