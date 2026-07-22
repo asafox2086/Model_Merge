@@ -48,7 +48,53 @@ def read_distribution(path: Path) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
     return classes, predicted, true
 
 
-def plot_panel(axis, classes, predicted, true, title, prediction_color):
+def annotate_predictions(axis, classes, predicted, color, annotate_zero_summary=False):
+    peak = int(np.argmax(predicted))
+    axis.annotate(
+        f"{predicted[peak]:.1f}",
+        (classes[peak], predicted[peak]),
+        xytext=(0, 12),
+        textcoords="offset points",
+        ha="center",
+        va="bottom",
+        color=color,
+        fontsize=9.5,
+        fontweight="bold",
+        zorder=6,
+    )
+    if annotate_zero_summary:
+        zero_classes = classes[np.isclose(predicted, 0.0)]
+        axis.text(
+            0.03,
+            0.35,
+            "DermaMNIST RegMean:\n0.0% at classes " + ", ".join(map(str, zero_classes)),
+            transform=axis.transAxes,
+            color=color,
+            fontsize=9.5,
+            fontweight="bold",
+            va="center",
+            bbox={"boxstyle": "round,pad=0.25", "facecolor": "white", "edgecolor": color, "alpha": 0.92},
+            zorder=6,
+        )
+        return
+    for class_index, value in zip(classes, predicted):
+        if value < 1 or class_index == classes[peak]:
+            continue
+        axis.annotate(
+            f"{value:.1f}",
+            (class_index, value),
+            xytext=(0, 7),
+            textcoords="offset points",
+            ha="center",
+            va="bottom",
+            color=color,
+            fontsize=9.5,
+            fontweight="bold",
+            zorder=6,
+        )
+
+
+def plot_panel(axis, classes, predicted, true, title, prediction_color, annotate_zero_summary=False):
     axis.plot(
         classes,
         true,
@@ -77,7 +123,8 @@ def plot_panel(axis, classes, predicted, true, title, prediction_color):
     axis.set_xticks(classes)
     axis.set_xticklabels([f"{class_index}" for class_index in classes])
     axis.set_xlabel("Class index")
-    axis.set_ylim(-2, 106)
+    axis.set_ylim(-2, 112)
+    annotate_predictions(axis, classes, predicted, prediction_color, annotate_zero_summary)
     polish_axes(axis, y_grid=True, x_grid=False)
 
 
@@ -110,52 +157,13 @@ def plot_overlay(axis, classes, derma_predicted, natural_predicted, true):
             label=label,
             zorder=4,
         )
-    derma_peak = int(np.argmax(derma_predicted))
-    axis.annotate(
-        f"{derma_predicted[derma_peak]:.1f}",
-        (classes[derma_peak], derma_predicted[derma_peak]),
-        xytext=(0, 14),
-        textcoords="offset points",
-        ha="center",
-        va="bottom",
-        color="#4F81BD",
-        fontsize=9.5,
-        fontweight="bold",
-        zorder=6,
-    )
-    zero_classes = classes[np.isclose(derma_predicted, 0.0)]
-    axis.text(
-        0.03,
-        0.35,
-        "DermaMNIST RegMean:\n0.0% at classes " + ", ".join(map(str, zero_classes)),
-        transform=axis.transAxes,
-        color="#4F81BD",
-        fontsize=9.5,
-        fontweight="bold",
-        va="center",
-        bbox={"boxstyle": "round,pad=0.25", "facecolor": "white", "edgecolor": "#4F81BD", "alpha": 0.92},
-        zorder=6,
-    )
-    for class_index, value in zip(classes, natural_predicted):
-        if value < 1:
-            continue
-        axis.annotate(
-            f"{value:.1f}",
-            (class_index, value),
-            xytext=(0, 7),
-            textcoords="offset points",
-            ha="center",
-            va="bottom",
-            color="#C0504D",
-            fontsize=9.5,
-            fontweight="bold",
-            zorder=6,
-        )
+    annotate_predictions(axis, classes, derma_predicted, "#4F81BD", annotate_zero_summary=True)
+    annotate_predictions(axis, classes, natural_predicted, "#C0504D")
     axis.set_xticks(classes)
     axis.set_xticklabels([f"{class_index}" for class_index in classes])
     axis.set_xlabel("Class index")
     axis.set_ylabel("Test distribution (%)")
-    axis.set_ylim(-2, 108)
+    axis.set_ylim(-2, 112)
     axis.set_title("Matched prediction distributions", fontweight="bold", pad=8)
     axis.legend(loc="upper left", frameon=False)
     polish_axes(axis, y_grid=True, x_grid=False)
@@ -182,7 +190,15 @@ def main() -> None:
         figure.tight_layout()
     else:
         figure, axes = plt.subplots(1, 2, figsize=(11.8, 4.6), dpi=350, sharey=True)
-        plot_panel(axes[0], derma_classes, derma_predicted, derma_true, "Medical DermaMNIST", "#4F81BD")
+        plot_panel(
+            axes[0],
+            derma_classes,
+            derma_predicted,
+            derma_true,
+            "Medical DermaMNIST",
+            "#4F81BD",
+            annotate_zero_summary=True,
+        )
         plot_panel(
             axes[1],
             natural_classes,
