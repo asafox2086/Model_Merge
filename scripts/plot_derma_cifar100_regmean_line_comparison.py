@@ -23,7 +23,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--derma-csv", type=Path, required=True)
     parser.add_argument("--natural-csv", type=Path, required=True)
     parser.add_argument("--output-base", type=Path, required=True)
-    parser.add_argument("--layout", choices=("panels", "overlay"), default="panels")
+    parser.add_argument("--layout", choices=("panels", "separate", "overlay"), default="panels")
     return parser.parse_args()
 
 
@@ -111,6 +111,7 @@ def plot_panel(axis, classes, predicted, true, title, prediction_color, annotate
         markerfacecolor="white",
         markeredgecolor="#202020",
         markeredgewidth=1.5,
+        linestyle="-",
         linewidth=2.6,
         label="True test distribution",
         zorder=4,
@@ -123,6 +124,7 @@ def plot_panel(axis, classes, predicted, true, title, prediction_color, annotate
         markerfacecolor=prediction_color,
         markeredgecolor=darken_color(prediction_color, 0.64),
         markeredgewidth=1.2,
+        linestyle="--",
         linewidth=2.8,
         label="RegMean predictions",
         zorder=5,
@@ -145,13 +147,14 @@ def plot_overlay(axis, classes, derma_predicted, natural_predicted, true):
         markerfacecolor="white",
         markeredgecolor="#202020",
         markeredgewidth=1.5,
+        linestyle="-",
         linewidth=2.6,
         label="True test distribution",
         zorder=3,
     )
-    for values, color, label, marker in (
-        (derma_predicted, "#4F81BD", "DermaMNIST RegMean", "D"),
-        (natural_predicted, "#C0504D", "CIFAR-100 RegMean", "s"),
+    for values, color, label, marker, linestyle in (
+        (derma_predicted, "#4F81BD", "DermaMNIST RegMean", "D", "--"),
+        (natural_predicted, "#C0504D", "CIFAR-100 RegMean", "s", "-."),
     ):
         axis.plot(
             classes,
@@ -161,6 +164,7 @@ def plot_overlay(axis, classes, derma_predicted, natural_predicted, true):
             markerfacecolor=color,
             markeredgecolor=darken_color(color, 0.64),
             markeredgewidth=1.2,
+            linestyle=linestyle,
             linewidth=2.8,
             label=label,
             zorder=4,
@@ -196,6 +200,26 @@ def main() -> None:
         figure, axis = plt.subplots(figsize=(7.4, 4.6), dpi=350)
         plot_overlay(axis, derma_classes, derma_predicted, natural_predicted, derma_true)
         figure.tight_layout()
+    elif args.layout == "separate":
+        for suffix, predicted, true, title, color, zero_summary in (
+            ("dermamnist", derma_predicted, derma_true, "Medical DermaMNIST", "#4F81BD", True),
+            (
+                "cifar100_semantic7",
+                natural_predicted,
+                natural_true,
+                "Natural CIFAR-100 semantic control",
+                "#C0504D",
+                False,
+            ),
+        ):
+            figure, axis = plt.subplots(figsize=(7.4, 4.6), dpi=350)
+            plot_panel(axis, derma_classes, predicted, true, title, color, annotate_zero_summary=zero_summary)
+            axis.set_ylabel("Test distribution (%)")
+            axis.legend(loc="upper left", frameon=False)
+            figure.tight_layout()
+            save_png_pdf(figure, f"{args.output_base}_{suffix}", dpi=350)
+            plt.close(figure)
+        return
     else:
         figure, axes = plt.subplots(1, 2, figsize=(11.8, 4.6), dpi=350, sharey=True)
         plot_panel(
