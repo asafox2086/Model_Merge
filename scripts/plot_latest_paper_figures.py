@@ -866,7 +866,7 @@ def draw_metric_radar(
     axis.set_theta_direction(-1)
     axis.set_xticks(angles)
     axis.set_xticklabels(labels, fontsize=7.2)
-    axis.tick_params(axis="x", pad=9.0)
+    axis.tick_params(axis="x", pad=3.0)
     axis.set_ylim(lower, upper)
     axis.set_yticks(ticks)
     axis.set_yticklabels([f"{tick:.0f}" for tick in ticks], fontsize=6.0)
@@ -889,7 +889,7 @@ def draw_metric_radar(
             alpha=0.72 if name != "LAMP-Merge" else 1.0,
             zorder=5 if name == "LAMP-Merge" else 3,
         )
-    axis.set_title(metric, fontsize=11.0, fontweight="bold", pad=6)
+    axis.set_title(metric, fontsize=11.0, fontweight="bold", pad=1.5)
     if show_legend:
         axis.legend(
             loc="center left",
@@ -926,7 +926,7 @@ def plot_dataset_radars(csv_dir: Path, figure_dir: Path) -> None:
     for backbone in backbones:
         if not any(row["Backbone"] == backbone for row in rows):
             continue
-        fig, axes = plt.subplots(2, 2, figsize=(6.9, 5.75), dpi=300, subplot_kw={"projection": "polar"})
+        fig, axes = plt.subplots(2, 2, figsize=(6.9, 5.3), dpi=300, subplot_kw={"projection": "polar"})
         flat_axes = list(axes.ravel())
         legend_axis = flat_axes[-1]
         legend_axis.axis("off")
@@ -954,8 +954,8 @@ def plot_dataset_radars(csv_dir: Path, figure_dir: Path) -> None:
             columnspacing=0.65,
             labelspacing=0.45,
         )
-        fig.suptitle(f"{backbone}", fontsize=14.0, fontweight="bold", y=0.955)
-        fig.tight_layout(rect=(0.0, 0.0, 1.0, 0.925), w_pad=0.45, h_pad=0.18)
+        fig.suptitle(f"{backbone}", fontsize=14.0, fontweight="bold", y=0.935)
+        fig.subplots_adjust(left=0.06, right=0.96, bottom=0.04, top=0.865, wspace=0.22, hspace=0.05)
         out_base = out_dir / f"{backbone.lower().replace('-', '_')}_radar"
         save_png(fig, str(out_base), dpi=350)
         fig.savefig(str(out_base) + ".pdf", bbox_inches="tight")
