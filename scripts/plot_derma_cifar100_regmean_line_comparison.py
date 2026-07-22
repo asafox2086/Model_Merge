@@ -50,19 +50,19 @@ def read_distribution(path: Path) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
 
 def annotate_predictions(axis, classes, predicted, color, annotate_zero_summary=False):
     peak = int(np.argmax(predicted))
-    axis.annotate(
-        f"{predicted[peak]:.1f}",
-        (classes[peak], predicted[peak]),
-        xytext=(0, 12),
-        textcoords="offset points",
-        ha="center",
-        va="bottom",
-        color=color,
-        fontsize=9.5,
-        fontweight="bold",
-        zorder=6,
-    )
     if annotate_zero_summary:
+        axis.annotate(
+            f"{predicted[peak]:.1f}",
+            (classes[peak], predicted[peak]),
+            xytext=(0, 12),
+            textcoords="offset points",
+            ha="center",
+            va="bottom",
+            color=color,
+            fontsize=9.5,
+            fontweight="bold",
+            zorder=6,
+        )
         zero_classes = classes[np.isclose(predicted, 0.0)]
         axis.text(
             0.03,
@@ -77,19 +77,27 @@ def annotate_predictions(axis, classes, predicted, color, annotate_zero_summary=
             zorder=6,
         )
         return
+    label_offsets = {
+        3: (0, 12, "center", "bottom"),
+        4: (14, 8, "left", "bottom"),
+        5: (0, -17, "center", "top"),
+        6: (0, 12, "center", "bottom"),
+    }
     for class_index, value in zip(classes, predicted):
-        if value < 1 or class_index == classes[peak]:
-            continue
+        offset_x, offset_y, horizontal_alignment, vertical_alignment = label_offsets.get(
+            int(class_index), (0, 7, "center", "bottom")
+        )
         axis.annotate(
             f"{value:.1f}",
             (class_index, value),
-            xytext=(0, 7),
+            xytext=(offset_x, offset_y),
             textcoords="offset points",
-            ha="center",
-            va="bottom",
+            ha=horizontal_alignment,
+            va=vertical_alignment,
             color=color,
             fontsize=9.5,
             fontweight="bold",
+            bbox={"facecolor": "white", "edgecolor": "none", "alpha": 0.88, "pad": 0.08},
             zorder=6,
         )
 
