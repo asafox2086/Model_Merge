@@ -1,5 +1,130 @@
 说明,本表对应 backbone 级雷达图；每张图表示一个 backbone，图内三个子图分别表示 ACC、F1、AUC，雷达图五个顶点为五个医学数据集，曲线为 LAMP-Merge 及所有通用模型融合基线。数值对 K=3/5/7 和三个 beta 设置取平均。
 Backbone,Dataset,Method,Cases,ACC (%),F1 (%),AUC (%)
+ResNet,Blood,Weight Avg,9,28.78,18.15,71.82
+ResNet,Blood,TIES,9,20.86,9.48,68.65
+ResNet,Blood,DARE-Linear,9,26.93,15.12,67.11
+ResNet,Blood,DARE-TIES,9,23.03,10.88,63.96
+ResNet,Blood,RegMean,9,30.42,20.95,73.44
+ResNet,Blood,Fisher,9,26.63,15.59,72.38
+ResNet,Blood,Breadcrumbs,9,12.43,4.89,50.84
+ResNet,Blood,Model Stock,9,20.73,10.46,67.22
+ResNet,Blood,FROM,9,24.49,12.60,72.88
+ResNet,Blood,Iso-C,9,30.16,18.57,72.55
+ResNet,Blood,FreeMerge,9,28.78,18.16,71.82
+ResNet,Blood,RobustMerge,9,26.95,14.18,69.94
+ResNet,Blood,LAMP-Merge,9,80.00,78.68,96.77
+ResNet,Derma,Weight Avg,9,57.45,12.97,66.02
+ResNet,Derma,TIES,9,57.73,12.95,60.59
+ResNet,Derma,DARE-Linear,9,58.29,12.86,63.91
+ResNet,Derma,DARE-TIES,9,52.52,10.27,57.32
+ResNet,Derma,RegMean,9,44.87,15.36,61.58
+ResNet,Derma,Fisher,9,61.20,12.24,62.70
+ResNet,Derma,Breadcrumbs,9,17.10,4.88,51.84
+ResNet,Derma,Model Stock,9,54.16,12.83,62.55
+ResNet,Derma,FROM,9,58.88,12.09,66.80
+ResNet,Derma,Iso-C,9,52.96,15.17,67.16
+ResNet,Derma,FreeMerge,9,57.46,12.97,66.02
+ResNet,Derma,RobustMerge,9,29.94,11.63,63.02
+ResNet,Derma,LAMP-Merge,9,67.60,15.04,80.15
+ResNet,Organ-C,Weight Avg,9,18.10,9.26,73.59
+ResNet,Organ-C,TIES,9,21.51,11.50,70.95
+ResNet,Organ-C,DARE-Linear,9,20.85,8.47,69.74
+ResNet,Organ-C,DARE-TIES,9,17.42,7.43,62.81
+ResNet,Organ-C,RegMean,9,16.89,11.89,68.43
+ResNet,Organ-C,Fisher,9,30.19,19.13,77.00
+ResNet,Organ-C,Breadcrumbs,9,7.09,2.36,48.99
+ResNet,Organ-C,Model Stock,9,12.28,4.32,68.37
+ResNet,Organ-C,FROM,9,18.10,9.61,72.90
+ResNet,Organ-C,Iso-C,9,17.81,9.03,74.61
+ResNet,Organ-C,FreeMerge,9,18.09,9.26,73.59
+ResNet,Organ-C,RobustMerge,9,19.58,9.93,67.46
+ResNet,Organ-C,LAMP-Merge,9,60.02,53.11,92.62
+ResNet,Organ-S,Weight Avg,9,23.77,11.64,73.10
+ResNet,Organ-S,TIES,9,19.23,9.18,66.35
+ResNet,Organ-S,DARE-Linear,9,24.42,9.61,69.05
+ResNet,Organ-S,DARE-TIES,9,16.24,8.28,59.89
+ResNet,Organ-S,RegMean,9,18.14,12.11,67.91
+ResNet,Organ-S,Fisher,9,22.91,11.91,72.37
+ResNet,Organ-S,Breadcrumbs,9,7.85,2.77,47.02
+ResNet,Organ-S,Model Stock,9,21.11,9.52,66.36
+ResNet,Organ-S,FROM,9,22.57,10.64,73.17
+ResNet,Organ-S,Iso-C,9,24.36,11.61,75.74
+ResNet,Organ-S,FreeMerge,9,23.77,11.64,73.10
+ResNet,Organ-S,RobustMerge,9,24.03,11.61,69.05
+ResNet,Organ-S,LAMP-Merge,9,52.86,42.58,89.30
+ResNet,Ultrasound,Weight Avg,9,18.53,7.81,66.49
+ResNet,Ultrasound,TIES,9,24.40,15.00,66.40
+ResNet,Ultrasound,DARE-Linear,9,18.33,7.53,65.58
+ResNet,Ultrasound,DARE-TIES,9,21.52,12.30,64.46
+ResNet,Ultrasound,RegMean,9,22.41,16.36,65.05
+ResNet,Ultrasound,Fisher,9,27.95,17.57,72.50
+ResNet,Ultrasound,Breadcrumbs,9,11.73,4.64,47.70
+ResNet,Ultrasound,Model Stock,9,15.63,6.16,60.48
+ResNet,Ultrasound,FROM,9,19.60,9.11,68.11
+ResNet,Ultrasound,Iso-C,9,19.56,10.15,67.28
+ResNet,Ultrasound,FreeMerge,9,18.54,7.81,66.49
+ResNet,Ultrasound,RobustMerge,9,20.43,10.42,62.81
+ResNet,Ultrasound,LAMP-Merge,9,47.39,45.17,82.23
+ConvNeXt,Blood,Weight Avg,9,13.57,2.95,52.96
+ConvNeXt,Blood,TIES,9,14.84,3.21,51.32
+ConvNeXt,Blood,DARE-Linear,9,14.07,3.05,57.08
+ConvNeXt,Blood,DARE-TIES,9,13.71,3.41,50.46
+ConvNeXt,Blood,RegMean,9,14.21,3.71,53.18
+ConvNeXt,Blood,Breadcrumbs,9,13.49,2.93,47.85
+ConvNeXt,Blood,Model Stock,9,15.59,3.35,55.28
+ConvNeXt,Blood,FROM,9,14.39,3.11,55.44
+ConvNeXt,Blood,Iso-C,9,17.64,3.74,57.87
+ConvNeXt,Blood,FreeMerge,9,13.83,2.99,58.63
+ConvNeXt,Blood,RobustMerge,9,11.89,2.62,54.91
+ConvNeXt,Blood,LAMP-Merge,9,85.05,83.46,97.42
+ConvNeXt,Derma,Weight Avg,9,48.28,8.58,56.23
+ConvNeXt,Derma,TIES,9,24.93,5.48,53.85
+ConvNeXt,Derma,DARE-Linear,9,41.21,7.41,54.87
+ConvNeXt,Derma,DARE-TIES,9,20.52,4.91,52.87
+ConvNeXt,Derma,RegMean,9,20.40,3.99,50.26
+ConvNeXt,Derma,Breadcrumbs,9,26.40,4.90,47.67
+ConvNeXt,Derma,Model Stock,9,48.28,8.58,51.21
+ConvNeXt,Derma,FROM,9,36.48,7.39,50.10
+ConvNeXt,Derma,Iso-C,9,48.30,8.59,57.16
+ConvNeXt,Derma,FreeMerge,9,48.30,8.59,55.59
+ConvNeXt,Derma,RobustMerge,9,34.15,6.24,51.80
+ConvNeXt,Derma,LAMP-Merge,9,59.29,33.28,77.14
+ConvNeXt,Organ-C,Weight Avg,9,10.66,2.09,49.55
+ConvNeXt,Organ-C,TIES,9,9.06,2.67,53.35
+ConvNeXt,Organ-C,DARE-Linear,9,9.39,1.79,51.60
+ConvNeXt,Organ-C,DARE-TIES,9,11.40,3.11,54.62
+ConvNeXt,Organ-C,RegMean,9,9.73,2.68,53.13
+ConvNeXt,Organ-C,Breadcrumbs,9,13.49,2.38,52.96
+ConvNeXt,Organ-C,Model Stock,9,12.93,2.60,50.95
+ConvNeXt,Organ-C,FROM,9,10.35,2.28,51.00
+ConvNeXt,Organ-C,Iso-C,9,8.78,1.67,50.43
+ConvNeXt,Organ-C,FreeMerge,9,11.69,1.87,50.34
+ConvNeXt,Organ-C,RobustMerge,9,14.68,2.32,49.40
+ConvNeXt,Organ-C,LAMP-Merge,9,65.42,63.19,89.26
+ConvNeXt,Organ-S,Weight Avg,9,12.53,1.98,52.04
+ConvNeXt,Organ-S,TIES,9,8.93,2.16,51.54
+ConvNeXt,Organ-S,DARE-Linear,9,10.38,1.73,53.76
+ConvNeXt,Organ-S,DARE-TIES,9,9.17,2.55,51.24
+ConvNeXt,Organ-S,RegMean,9,10.98,3.96,56.95
+ConvNeXt,Organ-S,Breadcrumbs,9,17.15,2.62,55.55
+ConvNeXt,Organ-S,Model Stock,9,14.26,2.21,55.60
+ConvNeXt,Organ-S,FROM,9,11.09,2.54,52.16
+ConvNeXt,Organ-S,Iso-C,9,10.44,2.21,56.09
+ConvNeXt,Organ-S,FreeMerge,9,12.53,1.98,49.87
+ConvNeXt,Organ-S,RobustMerge,9,17.97,2.72,50.61
+ConvNeXt,Organ-S,LAMP-Merge,9,60.57,56.07,87.13
+ConvNeXt,Ultrasound,Weight Avg,2,13.34,2.93,50.37
+ConvNeXt,Ultrasound,TIES,2,10.69,2.41,50.22
+ConvNeXt,Ultrasound,DARE-Linear,2,13.52,2.97,49.19
+ConvNeXt,Ultrasound,DARE-TIES,2,16.17,3.48,49.82
+ConvNeXt,Ultrasound,RegMean,2,14.42,3.15,51.45
+ConvNeXt,Ultrasound,Breadcrumbs,2,15.00,3.25,49.57
+ConvNeXt,Ultrasound,Model Stock,2,16.76,3.59,51.39
+ConvNeXt,Ultrasound,FROM,2,10.87,2.45,49.13
+ConvNeXt,Ultrasound,Iso-C,2,16.17,3.48,50.48
+ConvNeXt,Ultrasound,FreeMerge,2,16.76,3.59,49.98
+ConvNeXt,Ultrasound,RobustMerge,2,15.00,3.25,50.98
+ConvNeXt,Ultrasound,LAMP-Merge,2,42.09,40.11,76.73
 ViT-Tiny,Blood,Weight Avg,9,11.96,3.20,66.47
 ViT-Tiny,Blood,TIES,9,11.68,3.99,58.88
 ViT-Tiny,Blood,DARE-Linear,9,16.38,6.58,62.42
@@ -65,3 +190,63 @@ ViT-Tiny,Ultrasound,Iso-C,9,16.05,6.94,58.27
 ViT-Tiny,Ultrasound,FreeMerge,9,15.47,4.70,56.42
 ViT-Tiny,Ultrasound,RobustMerge,9,17.06,6.16,57.68
 ViT-Tiny,Ultrasound,LAMP-Merge,9,46.01,42.25,76.75
+Swin-Tiny,Blood,Weight Avg,8,14.31,3.19,54.85
+Swin-Tiny,Blood,TIES,8,11.58,2.55,48.78
+Swin-Tiny,Blood,DARE-Linear,8,15.36,3.99,55.50
+Swin-Tiny,Blood,DARE-TIES,8,13.02,2.83,46.88
+Swin-Tiny,Blood,RegMean,8,15.53,3.41,48.12
+Swin-Tiny,Blood,Breadcrumbs,8,13.90,3.14,57.72
+Swin-Tiny,Blood,Model Stock,7,14.67,3.37,60.88
+Swin-Tiny,Blood,FROM,7,15.53,3.33,49.26
+Swin-Tiny,Blood,Iso-C,7,16.42,8.26,60.03
+Swin-Tiny,Blood,FreeMerge,7,9.83,2.47,59.30
+Swin-Tiny,Blood,RobustMerge,7,14.34,3.17,57.31
+Swin-Tiny,Blood,LAMP-Merge,7,77.50,75.87,96.11
+Swin-Tiny,Derma,Weight Avg,9,53.62,9.33,49.84
+Swin-Tiny,Derma,TIES,9,27.70,5.22,50.89
+Swin-Tiny,Derma,DARE-Linear,9,39.90,7.09,48.79
+Swin-Tiny,Derma,DARE-TIES,9,40.96,7.34,49.47
+Swin-Tiny,Derma,RegMean,9,39.68,7.03,49.36
+Swin-Tiny,Derma,Breadcrumbs,9,13.75,3.59,47.34
+Swin-Tiny,Derma,Model Stock,9,40.55,7.32,50.98
+Swin-Tiny,Derma,FROM,9,47.43,8.37,49.66
+Swin-Tiny,Derma,Iso-C,9,37.04,8.65,53.98
+Swin-Tiny,Derma,FreeMerge,9,53.62,9.33,49.97
+Swin-Tiny,Derma,RobustMerge,9,18.84,3.64,51.22
+Swin-Tiny,Derma,LAMP-Merge,9,63.17,27.95,80.63
+Swin-Tiny,Organ-C,Weight Avg,9,10.50,2.48,54.87
+Swin-Tiny,Organ-C,TIES,9,9.32,2.41,54.37
+Swin-Tiny,Organ-C,DARE-Linear,9,10.68,2.48,53.67
+Swin-Tiny,Organ-C,DARE-TIES,9,10.55,2.71,50.98
+Swin-Tiny,Organ-C,RegMean,9,10.12,3.12,53.37
+Swin-Tiny,Organ-C,Breadcrumbs,9,16.29,3.49,57.09
+Swin-Tiny,Organ-C,Model Stock,9,10.95,2.59,56.35
+Swin-Tiny,Organ-C,FROM,9,11.48,2.86,54.91
+Swin-Tiny,Organ-C,Iso-C,9,13.67,6.64,61.75
+Swin-Tiny,Organ-C,FreeMerge,9,10.75,2.54,57.53
+Swin-Tiny,Organ-C,RobustMerge,9,16.68,3.74,58.08
+Swin-Tiny,Organ-C,LAMP-Merge,9,68.26,65.50,94.67
+Swin-Tiny,Organ-S,Weight Avg,9,8.89,1.76,55.24
+Swin-Tiny,Organ-S,TIES,9,8.16,1.92,50.08
+Swin-Tiny,Organ-S,DARE-Linear,9,9.14,2.00,53.98
+Swin-Tiny,Organ-S,DARE-TIES,9,9.53,3.01,52.06
+Swin-Tiny,Organ-S,RegMean,9,8.57,2.30,53.33
+Swin-Tiny,Organ-S,Breadcrumbs,9,21.81,3.38,57.82
+Swin-Tiny,Organ-S,Model Stock,9,11.63,3.04,59.52
+Swin-Tiny,Organ-S,FROM,9,11.76,3.20,54.89
+Swin-Tiny,Organ-S,Iso-C,9,17.17,8.22,64.78
+Swin-Tiny,Organ-S,FreeMerge,9,7.47,1.34,58.39
+Swin-Tiny,Organ-S,RobustMerge,9,16.33,3.89,55.52
+Swin-Tiny,Organ-S,LAMP-Merge,9,62.74,58.35,92.04
+Swin-Tiny,Ultrasound,Weight Avg,9,14.29,3.18,55.21
+Swin-Tiny,Ultrasound,TIES,9,14.20,4.13,52.32
+Swin-Tiny,Ultrasound,DARE-Linear,9,15.92,4.22,56.10
+Swin-Tiny,Ultrasound,DARE-TIES,9,14.83,3.68,50.19
+Swin-Tiny,Ultrasound,RegMean,9,15.45,6.28,53.43
+Swin-Tiny,Ultrasound,Breadcrumbs,9,14.71,4.28,52.81
+Swin-Tiny,Ultrasound,Model Stock,9,15.59,4.68,56.86
+Swin-Tiny,Ultrasound,FROM,9,14.23,3.98,56.10
+Swin-Tiny,Ultrasound,Iso-C,9,17.61,7.57,57.91
+Swin-Tiny,Ultrasound,FreeMerge,9,15.64,4.70,55.13
+Swin-Tiny,Ultrasound,RobustMerge,9,15.68,4.91,55.33
+Swin-Tiny,Ultrasound,LAMP-Merge,9,48.27,46.41,82.27
