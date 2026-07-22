@@ -1,0 +1,22 @@
+说明,本表对应数据集级雷达图；每个数据集一个雷达图，四个轴为四种 backbone，曲线比较 Weight Averaging、最强非 LAMP 基线和 LAMP-Merge 的 client-average ACC。
+Dataset,Backbone,Weight Averaging ACC (%),Strongest non-LAMP ACC (%),Strongest non-LAMP method,LAMP-Merge ACC (%)
+Blood,ResNet,28.77,30.41,RegMean,80.01
+Derma,ResNet,57.45,67.03,Fisher,67.60
+Organ-C,ResNet,18.10,30.33,Fisher,60.04
+Organ-S,ResNet,23.77,25.32,Fisher,52.87
+Ultrasound,ResNet,18.53,25.26,Fisher,47.39
+Blood,ConvNeXt,13.57,17.64,Iso-C,85.05
+Derma,ConvNeXt,48.28,48.30,Iso-C,59.32
+Organ-C,ConvNeXt,10.66,14.68,RobustMerge,65.40
+Organ-S,ConvNeXt,12.53,17.97,RobustMerge,60.55
+Ultrasound,ConvNeXt,14.22,15.75,Fisher,42.73
+Blood,ViT-Tiny,11.96,16.38,DARE-Linear,85.21
+Derma,ViT-Tiny,42.34,55.37,RegMean,59.55
+Organ-C,ViT-Tiny,12.18,14.73,FROM,58.47
+Organ-S,ViT-Tiny,11.35,12.64,TIES-Merging,54.48
+Ultrasound,ViT-Tiny,15.52,17.86,FROM,46.00
+Blood,Swin-Tiny,14.25,16.29,Fisher,77.40
+Derma,Swin-Tiny,53.62,53.62,Weight Averaging,63.17
+Organ-C,Swin-Tiny,10.50,16.68,RobustMerge,68.27
+Organ-S,Swin-Tiny,8.89,21.81,Breadcrumbs,62.74
+Ultrasound,Swin-Tiny,14.29,17.60,Iso-C,48.19

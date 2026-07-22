@@ -721,6 +721,212 @@ def plot_tsne(csv_dir: Path, figure_dir: Path) -> None:
     plt.close(fig)
 
 
+def load_dataset_radar_rows(csv_dir: Path) -> list[dict[str, str]]:
+    backbone_files = [
+        ("ResNet", "主实验_ResNet.csv"),
+        ("ConvNeXt", "主实验_ConvNeXt.csv"),
+        ("ViT-Tiny", "主实验_ViT-Tiny.csv"),
+        ("Swin-Tiny", "主实验_Swin-Tiny.csv"),
+    ]
+    datasets = ["Blood", "Derma", "Organ-C", "Organ-S", "Ultrasound"]
+    output_rows: list[dict[str, str]] = []
+    for backbone, filename in backbone_files:
+        rows = read_annotated_csv(csv_dir / filename)
+        by_method = {row["Method"]: row for row in rows}
+        if "Weight Averaging" not in by_method or "LAMP-Merge" not in by_method:
+            raise ValueError(f"{filename} is missing required radar methods")
+        for dataset in datasets:
+            column = f"{dataset} Avg ACC / F1 (%)"
+            weight_acc, _ = parse_metric_pair(by_method["Weight Averaging"][column], f"{backbone}:{dataset}:Weight")
+            lamp_acc, _ = parse_metric_pair(by_method["LAMP-Merge"][column], f"{backbone}:{dataset}:LAMP")
+            best_method = None
+            best_acc = -np.inf
+            for method, row in by_method.items():
+                if method == "LAMP-Merge":
+                    continue
+                acc, _ = parse_metric_pair(row[column], f"{backbone}:{dataset}:{method}")
+                if acc > best_acc:
+                    best_acc = acc
+                    best_method = method
+            if best_method is None or not np.isfinite(best_acc):
+                raise ValueError(f"No non-LAMP baseline found for {backbone}:{dataset}")
+            output_rows.append(
+                {
+                    "Dataset": dataset,
+                    "Backbone": backbone,
+                    "Weight Averaging ACC (%)": f"{weight_acc:.2f}",
+                    "Strongest non-LAMP ACC (%)": f"{best_acc:.2f}",
+                    "Strongest non-LAMP method": best_method,
+                    "LAMP-Merge ACC (%)": f"{lamp_acc:.2f}",
+                }
+            )
+    return output_rows
+
+
+def write_dataset_radar_csv(rows: list[dict[str, str]], path: Path) -> None:
+    fields = [
+        "Dataset",
+        "Backbone",
+        "Weight Averaging ACC (%)",
+        "Strongest non-LAMP ACC (%)",
+        "Strongest non-LAMP method",
+        "LAMP-Merge ACC (%)",
+    ]
+    path.parent.mkdir(parents=True, exist_ok=True)
+    with path.open("w", newline="", encoding="utf-8") as handle:
+        writer = csv.DictWriter(handle, fieldnames=fields, lineterminator="\n")
+        handle.write("说明,本表对应数据集级雷达图；每个数据集一个雷达图，四个轴为四种 backbone，曲线比较 Weight Averaging、最强非 LAMP 基线和 LAMP-Merge 的 client-average ACC。\n")
+        writer.writeheader()
+        writer.writerows(rows)
+
+
+def radar_axis_limits(values: np.ndarray) -> tuple[float, float, np.ndarray]:
+    lower = max(0.0, 5.0 * np.floor((float(values.min()) - 5.0) / 5.0))
+    upper = min(100.0, 5.0 * np.ceil((float(values.max()) + 5.0) / 5.0))
+    if upper - lower < 15.0:
+        center = (upper + lower) / 2.0
+        lower = max(0.0, center - 7.5)
+        upper = min(100.0, center + 7.5)
+    ticks = np.linspace(lower, upper, 4)
+    return lower, upper, ticks
+
+
+def draw_dataset_radar(
+    axis: plt.Axes,
+    dataset: str,
+    labels: list[str],
+    series: dict[str, np.ndarray],
+    show_legend: bool = False,
+) -> None:
+    angles = np.linspace(0, 2 * np.pi, len(labels), endpoint=False)
+    closed_angles = np.concatenate([angles, angles[:1]])
+    all_values = np.concatenate(list(series.values()))
+    lower, upper, ticks = radar_axis_limits(all_values)
+    axis.set_theta_offset(np.pi / 2)
+    axis.set_theta_direction(-1)
+    axis.set_xticks(angles)
+    axis.set_xticklabels(labels, fontsize=8.4)
+    axis.set_ylim(lower, upper)
+    axis.set_yticks(ticks)
+    axis.set_yticklabels([f"{tick:.0f}" for tick in ticks], fontsize=7.2)
+    axis.set_rlabel_position(8)
+    axis.grid(True, linestyle="--", color="#BFBFBF", alpha=0.65, linewidth=0.7)
+    axis.spines["polar"].set_color("black")
+    axis.spines["polar"].set_linewidth(0.9)
+    styles = {
+        "Weight Avg": {"color": "#F4A6A6", "marker": "o", "linewidth": 1.9},
+        "Best non-LAMP": {"color": "#F2A93B", "marker": "s", "linewidth": 2.0},
+        "LAMP-Merge": {"color": "#1F77B4", "marker": "^", "linewidth": 2.3},
+    }
+    for name, values in series.items():
+        closed_values = np.concatenate([values, values[:1]])
+        style = styles[name]
+        axis.plot(
+            closed_angles,
+            closed_values,
+            color=style["color"],
+            marker=style["marker"],
+            markersize=4.0,
+            linewidth=style["linewidth"],
+            label=name,
+            zorder=3,
+        )
+    axis.set_title(dataset, fontsize=12.0, fontweight="bold", pad=10)
+    if show_legend:
+        axis.legend(
+            loc="lower center",
+            bbox_to_anchor=(0.5, -0.30),
+            ncol=3,
+            frameon=False,
+            fontsize=7.3,
+            handlelength=1.6,
+            columnspacing=0.9,
+        )
+
+
+def plot_dataset_radars(csv_dir: Path, figure_dir: Path) -> None:
+    rows = load_dataset_radar_rows(csv_dir)
+    write_dataset_radar_csv(rows, csv_dir / "数据集雷达图.csv")
+    datasets = ["Blood", "Derma", "Organ-C", "Organ-S", "Ultrasound"]
+    backbones = ["ResNet", "ConvNeXt", "ViT-Tiny", "Swin-Tiny"]
+    row_by_key = {(row["Dataset"], row["Backbone"]): row for row in rows}
+    setup_style("dashboard")
+    plt.rcParams.update(
+        {
+            "font.family": "serif",
+            "font.serif": ["Times New Roman", "Times", "DejaVu Serif"],
+            "font.size": 9.0,
+            "axes.titlesize": 12.0,
+            "legend.fontsize": 8.2,
+        }
+    )
+    fig, axes = plt.subplots(1, len(datasets), figsize=(15.6, 3.65), dpi=300, subplot_kw={"projection": "polar"})
+    figure_handles = None
+    for index, (axis, dataset) in enumerate(zip(axes, datasets)):
+        series = {
+            "Weight Avg": np.asarray(
+                [float(row_by_key[(dataset, backbone)]["Weight Averaging ACC (%)"]) for backbone in backbones]
+            ),
+            "Best non-LAMP": np.asarray(
+                [float(row_by_key[(dataset, backbone)]["Strongest non-LAMP ACC (%)"]) for backbone in backbones]
+            ),
+            "LAMP-Merge": np.asarray(
+                [float(row_by_key[(dataset, backbone)]["LAMP-Merge ACC (%)"]) for backbone in backbones]
+            ),
+        }
+        draw_dataset_radar(axis, dataset, backbones, series, show_legend=False)
+        if figure_handles is None:
+            figure_handles, figure_labels = axis.get_legend_handles_labels()
+    if figure_handles is None:
+        raise ValueError("No dataset radar handles were created")
+    fig.legend(
+        figure_handles,
+        figure_labels,
+        loc="upper center",
+        bbox_to_anchor=(0.5, 1.01),
+        ncol=3,
+        frameon=False,
+        fontsize=9.4,
+        handlelength=2.0,
+        columnspacing=1.6,
+    )
+    fig.text(
+        0.5,
+        0.02,
+        "Dataset-level radar comparison over backbone families (client-average ACC).",
+        ha="center",
+        va="bottom",
+        fontsize=11.0,
+        fontstyle="italic",
+    )
+    fig.tight_layout(rect=(0, 0.08, 1, 0.9), w_pad=0.8)
+    save_png(fig, str(figure_dir / "09_dataset_radar_effects"), dpi=350)
+    fig.savefig(figure_dir / "09_dataset_radar_effects.pdf", bbox_inches="tight")
+    plt.close(fig)
+
+    single_dir = figure_dir / "dataset_radars"
+    single_dir.mkdir(parents=True, exist_ok=True)
+    for dataset in datasets:
+        fig, axis = plt.subplots(1, 1, figsize=(4.2, 4.15), dpi=300, subplot_kw={"projection": "polar"})
+        series = {
+            "Weight Avg": np.asarray(
+                [float(row_by_key[(dataset, backbone)]["Weight Averaging ACC (%)"]) for backbone in backbones]
+            ),
+            "Best non-LAMP": np.asarray(
+                [float(row_by_key[(dataset, backbone)]["Strongest non-LAMP ACC (%)"]) for backbone in backbones]
+            ),
+            "LAMP-Merge": np.asarray(
+                [float(row_by_key[(dataset, backbone)]["LAMP-Merge ACC (%)"]) for backbone in backbones]
+            ),
+        }
+        draw_dataset_radar(axis, dataset, backbones, series, show_legend=True)
+        fig.tight_layout(rect=(0.02, 0.18, 0.98, 1))
+        out_base = single_dir / f"{dataset.lower().replace('-', '_')}_radar"
+        save_png(fig, str(out_base), dpi=350)
+        fig.savefig(str(out_base) + ".pdf", bbox_inches="tight")
+        plt.close(fig)
+
+
 def main() -> None:
     parser = argparse.ArgumentParser()
     parser.add_argument("--paper-dir", type=Path, required=True)
@@ -736,6 +942,7 @@ def main() -> None:
     plot_ultrasound_distribution(csv_dir, figure_dir)
     plot_hparams(csv_dir, figure_dir)
     plot_tsne(csv_dir, figure_dir)
+    plot_dataset_radars(csv_dir, figure_dir)
     print(f"Wrote paper figures to {figure_dir}")
 
 
