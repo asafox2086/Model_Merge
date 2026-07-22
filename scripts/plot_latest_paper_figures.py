@@ -866,7 +866,7 @@ def draw_metric_radar(
     axis.set_theta_direction(-1)
     axis.set_xticks(angles)
     axis.set_xticklabels(labels, fontsize=7.2)
-    axis.tick_params(axis="x", pad=1.0)
+    axis.tick_params(axis="x", pad=9.0)
     axis.set_ylim(lower, upper)
     axis.set_yticks(ticks)
     axis.set_yticklabels([f"{tick:.0f}" for tick in ticks], fontsize=6.0)
@@ -926,11 +926,13 @@ def plot_dataset_radars(csv_dir: Path, figure_dir: Path) -> None:
     for backbone in backbones:
         if not any(row["Backbone"] == backbone for row in rows):
             continue
-        fig, axes = plt.subplots(1, 3, figsize=(12.4, 4.15), dpi=300, subplot_kw={"projection": "polar"})
+        fig, axes = plt.subplots(2, 2, figsize=(6.9, 5.75), dpi=300, subplot_kw={"projection": "polar"})
         flat_axes = list(axes.ravel())
+        legend_axis = flat_axes[-1]
+        legend_axis.axis("off")
         figure_handles = None
         figure_labels = None
-        for axis, metric in zip(flat_axes, RADAR_AXES):
+        for axis, metric in zip(flat_axes[:3], RADAR_AXES):
             series = {
                 method: np.asarray([float(row_by_key[(backbone, dataset, method)][f"{metric} (%)"]) for dataset in datasets])
                 for method in methods
@@ -941,20 +943,19 @@ def plot_dataset_radars(csv_dir: Path, figure_dir: Path) -> None:
                 figure_handles, figure_labels = axis.get_legend_handles_labels()
         if figure_handles is None or figure_labels is None:
             raise ValueError(f"No radar handles were created for {backbone}")
-        fig.legend(
+        legend_axis.legend(
             figure_handles,
             figure_labels,
-            loc="lower center",
-            bbox_to_anchor=(0.5, 0.01),
-            ncol=5,
+            loc="center",
+            ncol=2,
             frameon=False,
             fontsize=6.7,
             handlelength=1.5,
-            columnspacing=0.8,
-            labelspacing=0.34,
+            columnspacing=0.65,
+            labelspacing=0.45,
         )
-        fig.suptitle(f"{backbone}", fontsize=14.0, fontweight="bold", y=0.985)
-        fig.tight_layout(rect=(0.0, 0.12, 1.0, 0.92), w_pad=0.42)
+        fig.suptitle(f"{backbone}", fontsize=14.0, fontweight="bold", y=0.955)
+        fig.tight_layout(rect=(0.0, 0.0, 1.0, 0.925), w_pad=0.45, h_pad=0.18)
         out_base = out_dir / f"{backbone.lower().replace('-', '_')}_radar"
         save_png(fig, str(out_base), dpi=350)
         fig.savefig(str(out_base) + ".pdf", bbox_inches="tight")
