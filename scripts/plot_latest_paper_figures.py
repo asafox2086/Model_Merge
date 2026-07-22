@@ -221,52 +221,80 @@ def plot_baseline_2x2_ablation(csv_dir: Path, figure_dir: Path) -> None:
             f"{sorted(set(row_by_configuration).symmetric_difference(expected))}"
         )
 
-    values = {
-        baseline: finite_array(
-            [float(row_by_configuration[(baseline, setting)]["Overall ACC (%)"]) for setting in settings],
-            (len(settings),),
+    values = {}
+    for baseline in baselines:
+        metric_pairs = finite_array(
+            [
+                metric
+                for setting in settings
+                for metric in parse_metric_pair(
+                    row_by_configuration[(baseline, setting)]["Overall ACC / F1 (%)"],
+                    f"{baseline}:{setting}",
+                )
+            ],
+            (2 * len(settings),),
             baseline,
-        )
-        for baseline in baselines
-    }
+        ).reshape(len(settings), 2)
+        values[baseline] = metric_pairs
     if any((series < 0).any() or (series > 100).any() for series in values.values()):
-        raise ValueError("Baseline 2x2 accuracy is outside [0, 100]")
+        raise ValueError("Baseline 2x2 metrics are outside [0, 100]")
 
     setup_style("bar")
     plt.rcParams.update(
         {
             "font.family": "serif",
             "font.serif": ["Times New Roman", "Times", "DejaVu Serif"],
-            "font.size": 7.4,
-            "axes.titlesize": 8.6,
-            "axes.labelsize": 7.8,
-            "ytick.labelsize": 7.2,
-            "legend.fontsize": 7.0,
+            "font.size": 7.2,
+            "axes.titlesize": 8.3,
+            "axes.labelsize": 7.3,
+            "ytick.labelsize": 6.8,
+            "legend.fontsize": 5.6,
             "axes.linewidth": 0.7,
         }
     )
-    fig, axes = plt.subplots(1, 2, figsize=(3.45, 1.78), dpi=300, sharey=True)
+    fig, axes = plt.subplots(1, 2, figsize=(4.45, 1.82), dpi=300, sharey=True)
     x = np.arange(len(settings))
+    width = 0.33
+    setting_colors = [*ABLATION_COLORS[:-1], PAPER_COLORS["LAMP-Merge"]]
+    legend_handles = []
     for axis, baseline in zip(axes, baselines):
-        bars = axis.bar(
-            x,
-            values[baseline],
-            width=0.64,
-            color=[*ABLATION_COLORS[:-1], PAPER_COLORS["LAMP-Merge"]],
+        acc_values = values[baseline][:, 0]
+        f1_values = values[baseline][:, 1]
+        acc_bars = axis.bar(
+            x - width / 2,
+            acc_values,
+            width=width,
+            color=setting_colors,
             edgecolor="black",
-            linewidth=0.8,
+            linewidth=0.7,
             zorder=3,
+            label="ACC",
         )
-        for bar, value in zip(bars, values[baseline]):
-            axis.text(
-                bar.get_x() + bar.get_width() / 2,
-                value + 1.0,
-                f"{value:.2f}",
-                ha="center",
-                va="bottom",
-                fontsize=7.2,
-            )
-        axis.set_title(baseline, pad=3)
+        f1_bars = axis.bar(
+            x + width / 2,
+            f1_values,
+            width=width,
+            color=[darken_color(color, 0.86) for color in setting_colors],
+            edgecolor="black",
+            linewidth=0.7,
+            hatch="///",
+            zorder=3,
+            label="Macro-F1",
+        )
+        if not legend_handles:
+            legend_handles = [acc_bars[0], f1_bars[0]]
+        for bars, series in [(acc_bars, acc_values), (f1_bars, f1_values)]:
+            for bar, value in zip(bars, series):
+                axis.text(
+                    bar.get_x() + bar.get_width() / 2,
+                    value + 1.0,
+                    f"{value:.1f}",
+                    ha="center",
+                    va="bottom",
+                    fontsize=5.2,
+                    rotation=90,
+                )
+        axis.set_title(baseline, pad=2)
         axis.set_xticks([])
         axis.set_ylim(0, 70)
         axis.set_yticks(np.arange(0, 71, 10))
@@ -275,9 +303,21 @@ def plot_baseline_2x2_ablation(csv_dir: Path, figure_dir: Path) -> None:
         for spine in axis.spines.values():
             spine.set_linewidth(0.7)
 
-    fig.text(0.012, 0.56, "Overall client-average ACC (%)", va="center", rotation="vertical", fontsize=7.8)
+    axes[0].set_ylabel("Overall client-average score (%)", labelpad=3)
     fig.legend(
-        bars,
+        legend_handles,
+        ["ACC", "Macro-F1"],
+        loc="upper center",
+        bbox_to_anchor=(0.56, 0.995),
+        ncol=2,
+        frameon=False,
+        fontsize=5.6,
+        handlelength=1.35,
+        columnspacing=0.85,
+        handletextpad=0.35,
+    )
+    fig.legend(
+        acc_bars,
         settings,
         loc="lower center",
         bbox_to_anchor=(0.5, 0.015),
@@ -288,7 +328,7 @@ def plot_baseline_2x2_ablation(csv_dir: Path, figure_dir: Path) -> None:
         columnspacing=0.45,
         handletextpad=0.25,
     )
-    fig.subplots_adjust(left=0.16, right=0.99, top=0.84, bottom=0.28, wspace=0.24)
+    fig.subplots_adjust(left=0.115, right=0.995, top=0.79, bottom=0.27, wspace=0.18)
     save_png(fig, str(figure_dir / "03_baseline_2x2_ablation"), dpi=350)
     plt.close(fig)
 
