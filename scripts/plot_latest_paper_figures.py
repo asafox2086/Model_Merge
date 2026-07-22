@@ -906,7 +906,7 @@ def plot_dataset_radars(csv_dir: Path, figure_dir: Path) -> None:
     rows = load_dataset_radar_rows(csv_dir)
     write_dataset_radar_csv(rows, csv_dir / "数据集雷达图.csv")
     backbones = list(RADAR_BACKBONE_LABELS.values())
-    datasets = list(RADAR_DATASET_LABELS.values())
+    datasets = ["Ultrasound", "Derma", "Organ-C", "Organ-S", "Blood"]
     methods = [RADAR_METHOD_LABELS[key] for key in RADAR_METHOD_ORDER]
     row_by_key = {(row["Backbone"], row["Dataset"], row["Method"]): row for row in rows}
     setup_style("dashboard")
@@ -954,8 +954,8 @@ def plot_dataset_radars(csv_dir: Path, figure_dir: Path) -> None:
             columnspacing=0.65,
             labelspacing=0.45,
         )
-        fig.suptitle(f"{backbone}", fontsize=14.0, fontweight="bold", y=0.935)
-        fig.subplots_adjust(left=0.06, right=0.96, bottom=0.04, top=0.865, wspace=0.22, hspace=0.05)
+        fig.suptitle(f"{backbone}", fontsize=14.0, fontweight="bold", y=0.98)
+        fig.subplots_adjust(left=0.08, right=0.94, bottom=0.04, top=0.84, wspace=0.02, hspace=0.05)
         out_base = out_dir / f"{backbone.lower().replace('-', '_')}_radar"
         save_png(fig, str(out_base), dpi=350)
         fig.savefig(str(out_base) + ".pdf", bbox_inches="tight")
