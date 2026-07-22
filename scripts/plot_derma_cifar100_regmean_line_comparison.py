@@ -110,11 +110,52 @@ def plot_overlay(axis, classes, derma_predicted, natural_predicted, true):
             label=label,
             zorder=4,
         )
+    derma_peak = int(np.argmax(derma_predicted))
+    axis.annotate(
+        f"{derma_predicted[derma_peak]:.1f}",
+        (classes[derma_peak], derma_predicted[derma_peak]),
+        xytext=(0, 14),
+        textcoords="offset points",
+        ha="center",
+        va="bottom",
+        color="#4F81BD",
+        fontsize=9.5,
+        fontweight="bold",
+        zorder=6,
+    )
+    zero_classes = classes[np.isclose(derma_predicted, 0.0)]
+    axis.text(
+        0.03,
+        0.35,
+        "DermaMNIST RegMean:\n0.0% at classes " + ", ".join(map(str, zero_classes)),
+        transform=axis.transAxes,
+        color="#4F81BD",
+        fontsize=9.5,
+        fontweight="bold",
+        va="center",
+        bbox={"boxstyle": "round,pad=0.25", "facecolor": "white", "edgecolor": "#4F81BD", "alpha": 0.92},
+        zorder=6,
+    )
+    for class_index, value in zip(classes, natural_predicted):
+        if value < 1:
+            continue
+        axis.annotate(
+            f"{value:.1f}",
+            (class_index, value),
+            xytext=(0, 7),
+            textcoords="offset points",
+            ha="center",
+            va="bottom",
+            color="#C0504D",
+            fontsize=9.5,
+            fontweight="bold",
+            zorder=6,
+        )
     axis.set_xticks(classes)
     axis.set_xticklabels([f"{class_index}" for class_index in classes])
     axis.set_xlabel("Class index")
     axis.set_ylabel("Test distribution (%)")
-    axis.set_ylim(-2, 106)
+    axis.set_ylim(-2, 108)
     axis.set_title("Matched prediction distributions", fontweight="bold", pad=8)
     axis.legend(loc="upper left", frameon=False)
     polish_axes(axis, y_grid=True, x_grid=False)
