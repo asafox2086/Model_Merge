@@ -23,6 +23,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--derma-csv", type=Path, required=True)
     parser.add_argument("--natural-csv", type=Path, required=True)
     parser.add_argument("--output-base", type=Path, required=True)
+    parser.add_argument("--layout", choices=("panels", "overlay"), default="panels")
     return parser.parse_args()
 
 
@@ -80,6 +81,45 @@ def plot_panel(axis, classes, predicted, true, title, prediction_color):
     polish_axes(axis, y_grid=True, x_grid=False)
 
 
+def plot_overlay(axis, classes, derma_predicted, natural_predicted, true):
+    axis.plot(
+        classes,
+        true,
+        color="#202020",
+        marker="o",
+        markerfacecolor="white",
+        markeredgecolor="#202020",
+        markeredgewidth=1.5,
+        linewidth=2.6,
+        label="True test distribution",
+        zorder=3,
+    )
+    for values, color, label, marker in (
+        (derma_predicted, "#4F81BD", "DermaMNIST RegMean", "D"),
+        (natural_predicted, "#C0504D", "CIFAR-100 RegMean", "s"),
+    ):
+        axis.plot(
+            classes,
+            values,
+            color=color,
+            marker=marker,
+            markerfacecolor=color,
+            markeredgecolor=darken_color(color, 0.64),
+            markeredgewidth=1.2,
+            linewidth=2.8,
+            label=label,
+            zorder=4,
+        )
+    axis.set_xticks(classes)
+    axis.set_xticklabels([f"{class_index}" for class_index in classes])
+    axis.set_xlabel("Class index")
+    axis.set_ylabel("Test distribution (%)")
+    axis.set_ylim(-2, 106)
+    axis.set_title("Matched prediction distributions", fontweight="bold", pad=8)
+    axis.legend(loc="upper left", frameon=False)
+    polish_axes(axis, y_grid=True, x_grid=False)
+
+
 def main() -> None:
     args = parse_args()
     derma_classes, derma_predicted, derma_true = read_distribution(args.derma_csv)
@@ -95,20 +135,25 @@ def main() -> None:
     import matplotlib.pyplot as plt
 
     setup_style("line")
-    figure, axes = plt.subplots(1, 2, figsize=(11.8, 4.6), dpi=350, sharey=True)
-    plot_panel(axes[0], derma_classes, derma_predicted, derma_true, "Medical DermaMNIST", "#4F81BD")
-    plot_panel(
-        axes[1],
-        natural_classes,
-        natural_predicted,
-        natural_true,
-        "Natural CIFAR-100 semantic control",
-        "#C0504D",
-    )
-    axes[0].set_ylabel("Test distribution (%)")
-    handles, labels = axes[0].get_legend_handles_labels()
-    figure.legend(handles, labels, loc="lower center", ncol=2, frameon=False, bbox_to_anchor=(0.5, -0.04))
-    figure.subplots_adjust(left=0.08, right=0.995, top=0.86, bottom=0.24, wspace=0.12)
+    if args.layout == "overlay":
+        figure, axis = plt.subplots(figsize=(7.4, 4.6), dpi=350)
+        plot_overlay(axis, derma_classes, derma_predicted, natural_predicted, derma_true)
+        figure.tight_layout()
+    else:
+        figure, axes = plt.subplots(1, 2, figsize=(11.8, 4.6), dpi=350, sharey=True)
+        plot_panel(axes[0], derma_classes, derma_predicted, derma_true, "Medical DermaMNIST", "#4F81BD")
+        plot_panel(
+            axes[1],
+            natural_classes,
+            natural_predicted,
+            natural_true,
+            "Natural CIFAR-100 semantic control",
+            "#C0504D",
+        )
+        axes[0].set_ylabel("Test distribution (%)")
+        handles, labels = axes[0].get_legend_handles_labels()
+        figure.legend(handles, labels, loc="lower center", ncol=2, frameon=False, bbox_to_anchor=(0.5, -0.04))
+        figure.subplots_adjust(left=0.08, right=0.995, top=0.86, bottom=0.24, wspace=0.12)
     save_png_pdf(figure, str(args.output_base), dpi=350)
     plt.close(figure)
 
