@@ -865,11 +865,11 @@ def draw_metric_radar(
     axis.set_theta_offset(np.pi / 2)
     axis.set_theta_direction(-1)
     axis.set_xticks(angles)
-    axis.set_xticklabels(labels, fontsize=7.2)
-    axis.tick_params(axis="x", pad=3.0)
+    axis.set_xticklabels(labels, fontsize=6.4)
+    axis.tick_params(axis="x", pad=2.0)
     axis.set_ylim(lower, upper)
     axis.set_yticks(ticks)
-    axis.set_yticklabels([f"{tick:.0f}" for tick in ticks], fontsize=6.0)
+    axis.set_yticklabels([f"{tick:.0f}" for tick in ticks], fontsize=5.3)
     axis.set_rlabel_position(10)
     axis.grid(True, linestyle="--", color="#BFBFBF", alpha=0.62, linewidth=0.7)
     axis.spines["polar"].set_color("black")
@@ -883,13 +883,15 @@ def draw_metric_radar(
             color=style["color"],
             marker=style["marker"],
             linestyle=style["linestyle"],
-            markersize=3.1 if name != "LAMP-Merge" else 5.4,
-            linewidth=style["linewidth"],
+            markersize=2.4 if name != "LAMP-Merge" else 4.8,
+            linewidth=0.85 if name != "LAMP-Merge" else style["linewidth"],
             label=name,
-            alpha=0.72 if name != "LAMP-Merge" else 1.0,
+            alpha=0.58 if name != "LAMP-Merge" else 1.0,
             zorder=5 if name == "LAMP-Merge" else 3,
         )
-    axis.set_title(metric, fontsize=11.0, fontweight="bold", pad=1.5)
+        if name == "LAMP-Merge":
+            axis.fill(closed_angles, closed_values, color=style["color"], alpha=0.055, zorder=1)
+    axis.set_title(metric, fontsize=8.8, fontweight="bold", pad=0.2)
     if show_legend:
         axis.legend(
             loc="center left",
@@ -926,13 +928,11 @@ def plot_dataset_radars(csv_dir: Path, figure_dir: Path) -> None:
     for backbone in backbones:
         if not any(row["Backbone"] == backbone for row in rows):
             continue
-        fig, axes = plt.subplots(2, 2, figsize=(6.9, 5.3), dpi=300, subplot_kw={"projection": "polar"})
+        fig, axes = plt.subplots(1, 3, figsize=(7.35, 2.62), dpi=300, subplot_kw={"projection": "polar"})
         flat_axes = list(axes.ravel())
-        legend_axis = flat_axes[-1]
-        legend_axis.axis("off")
         figure_handles = None
         figure_labels = None
-        for axis, metric in zip(flat_axes[:3], RADAR_AXES):
+        for axis, metric in zip(flat_axes, RADAR_AXES):
             series = {
                 method: np.asarray([float(row_by_key[(backbone, dataset, method)][f"{metric} (%)"]) for dataset in datasets])
                 for method in methods
@@ -943,19 +943,20 @@ def plot_dataset_radars(csv_dir: Path, figure_dir: Path) -> None:
                 figure_handles, figure_labels = axis.get_legend_handles_labels()
         if figure_handles is None or figure_labels is None:
             raise ValueError(f"No radar handles were created for {backbone}")
-        legend_axis.legend(
+        fig.legend(
             figure_handles,
             figure_labels,
-            loc="center",
-            ncol=2,
+            loc="lower center",
+            bbox_to_anchor=(0.5, 0.005),
+            ncol=7,
             frameon=False,
-            fontsize=6.7,
-            handlelength=1.5,
-            columnspacing=0.65,
-            labelspacing=0.45,
+            fontsize=5.45,
+            handlelength=1.25,
+            columnspacing=0.52,
+            labelspacing=0.22,
         )
-        fig.suptitle(f"{backbone}", fontsize=14.0, fontweight="bold", y=0.98)
-        fig.subplots_adjust(left=0.08, right=0.94, bottom=0.04, top=0.84, wspace=0.02, hspace=0.05)
+        fig.text(0.035, 0.975, backbone, ha="left", va="top", fontsize=10.6, fontweight="bold")
+        fig.subplots_adjust(left=0.035, right=0.985, bottom=0.24, top=0.81, wspace=0.055)
         out_base = out_dir / f"{backbone.lower().replace('-', '_')}_radar"
         save_png(fig, str(out_base), dpi=350)
         fig.savefig(str(out_base) + ".pdf", bbox_inches="tight")
