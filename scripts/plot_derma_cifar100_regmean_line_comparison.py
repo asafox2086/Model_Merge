@@ -79,7 +79,7 @@ def annotate_predictions(axis, classes, predicted, color, annotate_zero_summary=
         return
     label_offsets = {
         3: (0, 12, "center", "bottom"),
-        4: (14, 8, "left", "bottom"),
+        4: (-14, 8, "right", "bottom"),
         5: (0, -17, "center", "top"),
         6: (0, 12, "center", "bottom"),
     }
