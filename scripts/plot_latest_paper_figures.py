@@ -853,10 +853,11 @@ def draw_dataset_radar(
     axis.set_theta_offset(np.pi / 2)
     axis.set_theta_direction(-1)
     axis.set_xticks(angles)
-    axis.set_xticklabels(labels, fontsize=8.0)
+    axis.set_xticklabels(labels, fontsize=7.4)
+    axis.tick_params(axis="x", pad=1.0)
     axis.set_ylim(lower, upper)
     axis.set_yticks(ticks)
-    axis.set_yticklabels([f"{tick:.0f}" for tick in ticks], fontsize=6.9)
+    axis.set_yticklabels([f"{tick:.0f}" for tick in ticks], fontsize=6.2)
     axis.set_rlabel_position(8)
     axis.grid(True, linestyle="--", color="#BFBFBF", alpha=0.65, linewidth=0.7)
     axis.spines["polar"].set_color("black")
@@ -890,7 +891,7 @@ def draw_dataset_radar(
             alpha=0.78 if name != "LAMP-Merge" else 1.0,
             zorder=5 if name == "LAMP-Merge" else 3,
         )
-    axis.set_title(dataset, fontsize=12.0, fontweight="bold", pad=10)
+    axis.set_title(dataset, fontsize=10.8, fontweight="bold", pad=5)
     if show_legend:
         axis.legend(
             loc="center left",
@@ -927,7 +928,7 @@ def plot_dataset_radars(csv_dir: Path, figure_dir: Path) -> None:
     for backbone in backbones:
         if not any(row["Backbone"] == backbone for row in rows):
             continue
-        fig, axes = plt.subplots(3, 2, figsize=(8.2, 10.0), dpi=300, subplot_kw={"projection": "polar"})
+        fig, axes = plt.subplots(2, 3, figsize=(9.4, 7.25), dpi=300, subplot_kw={"projection": "polar"})
         flat_axes = list(axes.ravel())
         figure_handles = None
         figure_labels = None
@@ -950,13 +951,13 @@ def plot_dataset_radars(csv_dir: Path, figure_dir: Path) -> None:
             loc="center",
             ncol=2,
             frameon=False,
-            fontsize=8.0,
+            fontsize=7.4,
             handlelength=1.45,
-            columnspacing=0.9,
-            labelspacing=0.55,
+            columnspacing=0.75,
+            labelspacing=0.38,
         )
-        fig.suptitle(f"{backbone}", fontsize=16.0, fontweight="bold", y=0.99)
-        fig.tight_layout(rect=(0.0, 0.0, 1.0, 0.965), h_pad=1.3, w_pad=1.2)
+        fig.suptitle(f"{backbone}", fontsize=14.2, fontweight="bold", y=0.985)
+        fig.tight_layout(rect=(0.0, 0.0, 1.0, 0.94), h_pad=2.0, w_pad=0.45)
         out_base = out_dir / f"{backbone.lower().replace('-', '_')}_radar"
         save_png(fig, str(out_base), dpi=350)
         fig.savefig(str(out_base) + ".pdf", bbox_inches="tight")
