@@ -10,6 +10,7 @@
 | --- | --- |
 | CPU | 2 × Intel Xeon Silver 4210 CPU @ 2.20GHz |
 | CPU 核心 / 线程 | 20 cores / 40 threads |
+| 系统内存 | 376 GiB RAM |
 | GPU | 4 × NVIDIA GeForce RTX 2080 Ti |
 | GPU 显存 | 11 GB per GPU |
 | NVIDIA Driver | 535.154.05 |
