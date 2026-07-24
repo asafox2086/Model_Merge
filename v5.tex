@@ -265,7 +265,7 @@ To address these problems, we propose \textbf{LAMP-Merge}, a class-aware medical
 \begin{figure*}[!t]
     \centering
     \includegraphics[width=0.92\textwidth,height=0.34\textheight]{figures/method.pdf}
-    \caption{\textbf{Overview of LAMP-Merge.} All local models share the same frozen backbone $\phi_0$, and only the diagnostic head is merged. Each hospital uploads class-level statistics---reference-space prototypes with sample support and diagnosis prevalence counts---while raw images stay local. On the server, Diagnostic Prototype Reconstruction (DPR) merges the prototypes by support-aware weighting into the classifier weights $\mathbf{w}_c$, and Long-tail Prevalence Calibration (LPC) adds a gated, scaled, and centered log-prior bias $b_c$. The resulting head is attached to the unchanged $\phi_0$, giving $\ell_c(x)=\mathbf{w}_c^{\top}\phi_0(T(x))+\mathbf{1}[r>\tau]\,b_c$ without raw-data sharing or federated rounds.}
+    \caption{\textbf{Overview of LAMP-Merge.} All local models share the same frozen backbone $\phi_0$, and only the diagnostic head is merged. Each hospital uploads class-level statistics---reference-space prototypes with sample support and diagnosis support counts---while raw images stay local. On the server, Diagnostic Prototype Reconstruction (DPR) merges the prototypes by support-aware weighting into the classifier weights $\mathbf{w}_c$, and Long-tail Prevalence Calibration (LPC) adds a gated, scaled, and centered log-prior bias $b_c$. The resulting head is attached to the unchanged $\phi_0$, giving $\ell_c(x)=\mathbf{w}_c^{\top}\phi_0(T(x))+\mathbf{1}[r>\tau]\,b_c$ without raw-data sharing or federated rounds.}
  
     \label{fig_method}
 \end{figure*}
@@ -284,8 +284,7 @@ We evaluate LAMP-Merge on five medical image datasets spanning microscopy, dermo
 
 \subsection{Model Merging}
 
-Model-merging methods integrate independently trained checkpoints in parameter, task-vector, or geometric spaces. Weight averaging~\cite{izmailov2018averaging} and Model Soups~\cite{pmlr-v162-wortsman22a} directly interpolate parameters; permutation-aware matching~\cite{entezari2022role,ainsworth2023gitrebasinmergingmodels} aligns hidden-unit symmetries; ZipIt~\cite{stoica2024zipit} performs feature-level zipping; Task Arithmetic~\cite{ilharco2023editingmodelstaskarithmetic}, TIES-Merging~\cite{yadav2023tiesmergingresolvinginterferencemerging}, and DARE~\cite{yu2024languagemodelssupermario} manipulate task deltas and sign conflicts; Fisher merging~\cite{matena_merging_2022}, RegMean~\cite{jin2025datalessknowledgefusionmerging}, Model Stock~\cite{jang2025modelstockneedjust}, Breadcrumbs~\cite{davari2024modelbreadcrumbsscalingmultitask}, Is
-o-C~\cite{marczak2025taskleftbehindisotropic}, FreeMerge~\cite{zheng2025freemergingfouriertransformefficient}, and RobustMerge~\cite{zeng2025robustmergeparameterefficientmodelmerging} introduce curvature, mean-statistic, subspace, frequency-domain, or robustness assumptions.
+Model-merging methods integrate independently trained checkpoints in parameter, task-vector, or geometric spaces. Weight averaging~\cite{izmailov2018averaging} and Model Soups~\cite{pmlr-v162-wortsman22a} directly interpolate parameters; permutation-aware matching~\cite{entezari2022role,ainsworth2023gitrebasinmergingmodels} aligns hidden-unit symmetries; ZipIt~\cite{stoica2024zipit} performs feature-level zipping; Task Arithmetic~\cite{ilharco2023editingmodelstaskarithmetic}, TIES-Merging~\cite{yadav2023tiesmergingresolvinginterferencemerging}, and DARE~\cite{yu2024languagemodelssupermario} manipulate task deltas and sign conflicts; Fisher merging~\cite{matena_merging_2022}, RegMean~\cite{jin2025datalessknowledgefusionmerging}, Model Stock~\cite{jang2025modelstockneedjust}, Breadcrumbs~\cite{davari2024modelbreadcrumbsscalingmultitask}, Iso-C~\cite{marczak2025taskleftbehindisotropic}, FreeMerge~\cite{zheng2025freemergingfouriertransformefficient}, and RobustMerge~\cite{zeng2025robustmergeparameterefficientmodelmerging} introduce curvature, mean-statistic, subspace, frequency-domain, or robustness assumptions.
 
 However, these methods share a class-agnostic merging interface: their variables are global parameters, task vectors, update signs, or geometric statistics rather than class-level diagnostic evidence. \textbf{They do not encode whether a client has reliable supervision for a specific medical class.} Under incomplete local class coverage and long-tailed prevalence, reliable class directions can be mixed with absent or conflicting directions from other clients, resulting in aggregation-induced prediction collapse\cite{BUDA2018249,10.1371/journal.pmed.1002683}.
 
@@ -310,7 +309,7 @@ We study one-shot asynchronous medical model merging: fusing several independent
 
 \subsection{Problem Setting}
 
-Consider $K$ medical clients that share a frozen \textbf{reference encoder} $\phi_0$, the common pretrained backbone every client starts from before local training and keeps identical across clients. We call it a \textbf{reference} because each client expresses its class evidence relative to this one common encoder, so features from different clients live in a single shared coordinate frame. Client $i$ owns a private labeled dataset $D_i=\{(x,y)\}$ drawn from a class-skewed distribution over $C$ diagnosis classes, and we write $D_{i,c}$ for its subset of class $c$. In medical partitions $D_{i,c}$ is empty for many classes: client $i$ carries reliable supervision only for the classes it has actually observed and is therefore a \textbf{partial diagnostic expert}. After local training, each client performs a \textbf{single upload}---its checkpoint interface together with a support count, a prevalence count, and a space \textbf{class prototype}. It \textbf{never} upload raw image, per-sample feature, or validation set.
+Consider $K$ medical clients that share a frozen \textbf{reference encoder} $\phi_0$, the common pretrained backbone every client starts from before local training and keeps identical across clients. We call it a \textbf{reference} because each client expresses its class evidence relative to this one common encoder, so features from different clients live in a single shared coordinate frame. Client $i$ owns a private labeled dataset $D_i=\{(x,y)\}$ drawn from a class-skewed distribution over $C$ diagnosis classes, and we write $D_{i,c}$ for its subset of class $c$. In medical partitions $D_{i,c}$ is empty for many classes: client $i$ carries reliable supervision only for the classes it has actually observed and is therefore a \textbf{partial diagnostic expert}. After local training, each client performs a \textbf{single upload}---a \textbf{support count}, and a \textbf{space class prototype}. It \textbf{never} upload raw image, per-sample feature, or validation set.
 
 General-purpose methods align checkpoints in parameter, task-vector, or statistic space, but when this alignment is confined to the classification head, it stays blind to which classes each client actually supervises. When clients encode disjoint, non-overlapping class evidence, such merging has little shared discriminative structure to align and collapses onto a few dominant classes instead of recovering the global label space. We therefore keep the \textbf{diagnosis class as the explicit unit of merging} throughout.
 
@@ -343,7 +342,7 @@ with $s=18.75$. The resulting classifier is \textbf{synthesized from class evide
 
 The second pathology is that medical prevalence is long-tailed \textbf{in a clinically meaningful way}, so the correction must be one-sided: a collapsed predictor is undesirable, but fully flattening the dominant class is equally wrong when that class reflects the true clinical prior. DPR alone treats every reconstructed direction symmetrically and encodes no prevalence at all; \textbf{LPC restores it as a bounded prior on top of the reconstructed head}, distinguishing collapse correction from ordinary class balancing.
 
-The prior is estimated only from the uploaded prevalence counts $m_{i,c}$, giving the global class distribution $\pi_c=\big(\sum_{i=1}^{K}m_{i,c}\big)/\big(\sum_{k=1}^{C}\sum_{i=1}^{K}m_{i,k}\big)$. To leave near-balanced tasks untouched, the calibration is \textbf{gated} by the dominant-class imbalance $r=C\max_c\pi_c$ and applied only when $r>\tau$ (default $\tau=2.5$). When active, it adds the centered log-prior bias
+The prior is estimated only from the supported counts uploaded $n_{i,c}$, giving the global class distribution $\pi_c=\big(\sum_{i=1}^{K}n_{i,c}\big)/\big(\sum_{k=1}^{C}\sum_{i=1}^{K}n_{i,k}\big)$. To leave near-balanced tasks untouched, the calibration is \textbf{gated} by the dominant-class imbalance $r=C\max_c\pi_c$ and applied only when $r>\tau$ (default $\tau=2.5$). When active, it adds the centered log-prior bias
 \begin{equation}
 b_c=\lambda\left(\log\pi_c-\frac{1}{C}\sum_{k=1}^{C}\log\pi_k\right),
 \end{equation}
@@ -432,7 +431,7 @@ We organize twelve merging baselines into four groups by how they combine local 
 
 % Experiments follow a single-shot asynchronous model-merging protocol. Each client independently trains a local model on its own medical imaging data and then computes the class-level statistics required by LAMP-Merge locally, including class-support counts, reference-space class prototypes, and class-prevalence counts. These statistics are uploaded once together with an interface to the local checkpoint. The server performs a single model-merging step using only the uploaded checkpoints and class-level statistics, and evaluates the resulting merged model on a global test set.
 
-All baselines merge the same frozen backbone and reduce, like LAMP-Merge, to \textbf{producing the shared classification head}. We evaluate four vision-model families: ResNet~\cite{he2016deep}, ConvNeXt~\cite{liu2022convnet}, ViT-Tiny~\cite{dosovitskiy2021image}, and Swin-Tiny~\cite{liu2021swin}. For each dataset-model pair, we construct non-IID client partitions with $K\in\{3,5,7\}$ clients and Dirichlet skew $\beta\in\{0,0.01,0.1\}$~\cite{hsu2019measuringeffectsnonidenticaldata}. A client-average result fixes the dataset, model, and $K$, then averages over the three $\beta$ values, with every configuration run once under the fixed seed 42.
+All baselines use the same frozen backbone to \textbf{producing the shared classification head}. We evaluate four vision-model families: ResNet~\cite{he2016deep}, ConvNeXt~\cite{liu2022convnet}, ViT-Tiny~\cite{dosovitskiy2021image}, and Swin-Tiny~\cite{liu2021swin}. For each dataset-model pair, we construct non-IID client partitions with $K\in\{3,5,7\}$ clients and Dirichlet skew $\beta\in\{0,0.01,0.1\}$~\cite{hsu2019measuringeffectsnonidenticaldata}. A client-average result fixes the dataset, model, and $K$, then averages over the three $\beta$ values, with every configuration run once under the fixed seed 42.
 
 \subsubsection{(4) Implementation Environment:}
 
@@ -701,7 +700,7 @@ FROM\pub{AAAI 2026} & 18.01 / 8.54 & 7.81 / 2.36 & 14.05 / 3.05 & 13.29 / 4.65 &
 \begin{figure}[!t]
 \centering
 \includegraphics[width=\columnwidth]{figures/03_baseline_2x2_ablation.pdf}
-\caption{\textbf{Module ablation.} We evaluate Baselines (TIES and DARE), +DPR, +LPC, and +DPR+LPC. Both modules are complementary, and their combination achieves the best performance
+\caption{\textbf{Module ablation.} We evaluate Baselines (TIES and DARE), +\emph{DPR}, +\emph{LPC}, and +\emph{DPR+LPC}. Both modules are complementary, and their combination achieves the best performance
 across all benchmarks.}
 \label{fig:baseline-2x2-ablation}
 \end{figure}
@@ -827,7 +826,7 @@ We visualize the absolute per-class predicted--true gap; LAMP-Merge gets almost 
 \begin{figure}[!t]
 \centering
 \includegraphics[width=\linewidth]{figures/04_ultrasound_class_distribution.pdf}
-\caption{\textbf{LAMP-Merge tracks the true class prevalence instead of piling mass on one class.} Absolute per-class predicted--true gaps on Ultrasound while LAMP-Merge stays near zero across classes.}
+\caption{\textbf{Absolute per-class predicted--true gaps on Ultrasound}. Common merging methods have \textbf{huge Gap} on Ultrasound while LAMP-Merge stays near zero across classes.}
 \label{fig:visual-chaosheng_predict}
 \end{figure}
 
