@@ -52,8 +52,8 @@ DATASETS=( ${DATASETS:-bloodmnist_224 dermamnist_224 organcmnist_224 organsmnist
 SMALL_MODELS=( ${SMALL_MODELS:-resnet convnext vit_t swin_tiny} )
 CLIP_MODELS=( ${CLIP_MODELS:-openai/clip-vit-base-patch32} )
 
-FORMAL_METHODS_DEFAULT=( avg ties dare_linear dare_ties regmean fisher breadcrumbs model_stock from iso_c free_merge robustmerge )
-ALL_SUPPORTED_METHODS=( avg ties dare_linear dare_ties regmean fisher breadcrumbs model_stock from iso_c iso_cts free_merge robustmerge adamerging lamp_merge )
+FORMAL_METHODS_DEFAULT=( avg avg_head ties dare_linear dare_ties regmean fisher breadcrumbs model_stock from iso_c free_merge robustmerge )
+ALL_SUPPORTED_METHODS=( avg avg_head ties dare_linear dare_ties regmean fisher breadcrumbs model_stock from iso_c iso_cts free_merge robustmerge adamerging lamp_merge )
 
 export TOKENIZERS_PARALLELISM="false"
 export OMP_NUM_THREADS="${OMP_NUM_THREADS:-1}"
@@ -143,7 +143,7 @@ validate_methods() {
   local method
   for method in "$@"; do
     case "${method}" in
-      avg|ties|dare_linear|dare_ties|regmean|fisher|breadcrumbs|model_stock|from|iso_c|iso_cts|free_merge|robustmerge|adamerging|lamp_merge)
+      avg|avg_head|ties|dare_linear|dare_ties|regmean|fisher|breadcrumbs|model_stock|from|iso_c|iso_cts|free_merge|robustmerge|adamerging|lamp_merge)
         ;;
       *)
         echo "Unsupported method: ${method}" >&2

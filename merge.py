@@ -6,6 +6,7 @@ import torch
 
 from methods import (
     merge_avg,
+    merge_avg_head,
     merge_adamerging,
     merge_breadcrumbs,
     merge_dare_linear,
@@ -93,6 +94,8 @@ def resolve_client_weights(meta, cfg, method):
 def merge_with_method(method, state_dicts, weights, meta, checkpoints, cfg):
     if method == 'avg':
         merged_state_dict, method_info = merge_avg(state_dicts, weights)
+    elif method == 'avg_head':
+        merged_state_dict, method_info = merge_avg_head(state_dicts, weights, meta=meta)
     elif method == 'ties':
         base_state, param_names = build_reference_bundle(meta, device='cpu')
         merged_state_dict, method_info = merge_ties(

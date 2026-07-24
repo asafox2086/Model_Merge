@@ -26,6 +26,7 @@ import torch.nn.functional as F
 
 FORMAL_METHODS = [
     "avg",
+    "avg_head",
     "ties",
     "dare_linear",
     "dare_ties",

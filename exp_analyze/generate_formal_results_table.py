@@ -9,6 +9,7 @@ from generate_lamp_merge_master_table import CLIENT_AVG_GROUPS, SETTINGS, emit_h
 
 DEFAULT_METHOD_ORDER = [
     "avg",
+    "avg_head",
     "ties",
     "dare_linear",
     "dare_ties",

@@ -1,4 +1,5 @@
 from .avg import merge_avg
+from .avg_head import merge_avg_head
 from .dare import merge_dare_linear, merge_dare_ties
 from .adamerging import merge_adamerging
 from .breadcrumbs import merge_breadcrumbs
@@ -15,6 +16,10 @@ from .ties import merge_ties
 
 METHOD_ALIASES = {
     'avg': 'avg',
+    'avg_head': 'avg_head',
+    'avg-head': 'avg_head',
+    'head_avg': 'avg_head',
+    'head-avg': 'avg_head',
     'ties': 'ties',
     'dare_linear': 'dare_linear',
     'dare-liner': 'dare_linear',
@@ -50,6 +55,7 @@ def normalize_method_name(name: str) -> str:
 
 __all__ = [
     'merge_avg',
+    'merge_avg_head',
     'merge_ties',
     'merge_dare_linear',
     'merge_dare_ties',

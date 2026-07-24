@@ -25,7 +25,7 @@ DATASETS=( ${DATASETS:-bloodmnist_224 dermamnist_224 organcmnist_224 organsmnist
 SMALL_MODELS=( ${SMALL_MODELS:-resnet convnext vit_t swin_tiny} )
 NUM_CLIENTS=( ${NUM_CLIENTS:-3 5 7} )
 BETAS=( ${BETAS:-0 0.01 0.1} )
-METHODS=( ${METHODS:-avg ties dare_linear dare_ties regmean fisher breadcrumbs model_stock from iso_c free_merge robustmerge lamp_merge} )
+METHODS=( ${METHODS:-avg avg_head ties dare_linear dare_ties regmean fisher breadcrumbs model_stock from iso_c free_merge robustmerge lamp_merge} )
 MODES=( ${MODES:-full m1_only avg_m2 prototype_head_agg global_feature_mean support_only prototype_shuffle uniform_client_weight binary_support global_client_size_weight no_prevalence uniform_prevalence smoothed_prevalence} )
 
 mkdir -p "${OUTPUT_ROOT}" "${LOG_DIR}" "$(dirname "${METRICS_CSV}")" "${SUMMARY_DIR}" "${FIGURE_DIR}"
