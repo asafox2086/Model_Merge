@@ -519,7 +519,7 @@ PREDICTION_DISTRIBUTION_STYLES = {
     "LAMP-Merge": {
         "color": PAPER_COLORS["LAMP-Merge"],
         "marker": "o",
-        "linestyle": "-",
+        "linestyle": "-.",
         "linewidth": 3.4,
         "markerfacecolor": PAPER_COLORS["LAMP-Merge"],
         "markeredgecolor": "#7F6000",
