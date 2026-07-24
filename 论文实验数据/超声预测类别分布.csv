@@ -1,6 +1,6 @@
 说明,本表对应 Ultrasound 预测分布相对真实分布的逐类绝对差值图；本次使用 classifier-head-only 基线与 LAMP-Merge 的 full-scope 结果，每个方法对四个 backbone、K=3/5/7 和三个 beta 设置取平均，单位为百分点。
 Series,Class 0 absolute difference vs. true (pp),Class 1 absolute difference vs. true (pp),Class 2 absolute difference vs. true (pp),Class 3 absolute difference vs. true (pp),Class 4 absolute difference vs. true (pp),Class 5 absolute difference vs. true (pp),Class 6 absolute difference vs. true (pp),Class 7 absolute difference vs. true (pp)
 LAMP-Merge,1.2404,5.8526,1.7545,1.4026,4.3676,4.0032,1.9492,5.1562
-TIES-Merging,2.6430,0.0250,0.0874,1.1206,2.7204,4.9790,0.6489,4.5423
+Iso-C,7.7044,10.3100,0.4393,3.5440,4.3127,13.2999,15.1792,9.2568
 DARE-Linear,6.5963,10.3449,3.2794,4.9740,6.0248,14.0885,12.5062,5.3235
 Breadcrumbs,3.3468,6.0896,3.4816,8.7626,5.0190,26.1480,8.1062,1.3802

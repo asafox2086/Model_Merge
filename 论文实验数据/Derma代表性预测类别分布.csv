@@ -1,0 +1,9 @@
+说明,本表对应 DermaMNIST head-only 代表性预测坍缩 case；设置为 dermamnist_224 / vit_t / K=3 / beta=0.1。数值为测试集逐类真实比例与预测比例，单位为百分比。
+Class,True test distribution (%),Head-only RegMean prediction (%),LAMP-Merge prediction (%)
+0,3.2918,0.0499,9.8753
+1,5.1372,0.0000,7.8803
+2,10.9726,0.1496,7.3815
+3,1.1471,0.0000,1.8953
+4,11.1222,0.6983,15.2618
+5,66.8828,99.1022,52.6683
+6,1.4464,0.0000,5.0374

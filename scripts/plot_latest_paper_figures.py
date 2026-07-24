@@ -27,6 +27,7 @@ PAPER_COLORS = {
     "LAMP-Merge": "#FFC000",
     "Weight Averaging": "#7F7F7F",
     "TIES-Merging": "#9BBB59",
+    "Iso-C": "#E15759",
     "DARE-Linear": "#4F81BD",
     "Breadcrumbs": "#8064A2",
     "True distribution": "#8064A2",
@@ -442,7 +443,7 @@ def plot_internal_ablations(csv_dir: Path, figure_dir: Path) -> None:
 
 def plot_ultrasound_distribution(csv_dir: Path, figure_dir: Path) -> None:
     rows = read_annotated_csv(csv_dir / "超声预测类别分布.csv")
-    methods = ["LAMP-Merge", "TIES-Merging", "DARE-Linear", "Breadcrumbs"]
+    methods = ["LAMP-Merge", "Iso-C", "DARE-Linear", "Breadcrumbs"]
     by_series = {row["Series"]: row for row in rows}
     x = np.arange(8)
     setup_style("line")
