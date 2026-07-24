@@ -14,6 +14,7 @@ from methods import (
     merge_fisher,
     merge_from,
     merge_free,
+    merge_head_only,
     merge_iso_c,
     merge_iso_cts,
     merge_lamp_merge,
@@ -79,6 +80,21 @@ METHOD_DEFAULTS = {
     'regmean_max_dim': 1024,
 }
 
+HEAD_ONLY_BASE_METHODS = {
+    'head_avg': 'avg',
+    'head_ties': 'ties',
+    'head_dare_linear': 'dare_linear',
+    'head_dare_ties': 'dare_ties',
+    'head_regmean': 'regmean',
+    'head_fisher': 'fisher',
+    'head_breadcrumbs': 'breadcrumbs',
+    'head_model_stock': 'model_stock',
+    'head_from': 'from',
+    'head_iso_c': 'iso_c',
+    'head_free_merge': 'free_merge',
+    'head_robustmerge': 'robustmerge',
+}
+
 
 def resolve_client_weights(meta, cfg, method):
     mode = cfg.get('merge_weight_mode', 'sample')
@@ -96,6 +112,24 @@ def merge_with_method(method, state_dicts, weights, meta, checkpoints, cfg):
         merged_state_dict, method_info = merge_avg(state_dicts, weights)
     elif method == 'avg_head':
         merged_state_dict, method_info = merge_avg_head(state_dicts, weights, meta=meta)
+    elif method in HEAD_ONLY_BASE_METHODS:
+        base_method = HEAD_ONLY_BASE_METHODS[method]
+        fisher_stats = None
+        cov_stats = None
+        if base_method == 'fisher':
+            fisher_stats = [compute_fisher_diagonal(meta, ckpt, cfg) for ckpt in checkpoints]
+        elif base_method == 'regmean':
+            cov_stats = [collect_linear_covariances(meta, ckpt, cfg) for ckpt in checkpoints]
+        merged_state_dict, method_info = merge_head_only(
+            base_method,
+            state_dicts,
+            weights,
+            meta=meta,
+            checkpoints=checkpoints,
+            cfg=cfg,
+            fisher_stats=fisher_stats,
+            cov_stats=cov_stats,
+        )
     elif method == 'ties':
         base_state, param_names = build_reference_bundle(meta, device='cpu')
         merged_state_dict, method_info = merge_ties(

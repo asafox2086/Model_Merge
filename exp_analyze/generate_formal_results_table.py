@@ -8,19 +8,19 @@ from generate_lamp_merge_master_table import CLIENT_AVG_GROUPS, SETTINGS, emit_h
 
 
 DEFAULT_METHOD_ORDER = [
-    "avg",
-    "avg_head",
-    "ties",
-    "dare_linear",
-    "dare_ties",
-    "regmean",
-    "fisher",
-    "breadcrumbs",
-    "model_stock",
-    "from",
-    "iso_c",
-    "free_merge",
-    "robustmerge",
+    "head_avg",
+    "head_ties",
+    "head_dare_linear",
+    "head_dare_ties",
+    "head_regmean",
+    "head_fisher",
+    "head_breadcrumbs",
+    "head_model_stock",
+    "head_from",
+    "head_iso_c",
+    "head_free_merge",
+    "head_robustmerge",
+    "LAMP-Merge",
 ]
 
 
@@ -33,6 +33,9 @@ def parse_args():
     p.add_argument("--datasets", nargs="+", required=True)
     p.add_argument("--small-models", nargs="+", required=True)
     p.add_argument("--methods", nargs="*", default=None)
+    p.add_argument("--metric-format", choices=["acc", "acc_f1"], default="acc")
+    p.add_argument("--diagnostics-csv", type=Path, default=None)
+    p.add_argument("--lamp-diagnostics-csv", type=Path, default=None)
     return p.parse_args()
 
 
@@ -45,9 +48,35 @@ def load_rows(output_roots):
     return rows
 
 
+def load_diagnostics_rows(paths):
+    rows = []
+    for path in paths:
+        if not path:
+            continue
+        path = Path(path)
+        if not path.exists():
+            continue
+        with path.open("r", encoding="utf-8", newline="") as f:
+            rows.extend(csv.DictReader(f))
+    return rows
+
+
 def row_key(row):
     task_type = row["task_type"]
     model_name = row["model"] if task_type == "small" else row["clip_model"]
+    return (
+        row["method"],
+        task_type,
+        row["dataset"],
+        model_name,
+        int(float(row["num_clients"])),
+        float(row["beta"]),
+    )
+
+
+def diagnostics_key(row):
+    task_type = row["task_type"]
+    model_name = row["model"] if task_type == "small" else row.get("clip_model", "")
     return (
         row["method"],
         task_type,
@@ -70,6 +99,24 @@ def build_lookup(rows):
     return lookup, list(discovered.keys())
 
 
+def build_diagnostics_lookup(rows):
+    lookup = {}
+    discovered = OrderedDict()
+    for row in rows:
+        if row.get("status") != "OK" or row.get("source") != "merge":
+            continue
+        method = row.get("method")
+        if method in {"lamp_merge", "lamp_merge:full"}:
+            method = "LAMP-Merge"
+        if not method:
+            continue
+        discovered.setdefault(method, None)
+        item = dict(row)
+        item["method"] = method
+        lookup[diagnostics_key(item)] = (float(row["accuracy"]), float(row["macro_f1"]))
+    return lookup, list(discovered.keys())
+
+
 def method_order(requested, discovered):
     methods = requested if requested else DEFAULT_METHOD_ORDER
     ordered = [method for method in methods if method in discovered]
@@ -89,21 +136,36 @@ def client_average(lookup, method, task_type, dataset, model_name, num_clients):
         value = value_for(lookup, method, task_type, dataset, model_name, num_clients, beta)
         if value is not None:
             values.append(value)
-    return sum(values) / len(values) if len(values) == 3 else None
+    if len(values) != 3:
+        return None
+    if isinstance(values[0], tuple):
+        return (
+            sum(value[0] for value in values) / len(values),
+            sum(value[1] for value in values) / len(values),
+        )
+    return sum(values) / len(values)
 
 
-def emit_method_rows(lines, rows):
+def fmt_value(value, metric_format):
+    if value is None:
+        return "-"
+    if isinstance(value, tuple):
+        return f"{value[0]:.4f} / {value[1]:.4f}"
+    return f"{value:.4f}"
+
+
+def emit_method_rows(lines, rows, metric_format):
     for method, values in rows:
         lines.append("    <tr>")
         lines.append(f"      <td>{method}</td>")
         for value in values:
-            lines.append(f"      <td>{fmt(value)}</td>")
+            lines.append(f"      <td>{fmt_value(value, metric_format)}</td>")
         lines.append("    </tr>")
     lines.append("  </tbody>")
     lines.append("</table>")
 
 
-def build_model_section(lines, lookup, methods, *, task_type, model_name, datasets):
+def build_model_section(lines, lookup, methods, *, task_type, model_name, datasets, metric_format):
     raw_headers = [label for _clients, _beta, label in SETTINGS]
     avg_headers = [label for _clients, label in CLIENT_AVG_GROUPS]
 
@@ -118,9 +180,8 @@ def build_model_section(lines, lookup, methods, *, task_type, model_name, datase
         for dataset in datasets:
             for num_clients, beta, _label in SETTINGS:
                 values.append(value_for(lookup, method, task_type, dataset, model_name, num_clients, beta))
-        if any(value is not None for value in values):
-            raw_rows.append((method, values))
-    emit_method_rows(lines, raw_rows)
+        raw_rows.append((method, values))
+    emit_method_rows(lines, raw_rows, metric_format)
     lines.append("")
 
     lines.append("#### Client Average")
@@ -132,9 +193,8 @@ def build_model_section(lines, lookup, methods, *, task_type, model_name, datase
         for dataset in datasets:
             for num_clients, _label in CLIENT_AVG_GROUPS:
                 values.append(client_average(lookup, method, task_type, dataset, model_name, num_clients))
-        if any(value is not None for value in values):
-            avg_rows.append((method, values))
-    emit_method_rows(lines, avg_rows)
+        avg_rows.append((method, values))
+    emit_method_rows(lines, avg_rows, metric_format)
     lines.append("")
 
 
@@ -142,8 +202,10 @@ def build_markdown(args, lookup, methods):
     lines = [
         "# Experiment Master Tables",
         "",
-        "- Layout: one model per table; rows are methods; columns are grouped by dataset.",
+        "- Layout: same as `汇总表.md`: one model per table; rows are methods; columns are grouped by dataset.",
         f"- Source output root: `{', '.join(args.output_root)}`.",
+        "- Baseline rows are classifier-head-only versions: each method keeps the original baseline rule but applies it only to the classifier head, then evaluates it on the shared reference backbone.",
+        "- Cell format: `ACC / macro-F1`." if args.metric_format == "acc_f1" else "- Cell format: `ACC`.",
         "",
         f"## {args.section_title}",
         "",
@@ -156,14 +218,24 @@ def build_markdown(args, lookup, methods):
             task_type=args.task_type,
             model_name=model_name,
             datasets=args.datasets,
+            metric_format=args.metric_format,
         )
     return "\n".join(lines).rstrip() + "\n"
 
 
 def main():
     args = parse_args()
-    rows = load_rows(args.output_root)
-    lookup, discovered = build_lookup(rows)
+    if args.metric_format == "acc_f1":
+        diag_paths = []
+        if args.diagnostics_csv:
+            diag_paths.append(args.diagnostics_csv)
+        if args.lamp_diagnostics_csv:
+            diag_paths.append(args.lamp_diagnostics_csv)
+        rows = load_diagnostics_rows(diag_paths)
+        lookup, discovered = build_diagnostics_lookup(rows)
+    else:
+        rows = load_rows(args.output_root)
+        lookup, discovered = build_lookup(rows)
     methods = method_order(args.methods, discovered)
     content = build_markdown(args, lookup, methods)
     dest = Path(args.dest)

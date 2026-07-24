@@ -52,8 +52,9 @@ DATASETS=( ${DATASETS:-bloodmnist_224 dermamnist_224 organcmnist_224 organsmnist
 SMALL_MODELS=( ${SMALL_MODELS:-resnet convnext vit_t swin_tiny} )
 CLIP_MODELS=( ${CLIP_MODELS:-openai/clip-vit-base-patch32} )
 
+HEAD_ONLY_METHODS_DEFAULT=( head_avg head_ties head_dare_linear head_dare_ties head_regmean head_fisher head_breadcrumbs head_model_stock head_from head_iso_c head_free_merge head_robustmerge )
 FORMAL_METHODS_DEFAULT=( avg avg_head ties dare_linear dare_ties regmean fisher breadcrumbs model_stock from iso_c free_merge robustmerge )
-ALL_SUPPORTED_METHODS=( avg avg_head ties dare_linear dare_ties regmean fisher breadcrumbs model_stock from iso_c iso_cts free_merge robustmerge adamerging lamp_merge )
+ALL_SUPPORTED_METHODS=( avg avg_head "${HEAD_ONLY_METHODS_DEFAULT[@]}" ties dare_linear dare_ties regmean fisher breadcrumbs model_stock from iso_c iso_cts free_merge robustmerge adamerging lamp_merge )
 
 export TOKENIZERS_PARALLELISM="false"
 export OMP_NUM_THREADS="${OMP_NUM_THREADS:-1}"
@@ -88,7 +89,7 @@ build_method_args() {
   local -n out_ref="$2"
   out_ref=(--merge-weight-mode equal)
   case "${method}" in
-    avg|ties|breadcrumbs|model_stock|from|iso_c|free_merge|robustmerge)
+    avg|avg_head|head_avg|head_ties|head_breadcrumbs|head_model_stock|head_from|head_iso_c|head_free_merge|head_robustmerge|ties|breadcrumbs|model_stock|from|iso_c|free_merge|robustmerge)
       ;;
     lamp_merge)
       out_ref+=(
@@ -97,13 +98,13 @@ build_method_args() {
         --stats-num-workers "${STATS_NUM_WORKERS}"
       )
       ;;
-    dare_linear|dare_ties)
+    head_dare_linear|head_dare_ties|dare_linear|dare_ties)
       out_ref+=(--density "${DENSITY}" --dare-seed "${DARE_SEED}")
       ;;
-    regmean)
+    head_regmean|regmean)
       out_ref+=(--stats-split "${STATS_SPLIT}" --stats-batch-size "${STATS_BATCH_SIZE}" --stats-num-workers "${STATS_NUM_WORKERS}" --regmean-max-batches "${REGMEAN_MAX_BATCHES}" --regmean-max-dim "${REGMEAN_MAX_DIM}" --regmean-eps "${REGMEAN_EPS}")
       ;;
-    fisher)
+    head_fisher|fisher)
       out_ref+=(--stats-split "${STATS_SPLIT}" --stats-batch-size "${STATS_BATCH_SIZE}" --stats-num-workers "${STATS_NUM_WORKERS}" --fisher-max-batches "${FISHER_MAX_BATCHES}" --fisher-eps "${FISHER_EPS}")
       ;;
     *)
@@ -112,12 +113,12 @@ build_method_args() {
       ;;
   esac
 
-  [[ "${method}" == "breadcrumbs" ]] && out_ref+=(--breadcrumbs-top-k-keep 0.2 --breadcrumbs-top-k-remove 0.1 --breadcrumbs-alpha 1.0)
-  [[ "${method}" == "model_stock" ]] && out_ref+=(--model-stock-k 2.0)
-  [[ "${method}" == "from" ]] && out_ref+=(--from-k 1.0)
-  [[ "${method}" == "iso_c" ]] && out_ref+=(--iso-common-space-fraction "${ISO_COMMON_SPACE_FRACTION}")
-  [[ "${method}" == "free_merge" ]] && out_ref+=(--free-filter-ratio "${FREE_FILTER_RATIO}" --free-scaling "${FREE_SCALING}")
-  [[ "${method}" == "robustmerge" ]] && out_ref+=(--robustmerge-mask-ratio "${ROBUSTMERGE_MASK_RATIO}" --robustmerge-att-ratio "${ROBUSTMERGE_ATT_RATIO}" --robustmerge-fuse-weight "${ROBUSTMERGE_FUSE_WEIGHT}")
+  [[ "${method}" == "breadcrumbs" || "${method}" == "head_breadcrumbs" ]] && out_ref+=(--breadcrumbs-top-k-keep 0.2 --breadcrumbs-top-k-remove 0.1 --breadcrumbs-alpha 1.0)
+  [[ "${method}" == "model_stock" || "${method}" == "head_model_stock" ]] && out_ref+=(--model-stock-k 2.0)
+  [[ "${method}" == "from" || "${method}" == "head_from" ]] && out_ref+=(--from-k 1.0)
+  [[ "${method}" == "iso_c" || "${method}" == "head_iso_c" ]] && out_ref+=(--iso-common-space-fraction "${ISO_COMMON_SPACE_FRACTION}")
+  [[ "${method}" == "free_merge" || "${method}" == "head_free_merge" ]] && out_ref+=(--free-filter-ratio "${FREE_FILTER_RATIO}" --free-scaling "${FREE_SCALING}")
+  [[ "${method}" == "robustmerge" || "${method}" == "head_robustmerge" ]] && out_ref+=(--robustmerge-mask-ratio "${ROBUSTMERGE_MASK_RATIO}" --robustmerge-att-ratio "${ROBUSTMERGE_ATT_RATIO}" --robustmerge-fuse-weight "${ROBUSTMERGE_FUSE_WEIGHT}")
   return 0
 }
 
@@ -143,7 +144,7 @@ validate_methods() {
   local method
   for method in "$@"; do
     case "${method}" in
-      avg|avg_head|ties|dare_linear|dare_ties|regmean|fisher|breadcrumbs|model_stock|from|iso_c|iso_cts|free_merge|robustmerge|adamerging|lamp_merge)
+      avg|avg_head|head_avg|head_ties|head_dare_linear|head_dare_ties|head_regmean|head_fisher|head_breadcrumbs|head_model_stock|head_from|head_iso_c|head_free_merge|head_robustmerge|ties|dare_linear|dare_ties|regmean|fisher|breadcrumbs|model_stock|from|iso_c|iso_cts|free_merge|robustmerge|adamerging|lamp_merge)
         ;;
       *)
         echo "Unsupported method: ${method}" >&2

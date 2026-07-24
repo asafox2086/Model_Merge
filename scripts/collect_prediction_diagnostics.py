@@ -44,18 +44,18 @@ FORMAL_SMALL_DATASETS = [
 FORMAL_SMALL_MODELS = ["resnet", "convnext", "vit_t", "swin_tiny"]
 
 DEFAULT_BASELINES = [
-    "avg",
-    "ties",
-    "dare_linear",
-    "dare_ties",
-    "regmean",
-    "fisher",
-    "breadcrumbs",
-    "model_stock",
-    "from",
-    "iso_c",
-    "free_merge",
-    "robustmerge",
+    "head_avg",
+    "head_ties",
+    "head_dare_linear",
+    "head_dare_ties",
+    "head_regmean",
+    "head_fisher",
+    "head_breadcrumbs",
+    "head_model_stock",
+    "head_from",
+    "head_iso_c",
+    "head_free_merge",
+    "head_robustmerge",
     "lamp_merge",
 ]
 
