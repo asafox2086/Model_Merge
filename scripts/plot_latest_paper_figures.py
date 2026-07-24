@@ -27,10 +27,13 @@ PAPER_COLORS = {
     "LAMP-Merge": "#FFC000",
     "Weight Averaging": "#7F7F7F",
     "TIES-Merging": "#9BBB59",
+    "RegMean": "#F28E2B",
+    "Head-only RegMean": "#F28E2B",
     "Iso-C": "#E15759",
     "DARE-Linear": "#4F81BD",
     "Breadcrumbs": "#8064A2",
-    "True distribution": "#8064A2",
+    "True test distribution": "#222222",
+    "True distribution": "#222222",
 }
 
 LINE_STYLES = [
@@ -488,7 +491,149 @@ def plot_ultrasound_distribution(csv_dir: Path, figure_dir: Path) -> None:
     polish_axes(ax, y_grid=True, x_grid=False)
     fig.tight_layout()
     save_png(fig, str(figure_dir / "04_ultrasound_class_distribution"), dpi=350)
+    fig.savefig(figure_dir / "04_ultrasound_class_distribution.pdf", bbox_inches="tight")
     plt.close(fig)
+
+
+PREDICTION_DISTRIBUTION_STYLES = {
+    "True test distribution": {
+        "color": PAPER_COLORS["True test distribution"],
+        "marker": "o",
+        "linestyle": "-",
+        "linewidth": 2.8,
+        "markerfacecolor": "white",
+        "markeredgecolor": PAPER_COLORS["True test distribution"],
+        "markeredgewidth": 1.7,
+        "zorder": 4,
+    },
+    "Head-only RegMean": {
+        "color": PAPER_COLORS["Head-only RegMean"],
+        "marker": "D",
+        "linestyle": "--",
+        "linewidth": 2.8,
+        "markerfacecolor": PAPER_COLORS["Head-only RegMean"],
+        "markeredgecolor": "#9A4F0A",
+        "markeredgewidth": 1.45,
+        "zorder": 3,
+    },
+    "LAMP-Merge": {
+        "color": PAPER_COLORS["LAMP-Merge"],
+        "marker": "o",
+        "linestyle": "-",
+        "linewidth": 3.4,
+        "markerfacecolor": PAPER_COLORS["LAMP-Merge"],
+        "markeredgecolor": "#7F6000",
+        "markeredgewidth": 1.6,
+        "zorder": 5,
+    },
+}
+
+
+def plot_prediction_distribution_case(
+    rows: list[dict[str, str]],
+    figure_dir: Path,
+    output_name: str,
+    title: str,
+    series_names: list[str],
+    annotate_names: list[str],
+) -> None:
+    x = finite_array([float(row["Class"]) for row in rows], (len(rows),), "Derma class indices")
+    column_by_series = {
+        "True test distribution": "True test distribution (%)",
+        "Head-only RegMean": "Head-only RegMean prediction (%)",
+        "LAMP-Merge": "LAMP-Merge prediction (%)",
+    }
+    setup_style("line")
+    fig, ax = plt.subplots(figsize=(10.4, 5.6), dpi=300)
+    series_values: dict[str, np.ndarray] = {}
+    for name in series_names:
+        values = finite_array(
+            [float(row[column_by_series[name]]) for row in rows],
+            (len(rows),),
+            name,
+        )
+        series_values[name] = values
+        style = PREDICTION_DISTRIBUTION_STYLES[name]
+        ax.plot(
+            x,
+            values,
+            label=name if name != "Head-only RegMean" else "Head-only RegMean prediction",
+            color=style["color"],
+            marker=style["marker"],
+            linestyle=style["linestyle"],
+            linewidth=style["linewidth"],
+            markerfacecolor=style["markerfacecolor"],
+            markeredgecolor=style["markeredgecolor"],
+            markeredgewidth=style["markeredgewidth"],
+            zorder=style["zorder"],
+        )
+
+    for name in annotate_names:
+        values = series_values[name]
+        peak_index = int(np.argmax(values))
+        peak_value = float(values[peak_index])
+        color = PREDICTION_DISTRIBUTION_STYLES[name]["markeredgecolor"]
+        ax.annotate(
+            f"{peak_value:.1f}",
+            xy=(x[peak_index], peak_value),
+            xytext=(0, 8 if peak_value < 95 else 6),
+            textcoords="offset points",
+            ha="center",
+            va="bottom",
+            color=color,
+            fontsize=12,
+            fontweight="bold",
+            zorder=8,
+        )
+
+    ax.set_xticks(x)
+    ax.set_xticklabels([str(int(item)) for item in x])
+    ax.set_xlabel("Class index")
+    ax.set_ylabel("Test distribution (%)")
+    ax.set_ylim(-2, 110)
+    ax.set_yticks(np.arange(0, 101, 20))
+    ax.set_title(title, fontweight="bold", pad=7)
+    ax.legend(loc="upper left", frameon=False, handlelength=1.7)
+    polish_axes(ax, y_grid=True, x_grid=False)
+    fig.tight_layout()
+    save_png(fig, str(figure_dir / output_name), dpi=350)
+    fig.savefig(figure_dir / f"{output_name}.pdf", bbox_inches="tight")
+    plt.close(fig)
+
+
+def plot_derma_representative_distribution(csv_dir: Path, figure_dir: Path) -> None:
+    rows = read_annotated_csv(csv_dir / "Derma代表性预测类别分布.csv")
+    plot_prediction_distribution_case(
+        rows,
+        figure_dir,
+        "derma_head_only_regmean_lamp_distribution_overlay",
+        "DermaMNIST Representative Prediction Collapse",
+        ["True test distribution", "Head-only RegMean", "LAMP-Merge"],
+        ["Head-only RegMean", "LAMP-Merge"],
+    )
+    plot_prediction_distribution_case(
+        rows,
+        figure_dir,
+        "derma_head_only_regmean_distribution",
+        "Head-only RegMean on DermaMNIST",
+        ["True test distribution", "Head-only RegMean"],
+        ["Head-only RegMean"],
+    )
+    plot_prediction_distribution_case(
+        rows,
+        figure_dir,
+        "derma_lamp_merge_distribution",
+        "LAMP-Merge on DermaMNIST",
+        ["True test distribution", "LAMP-Merge"],
+        ["LAMP-Merge"],
+    )
+    import shutil
+
+    for suffix in ("png", "pdf"):
+        shutil.copyfile(
+            figure_dir / f"derma_head_only_regmean_lamp_distribution_overlay.{suffix}",
+            figure_dir / f"derma_cifar100_regmean_distribution_overlay.{suffix}",
+        )
 
 
 def plot_hparam_curves(
@@ -987,6 +1132,7 @@ def main() -> None:
     plot_baseline_2x2_ablation(csv_dir, figure_dir)
     plot_internal_ablations(csv_dir, figure_dir)
     plot_ultrasound_distribution(csv_dir, figure_dir)
+    plot_derma_representative_distribution(csv_dir, figure_dir)
     plot_hparams(csv_dir, figure_dir)
     plot_tsne(csv_dir, figure_dir)
     plot_dataset_radars(csv_dir, figure_dir)
