@@ -25,9 +25,10 @@
 \usepackage{multirow}
 \usepackage{arydshln}
 \usepackage{placeins}
+\usepackage{enumitem}
+\usepackage{pifont}
 
 \definecolor{DarkGreen}{RGB}{34,120,50}
-
 
 \newcommand{\pub}[1]{{\color{gray}{\footnotesize{[{#1}]}}}}
 
@@ -165,12 +166,15 @@
 \begin{document}
 \maketitle
 
+% \begin{abstract}
+% Model merging aims to integrate multiple independently trained local checkpoints into a unified global model, typically through general-purpose paradigms such as parameter interpolation, task-vector composition, or update-direction alignment. These methods implicitly assume that client models share relatively complete and comparable global discriminative structures. We argue that this assumption does not hold in medical settings, giving rise to two diagnostic-structure anomalies: (1)\textbf{ Aggregation-induced prediction collapse after merging}: When clients have incomplete diagnostic-class coverage, multiple locally effective models can be merged into a globally collapsed model whose predictive distribution concentrates on a small number of dominant classes. (2)\textbf{ Long-tailed medical prevalence cannot be ignored}. Majority classes in medical data often reflect genuine clinical prevalence rather than merely data noise. To address these challenges, we propose \textbf{LAMP-Merge}, which recasts medical model merging from global parameter interpolation as class-level diagnostic-evidence reconstruction. Through \textbf{diagnostic prototype reconstruction(DPR)} and \textbf{long-tail prevalence calibration(LPC)}, LAMP-Merge constructs a global diagnostic model without exposing raw medical images or requiring multi-round federated communication. Experiments on the Blood, Derma, Organ-C, Organ-S, and Ultrasound medical imaging datasets show that LAMP-Merge outperforms existing model-merging methods in most client-averaged settings while substantially mitigating prediction collapse.
+
+% % Index Terms:medical model merging, asynchronous fusion, predictive collapse, long-tail calibration, privacy-preserving learning
+% \end{abstract}
+
 \begin{abstract}
-Model merging aims to integrate multiple independently trained local checkpoints into a unified global model, typically through general-purpose paradigms such as parameter interpolation, task-vector composition, or update-direction alignment. These methods implicitly assume that client models share relatively complete and comparable global discriminative structures. We argue that this assumption does not hold in medical settings, giving rise to two diagnostic-structure anomalies: (1)\textbf{ Aggregation-induced prediction collapse after merging}: When clients have incomplete diagnostic-class coverage, multiple locally effective models can be merged into a globally collapsed model whose predictive distribution concentrates on a small number of dominant classes. (2)\textbf{ Long-tailed medical prevalence cannot be ignored}. Majority classes in medical data often reflect genuine clinical prevalence rather than merely data noise. To address these challenges, we propose \textbf{LAMP-Merge}, which recasts medical model merging from global parameter interpolation as class-level diagnostic-evidence reconstruction. Through \textbf{diagnostic prototype reconstruction(DPR)} and \textbf{long-tail prevalence calibration(LPC)}, LAMP-Merge constructs a global diagnostic model without exposing raw medical images or requiring multi-round federated communication. Experiments on the Blood, Derma, Organ-C, Organ-S, and Ultrasound medical imaging datasets show that LAMP-Merge outperforms existing model-merging methods in most client-averaged settings while substantially mitigating prediction collapse.
-
-% Index Terms:medical model merging, asynchronous fusion, predictive collapse, long-tail calibration, privacy-preserving learning
+Model merging combines independently trained models into a unified model without joint retraining, typically assuming that their \textbf{class-discriminative knowledge is complete and comparable}. We argue that this assumption breaks down in medical settings for two reasons: hospitals often observe only subsets of diagnostic classes, and disease prevalence is highly long-tailed and heterogeneous across centers. Under these conditions, class-agnostic model merging can mix reliable class-specific knowledge with models that have never observed the corresponding classes, causing \textbf{aggregation-induced prediction collapse}, in which the merged model predicts only a few dominant diagnoses. Meanwhile, simply flattening its predictions can discard valid prevalence information, making collapse correction fundamentally different from ordinary class balancing. To address these coupled problems, we propose \textbf{LAMP-Merge}, which shifts parameter-centric merging toward class-aware reconstruction of the diagnostic head while keeping the shared reference backbone frozen. LAMP-Merge consists of \textbf{Diagnostic Prototype Reconstruction (DPR)}, which merges client-side class prototypes according to class support to reconstruct class-discriminative directions across the global label space, and \textbf{Long-tail Prevalence Calibration (LPC)}, which calibrates the reconstructed head with cross-center prevalence statistics to preserve the observed long-tailed prior. Together, the two modules construct a global classifier that restores diagnostic coverage without erasing disease prevalence. Across five medical image benchmarks spanning microscopy, dermoscopy, CT, and ultrasound, four model families, multiple client counts, and diverse non-IID partitions, LAMP-Merge achieves the best dataset-level average accuracy on all five benchmarks among twelve evaluated model-merging baselines, while improving Macro-F1 and prediction-collapse diagnostics.
 \end{abstract}
-
 
 % Uncomment the following to link to your code, datasets, an extended version or similar.
 % You must keep this block between (not within) the abstract and the main body of the paper.
@@ -180,48 +184,108 @@ Model merging aims to integrate multiple independently trained local checkpoints
 %     \link{Extended version}{https://aaai.org/example/extended-version}
 % \end{links}
 
+% \section{Introduction}
+
+% Federated learning~\cite{pmlr-v54-mcmahan17a,li2020fedprox,karimireddy2020scaffold,kairouz2021advances} and model merging~\cite{izmailov2018averaging,pmlr-v162-wortsman22a,ilharco2023editingmodelstaskarithmetic,yadav2023tiesmergingresolvinginterferencemerging} provide two important collaboration routes for privacy-sensitive multicenter medical intelligence. Federated learning enables hospitals to train collaboratively without sharing raw data~\cite{sheller2020federated,rieke2020future}, while model merging further reduces communication and optimization costs by integrating independently trained local models after training~\cite{ainsworth2023gitrebasinmergingmodels,stoica2024zipit,wu_parameter_2025}. These paradigms are particularly attractive for \textbf{medical imaging}, because a single hospital rarely covers the full disease spectrum, while privacy regulations and device heterogeneity make centralizing raw medical images difficult ~\cite{kaissis2020secure,bonawitz2019towards,abadi2016deep}.
+
+% \begin{figure}[!t]
+%     \centering
+%     \includegraphics[width=0.96\linewidth]{figures/intro.pdf}
+%     \caption{\textbf{Motivation.} Unlike natural-image clients whose generic visual evidence overlaps broadly, medical clients learn client-specific diagnostic evidence that does not transfer across hospitals, so parameter-level merging has little shared structure to align and collapses the global model onto a few dominant classes. This reflects two observations: diagnostic evidence is not shared across isolated clients, and medical prevalence is long-tailed---under which a collapsed model can still report deceptively high accuracy.}
+ 
+%     \label{fig:intro-collapse}
+% \end{figure}
+
+% Despite their success on natural images and general visual tasks~\cite{izmailov2018averaging,pmlr-v162-wortsman22a,ilharco2023editingmodelstaskarithmetic,entezari2022role,ainsworth2023gitrebasinmergingmodels}, transferring these paradigms to medical data remains challenging. A key reason is that general-purpose model merging implicitly assumes that different client checkpoints contain relatively complete and comparable \textbf{global discriminative structures}; local models are expected to align through parameter space, task-vector space, update signs, or curvature statistics~\cite{yadav2023tiesmergingresolvinginterferencemerging,yu2024languagemodelssupermario,wu_parameter_2025,jin2025datalessknowledgefusionmerging}. This assumption does not hold in medical scenarios. Medical centers differ not only in device domains but also in diagnostic-class availability: some centers may mainly cover common diseases or specific examination types, while having few rare-disease samples~\cite{9557808,10.1371/journal.pmed.1002683,li2021fedbn}. The resulting local models are not complete replicas of the global task, but \textbf{partial diagnostic experts} supported by locally observed diseases.
+
+% As illustrated in Fig.~\ref{fig:intro-collapse}, we summarize these challenges as two diagnostic-structure abnormalities in medical model merging:
+% \begin{itemize}
+%     \item \textbf{Diagnostic evidence is not shared across medical clients.} Unlike natural images, where generic visual features overlap broadly and give parameter merging a common structure to align, each hospital learns client-specific diagnostic evidence that does not transfer to unobserved classes; local models therefore carry little shared discriminative structure for merging to reconcile~\cite{9557808,li2021fedbn}.
+%     \item \textbf{Long-tailed Medical Image Prevalence.} Medical image datasets naturally follow a long-tailed distribution: a few common diagnostic classes dominate the  samples, while rare classes are underrepresented~\cite{BUDA2018249,5597285}. Under this imbalanced class prior, a merged model collapsed to the majority class can still obtain high Accuracy despite lacking complete multi-class discrimination.
+% \end{itemize}
+
+% \begin{figure}[!t]
+%     \centering
+%     \includegraphics[width=0.96\linewidth]{figures/compare_nl_me.pdf}
+%     \caption{\textbf{Collapse is medical-specific, not merging-specific.} Both domains share the \emph{same} class-imbalanced partition template---matched per-class sample counts and matched per-client class assignments---so the only variable is whether the images are natural or medical. Under this controlled setup, the same merging method (RegMean) tracks the true test distribution on natural images (CIFAR-100) but collapses onto a single dominant class on medical images (DermaMNIST: $100\%$ mass on class~5, $0\%$ on classes~0--3 and 6). The pathology is therefore driven by the medical diagnostic structure rather than by the merging operator itself.}
+%     \label{fig:collapse-compare}
+% \end{figure}
+
+% Fig.~\ref{fig:collapse-compare} confirms that this collapse stems from the medical diagnostic structure rather than from the merging operator itself: with the image domain as the only difference, the same merging method still recovers the multi-class distribution on natural images, yet degenerates onto a single dominant class on medical images.
+
+% To address these issues, we propose \textbf{LAMP-Merge, a long-tail-aware medical prototype-merging method for single-shot asynchronous medical image model merging}. LAMP-Merge shifts the merge target from global parameter interpolation to \textbf{class-level diagnostic-evidence reconstruction}. The key idea is to use client-uploaded class-level statistics as a synchronization signal for the global diagnostic space, allowing the server to reconstruct a global diagnostic classifier without accessing raw medical images, using a server-side validation set, or conducting multi-round federated communication. Specifically, LAMP-Merge consists of two mechanisms: \textbf{diagnostic prototype reconstruction} aggregates reliable class-level evidence through prototypes in a shared reference feature space, and \textbf{long-tail prevalence calibration} injects a bounded prior bias from client-uploaded class counts, thereby mitigating prediction collapse while preserving clinically meaningful majority-class prevalence.
+
+% \begin{figure*}[!t]
+%     \centering
+%     \includegraphics[width=0.92\textwidth,height=0.40\textheight]{figures/method.pdf}
+    
+%     \caption{\textbf{Overview of LAMP-Merge.} The \textbf{reference encoder} $\phi_0$ is the single frozen encoder that all clients share (the common pretrained backbone before local training); it is called a \textbf{reference} because every hospital expresses its class evidence relative to this one common encoder, so features from different hospitals become directly comparable. Each hospital uploads only class-level statistics---$\phi_0$-space class prototypes with sample support and diagnosis prevalence counts---while raw images stay local. On the server, Diagnostic Prototype Reconstruction (DPR) aggregates the prototypes by support-aware weighting into a diagnostic head $\mathbf{w}_c$, and Long-tail Prevalence Calibration (LPC) adds a gated, bounded log-prior bias $b_c$, giving the scoring rule $\ell_c(x)=\mathbf{w}_c^{\top}\phi_0(T(x))+\mathbf{1}[r>\tau]\,b_c$; the frozen $\phi_0$ is reused as the backbone of the merged model, in a single-shot merge without raw-data sharing or federated rounds.}
+ 
+%     \label{fig_method}
+% \end{figure*}
+
+% Our main contributions are summarized as follows:
+% \begin{itemize}
+%     \item \textbf{Medical Merging Diagnosis.} We revisit model merging under single-shot asynchronous medical collaboration and identify limited local diagnostic coverage and aggregation-induced prediction collapse as two key abnormalities caused by medical class availability and long-tailed prevalence.
+%     \item \textbf{LAMP-Merge.} We propose a long-tail-aware medical prototype-merging method that reconstructs a global diagnostic classifier from client-side class prototypes and prevalence statistics without exposing raw images or requiring multi-round federated optimization.
+%     \item \textbf{Empirical Validation.} We conduct full-scope experiments on five medical image datasets, four vision-model families, three client-population sizes, and three non-IID skew levels, showing that LAMP-Merge consistently outperforms strong model-merging baselines and improves prediction-collapse diagnostics.
+% \end{itemize}
+
 \section{Introduction}
 
-Federated learning~\cite{pmlr-v54-mcmahan17a,li2020fedprox,karimireddy2020scaffold,kairouz2021advances} and model merging~\cite{izmailov2018averaging,pmlr-v162-wortsman22a,ilharco2023editingmodelstaskarithmetic,yadav2023tiesmergingresolvinginterferencemerging} provide two important collaboration routes for privacy-sensitive multicenter medical intelligence. Federated learning enables hospitals to train collaboratively without sharing raw data~\cite{sheller2020federated,rieke2020future}, while model merging further reduces communication and optimization costs by integrating independently trained local models after training~\cite{ainsworth2023gitrebasinmergingmodels,stoica2024zipit,wu_parameter_2025}. These paradigms are particularly attractive for \textbf{medical imaging}, because a single hospital rarely covers the full disease spectrum, while privacy regulations and device heterogeneity make centralizing raw medical images difficult ~\cite{kaissis2020secure,bonawitz2019towards,abadi2016deep}.
+Model merging has emerged as a practical paradigm for integrating independently trained models into a unified model without joint retraining~\cite{izmailov2018averaging,pmlr-v162-wortsman22a,ilharco2023editingmodelstaskarithmetic,yadav2023tiesmergingresolvinginterferencemerging}. Unlike federated learning, which relies on repeated collaborative optimization~\cite{pmlr-v54-mcmahan17a,li2020fedprox,karimireddy2020scaffold,kairouz2021advances}, model merging operates after local training and avoids iterative client--server coordination~\cite{ainsworth2023gitrebasinmergingmodels,stoica2024zipit,wu_parameter_2025}. These properties make model merging a potentially useful interface for multicenter medical collaboration, where raw images cannot easily be centralized and hospitals may not remain online for additional optimization rounds~\cite{kaissis2020secure,bonawitz2019towards,sheller2020federated,rieke2020future}. However, whether existing model-merging methods remain effective under medical data heterogeneity is unclear.
 
 \begin{figure}[!t]
     \centering
-    \includegraphics[width=0.96\linewidth]{figures/intro.png}
-    \caption{\textbf{Motivation.} Unlike natural-image clients that share overlapping visual evidence, medical clients each observe only part of the diagnostic space, so parameter-level merging collapses the global model onto a few dominant classes. This reflects two observations: diagnostic evidence is fragmented across isolated clients, and medical prevalence is long-tailed---under which a collapsed model can still report deceptively high accuracy.}
+    \includegraphics[width=0.96\linewidth]{figures/intro.pdf}
+    \caption{\textbf{Motivation.} Left: natural-image models often share broad visual evidence that can be aligned by general-purpose merging. Right: medical centers may cover different diagnosis subsets under long-tailed prevalence, leaving class-agnostic merging unable to distinguish reliable from absent class evidence and potentially concentrating predictions on a few dominant classes.}
  
     \label{fig:intro-collapse}
 \end{figure}
 
-Despite their success on natural images and general visual tasks~\cite{izmailov2018averaging,pmlr-v162-wortsman22a,ilharco2023editingmodelstaskarithmetic,entezari2022role,ainsworth2023gitrebasinmergingmodels}, transferring these paradigms to medical data remains challenging. A key reason is that general-purpose model merging implicitly assumes that different client checkpoints contain relatively complete and comparable \textbf{global discriminative structures}; local models are expected to align through parameter space, task-vector space, update signs, or curvature statistics~\cite{yadav2023tiesmergingresolvinginterferencemerging,yu2024languagemodelssupermario,wu_parameter_2025,jin2025datalessknowledgefusionmerging}. This assumption does not hold in medical scenarios. Medical centers differ not only in device domains but also in diagnostic-class availability: some centers may mainly cover common diseases or specific examination types, while having few rare-disease samples~\cite{9557808,10.1371/journal.pmed.1002683,li2021fedbn}. The resulting local models are not complete replicas of the global task, but \textbf{partial diagnostic experts} supported by locally observed diseases.
+Existing model-merging methods commonly combine parameters, task vectors, update signs, or curvature statistics and typically treat local class-discriminative knowledge as complete and comparable~\cite{izmailov2018averaging,pmlr-v162-wortsman22a,ilharco2023editingmodelstaskarithmetic,entezari2022role,ainsworth2023gitrebasinmergingmodels,yadav2023tiesmergingresolvinginterferencemerging,yu2024languagemodelssupermario,wu_parameter_2025,jin2025datalessknowledgefusionmerging}. This assumption fails in medical settings because hospitals often cover only subsets of diagnostic classes and exhibit long-tailed, heterogeneous disease prevalence~\cite{9557808,10.1371/journal.pmed.1002683,li2021fedbn,BUDA2018249,5597285}. Class-agnostic model merging can therefore mix reliable class-specific knowledge with models that never observed the corresponding classes.
 
-As illustrated in Fig.~\ref{fig:intro-collapse}, we summarize these challenges as two diagnostic-structure abnormalities in medical model merging:
+As illustrated in Fig.~\ref{fig:intro-collapse}, we systematize this mismatch at two coupled levels:
 \begin{itemize}
-    \item \textbf{Diagnostic evidence fragmented across isolated medical clients.} Each client has reliable supervision only for observed classes; thus, a local model may be locally discriminative but still lack evidence for the full global diagnostic space~\cite{9557808,li2021fedbn}.
-    \item \textbf{Long-tailed Medical Image Prevalence.} Medical image datasets naturally follow a long-tailed distribution: a few common diagnostic classes dominate the  samples, while rare classes are underrepresented~\cite{BUDA2018249,5597285}. Under this imbalanced class prior, a merged model collapsed to the majority class can still obtain high Accuracy despite lacking complete multi-class discrimination.
+    \item \textbf{Class-discriminative evidence level: aggregation-induced prediction collapse.} Mixing supported and absent class evidence can concentrate predictions on a few dominant diagnoses, while accuracy masks the loss of multiclass discrimination.
+    \item \textbf{Prediction-distribution level: long-tailed prevalence preservation.} A dominant prediction may reflect collapse or the observed disease prior; simply flattening the output can therefore erase valid prevalence information.
 \end{itemize}
 
-To address these issues, we propose \textbf{LAMP-Merge, a long-tail-aware medical prototype-merging method for single-shot asynchronous medical image model merging}. LAMP-Merge shifts the merge target from global parameter interpolation to \textbf{class-level diagnostic-evidence reconstruction}. The key idea is to use client-uploaded class-level statistics as a synchronization signal for the global diagnostic space, allowing the server to reconstruct a global diagnostic classifier without accessing raw medical images, using a server-side validation set, or conducting multi-round federated communication. Specifically, LAMP-Merge consists of two mechanisms: \textbf{diagnostic prototype reconstruction} aggregates reliable class-level evidence through prototypes in a shared reference feature space, and \textbf{long-tail prevalence calibration} injects a bounded prior bias from client-uploaded class counts, thereby mitigating prediction collapse while preserving clinically meaningful majority-class prevalence.
+\begin{figure}[!t]
+    \centering
+    \includegraphics[width=0.96\linewidth]{figures/compare_nl_me.pdf}
+    \caption{\textbf{A controlled domain comparison reveals substantially stronger collapse on medical data.} Both domains use matched class-imbalance and client-assignment templates. With the same merging method (RegMean), predictions remain distributed across classes on CIFAR-100 but concentrate entirely on class~5 for DermaMNIST ($0\%$ on classes~0--3 and 6). This contrast suggests that domain-specific data structure can interact adversely with class-agnostic merging.}
+    \label{fig:collapse-compare}
+\end{figure}
+
+Figure~\ref{fig:collapse-compare} provides controlled evidence of this failure. Under matched class-imbalance and client-assignment templates, RegMean preserves multiclass predictions on CIFAR-100 but assigns every DermaMNIST image to one class. This does not imply that every medical merger must collapse, but it shows that the same merging method can behave differently on medical diagnoses and motivates class-specific reliability.
+
+To address these problems, we propose \textbf{LAMP-Merge}, a class-aware medical model-merging method that keeps the shared backbone $\phi_0$ frozen and reconstructs the global diagnostic head. \textbf{Diagnostic Prototype Reconstruction (DPR)} merges class prototypes by class-specific support to recover reliable diagnostic directions. \textbf{Long-tail Prevalence Calibration (LPC)} calibrates the reconstructed head using cross-center prevalence statistics without replacing those directions. Together, they construct the global model through one upload of class-level statistics and no further local optimization.
 
 \begin{figure*}[!t]
     \centering
-    \includegraphics[width=0.92\textwidth,height=0.34\textheight]{figures/method.png}
-    \caption{\textbf{Overview of LAMP-Merge.} Each hospital uploads only class-level statistics---reference-space prototypes with sample support and diagnosis prevalence counts---while raw images stay local. On the server, Diagnostic Prototype Reconstruction (DPR) aggregates the prototypes by support-aware weighting into a diagnostic head $\mathbf{w}_c$, and Long-tail Prevalence Calibration (LPC) adds a gated, bounded log-prior bias $b_c$, giving the scoring rule $\ell_c(x)=\mathbf{w}_c^{\top}\phi_0(T(x))+\mathbf{1}[r>\tau]\,b_c$ in a single-shot merge without raw-data sharing or federated rounds.}
+    \includegraphics[width=0.92\textwidth,height=0.34\textheight]{figures/method.pdf}
+    \caption{\textbf{Overview of LAMP-Merge.} All local models share the same frozen backbone $\phi_0$, and only the diagnostic head is merged. Each hospital uploads class-level statistics---reference-space prototypes with sample support and diagnosis prevalence counts---while raw images stay local. On the server, Diagnostic Prototype Reconstruction (DPR) merges the prototypes by support-aware weighting into the classifier weights $\mathbf{w}_c$, and Long-tail Prevalence Calibration (LPC) adds a gated, scaled, and centered log-prior bias $b_c$. The resulting head is attached to the unchanged $\phi_0$, giving $\ell_c(x)=\mathbf{w}_c^{\top}\phi_0(T(x))+\mathbf{1}[r>\tau]\,b_c$ without raw-data sharing or federated rounds.}
  
     \label{fig_method}
 \end{figure*}
 
-Our main contributions are summarized as follows:
-\begin{itemize}
-    \item \textbf{Medical Merging Diagnosis.} We revisit model merging under single-shot asynchronous medical collaboration and identify limited local diagnostic coverage and aggregation-induced prediction collapse as two key abnormalities caused by medical class availability and long-tailed prevalence.
-    \item \textbf{LAMP-Merge.} We propose a long-tail-aware medical prototype-merging method that reconstructs a global diagnostic classifier from client-side class prototypes and prevalence statistics without exposing raw images or requiring multi-round federated optimization.
-    \item \textbf{Empirical Validation.} We conduct full-scope experiments on five medical image datasets, four vision-model families, three client-population sizes, and three non-IID skew levels, showing that LAMP-Merge consistently outperforms strong model-merging baselines and improves prediction-collapse diagnostics.
+We evaluate LAMP-Merge on five medical image datasets spanning microscopy, dermoscopy, CT, and ultrasound, four model families, and diverse client and non-IID settings. It achieves the best dataset-level average accuracy on all five benchmarks among twelve evaluated baselines while improving Macro-F1 and prediction-collapse diagnostics. Our main contributions are:
+\begin{itemize}[leftmargin=*]
+    \item[\ding{182}] \textbf{\textit{Problem Identification.}}
+    We identify class-evidence dilution and prevalence preservation as two coupled problems in medical model merging and characterize the resulting prediction collapse.
+    \item[\ding{183}] \textbf{\textit{Method Design.}}
+    We propose LAMP-Merge, combining support-aware prototype reconstruction with prevalence calibration on a shared frozen backbone.
+    \item[\ding{184}] \textbf{\textit{Empirical Validation.}}
+    Experiments across multiple medical modalities, models, and non-IID settings validate both the method and the identified failure.
 \end{itemize}
 
 \section{Related Works}
 
 \subsection{Model Merging}
 
-Model-merging methods integrate independently trained checkpoints in parameter, task-vector, or geometric spaces. Weight averaging~\cite{izmailov2018averaging} and Model Soups~\cite{pmlr-v162-wortsman22a} directly interpolate parameters; permutation-aware matching~\cite{entezari2022role,ainsworth2023gitrebasinmergingmodels} aligns hidden-unit symmetries; ZipIt~\cite{stoica2024zipit} performs feature-level zipping; Task Arithmetic~\cite{ilharco2023editingmodelstaskarithmetic}, TIES-Merging~\cite{yadav2023tiesmergingresolvinginterferencemerging}, and DARE~\cite{yu2024languagemodelssupermario} manipulate task deltas and sign conflicts; Fisher merging~\cite{wu_parameter_2025}, RegMean~\cite{jin2025datalessknowledgefusionmerging}, Model Stock~\cite{jang2025modelstockneedjust}, Breadcrumbs~\cite{davari2024modelbreadcrumbsscalingmultitask}, Iso-C~\cite{marczak2025taskleftbehindisotropic}, FreeMerge~\cite{zheng2025freemergingfouriertransformefficient}, and RobustMerge~\cite{zeng2025robustmergeparameterefficientmodelmerging} introduce curvature, mean-statistic, subspace, frequency-domain, or robustness assumptions.
+Model-merging methods integrate independently trained checkpoints in parameter, task-vector, or geometric spaces. Weight averaging~\cite{izmailov2018averaging} and Model Soups~\cite{pmlr-v162-wortsman22a} directly interpolate parameters; permutation-aware matching~\cite{entezari2022role,ainsworth2023gitrebasinmergingmodels} aligns hidden-unit symmetries; ZipIt~\cite{stoica2024zipit} performs feature-level zipping; Task Arithmetic~\cite{ilharco2023editingmodelstaskarithmetic}, TIES-Merging~\cite{yadav2023tiesmergingresolvinginterferencemerging}, and DARE~\cite{yu2024languagemodelssupermario} manipulate task deltas and sign conflicts; Fisher merging~\cite{matena_merging_2022}, RegMean~\cite{jin2025datalessknowledgefusionmerging}, Model Stock~\cite{jang2025modelstockneedjust}, Breadcrumbs~\cite{davari2024modelbreadcrumbsscalingmultitask}, Is
+o-C~\cite{marczak2025taskleftbehindisotropic}, FreeMerge~\cite{zheng2025freemergingfouriertransformefficient}, and RobustMerge~\cite{zeng2025robustmergeparameterefficientmodelmerging} introduce curvature, mean-statistic, subspace, frequency-domain, or robustness assumptions.
 
 However, these methods share a class-agnostic merging interface: their variables are global parameters, task vectors, update signs, or geometric statistics rather than class-level diagnostic evidence. \textbf{They do not encode whether a client has reliable supervision for a specific medical class.} Under incomplete local class coverage and long-tailed prevalence, reliable class directions can be mixed with absent or conflicting directions from other clients, resulting in aggregation-induced prediction collapse\cite{BUDA2018249,10.1371/journal.pmed.1002683}.
 
@@ -240,99 +304,87 @@ Federated and decentralized learning perform collaborative training through comm
 However, our setting begins after local training has finished. Hospitals may not remain online, receive global checkpoints repeatedly, or run additional optimization rounds. \textbf{The bottleneck is therefore communication feasibility in addition to privacy.} LAMP-Merge requires one upload of a local model interface and class-level statistics, enabling the server to construct a unified diagnostic model without a multi-round feedback loop.
 
 \section{Method}
-
-In this section, we first formulate the diagnostic-structure pathologies exposed when generic model merging is applied to medical data, namely \textbf{limited local diagnostic coverage} and \textbf{aggregation-induced prediction collapse}. To correct these intrinsic mismatches, we propose \textbf{LAMP-Merge}, a two-stage framework composed of \textbf{DPR} and \textbf{LPC}, as shown in Fig.~\ref{fig_method}.
-
-\subsection{Preliminaries}
-
-\subsubsection{Problem Formulation.}
-
-Assume $K$ medical clients. Client $i$ owns a private labeled dataset $D_i=\{(x,y)\}$ drawn from a class-skewed medical distribution over $C$ diagnosis classes. Let $D_{i,c}$ denote the subset of client $i$ belonging to diagnosis class $c$. In medical partitions, $D_{i,c}$ can be empty for many classes; therefore, client $i$ has reliable supervision only for its observed classes. The goal is to construct a global diagnostic model under this partial and heterogeneous diagnostic-label coverage.
-
-\subsubsection{Upload and Server Constraints.}
-
-After local training, each client uploads its checkpoint interface and class-level statistics once; the server receives no raw images, per-sample data, validation set, or iterative feedback. The uploaded support $n_{i,c}$, prevalence $m_{i,c}$, and reference-space prototype $\mu_{i,c}$ enable one merge with class-level diagnostic evidence as an explicit variable.
-
-\subsection{Motivation}
-
-Although generic model merging is training-free and parameter-efficient, we find that its diagnostic structure can severely degenerate in medical model merging. Prediction-distribution diagnosis and class-support analysis reveal two key abnormalities:
-
-\subsubsection{(1) Aggregation-induced prediction collapse.} Under partial diagnostic coverage, parameter-level merging can turn several locally useful predictors into \textbf{a globally collapsed predictor}. The merged model tends to allocate most test images to a few dominant classes, indicating that global class-discriminative structure has not been reconstructed.
-
-\subsubsection{(2) Prevalence prior cannot be ignored.} Medical datasets often exhibit clinically meaningful long-tailed prevalence. Therefore, completely suppressing majority-class dominance is also inappropriate: a collapsed predictor is undesirable, but a merger should still preserve calibrated disease prevalence when the dominant class reflects the true clinical prior.
-
-\subsection{Diagnostic Prototype Reconstruction Module}
-
-To address \textbf{fragmented diagnostic evidence across isolated medical clients}, DPR reconstructs class-conditional evidence in a shared reference space and synthesizes a global diagnostic head over the full label space.
-
-\subsubsection{(1) Reference-space Class Prototype Extraction.}
+%combine parameters, task vectors, update signs, or curvature statistics
+We study one-shot asynchronous medical model merging: fusing several independently trained clinical classifiers into a single global diagnostic model in one pass, with no raw-data exchange and no federated rounds. Prior methods merge in parameters, task vectors, update signs, or curvature statistics. \textbf{LAMP-Merge instead reconstructs the diagnostic head from class-level evidence}: for every diagnosis class, we build one global class direction from the client class prototypes rather than from their weights. The class prototype, not the parameter, becomes our unit of merging. The simplest way to combine these prototypes is an equal-weight average, but it still collapses under the partial diagnostic coverage typical of medical partitions. We correct it in two steps. \textbf{Diagnostic Prototype Reconstruction (DPR)} reweights the average by class-specific reliability, and \textbf{Long-tail Prevalence Calibration (LPC)} injects a bounded, gated log-prior, adjusting the reconstructed directions rather than overriding them. Fig.~\ref{fig_method} illustrates the resulting framework.
 
 
-First, all clients extract class prototypes with the same frozen reference backbone. Let $\phi_0$ be the reference backbone instantiated from the shared model configuration before local training, and let $T(\cdot)$ be the evaluation transform. For each diagnosis class $c$, client $i$ locally computes a reference-space class prototype
+\subsection{Problem Setting}
+
+Consider $K$ medical clients that share a frozen \textbf{reference encoder} $\phi_0$, the common pretrained backbone every client starts from before local training and keeps identical across clients. We call it a \textbf{reference} because each client expresses its class evidence relative to this one common encoder, so features from different clients live in a single shared coordinate frame. Client $i$ owns a private labeled dataset $D_i=\{(x,y)\}$ drawn from a class-skewed distribution over $C$ diagnosis classes, and we write $D_{i,c}$ for its subset of class $c$. In medical partitions $D_{i,c}$ is empty for many classes: client $i$ carries reliable supervision only for the classes it has actually observed and is therefore a \textbf{partial diagnostic expert}. After local training, each client performs a \textbf{single upload}---its checkpoint interface together with a support count, a prevalence count, and a space \textbf{class prototype}. It \textbf{never} upload raw image, per-sample feature, or validation set.
+
+General-purpose methods align checkpoints in parameter, task-vector, or statistic space, but when this alignment is confined to the classification head, it stays blind to which classes each client actually supervises. When clients encode disjoint, non-overlapping class evidence, such merging has little shared discriminative structure to align and collapses onto a few dominant classes instead of recovering the global label space. We therefore keep the \textbf{diagnosis class as the explicit unit of merging} throughout.
+
+
+\subsection{Diagnostic Prototype Reconstruction}
+
+The first pathology is that generic merging collapses because the diagnostic evidence held by different clients is fragmented and non-comparable in parameter space: a class supervised by only one client has no counterpart to align against in the others, so aggregation dilutes it instead of reinforcing it. \textbf{DPR removes this obstacle by moving the merge into the shared $\phi_0$ space}, where every client's evidence for a class lands in one comparable frame.
+
+With $T(\cdot)$ the evaluation transform, each client summarizes its evidence for class $c$ as the $\phi_0$-space \textbf{class prototype}
 \begin{equation}
-\mu_{i,c}=\frac{1}{n_{i,c}}\sum_{(x,y)\in D_i}\mathbf{1}[y=c]\phi_0(T(x)),
+\mu_{i,c}=\frac{1}{n_{i,c}}\sum_{(x,y)\in D_i}\mathbf{1}[y=c]\,\phi_0(T(x)),
 \end{equation}
-where $n_{i,c}=|D_{i,c}|$ is the class support count. If $n_{i,c}=0$, the client uploads zero support for that class and contributes no prototype evidence.
-
-\subsubsection{(2) Support-aware Evidence Aggregation.}
-
-Second, the server converts class-support counts into evidence weights to characterize the reliability of each client for a given class:
+where $n_{i,c}=|D_{i,c}|$ is the class support and a client with $n_{i,c}=0$ contributes no prototype for that class. Merging class $c$ then reduces to combining the client estimates $\{\mu_{i,c}\}_{i=1}^{K}$ into one global prototype. The key observation is that $\mu_{i,c}$ is a mean over $n_{i,c}$ samples, so a larger support yields a lower-variance estimate; we therefore weight each client by its support,
 \begin{equation}
-e_{i,c}=(n_{i,c}+1)^\gamma \mathbf{1}[n_{i,c}>0],
+e_{i,c}=(n_{i,c}+1)^{\gamma}\,\mathbf{1}[n_{i,c}>0],\qquad
+\alpha_{i,c}=\frac{e_{i,c}}{\sum_{j=1}^{K} e_{j,c}},
 \end{equation}
-where $\gamma=0.55$ is the default evidence exponent. This weight gives larger class-specific contribution to clients with more supervised samples of class $c$, while excluding clients that never observe this class. The normalized reliability is
+with $\gamma=0.55$ interpolating between uniform ($\gamma=0$) and count-weighted ($\gamma\!\to\!1$) averaging. Crucially, $\alpha_{i,c}=0$ whenever $n_{i,c}=0$, so \textbf{absent-class clients can never enter a class reconstruction}. It is exactly what removes the dilution behind aggregation-induced collapse. The global prototype is then the reliability-weighted average
 \begin{equation}
-\alpha_{i,c}=\frac{e_{i,c}}{\sum_{j=1}^{K} e_{j,c}}.
+p_c=\sum_{i=1}^{K}\alpha_{i,c}\,\mu_{i,c},\qquad \sum_{i=1}^{K}\alpha_{i,c}=1,
+\label{eq:dpr-fuse}
 \end{equation}
-
-The global diagnosis prototype is obtained by class-wise reliability-weighted aggregation:
+summing one homogeneous quantity per client like weight averaging, yet reconstructing each class independently. These prototypes finally induce a cosine head
 \begin{equation}
-p_c=\sum_{i=1}^{K}\alpha_{i,c}\mu_{i,c}.
+w_c=s\,\frac{p_c}{\|p_c\|_2},
 \end{equation}
-This step aggregates evidence only from clients that have actually observed class $c$, preventing absent-class classifiers from diluting valid diagnostic signals.
-
-\subsubsection{(3) Prototype-induced Diagnostic Head.}
-
-Finally, LAMP-Merge maps global diagnosis prototypes into a cosine prototype classifier:
-\begin{equation}
-w_c=s\frac{p_c}{\|p_c\|_2},
-\end{equation}
-where $s=18.75$ is the default head scale. The resulting head is not an average of local classifier parameters; it is induced by class evidence in the shared reference space, thereby restoring multiclass diagnostic directions over the global label space.
+with $s=18.75$. The resulting classifier is \textbf{synthesized from class evidence, not averaged from local classifier weights}.
 
 \subsection{Long-tail Prevalence Calibration}
 
-To address \textbf{long-tailed medical prevalence cannot be ignored}, LPC adds a bounded class prior after DPR to calibrate the clinical prevalence reflected by client statistics.
+The second pathology is that medical prevalence is long-tailed \textbf{in a clinically meaningful way}, so the correction must be one-sided: a collapsed predictor is undesirable, but fully flattening the dominant class is equally wrong when that class reflects the true clinical prior. DPR alone treats every reconstructed direction symmetrically and encodes no prevalence at all; \textbf{LPC restores it as a bounded prior on top of the reconstructed head}, distinguishing collapse correction from ordinary class balancing.
 
-\subsubsection{(1) Client-reported Prevalence Prior.}
-
-First, each client uploads class-prevalence counts $m_{i,c}$. The server estimates the global class prior
-\begin{equation}
-\pi_c=\frac{\sum_{i=1}^{K}m_{i,c}}{\sum_{k=1}^{C}\sum_{i=1}^{K}m_{i,k}}.
-\end{equation}
-This prior is computed only from class-level counts, not from raw images, per-sample features, or per-sample predictions.
-
-\subsubsection{(2) Long-tail Activation Criterion.}
-
-Second, to avoid unnecessary calibration in non-long-tailed cases, the server measures dominant-class imbalance by
-\begin{equation}
-r=C\max_c \pi_c.
-\end{equation}
-The calibration module is activated only when $r>\tau$, where $\tau=2.5$ by default.
-
-\subsubsection{(3) Centered Log-prior Calibration.}
-
-Finally, when the module is activated, LAMP-Merge constructs a centered log-prior bias
+The prior is estimated only from the uploaded prevalence counts $m_{i,c}$, giving the global class distribution $\pi_c=\big(\sum_{i=1}^{K}m_{i,c}\big)/\big(\sum_{k=1}^{C}\sum_{i=1}^{K}m_{i,k}\big)$. To leave near-balanced tasks untouched, the calibration is \textbf{gated} by the dominant-class imbalance $r=C\max_c\pi_c$ and applied only when $r>\tau$ (default $\tau=2.5$). When active, it adds the centered log-prior bias
 \begin{equation}
 b_c=\lambda\left(\log\pi_c-\frac{1}{C}\sum_{k=1}^{C}\log\pi_k\right),
 \end{equation}
-with default maximum calibration strength $\lambda=4.25$. The centering term prevents a uniform shift of all class logits, so the bias only changes the relative class prior. This module calibrates prevalence without replacing the diagnostic directions reconstructed by the first module.
+with default strength $\lambda=4.25$. Centering removes the uniform shift, so the bias changes only the relative ordering induced by prevalence, while the gate keeps it bounded; the reconstructed directions from DPR are thus \textbf{adjusted, never replaced}.
 
-\subsection{Optimization Objective and Algorithm}
-
-The final scoring function of LAMP-Merge integrates the diagnostic prototype reconstruction term and the long-tail prevalence calibration term:
+Assembling the two terms gives the score assigned to class $c$ for an input $x$,
 \begin{equation}
-\ell_c(x)=w_c^\top\phi_0(T(x))+\mathbf{1}[r>\tau]\,b_c.
+\ell_c(x)=w_c^{\top}\phi_0(T(x))+\mathbf{1}[r>\tau]\,b_c,
+\label{eq:score}
 \end{equation}
+realized as a single checkpoint. \textbf{Merging is confined entirely to the diagnostic head}: the frozen $\phi_0$ is reused as the shared body, and the head weight and bias are exactly the reconstructed $\{w_c\}$ and calibration $\{b_c\}$. The result $\theta_m=(\phi_0,\{w_c,b_c\})$ is a single global diagnostic model built \textbf{in one pass from class-level prototypes}, with no raw-image access and no federated rounds. Algorithm~\ref{alg:lamp} summarizes the procedure.
+
+\begin{algorithm}[!t]
+\caption{LAMP-Merge}
+\label{alg:lamp}
+\begin{algorithmic}[1]
+\REQUIRE Clients $\{D_i\}_{i=1}^{K}$; frozen reference encoder $\phi_0$; transform $T$; hyperparameters $\gamma,s,\tau,\lambda$
+\ENSURE Merged diagnostic model $\theta_m=(\phi_0,\{w_c,b_c\}_{c=1}^{C})$
+\STATE \textbf{Hospital side} (each client $i$, uploaded once):
+\FOR{each class $c=1,\dots,C$}
+    \STATE $n_{i,c}\leftarrow |D_{i,c}|$;\quad $m_{i,c}\leftarrow$ local label count of class $c$
+    \STATE $\mu_{i,c}\leftarrow \frac{1}{n_{i,c}}\sum_{(x,y)\in D_i}\mathbf{1}[y=c]\,\phi_0(T(x))$ \quad\textbf{if } $n_{i,c}>0$
+\ENDFOR
+\STATE upload $\{(\mu_{i,c},n_{i,c},m_{i,c})\}_{c=1}^{C}$; \textbf{raw images stay local}
+\STATE \textbf{Merging} (single pass):
+\FOR{each class $c=1,\dots,C$}
+    \STATE $e_{i,c}\leftarrow (n_{i,c}+1)^{\gamma}\,\mathbf{1}[n_{i,c}>0]$ for all $i$
+    \STATE $\alpha_{i,c}\leftarrow e_{i,c}\big/\sum_{j=1}^{K} e_{j,c}$
+    \STATE $p_c\leftarrow \sum_{i=1}^{K}\alpha_{i,c}\,\mu_{i,c}$ \hfill $\triangleright$ DPR fusion
+    \STATE $w_c\leftarrow s\,p_c/\|p_c\|_2$
+\ENDFOR
+\STATE $\pi_c\leftarrow \sum_{i} m_{i,c}\big/\sum_{k}\sum_{i} m_{i,k}$;\quad $r\leftarrow C\max_c \pi_c$
+\IF{$r>\tau$}
+    \STATE $b_c\leftarrow \lambda\big(\log\pi_c-\frac{1}{C}\sum_{k}\log\pi_k\big)$ for all $c$ \hfill $\triangleright$ LPC
+\ELSE
+    \STATE $b_c\leftarrow 0$ for all $c$
+\ENDIF
+\RETURN $\theta_m=(\phi_0,\{w_c,b_c\}_{c=1}^{C})$
+\end{algorithmic}
+\end{algorithm}
+
 
 
 \section{Experiments}
@@ -347,7 +399,7 @@ We evaluate the merged models on five representative MedMNIST v2 benchmarks\cite
 
 \begin{table}[!t]
 \centering
-\caption{Dataset statistics and representative samples for the five medical image benchmarks. Counts are taken from the exact NPZ files used in our experiments.}
+\caption{\textbf{Five medical benchmarks spanning distinct modalities, class counts, and prevalence profiles.} Dataset statistics and a representative sample per benchmark; counts are read from the exact NPZ files used in our experiments.}
 \label{tab:dataset-statistics}
 \scriptsize
 \renewcommand{\arraystretch}{1.25}
@@ -358,13 +410,13 @@ We evaluate the merged models on five representative MedMNIST v2 benchmarks\cite
 \rowcolor[HTML]{F2F2F2}
 \textbf{Dataset} & \textbf{Classes} & \textbf{Train} & \textbf{Val} & \textbf{Test} & \textbf{Total} & \textbf{Sample} \\
 \hline \hline
-Blood & 8 & 11,959 & 1,712 & 3,421 & 17,092 & \makebox[1.05cm][c]{\raisebox{-0.16cm}{\includegraphics[width=0.95cm,height=0.52cm,keepaspectratio]{figures/sample_blood.png}}} \\
+Blood & 8 & 11,959 & 1,712 & 3,421 & 17,092 & \makebox[1.05cm][c]{\raisebox{-0.16cm}{\includegraphics[width=0.95cm,height=0.52cm,keepaspectratio]{figures/sample_blood.pdf}}} \\
 \rowcolor{gray!10}
-Derma & 7 & 7,007 & 1,003 & 2,005 & 10,015 & \makebox[1.05cm][c]{\raisebox{-0.16cm}{\includegraphics[width=0.95cm,height=0.52cm,keepaspectratio]{figures/sample_derma.png}}} \\
-Organ-C & 11 & 12,975 & 2,392 & 8,216 & 23,583 & \makebox[1.05cm][c]{\raisebox{-0.16cm}{\includegraphics[width=0.95cm,height=0.52cm,keepaspectratio]{figures/sample_organ_c.png}}} \\
+Derma & 7 & 7,007 & 1,003 & 2,005 & 10,015 & \makebox[1.05cm][c]{\raisebox{-0.16cm}{\includegraphics[width=0.95cm,height=0.52cm,keepaspectratio]{figures/sample_derma.pdf}}} \\
+Organ-C & 11 & 12,975 & 2,392 & 8,216 & 23,583 & \makebox[1.05cm][c]{\raisebox{-0.16cm}{\includegraphics[width=0.95cm,height=0.52cm,keepaspectratio]{figures/sample_organ_c.pdf}}} \\
 \rowcolor{gray!10}
-Organ-S & 11 & 13,932 & 2,452 & 8,827 & 25,211 & \makebox[1.05cm][c]{\raisebox{-0.16cm}{\includegraphics[width=0.95cm,height=0.52cm,keepaspectratio]{figures/sample_organ_s.png}}} \\
-Ultrasound & 8 & 3,869 & 549 & 1,113 & 5,531 & \makebox[1.05cm][c]{\raisebox{-0.16cm}{\includegraphics[width=0.95cm,height=0.52cm,keepaspectratio]{figures/sample_ultrasound.png}}} \\
+Organ-S & 11 & 13,932 & 2,452 & 8,827 & 25,211 & \makebox[1.05cm][c]{\raisebox{-0.16cm}{\includegraphics[width=0.95cm,height=0.52cm,keepaspectratio]{figures/sample_organ_s.pdf}}} \\
+Ultrasound & 8 & 3,869 & 549 & 1,113 & 5,531 & \makebox[1.05cm][c]{\raisebox{-0.16cm}{\includegraphics[width=0.95cm,height=0.52cm,keepaspectratio]{figures/sample_ultrasound.pdf}}} \\
 \noalign{\hrule height 1.25pt}
 \end{tabular}
 }
@@ -372,24 +424,25 @@ Ultrasound & 8 & 3,869 & 549 & 1,113 & 5,531 & \makebox[1.05cm][c]{\raisebox{-0.
 
 \subsubsection{(2) Baselines:}
 
-We compare LAMP-Merge with twelve established merging baselines spanning parameter averaging, task-vector pruning, conflict resolution, statistic-aware correction, interpolation, subspace merging, Fourier fusion, and robust merging~\cite{yadav2023tiesmergingresolvinginterferencemerging,yu2024languagemodelssupermario,jin2025datalessknowledgefusionmerging,wu_parameter_2025,davari2024modelbreadcrumbsscalingmultitask,jang2025modelstockneedjust,ilharco2023editingmodelstaskarithmetic,marczak2025taskleftbehindisotropic,zheng2025freemergingfouriertransformefficient,zeng2025robustmergeparameterefficientmodelmerging}.
+We organize twelve merging baselines into four groups by how they combine local checkpoints: (i) direct parameter interpolation, Weight Averaging~\cite{pmlr-v162-wortsman22a}; (ii) task-vector pruning and conflict resolution, TIES-Merging~\cite{yadav2023tiesmergingresolvinginterferencemerging} and the Linear and TIES variants of DARE~\cite{yu2024languagemodelssupermario}; (iii) statistic- and geometry-aware correction, RegMean~\cite{jin2025datalessknowledgefusionmerging}, Fisher merging~\cite{matena_merging_2022}, Model Stock~\cite{jang2025modelstockneedjust}, and Model Breadcrumbs~\cite{davari2024modelbreadcrumbsscalingmultitask}; and (iv) recent subspace, frequency, and robust merging, Iso-C~\cite{marczak2025taskleftbehindisotropic}, FREE-Merging~\cite{zheng2025freemergingfouriertransformefficient}, RobustMerge~\cite{zeng2025robustmergeparameterefficientmodelmerging}, and FROM~\cite{wu_parameter_2025}.
+
 
 \subsubsection{(3) Merging Settings:}
 
 
 % Experiments follow a single-shot asynchronous model-merging protocol. Each client independently trains a local model on its own medical imaging data and then computes the class-level statistics required by LAMP-Merge locally, including class-support counts, reference-space class prototypes, and class-prevalence counts. These statistics are uploaded once together with an interface to the local checkpoint. The server performs a single model-merging step using only the uploaded checkpoints and class-level statistics, and evaluates the resulting merged model on a global test set.
 
-We evaluate four vision-model families: ResNet, ConvNeXt, ViT-Tiny, and Swin-Tiny\cite{he2016deep,liu2022convnet,dosovitskiy2021image,liu2021swin}. For each dataset-model pair, we construct non-IID client partitions with $K\in\{3,5,7\}$ clients and Dirichlet skew parameter $\beta\in\{0,0.01,0.1\}$, using seed 42\cite{hsu2019measuringeffectsnonidenticaldata}. A client-average result fixes the dataset, model, and $K$, and then averages over the three $\beta$ values. And the experiments follow a single-shot asynchronous model-merging protocol.
+All baselines merge the same frozen backbone and reduce, like LAMP-Merge, to \textbf{producing the shared classification head}. We evaluate four vision-model families: ResNet~\cite{he2016deep}, ConvNeXt~\cite{liu2022convnet}, ViT-Tiny~\cite{dosovitskiy2021image}, and Swin-Tiny~\cite{liu2021swin}. For each dataset-model pair, we construct non-IID client partitions with $K\in\{3,5,7\}$ clients and Dirichlet skew $\beta\in\{0,0.01,0.1\}$~\cite{hsu2019measuringeffectsnonidenticaldata}. A client-average result fixes the dataset, model, and $K$, then averages over the three $\beta$ values, with every configuration run once under the fixed seed 42.
 
-% \subsubsection{4) Implementation Environment:}
+\subsubsection{(4) Implementation Environment:}
 
-% All experiments were run on a server with two Intel(R) Xeon(R) Silver 4210 CPUs, four NVIDIA GeForce RTX 2080 Ti GPUs, and the conda environment \texttt{MM} with Python 3.10.20, PyTorch 2.6.0+\texttt{cu118}, and CUDA runtime 11.8.
+All experiments run on two Intel Xeon Silver 4210 CPUs (20 cores / 40 threads), 376\,GB RAM, and four NVIDIA RTX 2080 Ti GPUs (11\,GB, driver 535.154.05) under Linux x86\_64, with Python 3.10.20, PyTorch 2.6.0, and CUDA 11.8; the one-shot server merge needs no training and runs on CPU.
 
 \subsection{Comparison With the State of the Arts}
 
 % The main comparison uses client-average ACC: for each fixed dataset, model, and client number, we first average over the three $\beta$ skew levels and then compare merging methods. A cell is counted as successful when LAMP-Merge is greater than or equal to the strongest non-LAMP baseline in that cell.
 
-Tables~\ref{tab:client-avg-swin-tiny}, \ref{tab:client-avg-convnext}, \ref{tab:client-avg-resnet}, and \ref{tab:client-avg-vit-tiny} report the full client-average results for all four backbones. Across all evaluated settings, LAMP-Merge wins or ties the strongest non-LAMP baseline in \textbf{76 cells (95.0\%)}.
+Tables~\ref{tab:client-avg-swin-tiny}, \ref{tab:client-avg-convnext}, \ref{tab:client-avg-resnet}, \ref{tab:client-avg-vit-tiny} report the full client-average results for all four backbones. LAMP-Merge attains \textbf{the best} client-average accuracy and Macro-F1 in nearly every cell across all four backbones and five datasets. The margins are largest where collapse is most severe: on \textbf{Blood} it reaches \textbf{85.21\%/82.95\%} with \textbf{ViT-Tiny} (\textcolor{DropRed}{+68.83\%/+76.36\%}) and \textbf{85.05\%/83.48\%} with \textbf{ConvNeXt} (\textcolor{DropRed}{+67.41\%/+79.74\%}), and on \textbf{Organ-C}, \textbf{Organ-S}, and \textbf{Ultrasound} the accuracy gains span \textcolor{DropRed}{+22\%} to \textcolor{DropRed}{+52\%} over the strongest baseline. Even on \textbf{Derma}, where one hyper-dominant class props up baseline accuracy, LAMP-Merge keeps the top accuracy and lifts \textbf{Macro-F1} by as much as \textcolor{DropRed}{+26.22\%}, and the advantage holds across backbones, client counts, and skew levels.
 
 \setcounter{dbltopnumber}{4}
 \setcounter{topnumber}{4}
@@ -398,7 +451,7 @@ Tables~\ref{tab:client-avg-swin-tiny}, \ref{tab:client-avg-convnext}, \ref{tab:c
 \begin{table*}[!t]
 \centering
 \renewcommand{\arraystretch}{1.35}
-\caption{Client-average test accuracy / Macro-F1 (\%) on Swin-Tiny. Each entry is reported as ACC / F1, where F1 denotes Macro-F1 and each value averages the three Dirichlet settings for a fixed client number; Avg averages $K=3,5,7$ within the corresponding dataset.}
+\caption{\textbf{Client-average test accuracy / Macro-F1 (\%) on Swin-Tiny.}}
 \label{tab:client-avg-swin-tiny}
 \resizebox{\textwidth}{!}{%
 \begin{tabular}{l||ccc:c|ccc:c|ccc:c|ccc:c|ccc:c}
@@ -460,7 +513,7 @@ FROM\pub{AAAI 2026} & 15.65 / 3.37 & 14.95 / 3.20 & 16.71 / 3.57 & 15.77 / 3.38 
 \begin{table*}[!t]
 \centering
 \renewcommand{\arraystretch}{1.35}
-\caption{Client-average test accuracy / Macro-F1 (\%) on ConvNeXt. Each entry is reported as ACC / F1, where F1 denotes Macro-F1 and each value averages the three Dirichlet settings for a fixed client number; Avg averages $K=3,5,7$ within the corresponding dataset.}
+\caption{\textbf{Client-average test accuracy / Macro-F1 (\%) on ConvNeXt.}}
 \label{tab:client-avg-convnext}
 \resizebox{\textwidth}{!}{%
 \begin{tabular}{l||ccc:c|ccc:c|ccc:c|ccc:c|ccc:c}
@@ -522,7 +575,7 @@ FROM\pub{AAAI 2026} & 15.65 / 3.37 & 10.83 / 2.39 & 16.71 / 3.57 & 14.39 / 3.11 
 \begin{table*}[!t]
 \centering
 \renewcommand{\arraystretch}{1.35}
-\caption{Client-average test accuracy / Macro-F1 (\%) on ResNet. Each entry is reported as ACC / F1, where F1 denotes Macro-F1 and each value averages the three Dirichlet settings for a fixed client number; Avg averages $K=3,5,7$ within the corresponding dataset.}
+\caption{\textbf{Client-average test accuracy / Macro-F1 (\%) on ResNet.}}
 \label{tab:client-avg-resnet}
 \resizebox{\textwidth}{!}{%
 \begin{tabular}{l||ccc:c|ccc:c|ccc:c|ccc:c|ccc:c}
@@ -584,7 +637,7 @@ FROM\pub{AAAI 2026} & 29.89 / 18.76 & 23.06 / 11.03 & 20.52 / 8.00 & 24.49 / 12.
 \begin{table*}[!t]
 \centering
 \renewcommand{\arraystretch}{1.35}
-\caption{Client-average test accuracy / Macro-F1 (\%) on ViT-Tiny. Each entry is reported as ACC / F1, where F1 denotes Macro-F1 and each value averages the three Dirichlet settings for a fixed client number; Avg averages $K=3,5,7$ within the corresponding dataset.}
+\caption{\textbf{Client-average test accuracy / Macro-F1 (\%) on ViT-Tiny.}}
 \label{tab:client-avg-vit-tiny}
 \resizebox{\textwidth}{!}{%
 \begin{tabular}{l||ccc:c|ccc:c|ccc:c|ccc:c|ccc:c}
@@ -643,17 +696,29 @@ FROM\pub{AAAI 2026} & 18.01 / 8.54 & 7.81 / 2.36 & 14.05 / 3.05 & 13.29 / 4.65 &
 }
 \end{table*}
 
-
 \subsection{Ablation Study}
 
-To assess DPR and LPC, we conduct module ablations under the main experimental configuration. Weight averaging, weight averaging + DPR, and full LAMP-Merge obtain mean ACC of 22.04\%, 58.91\%, and 62.21\%, respectively; Fig.~\ref{fig:baseline-2x2-ablation} further reports the results that use TIES/DARE as baselines.
+\begin{figure}[!t]
+\centering
+\includegraphics[width=\columnwidth]{figures/03_baseline_2x2_ablation.pdf}
+\caption{\textbf{Module ablation.} We evaluate Baselines (TIES and DARE), +DPR, +LPC, and +DPR+LPC. Both modules are complementary, and their combination achieves the best performance
+across all benchmarks.}
+\label{fig:baseline-2x2-ablation}
+\end{figure}
 
-\subsubsection{1) Effectiveness of DPR}
-To identify the necessary components of DPR, we retain LPC and probe two design axes. The first axis alters the \emph{prototype semantics}: classifier-head aggregation (CHA) swaps each class prototype for the local classifier-head direction, testing whether independently trained heads already share a class-aligned representation; global-feature mean (GFM) reuses one class-agnostic feature mean for every class, testing whether generic client appearance alone can drive merging; support-only synthetic head (SSH) keeps the cosine-head interface but fills it with a fixed random unit vector, testing whether the head form or support counts suffice without diagnostic content; and shuffled-label prototype (SLP) permutes prototypes across labels, testing whether class evidence must be assigned to the correct output class. The second axis alters the \emph{client-support weighting}: uniform client weight (UCW) credits every observing client equally regardless of sample count; binary support only (BSO) collapses both support and prevalence to presence indicators, removing all frequency information; and global client-size weight (GCSW) weights by a client's total size rather than its class-specific support. These probe how reliably each observed class should be credited.
+We evaluate Baseline, +\emph{DPR}, +\emph{LPC}, and +\emph{DPR}+\emph{LPC}. Fig.~\ref{fig:baseline-2x2-ablation} shows that both modules consistently improve over the baseline: On \textbf{TIES-Merging}, DPR and LPC improve accuracy from \textbf{19.50\%} to \textbf{58.91\%} and \textbf{28.21\%}, respectively; on \textbf{DARE-Linear}. they improve accuracy from \textbf{19.33\%} to \textbf{58.91\%} and \textbf{28.79\%}. Their combination further reaches \textbf{62.21\%}, showing the two modules address complementary failure modes.
+
+\subsubsection{Effectiveness of DPR}
+We assess DPR from two axes. The \textbf{prototype semantics} axis replaces the class prototype: CHA uses the local classifier-head direction, GFM reuses one class-agnostic feature mean for all classes, SSH fills the cosine head with a random unit vector, and SLP permutes prototypes across labels. The \textbf{client-support weighting} axis alters how observing clients are credited: UCW weights every client equally, BSO keeps only presence indicators, and GCSW weights by total client size rather than class-specific support.
+
+% Table~\ref{tab:diagnostic-internal-ablation} and Fig.~\ref{fig:internal_module_ablations}
+Table~\ref{tab:diagnostic-internal-ablation} shows that every replacement lowers \textbf{accuracy}. Corrupting the \textbf{prototype semantics} is fatal: Avg accuracy drops from \textbf{62.21\%/52.81\%} to as low as \textbf{10.89\%/5.77\%} (\textbf{\textcolor{DropRed}{-51.32\%/-47.04\%}}), so the merge cannot proceed without correctly assigned class prototypes. Removing the \textbf{support weighting} is milder but still costly, the best such variant losing \textbf{\textcolor{DropRed}{-2.82\%/-4.07\%}}. DPR thus needs both reliable class prototypes and class-specific support weighting.
+
+\subsubsection{Effectiveness of LPC}
 
 \begin{table}[!t]
 \centering
-\caption{DPR internal ablation by dataset. Each entry is reported as ACC / F1, where F1 denotes Macro-F1; all values average all backbones, client counts, and Dirichlet settings.}
+\caption{\textbf{Internal ablation of DPR}. We compare \textbf{ACC / Macro-F1} over \textbf{all datasets}. Perturbing the prototype semantics collapses accuracy far below reweighting the support, and full LAMP-Merge is \textbf{best} on every dataset.}
 \label{tab:diagnostic-internal-ablation}
 \scriptsize
 \renewcommand{\arraystretch}{1.20}
@@ -679,16 +744,9 @@ To identify the necessary components of DPR, we retain LPC and probe two design 
 }
 \end{table}
 
-
-Table~\ref{tab:diagnostic-internal-ablation} and Fig.~\ref{fig:internal_module_ablations} show that every replacement lowers ACC. This confirms that DPR needs both reliable class prototypes and class-specific support weighting.
-
-\subsubsection{2) Effectiveness of LPC}
-
-
-
 \begin{table}[!t]
 \centering
-\caption{LPC internal ablation by dataset. UPP uses a uniform prior, AOC removes the activation gate, and CBP averages client-normalized priors. Each entry is reported as ACC / F1, where F1 denotes Macro-F1.}
+\caption{\textbf{Internal ablation of LPC}. We compare \textbf{ACC / Macro-F1} over \textbf{all datasets}. Full LAMP-Merge \textbf{exceeds} every control on every dataset average.}
 \label{tab:prevalence-internal-ablation}
 \scriptsize
 \renewcommand{\arraystretch}{1.20}
@@ -710,27 +768,22 @@ CBP & 81.36 / 79.41 & 49.61 / 28.90 & 62.10 / 59.32 & 57.12 / 52.75 & 44.76 / 41
 }
 \end{table}
 
-\begin{figure}[!t]
-    \centering
-    \includegraphics[width=\columnwidth]{figures/02_internal_module_ablations.png}
-    \caption{Internal ablations of DPR and LPC. Each setting reports paired ACC and Macro-F1 bars; the plotted abbreviations are defined in the ablation text above.}
- 
-    \label{fig:internal_module_ablations}
-\end{figure}
+% \begin{figure}[!t]
+%     \centering
+%     \includegraphics[width=\columnwidth]{figures/02_internal_module_ablations.pdf}
+%     \caption{\textbf{Every internal variant of DPR and LPC falls below the full model.} Visual companion to Tables~\ref{tab:diagnostic-internal-ablation} and~\ref{tab:prevalence-internal-ablation}; plotted abbreviations are defined in the ablation text above. No single component can be removed without loss, confirming that the two modules are jointly necessary.}
 
-To evaluate LPC, we retain DPR and compare its empirical prior against three controls across the full experimental setting. Uniform prevalence prior (UPP) replaces the measured class distribution with a flat prior, testing whether calibration should ignore observed prevalence altogether. Always-on calibration (AOC) removes the long-tail activation gate so the prior is applied to every configuration, testing whether the gate is a useful safeguard against calibrating near-balanced cases. Client-balanced prior (CBP) estimates the prior by averaging each client's normalized prevalence with equal weight, testing whether equal client influence can replace a sample-count-weighted prevalence estimate.
+%     \label{fig:internal_module_ablations}
+% \end{figure}
 
-Table~\ref{tab:prevalence-internal-ablation} and Fig.~\ref{fig:internal_module_ablations} show that LAMP-Merge is best and every control reduces ACC. This demonstrates that calibrated empirical prevalence and client-size-aware aggregation complement DPR.
+We test three controls to prove its effectiveness. Two probe the \textbf{prior estimator}: UPP replaces the measured class distribution with a flat prior, and CBP averages each client's normalized prevalence with equal weight instead of by sample count. One probes the \textbf{activation gate}: AOC removes it so the prior applies to every configuration.
 
-\begin{figure}[!t]
-\centering
-\includegraphics[width=\columnwidth]{figures/03_baseline_2x2_ablation.png}
-\caption{Strict $2\times2$ DPR/LPC ablations for TIES-Merging and DARE-Linear. Each setting reports paired ACC and Macro-F1 bars. \textbf{All experimental datasets are included.}}
-\label{fig:baseline-2x2-ablation}
-\end{figure}
+%Table~\ref{tab:prevalence-internal-ablation} and Fig.~\ref{fig:internal_module_ablations} 
+Table~\ref{tab:prevalence-internal-ablation} shows that every control lowers accuracy from \textbf{62.21\%}. Discarding the measured \textbf{prior estimator} costs the most, UPP dropping \textbf{\textcolor{DropRed}{-3.30\%}} and CBP \textbf{\textcolor{DropRed}{-3.22\%}}, so both prevalence and its sample-count weighting matter. Removing the \textbf{activation gate} makes the F1 \textbf{\textcolor{DropRed}{-0.85\%}}, marking it trusts the prior distribution too much. LPC therefore calibrates DPR's restored directions instead of replacing them.
+
 
 \subsection{Innovative prediction-collapse Diagnostics}
-Because raw ACC can hide single-class predictions on long-tailed data, we additionally report collapse ratio, effective predicted classes, and predicted--true total variation\cite{BUDA2018249,5597285}. With $q_c$ and $\bar{q}_c$ the predicted and true class distributions over the test set, the three diagnostics are
+We additionally report \textbf{collapse ratio, effective predicted classes, and predicted--true total variation}. With $q_c$ and $\bar{q}_c$ the predicted and true class distributions over the test set, the three diagnostics are
 \begin{equation}
 \begin{array}{c}
 \rho=\max_c q_c,\qquad C_{\mathrm{eff}}=\exp\left(-\sum_c q_c\log q_c\right),\\[3pt]
@@ -741,7 +794,7 @@ Lower $\rho$ and TV and higher $C_{\mathrm{eff}}$ indicate weaker prediction col
 
 \begin{table}[!t]
 \centering
-\caption{Prediction-collapse diagnostics by dataset. Best ref. is selected separately for each metric and dataset. Ratio metrics use percentage scale; Avg averages the five datasets.}
+\caption{\textbf{Three more diagnostics to prove LAMP-Merge breaks the single-class collapse}. On the experiments based on \textbf{all datasets}, LAMP-Merge lowers the collapse ratio and total variation and raises the effective class count on every benchmark.}
 \label{tab:collapse-key}
 \scriptsize
 \setlength{\tabcolsep}{2.2pt}
@@ -767,28 +820,27 @@ Lower $\rho$ and TV and higher $C_{\mathrm{eff}}$ indicate weaker prediction col
 
 Table~\ref{tab:collapse-key} shows that \textbf{LAMP-Merge consistently improves all collapse diagnostics}.
 
-\subsection{Visualization Experiment}
+\subsection{Distribution Analysis}
 
-We visualize the absolute per-class predicted--true gap; values closer to zero indicate better prevalence alignment.
+We visualize the absolute per-class predicted--true gap; LAMP-Merge gets almost zero gap rather than an extremely large gap as others.
 
 \begin{figure}[!t]
 \centering
-\includegraphics[width=\linewidth]{figures/04_ultrasound_class_distribution.png}
-\caption{Absolute predicted--true class gaps on Ultrasound, averaged over all backbones, client counts, and Dirichlet settings. Values are percentage points; zero denotes exact agreement.}
+\includegraphics[width=\linewidth]{figures/04_ultrasound_class_distribution.pdf}
+\caption{\textbf{LAMP-Merge tracks the true class prevalence instead of piling mass on one class.} Absolute per-class predicted--true gaps on Ultrasound while LAMP-Merge stays near zero across classes.}
 \label{fig:visual-chaosheng_predict}
 \end{figure}
 
-\subsection{Hyperparameter Analysis Experiment}
-Fig.~\ref{fig:hparam-analysis} evaluates DPR/LPC sensitivity on \textbf{the full setting}.
 
 \begin{figure}[!t]
 \centering
-\includegraphics[width=\columnwidth]{figures/05_hyperparameter_sensitivity.png}
-\caption{Full-grid DPR/LPC hyperparameter analysis on \textbf{the full setting}; each curve fixes one module parameter and scans the other over all datasets, backbones, client counts, and Dirichlet settings.}
+\includegraphics[width=\columnwidth]{figures/05_hyperparameter_sensitivity.pdf}
+\caption{\textbf{$\gamma$, $s$, $\tau$ and $\lambda$ sensitivity}. Full-grid DPR/LPC sensitivity over \textbf{all datasets}; each curve fixes one module parameter and scans the other. The chosen $s=18.75$ sits inside a broad high-performing plateau, and the strength varies gradually rather than sharply.}
 \label{fig:hparam-analysis}
 \end{figure}
 
-This full-grid analysis varies DPR's prototype-head scale \(s\) under several \(\gamma\) values and LPC's calibration strength \(\lambda\) under several \(\tau\) values. The selected \(s=18.75\) remains inside a high-performing DPR region, and the LPC curves show gradual sensitivity rather than an isolated peak.
+\subsection{Hyperparameter Analysis Experiment}
+Fig.~\ref{fig:hparam-analysis} evaluates DPR/LPC sensitivity on \textbf{the full setting}. This full-grid analysis varies DPR's prototype-head scale \(s\) under several \(\gamma\) values and LPC's calibration strength \(\lambda\) under several \(\tau\) values.The changes of hyperparameter hardly influence our method. We therefore use $\gamma=0.55$, $s=18.75$, $\tau=2.5$, and $\lambda=4.25$ by default.
 
 
 \section{Conclusion}
