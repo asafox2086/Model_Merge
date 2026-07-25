@@ -45,149 +45,11 @@ for One-shot Asynchronous Clinical Models}
 \section{Overview of the Supplementary Material}
 
 This document is the self-contained supplement to the main paper. It is organized as follows.
-Section~\ref{app:organ-s-results} reports the Organ-S state-of-the-art comparison that is omitted from the enlarged main-text tables.
 Section~\ref{app:datasets} gives a detailed, per-class description of the five MedMNIST~v2 benchmarks used in all experiments, including the exact training, validation, and test split sizes and representative samples.
 Section~\ref{app:ablation-configurations} specifies, for every internal ablation reported in the main paper, the exact quantity that is substituted in the LAMP-Merge pipeline, together with its measured effect; this makes each ablation label reproducible from the equations alone.
 Section~\ref{app:theory} develops the theoretical analysis behind the two modules: it states the estimation assumptions explicitly and proves (i) a bias--variance bound for the reconstructed prototypes, (ii) a sufficient condition under which prototype reconstruction preserves pairwise class margins, and (iii) the boundedness and gauge-invariance of the prevalence correction.
 Section~\ref{app:metric-geometry} defines the prediction-collapse metrics, and Section~\ref{app:repro} records the hyperparameter grid used for the sensitivity study.
 Notation follows the main paper: $K$ clients index $i$, $C$ diagnosis classes index $c$, $n_{i,c}$ is client $i$'s support for class $c$, $m_{i,c}$ its prevalence count, and $\phi_0(T(\cdot))$ the frozen reference encoder applied to the evaluation transform $T$.
-
-\section{Organ-S Results Omitted from the Main Tables}
-\label{app:organ-s-results}
-
-The main paper enlarges the state-of-the-art comparison tables by reporting four representative benchmarks in the two-column body. For completeness, Tables~\ref{tab:appendix-organs-swin}--\ref{tab:appendix-organs-vit} report the omitted Organ-S client-average results under the same protocol. Each cell gives ACC / Macro-F1 in percentage points.
-
-\begin{table}[!t]
-\centering
-\caption{Organ-S client-average test ACC / Macro-F1 (\%) on Swin-Tiny.}
-\label{tab:appendix-organs-swin}
-\scriptsize
-\renewcommand{\arraystretch}{1.18}
-\setlength{\tabcolsep}{3.2pt}
-\resizebox{\columnwidth}{!}{%
-\begin{tabular}{lcccc}
-\noalign{\hrule height 1.25pt}
-\rowcolor[HTML]{F2F2F2}
-\textbf{Method} & \textbf{$K=3$} & \textbf{$K=5$} & \textbf{$K=7$} & \textbf{Avg} \\
-\hline \hline
-Weight Avg. & 23.05 / 12.58 & 17.70 / 9.52 & 19.07 / 10.37 & 19.94 / 10.82 \\
-\rowcolor{gray!10} TIES & 14.68 / 8.88 & 14.03 / 9.87 & 15.91 / 10.90 & 14.87 / 9.88 \\
-DARE-Linear & 20.61 / 11.41 & 16.22 / 9.41 & 15.52 / 8.33 & 17.45 / 9.72 \\
-\rowcolor{gray!10} DARE-TIES & 14.24 / 8.21 & 12.98 / 8.61 & 11.15 / 7.05 & 12.79 / 7.96 \\
-RegMean & 20.04 / 10.36 & 20.95 / 9.04 & 19.66 / 10.78 & 20.22 / 10.06 \\
-\rowcolor{gray!10} Fisher & 18.47 / 11.70 & 17.36 / 8.75 & 20.49 / 10.35 & 18.77 / 10.27 \\
-Breadcrumbs & 17.67 / 10.96 & 12.37 / 8.14 & 11.13 / 7.21 & 13.72 / 8.77 \\
-\rowcolor{gray!10} Model Stock & 21.86 / 12.85 & 17.11 / 9.26 & 17.15 / 8.73 & 18.71 / 10.28 \\
-Iso-C & 25.18 / 15.34 & 22.82 / 10.93 & 18.34 / 10.30 & 22.12 / 12.19 \\
-\rowcolor{gray!10} Free-Merging & 23.05 / 12.58 & 17.70 / 9.52 & 19.07 / 10.37 & 19.94 / 10.82 \\
-RobustMerge & 17.85 / 10.64 & 16.22 / 10.64 & 15.42 / 8.45 & 16.50 / 9.91 \\
-\rowcolor{gray!10} FROM & 18.11 / 10.16 & 17.43 / 9.56 & 12.89 / 7.62 & 16.14 / 9.11 \\
-\hline \hline
-\rowcolor[HTML]{FFF9C4}
-\textbf{LAMP-Merge} & \textbf{62.58 / 58.21} & \textbf{62.80 / 58.45} & \textbf{62.84 / 58.39} & \textbf{62.74 / 58.35} \\
-\noalign{\hrule height 1.25pt}
-\end{tabular}
-}
-\end{table}
-
-\begin{table}[!t]
-\centering
-\caption{Organ-S client-average test ACC / Macro-F1 (\%) on ConvNeXt.}
-\label{tab:appendix-organs-convnext}
-\scriptsize
-\renewcommand{\arraystretch}{1.18}
-\setlength{\tabcolsep}{3.2pt}
-\resizebox{\columnwidth}{!}{%
-\begin{tabular}{lcccc}
-\noalign{\hrule height 1.25pt}
-\rowcolor[HTML]{F2F2F2}
-\textbf{Method} & \textbf{$K=3$} & \textbf{$K=5$} & \textbf{$K=7$} & \textbf{Avg} \\
-\hline \hline
-Weight Avg. & 17.66 / 8.18 & 12.61 / 7.24 & 14.33 / 5.48 & 14.87 / 6.97 \\
-\rowcolor{gray!10} TIES & 11.83 / 6.50 & 13.13 / 8.79 & 11.34 / 7.02 & 12.10 / 7.44 \\
-DARE-Linear & 17.48 / 8.29 & 8.18 / 6.03 & 8.73 / 5.12 & 11.46 / 6.48 \\
-\rowcolor{gray!10} DARE-TIES & 14.34 / 7.74 & 9.80 / 7.03 & 12.17 / 6.83 & 12.11 / 7.20 \\
-RegMean & 15.71 / 9.76 & 13.87 / 7.28 & 16.55 / 6.68 & 15.37 / 7.91 \\
-\rowcolor{gray!10} Fisher & 22.16 / 10.64 & 16.09 / 9.05 & 17.67 / 8.49 & 18.64 / 9.39 \\
-Breadcrumbs & 9.86 / 6.89 & 7.97 / 6.03 & 8.10 / 5.06 & 8.64 / 5.99 \\
-\rowcolor{gray!10} Model Stock & 15.72 / 7.26 & 10.61 / 7.02 & 11.48 / 5.24 & 12.60 / 6.50 \\
-Iso-C & 16.66 / 8.25 & 12.72 / 8.92 & 14.98 / 6.69 & 14.79 / 7.95 \\
-\rowcolor{gray!10} Free-Merging & 17.66 / 8.18 & 12.61 / 7.24 & 14.33 / 5.48 & 14.87 / 6.97 \\
-RobustMerge & 13.57 / 6.67 & 6.79 / 5.45 & 7.52 / 4.47 & 9.29 / 5.53 \\
-\rowcolor{gray!10} FROM & 16.19 / 7.85 & 14.36 / 6.72 & 11.94 / 5.65 & 14.16 / 6.74 \\
-\hline \hline
-\rowcolor[HTML]{FFF9C4}
-\textbf{LAMP-Merge} & \textbf{60.55 / 56.06} & \textbf{60.50 / 56.07} & \textbf{60.66 / 56.09} & \textbf{60.57 / 56.07} \\
-\noalign{\hrule height 1.25pt}
-\end{tabular}
-}
-\end{table}
-
-\begin{table}[!t]
-\centering
-\caption{Organ-S client-average test ACC / Macro-F1 (\%) on ResNet.}
-\label{tab:appendix-organs-resnet}
-\scriptsize
-\renewcommand{\arraystretch}{1.18}
-\setlength{\tabcolsep}{3.2pt}
-\resizebox{\columnwidth}{!}{%
-\begin{tabular}{lcccc}
-\noalign{\hrule height 1.25pt}
-\rowcolor[HTML]{F2F2F2}
-\textbf{Method} & \textbf{$K=3$} & \textbf{$K=5$} & \textbf{$K=7$} & \textbf{Avg} \\
-\hline \hline
-Weight Avg. & 23.64 / 7.49 & 12.41 / 3.79 & 15.30 / 3.55 & 17.12 / 4.95 \\
-\rowcolor{gray!10} TIES & 13.07 / 3.70 & 11.30 / 4.36 & 13.47 / 4.43 & 12.62 / 4.16 \\
-DARE-Linear & 23.58 / 7.15 & 13.95 / 4.22 & 16.91 / 5.20 & 18.15 / 5.52 \\
-\rowcolor{gray!10} DARE-TIES & 14.00 / 5.08 & 9.03 / 3.10 & 12.42 / 4.16 & 11.81 / 4.11 \\
-RegMean & 20.27 / 9.88 & 9.12 / 4.70 & 11.81 / 5.89 & 13.73 / 6.82 \\
-\rowcolor{gray!10} Fisher & 16.69 / 5.25 & 10.74 / 4.53 & 14.84 / 3.24 & 14.09 / 4.34 \\
-Breadcrumbs & 13.20 / 7.20 & 12.05 / 4.78 & 11.83 / 4.58 & 12.36 / 5.52 \\
-\rowcolor{gray!10} Model Stock & 23.48 / 7.35 & 12.63 / 4.26 & 15.25 / 3.61 & 17.12 / 5.07 \\
-Iso-C & 25.31 / 10.64 & 10.91 / 5.37 & 13.97 / 4.49 & 16.73 / 6.83 \\
-\rowcolor{gray!10} Free-Merging & 23.64 / 7.49 & 12.41 / 3.79 & 15.30 / 3.55 & 17.12 / 4.95 \\
-RobustMerge & 19.44 / 6.52 & 10.32 / 4.39 & 11.86 / 4.03 & 13.87 / 4.98 \\
-\rowcolor{gray!10} FROM & 16.73 / 4.99 & 12.10 / 3.48 & 12.30 / 3.11 & 13.71 / 3.86 \\
-\hline \hline
-\rowcolor[HTML]{FFF9C4}
-\textbf{LAMP-Merge} & \textbf{52.98 / 42.87} & \textbf{52.79 / 42.54} & \textbf{52.81 / 42.32} & \textbf{52.86 / 42.58} \\
-\noalign{\hrule height 1.25pt}
-\end{tabular}
-}
-\end{table}
-
-\begin{table}[!t]
-\centering
-\caption{Organ-S client-average test ACC / Macro-F1 (\%) on ViT-Tiny.}
-\label{tab:appendix-organs-vit}
-\scriptsize
-\renewcommand{\arraystretch}{1.18}
-\setlength{\tabcolsep}{3.2pt}
-\resizebox{\columnwidth}{!}{%
-\begin{tabular}{lcccc}
-\noalign{\hrule height 1.25pt}
-\rowcolor[HTML]{F2F2F2}
-\textbf{Method} & \textbf{$K=3$} & \textbf{$K=5$} & \textbf{$K=7$} & \textbf{Avg} \\
-\hline \hline
-Weight Avg. & 10.06 / 6.70 & 12.16 / 5.80 & 9.20 / 3.47 & 10.47 / 5.32 \\
-\rowcolor{gray!10} TIES & 8.67 / 4.89 & 13.92 / 3.58 & 10.29 / 4.46 & 10.96 / 4.31 \\
-DARE-Linear & 8.96 / 5.43 & 13.59 / 4.62 & 13.99 / 5.57 & 12.18 / 5.20 \\
-\rowcolor{gray!10} DARE-TIES & 8.21 / 5.67 & 13.62 / 5.14 & 10.75 / 5.48 & 10.86 / 5.43 \\
-RegMean & 13.81 / 8.29 & 13.39 / 6.79 & 10.26 / 5.19 & 12.48 / 6.76 \\
-\rowcolor{gray!10} Fisher & 12.43 / 6.85 & 13.30 / 6.28 & 10.96 / 5.10 & 12.23 / 6.08 \\
-Breadcrumbs & 5.26 / 2.62 & 4.26 / 2.66 & 4.71 / 3.45 & 4.74 / 2.91 \\
-\rowcolor{gray!10} Model Stock & 7.79 / 4.90 & 8.07 / 4.48 & 6.81 / 3.01 & 7.56 / 4.13 \\
-Iso-C & 10.34 / 7.88 & 10.48 / 5.48 & 9.02 / 3.52 & 9.95 / 5.62 \\
-\rowcolor{gray!10} Free-Merging & 10.06 / 6.70 & 12.16 / 5.80 & 9.20 / 3.47 & 10.47 / 5.32 \\
-RobustMerge & 6.91 / 3.22 & 6.31 / 2.87 & 5.41 / 2.59 & 6.21 / 2.89 \\
-\rowcolor{gray!10} FROM & 10.51 / 6.88 & 13.70 / 5.25 & 10.61 / 3.90 & 11.61 / 5.34 \\
-\hline \hline
-\rowcolor[HTML]{FFF9C4}
-\textbf{LAMP-Merge} & \textbf{54.39 / 52.10} & \textbf{54.51 / 52.28} & \textbf{54.65 / 52.33} & \textbf{54.52 / 52.24} \\
-\noalign{\hrule height 1.25pt}
-\end{tabular}
-}
-\end{table}
 
 \section{Dataset Details}
 \label{app:datasets}
@@ -203,7 +65,7 @@ The experiments use five MedMNIST~v2 benchmarks~\citep{yang2023medmnist}. They w
 
 \paragraph{Ultrasound.} UltrasoundMNIST is an eight-class ultrasound-structure benchmark. Speckle noise, low contrast, and view-dependent boundaries make it particularly suitable for the prediction-collapse diagnostics and the per-class gap visualization reported in the main paper.
 
-\newcommand{\classsample}[2]{\makebox[1.05cm][c]{\raisebox{-0.16cm}{\includegraphics[width=0.95cm,height=0.52cm,keepaspectratio]{figures/appendix_sample_#1_#2.png}}}}
+\newcommand{\classsample}[2]{\makebox[1.05cm][c]{\raisebox{-0.16cm}{\includegraphics[width=0.95cm,height=0.52cm,keepaspectratio]{figures/appendix_sample_#1_#2.pdf}}}}
 \newcommand{\datasetlabel}[1]{\makebox[1.35cm][c]{#1}}
 \begin{table}[!t]
 \centering
