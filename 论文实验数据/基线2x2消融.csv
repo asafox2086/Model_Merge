@@ -1,10 +1,10 @@
-说明,本表对应以权重平均分类头为起点的 DPR×LPC 2x2 模块消融；每个 case 均包含 avg、avg+DPR、avg+LPC 和 avg+DPR+LPC 四种设置。数值来自对应 dataset-backbone 的 K=3/5/7 与 beta=0/0.01/0.1 共 9 个 client-average cells 的均值，每个单元为 ACC/Macro-F1（百分比）。
-Case,Setting,DPR,LPC,Client-average cells,Overall ACC / F1 (%)
-Organ-C / ConvNeXt,avg,No,No,9,10.66 / 2.09
-Organ-C / ConvNeXt,avg + DPR,Yes,No,9,64.89 / 62.80
-Organ-C / ConvNeXt,avg + LPC,No,Yes,9,22.33 / 3.32
-Organ-C / ConvNeXt,avg + DPR + LPC,Yes,Yes,9,65.40 / 63.17
-Organ-C / Swin-Tiny,avg,No,No,9,10.50 / 2.48
-Organ-C / Swin-Tiny,avg + DPR,Yes,No,9,66.44 / 64.10
-Organ-C / Swin-Tiny,avg + LPC,No,Yes,9,22.33 / 3.32
-Organ-C / Swin-Tiny,avg + DPR + LPC,Yes,Yes,9,68.27 / 65.51
+说明,本表对应以权重平均分类头为起点的 DPR×LPC 2x2 模块消融；每个 case 均包含 avg、avg+DPR、avg+LPC 和 avg+DPR+LPC 四种设置。数值来自对应 dataset-backbone 的 K=3/5/7 与 beta=0/0.01/0.1 共 9 个 client-average cells 的 ACC 均值（百分比）。
+Case,Setting,DPR,LPC,Client-average cells,Overall ACC (%)
+Organ-C / ConvNeXt,avg,No,No,9,10.66
+Organ-C / ConvNeXt,avg + DPR,Yes,No,9,64.89
+Organ-C / ConvNeXt,avg + LPC,No,Yes,9,22.33
+Organ-C / ConvNeXt,avg + DPR + LPC,Yes,Yes,9,65.40
+Organ-C / Swin-Tiny,avg,No,No,9,10.50
+Organ-C / Swin-Tiny,avg + DPR,Yes,No,9,66.44
+Organ-C / Swin-Tiny,avg + LPC,No,Yes,9,22.33
+Organ-C / Swin-Tiny,avg + DPR + LPC,Yes,Yes,9,68.27
