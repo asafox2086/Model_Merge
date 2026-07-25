@@ -215,10 +215,10 @@ def plot_module_ablation(csv_dir: Path, figure_dir: Path) -> None:
 
 def plot_baseline_2x2_ablation(csv_dir: Path, figure_dir: Path) -> None:
     rows = read_annotated_csv(csv_dir / "基线2x2消融.csv")
-    baselines = ["TIES-Merging", "DARE-Linear"]
-    settings = ["Baseline", "Baseline + DPR", "Baseline + LPC", "Baseline + DPR + LPC"]
-    row_by_configuration = {(row["Baseline"], row["Setting"]): row for row in rows}
-    expected = {(baseline, setting) for baseline in baselines for setting in settings}
+    cases = ["Organ-C / ConvNeXt", "Organ-C / Swin-Tiny"]
+    settings = ["avg", "avg + DPR", "avg + LPC", "avg + DPR + LPC"]
+    row_by_configuration = {(row["Case"], row["Setting"]): row for row in rows}
+    expected = {(case, setting) for case in cases for setting in settings}
     if set(row_by_configuration) != expected:
         raise ValueError(
             "Unexpected baseline 2x2 configurations: "
@@ -226,20 +226,20 @@ def plot_baseline_2x2_ablation(csv_dir: Path, figure_dir: Path) -> None:
         )
 
     values = {}
-    for baseline in baselines:
+    for case in cases:
         metric_pairs = finite_array(
             [
                 metric
                 for setting in settings
                 for metric in parse_metric_pair(
-                    row_by_configuration[(baseline, setting)]["Overall ACC / F1 (%)"],
-                    f"{baseline}:{setting}",
+                    row_by_configuration[(case, setting)]["Overall ACC / F1 (%)"],
+                    f"{case}:{setting}",
                 )
             ],
             (2 * len(settings),),
-            baseline,
+            case,
         ).reshape(len(settings), 2)
-        values[baseline] = metric_pairs
+        values[case] = metric_pairs
     if any((series < 0).any() or (series > 100).any() for series in values.values()):
         raise ValueError("Baseline 2x2 metrics are outside [0, 100]")
 
@@ -256,14 +256,14 @@ def plot_baseline_2x2_ablation(csv_dir: Path, figure_dir: Path) -> None:
             "axes.linewidth": 0.7,
         }
     )
-    fig, axes = plt.subplots(1, 2, figsize=(4.45, 1.82), dpi=300, sharey=True)
+    fig, axes = plt.subplots(1, 2, figsize=(4.45, 1.86), dpi=300, sharey=True)
     x = np.arange(len(settings))
     width = 0.33
     setting_colors = [*ABLATION_COLORS[:-1], PAPER_COLORS["LAMP-Merge"]]
     legend_handles = []
-    for axis, baseline in zip(axes, baselines):
-        acc_values = values[baseline][:, 0]
-        f1_values = values[baseline][:, 1]
+    for axis, case in zip(axes, cases):
+        acc_values = values[case][:, 0]
+        f1_values = values[case][:, 1]
         acc_bars = axis.bar(
             x - width / 2,
             acc_values,
@@ -298,10 +298,10 @@ def plot_baseline_2x2_ablation(csv_dir: Path, figure_dir: Path) -> None:
                     fontsize=5.2,
                     rotation=90,
                 )
-        axis.set_title(baseline, pad=2)
+        axis.set_title(case, pad=2)
         axis.set_xticks([])
-        axis.set_ylim(0, 70)
-        axis.set_yticks(np.arange(0, 71, 10))
+        axis.set_ylim(0, 76)
+        axis.set_yticks(np.arange(0, 77, 10))
         axis.tick_params(direction="in", top=True, right=True, width=0.7, length=2.5)
         polish_axes(axis, y_grid=True, x_grid=False)
         for spine in axis.spines.values():
@@ -334,6 +334,7 @@ def plot_baseline_2x2_ablation(csv_dir: Path, figure_dir: Path) -> None:
     )
     fig.subplots_adjust(left=0.115, right=0.995, top=0.79, bottom=0.27, wspace=0.18)
     save_png(fig, str(figure_dir / "03_baseline_2x2_ablation"), dpi=350)
+    fig.savefig(figure_dir / "03_baseline_2x2_ablation.pdf", bbox_inches="tight")
     plt.close(fig)
 
 

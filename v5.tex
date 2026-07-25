@@ -953,12 +953,11 @@ FROM\pub{AAAI 2026} & 20.51 / 9.14 & 15.88 / 4.30 & 19.61 / 10.27 & 18.67 / 7.90
 \begin{figure}[!t]
 \centering
 \includegraphics[width=\columnwidth]{figures/03_baseline_2x2_ablation.pdf}
-\caption{\textbf{Module ablation.} We evaluate Baselines (TIES and DARE), +\emph{DPR}, +\emph{LPC}, and +\emph{DPR+LPC}. Both modules are complementary, and their combination achieves the best performance
-across all benchmarks.}
+\caption{\textbf{Module ablation.} We evaluate \emph{avg}, \emph{avg+DPR}, \emph{avg+LPC}, and \emph{avg+DPR+LPC} on two Organ-C backbone settings. Both modules improve the avg classifier-head baseline, and their combination gives the strongest result.}
 \label{fig:baseline-2x2-ablation}
 \end{figure}
 
-We evaluate Baseline, +\emph{DPR}, +\emph{LPC}, and +\emph{DPR}+\emph{LPC}. Fig.~\ref{fig:baseline-2x2-ablation} shows that both modules consistently improve over the baseline: On \textbf{TIES-Merging}, DPR and LPC improve accuracy from \textbf{19.50\%} to \textbf{58.91\%} and \textbf{28.21\%}, respectively; on \textbf{DARE-Linear}. they improve accuracy from \textbf{19.33\%} to \textbf{58.91\%} and \textbf{28.79\%}. Their combination further reaches \textbf{62.21\%}, showing the two modules address complementary failure modes.
+We evaluate \emph{avg}, \emph{avg+DPR}, \emph{avg+LPC}, and \emph{avg+DPR+LPC}. Fig.~\ref{fig:baseline-2x2-ablation} shows a controlled 2-by-2 decomposition on two Organ-C backbone settings. On \textbf{ConvNeXt}, DPR and LPC improve accuracy from \textbf{10.66\%} to \textbf{64.89\%} and \textbf{22.33\%}, respectively, and their combination further reaches \textbf{65.40\%}. On \textbf{Swin-Tiny}, DPR and LPC improve accuracy from \textbf{10.50\%} to \textbf{66.44\%} and \textbf{22.33\%}, respectively, while the full model reaches \textbf{68.27\%}. These results indicate that DPR recovers the class-discriminative diagnostic structure, whereas LPC contributes an additional prevalence-aware correction on top of the reconstructed classifier head.
 
 \subsubsection{Effectiveness of DPR}
 We assess DPR from two axes. The \textbf{prototype semantics} axis replaces the class prototype: CHA uses the local classifier-head direction, GFM reuses one class-agnostic feature mean for all classes, SSH fills the cosine head with a random unit vector, and SLP permutes prototypes across labels. The \textbf{client-support weighting} axis alters how observing clients are credited: UCW weights every client equally, BSO keeps only presence indicators, and GCSW weights by total client size rather than class-specific support.
