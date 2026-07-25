@@ -273,12 +273,11 @@ def plot_baseline_2x2_ablation(csv_dir: Path, figure_dir: Path) -> None:
         for bar, value in zip(acc_bars, acc_values):
             axis.text(
                 bar.get_x() + bar.get_width() / 2,
-                value + 1.0,
+                value + 1.4,
                 f"{value:.1f}",
                 ha="center",
                 va="bottom",
-                fontsize=5.9,
-                rotation=90,
+                fontsize=5.4,
             )
         axis.set_title(case, pad=2)
         axis.set_xticks([])
