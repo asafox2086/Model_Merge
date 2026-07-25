@@ -1,0 +1,9 @@
+说明,本表对应 introduction 受控对比图中 DermaMNIST 数据集的真实测试集类别分布；用于支撑第二个观测：医学图像存在长尾患病率分布。数值直接由 Med_data/dermamnist_224.npz 的 test_labels 统计得到。
+Class,Test count,True test distribution (%)
+0,66,3.2918
+1,103,5.1372
+2,220,10.9726
+3,23,1.1471
+4,223,11.1222
+5,1341,66.8828
+6,29,1.4464
