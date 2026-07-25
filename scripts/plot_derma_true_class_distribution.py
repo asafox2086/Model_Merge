@@ -16,13 +16,14 @@ TEMPLATE_DIR = ROOT / "scripts" / "plot_templates"
 if str(TEMPLATE_DIR) not in sys.path:
     sys.path.insert(0, str(TEMPLATE_DIR))
 
-from style import darken_color, polish_axes, setup_style  # noqa: E402
+from style import polish_axes, setup_style  # noqa: E402
 
 
 DATA_PATH = ROOT / "Med_data" / "dermamnist_224.npz"
 FIGURE_BASE = ROOT / "figures" / "derma_true_class_distribution"
 CSV_PATH = ROOT / "论文实验数据" / "Derma真实类别分布.csv"
-BAR_COLOR = "#FFC000"
+BAR_COLOR = "#6E9FC8"
+BAR_EDGE = "#355C7D"
 
 
 def save_png_pdf(figure: plt.Figure, output_base: Path) -> None:
@@ -74,12 +75,13 @@ def plot_distribution(classes: np.ndarray, counts: np.ndarray, percentages: np.n
         percentages,
         width=0.64,
         color=BAR_COLOR,
-        edgecolor=darken_color(BAR_COLOR, 0.58),
+        edgecolor=BAR_EDGE,
         linewidth=1.35,
         zorder=3,
     )
     peak_index = int(np.argmax(percentages))
-    bars[peak_index].set_edgecolor("#7F6000")
+    bars[peak_index].set_color("#3F73A3")
+    bars[peak_index].set_edgecolor("#274A68")
     bars[peak_index].set_linewidth(1.9)
 
     for class_id, percentage in zip(classes, percentages):
@@ -92,26 +94,8 @@ def plot_distribution(classes: np.ndarray, counts: np.ndarray, percentages: np.n
             va="bottom",
             fontsize=8.7,
             fontweight="bold" if class_id == peak_index else "normal",
-            color="#7F6000" if class_id == peak_index else "#222222",
+            color="#274A68" if class_id == peak_index else "#222222",
         )
-
-    majority = percentages[peak_index]
-    min_nonzero = counts[counts > 0].min()
-    imbalance = counts.max() / min_nonzero
-    axis.annotate(
-        f"Majority: {majority:.1f}%\nImbalance: {imbalance:.1f}x",
-        xy=(classes[peak_index], majority),
-        xytext=(classes[peak_index] - 1.75, majority - 12.0),
-        textcoords="data",
-        ha="center",
-        va="top",
-        fontsize=8.4,
-        fontweight="bold",
-        color="#7F6000",
-        arrowprops={"arrowstyle": "->", "color": "#7F6000", "lw": 1.35},
-        bbox={"boxstyle": "round,pad=0.28", "facecolor": "white", "edgecolor": "#D6A800", "alpha": 0.94},
-        zorder=5,
-    )
 
     axis.set_xticks(classes)
     axis.set_xticklabels([f"C{int(class_id)}" for class_id in classes])
