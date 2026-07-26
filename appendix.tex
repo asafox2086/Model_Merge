@@ -46,16 +46,119 @@ for One-shot Asynchronous Clinical Models}
 
 This document provides the detailed material that supports the main paper. It follows the same notation and experimental protocol as the main text.
 Section~\ref{app:organ-s-results} reports the Organ-S comparison table in full. Section~\ref{app:datasets} reports dataset provenance and per-class statistics, distinguishing the four public MedMNIST~v2 benchmarks from the private ChaoShengMNIST ultrasound subset.
+Section~\ref{app:algorithm-figures} explains the algorithmic flow and the figures used by the main paper and appendix.
 Section~\ref{app:observations} formalizes the two empirical observations used to motivate LAMP-Merge: aggregation-induced prediction collapse and long-tailed medical prevalence.
 Section~\ref{app:ablation-configurations} specifies, for every internal ablation, which quantity is substituted in the LAMP-Merge pipeline and what empirical effect the substitution produces.
-Section~\ref{app:theory} gives the theoretical analysis behind the two modules, including a bias--variance bound for diagnostic prototype reconstruction, a margin-preservation condition, and the boundedness of the prevalence correction.
+Section~\ref{app:theory} gives the theoretical analysis behind the two modules, including a bias and variance bound for diagnostic prototype reconstruction, a margin-preservation condition, and the boundedness of the prevalence correction.
 Section~\ref{app:metric-geometry} defines the diagnostic metrics used in the supplementary analyses, and Section~\ref{app:repro} records the hyperparameter grid used for the sensitivity study.
 Unless otherwise stated, $K$ denotes the number of clients, $C$ denotes the number of diagnosis classes, $n_{i,c}$ denotes the support count of class $c$ on client $i$, $m_{i,c}$ denotes the corresponding prevalence count, and $\phi_0(T(\cdot))$ denotes the frozen reference encoder applied after the evaluation transform $T$.
+
+\section{Algorithm and Figure Explanations}
+\label{app:algorithm-figures}
+
+This section expands the algorithm and visual material used in the main paper. The goal is to make each symbol, processing step, and figure traceable to the same class-level merge protocol.
+
+\subsection{LAMP-Merge Algorithm}
+
+For each client \(i\) and diagnosis class \(c\), the client first computes the class support and reference-space prototype:
+\begin{equation}
+n_{i,c}=|D_{i,c}|.
+\label{eq:app-alg-support}
+\end{equation}
+\begin{equation}
+\mu_{i,c}=
+\frac{1}{n_{i,c}}
+\sum_{(x,y)\in D_i}
+\mathbf{1}[y=c]\phi_0(T(x)).
+\label{eq:app-alg-prototype}
+\end{equation}
+The prototype in Eq.~\ref{eq:app-alg-prototype} is computed only when \(n_{i,c}>0\). A client with no sample from class \(c\) uploads zero support for that class and does not contribute to its prototype aggregation.
+
+The server converts class support into a reliability weight:
+\begin{equation}
+e_{i,c}=(n_{i,c}+1)^\gamma\mathbf{1}[n_{i,c}>0].
+\label{eq:app-alg-evidence}
+\end{equation}
+The normalized aggregation coefficient is
+\begin{equation}
+\alpha_{i,c}=\frac{e_{i,c}}{\sum_{j=1}^{K}e_{j,c}}.
+\label{eq:app-alg-alpha}
+\end{equation}
+The global class prototype and the induced classifier weight are
+\begin{equation}
+p_c=\sum_{i=1}^{K}\alpha_{i,c}\mu_{i,c}.
+\label{eq:app-alg-global-prototype}
+\end{equation}
+\begin{equation}
+w_c=s\frac{p_c}{\|p_c\|_2}.
+\label{eq:app-alg-head}
+\end{equation}
+Thus, Diagnostic Prototype Reconstruction builds the classifier head from class-conditioned evidence in the shared reference space.
+
+Long-tail Prevalence Calibration uses client-reported prevalence counts to estimate the global class prior:
+\begin{equation}
+\pi_c=
+\frac{\sum_{i=1}^{K}m_{i,c}}
+{\sum_{k=1}^{C}\sum_{i=1}^{K}m_{i,k}}.
+\label{eq:app-alg-prior}
+\end{equation}
+The dominant-class imbalance is
+\begin{equation}
+r=C\max_c\pi_c.
+\label{eq:app-alg-imbalance}
+\end{equation}
+When \(r>\tau\), the centered prior bias is
+\begin{equation}
+b_c=
+\lambda
+\left(
+\log\pi_c-\frac{1}{C}\sum_{k=1}^{C}\log\pi_k
+\right).
+\label{eq:app-alg-bias}
+\end{equation}
+When \(r\le\tau\), \(b_c=0\). The final class score is
+\begin{equation}
+\ell_c(x)=w_c^\top\phi_0(T(x))+\mathbf{1}[r>\tau]b_c.
+\label{eq:app-alg-score}
+\end{equation}
+
+\begin{algorithm}[!t]
+\caption{LAMP-Merge in One Upload}
+\label{alg:app-lamp}
+\begin{algorithmic}[1]
+\REQUIRE Clients \(\{D_i\}_{i=1}^{K}\), reference encoder \(\phi_0\), transform \(T\), hyperparameters \(\gamma,s,\tau,\lambda\)
+\ENSURE Merged model \(\theta_m\)
+\STATE Each client computes class support by Eq.~\ref{eq:app-alg-support}
+\STATE Each client computes class prototypes by Eq.~\ref{eq:app-alg-prototype}
+\STATE Each client uploads only class-level statistics
+\STATE The server computes reliability weights by Eq.~\ref{eq:app-alg-evidence}
+\STATE The server computes aggregation coefficients by Eq.~\ref{eq:app-alg-alpha}
+\STATE The server reconstructs prototypes and classifier weights by Eqs.~\ref{eq:app-alg-global-prototype} and~\ref{eq:app-alg-head}
+\STATE The server estimates prevalence and imbalance by Eqs.~\ref{eq:app-alg-prior} and~\ref{eq:app-alg-imbalance}
+\STATE The server computes the calibration bias by Eq.~\ref{eq:app-alg-bias}
+\STATE The server evaluates class scores by Eq.~\ref{eq:app-alg-score}
+\RETURN \(\theta_m=(\phi_0,\{w_c,b_c\}_{c=1}^{C})\)
+\end{algorithmic}
+\end{algorithm}
+
+Algorithm~\ref{alg:app-lamp} separates the hospital-side computation from the server-side merge. Hospitals only upload class-level statistics. Raw images, per-sample features, and per-sample predictions remain local. The server constructs a single global diagnostic head in one pass.
+
+\subsection{Figure Guide}
+
+The motivation figure in the main paper illustrates the structural difference between natural-image and medical-image model merging. It shows that medical clients can cover different diagnosis subsets under long-tailed prevalence, so a class-agnostic merge can mix supported evidence with absent-class directions.
+
+The controlled domain-comparison figure uses matched class imbalance and matched client assignments for CIFAR-100 and DermaMNIST. It demonstrates that the same RegMean merge preserves multiclass predictions on the natural-image control while concentrating predictions on one DermaMNIST class. This figure supports the claim that medical diagnostic structure can interact with class-agnostic merging in a harmful way.
+
+The method overview figure summarizes the complete LAMP-Merge pipeline. The left side corresponds to local computation of \(n_{i,c}\), \(m_{i,c}\), and \(\mu_{i,c}\). The server side corresponds to Eqs.~\ref{eq:app-alg-evidence} to~\ref{eq:app-alg-score}. Diagnostic Prototype Reconstruction supplies the class directions \(w_c\). Long-tail Prevalence Calibration supplies the bounded bias \(b_c\).
+
+The dataset sample tables in Section~\ref{app:datasets} provide visual examples and exact split sizes for every class. They are included to show that the experiments cover microscopy, dermoscopy, CT, and ultrasound, and that the class statistics used by LAMP-Merge are directly tied to the benchmark files.
+
+The module-ablation figure and internal-ablation tables test whether the two components and their internal variables are necessary. The prediction-distribution figures and collapse-diagnostic tables test whether performance gains coincide with reduced single-class prediction collapse. The hyperparameter figure records full-scope sensitivity for \(\gamma\), \(s\), \(\tau\), and \(\lambda\), showing that the reported operating point is not selected from an isolated run.
 
 \section{Organ-S Supplementary Results}
 \label{app:organ-s-results}
 
-The main paper emphasizes the representative benchmarks in the two-column body. For completeness, Tables~\ref{tab:appendix-organs-swin}--\ref{tab:appendix-organs-vit} report the Organ-S client-average results under the same protocol. Each cell gives ACC / Macro-F1 in percentage points. \textbf{Across all four backbones, LAMP-Merge remains the strongest method on Organ-S, showing that the reported conclusions are not an artifact of excluding this CT plane from a compact table layout.}
+The main paper emphasizes the representative benchmarks in the two-column body. For completeness, Tables~\ref{tab:appendix-organs-swin} to~\ref{tab:appendix-organs-vit} report the Organ-S client-average results under the same protocol. Each cell gives ACC / Macro-F1 in percentage points. \textbf{Across all four backbones, LAMP-Merge remains the strongest method on Organ-S, showing that the reported conclusions are not an artifact of excluding this CT plane from a compact table layout.}
 
 \begin{table}[!t]
 \centering
@@ -194,7 +297,7 @@ RobustMerge & 6.91 / 3.22 & 6.31 / 2.87 & 5.41 / 2.59 & 6.21 / 2.89 \\
 \label{app:datasets}
 \FloatBarrier
 
-The experiments use five medical image benchmarks. \textbf{BloodMNIST, DermaMNIST, OrganCMNIST, and OrganSMNIST are public MedMNIST~v2 datasets~\citep{yang2023medmnist}; ChaoShengMNIST is a private eight-class ultrasound subset stored in the same NPZ schema as the public benchmarks.} The five datasets were selected to cover microscopy, dermoscopy, CT, and ultrasound while varying the number of classes, visual granularity, and prevalence profile. The per-class tables in this section (Tables~\ref{tab:appendix-blood-classes}--\ref{tab:appendix-ultrasound-classes}) report the exact training, validation, and test split sizes used by the experiments.
+The experiments use five medical image benchmarks. \textbf{BloodMNIST, DermaMNIST, OrganCMNIST, and OrganSMNIST are public MedMNIST~v2 datasets~\citep{yang2023medmnist}; ChaoShengMNIST is a private eight-class ultrasound subset stored in the same NPZ schema as the public benchmarks.} The five datasets were selected to cover microscopy, dermoscopy, CT, and ultrasound while varying the number of classes, visual granularity, and prevalence profile. The per-class tables in this section, from Table~\ref{tab:appendix-blood-classes} to Table~\ref{tab:appendix-ultrasound-classes}, report the exact training, validation, and test split sizes used by the experiments.
 
 \paragraph{Blood.} BloodMNIST is an eight-class microscopy benchmark for recognizing peripheral blood-cell morphology. Its classes include granulocytes, lymphocytes, platelets, and other hematopoietic cells with visually similar staining patterns. This benchmark emphasizes fine-grained cell morphology; it therefore tests whether a merged classifier preserves class-specific evidence rather than collapsing onto a subset of visually dominant cell types.
 
@@ -202,9 +305,9 @@ The experiments use five medical image benchmarks. \textbf{BloodMNIST, DermaMNIS
 
 \paragraph{Organ-C and Organ-S.} OrganCMNIST and OrganSMNIST provide 11-way abdominal CT organ recognition in coronal and sagittal views, respectively. They share the same organ label space but differ in anatomical view and spatial appearance. We use them to test whether a method remains stable when the semantic task is fixed but the image geometry and organ visibility change across acquisition planes.
 
-\paragraph{ChaoShengMNIST.} ChaoShengMNIST is a private eight-class ultrasound image subset. The source retains anonymized class identifiers, so we report the labels as Class 0--Class 7 rather than assigning unverified clinical names. Compared with microscopy and CT, ultrasound images contain stronger speckle noise, lower contrast, and view-dependent boundaries. This makes ChaoShengMNIST a useful stress test for the prediction-collapse diagnostics and the per-class distribution-gap visualization reported in the main paper.
+\paragraph{ChaoShengMNIST.} ChaoShengMNIST is a private eight-class ultrasound image subset. The source retains anonymized class identifiers, so we report the labels as Class 0 to Class 7 and do not assign unverified clinical names. Compared with microscopy and CT, ultrasound images contain stronger speckle noise, lower contrast, and view-dependent boundaries. This makes ChaoShengMNIST a useful stress test for the prediction-collapse diagnostics and the per-class distribution-gap visualization reported in the main paper.
 
-\newcommand{\classsample}[2]{\makebox[1.05cm][c]{\raisebox{-0.16cm}{\includegraphics[width=0.95cm,height=0.52cm,keepaspectratio]{figures/appendix_sample_#1_#2.pdf}}}}
+\newcommand{\classsample}[2]{\raisebox{-0.12cm}{\includegraphics[width=1.02cm,height=0.58cm,keepaspectratio]{figures/appendix_sample_#1_#2.pdf}}}
 \newcommand{\datasetlabel}[1]{\makebox[1.35cm][c]{#1}}
 \begin{table}[!t]
 \centering
@@ -271,14 +374,14 @@ The experiments use five medical image benchmarks. \textbf{BloodMNIST, DermaMNIS
 \multicolumn{1}{c}{\textbf{Dataset}} & \textbf{Class} & \textbf{Train} & \textbf{Val} & \textbf{Test} & \textbf{Total} & \textbf{Sample} \\
 \hline \hline
  & Bladder & 1,148 & 191 & 828 & 2,167 & \classsample{organ_c}{0} \\
-\rowcolor{gray!10} & Femur--left & 619 & 102 & 431 & 1,152 & \classsample{organ_c}{1} \\
- & Femur--right & 595 & 96 & 421 & 1,112 & \classsample{organ_c}{2} \\
+\rowcolor{gray!10} & Left femur & 619 & 102 & 431 & 1,152 & \classsample{organ_c}{1} \\
+ & Right femur & 595 & 96 & 421 & 1,112 & \classsample{organ_c}{2} \\
 \rowcolor{gray!10} & Heart & 600 & 202 & 421 & 1,223 & \classsample{organ_c}{3} \\
- & Kidney--left & 1,088 & 132 & 727 & 1,947 & \classsample{organ_c}{4} \\
-\rowcolor{gray!10} & Kidney--right & 1,170 & 157 & 735 & 2,062 & \classsample{organ_c}{5} \\
+ & Left kidney & 1,088 & 132 & 727 & 1,947 & \classsample{organ_c}{4} \\
+\rowcolor{gray!10} & Right kidney & 1,170 & 157 & 735 & 2,062 & \classsample{organ_c}{5} \\
  & Liver & 2,986 & 429 & 1,835 & 5,250 & \classsample{organ_c}{6} \\
-\rowcolor{gray!10} & Lung--left & 1,002 & 347 & 549 & 1,898 & \classsample{organ_c}{7} \\
- & Lung--right & 1,022 & 352 & 557 & 1,931 & \classsample{organ_c}{8} \\
+\rowcolor{gray!10} & Left lung & 1,002 & 347 & 549 & 1,898 & \classsample{organ_c}{7} \\
+ & Right lung & 1,022 & 352 & 557 & 1,931 & \classsample{organ_c}{8} \\
 \rowcolor{gray!10} & Pancreas & 1,173 & 179 & 750 & 2,102 & \classsample{organ_c}{9} \\
 \multirow{-11}{*}{\datasetlabel{Organ-C}} & Spleen & 1,572 & 205 & 962 & 2,739 & \classsample{organ_c}{10} \\
 \noalign{\hrule height 1.25pt}
@@ -300,14 +403,14 @@ The experiments use five medical image benchmarks. \textbf{BloodMNIST, DermaMNIS
 \multicolumn{1}{c}{\textbf{Dataset}} & \textbf{Class} & \textbf{Train} & \textbf{Val} & \textbf{Test} & \textbf{Total} & \textbf{Sample} \\
 \hline \hline
  & Bladder & 1,148 & 188 & 811 & 2,147 & \classsample{organ_s}{0} \\
-\rowcolor{gray!10} & Femur--left & 630 & 104 & 439 & 1,173 & \classsample{organ_s}{1} \\
- & Femur--right & 614 & 95 & 445 & 1,154 & \classsample{organ_s}{2} \\
+\rowcolor{gray!10} & Left femur & 630 & 104 & 439 & 1,173 & \classsample{organ_s}{1} \\
+ & Right femur & 614 & 95 & 445 & 1,154 & \classsample{organ_s}{2} \\
 \rowcolor{gray!10} & Heart & 721 & 246 & 510 & 1,477 & \classsample{organ_s}{3} \\
- & Kidney--left & 1,132 & 140 & 704 & 1,976 & \classsample{organ_s}{4} \\
-\rowcolor{gray!10} & Kidney--right & 1,119 & 159 & 693 & 1,971 & \classsample{organ_s}{5} \\
+ & Left kidney & 1,132 & 140 & 704 & 1,976 & \classsample{organ_s}{4} \\
+\rowcolor{gray!10} & Right kidney & 1,119 & 159 & 693 & 1,971 & \classsample{organ_s}{5} \\
  & Liver & 3,464 & 491 & 2,078 & 6,033 & \classsample{organ_s}{6} \\
-\rowcolor{gray!10} & Lung--left & 741 & 261 & 397 & 1,399 & \classsample{organ_s}{7} \\
- & Lung--right & 803 & 275 & 439 & 1,517 & \classsample{organ_s}{8} \\
+\rowcolor{gray!10} & Left lung & 741 & 261 & 397 & 1,399 & \classsample{organ_s}{7} \\
+ & Right lung & 803 & 275 & 439 & 1,517 & \classsample{organ_s}{8} \\
 \rowcolor{gray!10} & Pancreas & 2,004 & 280 & 1,343 & 3,627 & \classsample{organ_s}{9} \\
 \multirow{-11}{*}{\datasetlabel{Organ-S}} & Spleen & 1,556 & 213 & 968 & 2,737 & \classsample{organ_s}{10} \\
 \noalign{\hrule height 1.25pt}
@@ -368,7 +471,11 @@ and the total variation distance between the predicted and empirical test distri
 \mathrm{TV}(q,\bar{q})=\frac{1}{2}\sum_c |q_c-\bar{q}_c|.
 \label{eq:app-tv}
 \end{equation}
-Here $\bar{q}_c=N^{-1}\sum_n\mathbf{1}[y_n=c]$ is the true test-set class distribution. A collapsed merger has large $\rho$, small $C_{\mathrm{eff}}$, and large TV. This observation motivates Diagnostic Prototype Reconstruction: if generic parameter-space merging loses class-discriminative directions, the server should reconstruct the diagnostic head from class-level evidence rather than average all parameters blindly.
+The true test-set class distribution is
+\begin{equation}
+\bar{q}_c=\frac{1}{N}\sum_n\mathbf{1}[y_n=c].
+\end{equation}
+A collapsed merger has large \(\rho\), small \(C_{\mathrm{eff}}\), and large TV. This observation motivates Diagnostic Prototype Reconstruction: if generic parameter-space merging loses class-discriminative directions, the server should reconstruct the diagnostic head from class-level evidence.
 
 \subsection{Long-Tailed Medical Prevalence}
 
@@ -427,7 +534,7 @@ e_{i,c}=(n_{i,c}+1)^\gamma\mathbf{1}[n_{i,c}>0]
 \end{equation}
 Here \(N_i=\sum_k n_{i,k}\) is the total support of client \(i\). GCSW tests whether a generally large client can stand in for strong evidence of a particular class. Its 59.39\% mean ACC, 2.82 points below LAMP-Merge, shows that local data volume should be assigned at the class level.
 
-\paragraph{DPR summary.} The semantic controls cause large reductions (35.71--51.32 points), while the weighting controls cause smaller but consistent reductions (2.82--7.03 points). \textbf{Together, these results support the two parts of Eq.~\ref{eq:appendix-dpr}: class-conditioned shared-space evidence provides the discriminative direction, and class-specific support determines how reliably each client contributes to that direction.}
+\paragraph{DPR summary.} The semantic controls cause large reductions from 35.71 to 51.32 points, and the weighting controls cause smaller but consistent reductions from 2.82 to 7.03 points. \textbf{Together, these results support the two parts of Eq.~\ref{eq:appendix-dpr}: class-conditioned shared-space evidence provides the discriminative direction, and class-specific support determines how reliably each client contributes to that direction.}
 
 \subsection{Long-tail Prevalence Calibration}
 
@@ -442,7 +549,11 @@ b_c=\lambda\left(\log\pi_c-\frac{1}{C}\sum_k\log\pi_k\right).
 \end{equation}
 The three controls retain DPR and test the prior estimator or the activation gate in Eq.~\ref{eq:appendix-lpc}.
 
-\paragraph{Uniform prevalence prior (UPP).} UPP replaces the empirical prior in Eq.~\ref{eq:appendix-lpc} by \(\pi_c\longrightarrow1/C\). It tests whether calibration should ignore the observed class distribution. Mean ACC is 58.91\%, 3.30 points below LAMP-Merge, demonstrating that the empirical prior is useful rather than a source of collapse.
+\paragraph{Uniform prevalence prior (UPP).} UPP replaces the empirical prior in Eq.~\ref{eq:appendix-lpc} by the uniform prior:
+\begin{equation}
+\pi_c\longrightarrow\frac{1}{C}.
+\end{equation}
+It tests whether calibration should ignore the observed class distribution. Mean ACC is 58.91\%, 3.30 points below LAMP-Merge, demonstrating that the empirical prior is useful for calibrated prevalence preservation.
 
 \paragraph{Always-on calibration (AOC).} AOC replaces the activation gate in the score \(\ell_c(x)\) by \(\mathbf{1}[r>\tau]\longrightarrow1\). It tests whether the prior should be applied uniformly to every configuration. Its 61.90\% mean ACC is 0.31 points below LAMP-Merge. The small aggregate gap indicates that calibration is broadly useful, while the gated design avoids imposing a prior when a configuration is not sufficiently long-tailed.
 
@@ -453,12 +564,16 @@ The three controls retain DPR and test the prior estimator or the activation gat
 \end{equation}
 It tests whether each client should contribute equally regardless of sample volume. The 58.97\% mean ACC, 3.24 points below LAMP-Merge, favors the sample-count empirical prior over a client-balanced estimate.
 
-\paragraph{LPC summary.} Every LPC control is below the 62.21\% LAMP-Merge mean. UPP and CBP show that both prevalence information and its sample-size weighting matter; AOC shows that the activation criterion is a targeted safeguard rather than the primary source of the gain. \textbf{Hence LPC calibrates DPR's restored class directions instead of replacing them with a prior.}
+\paragraph{LPC summary.} Every LPC control is below the 62.21\% LAMP-Merge mean. UPP and CBP show that both prevalence information and its sample-size weighting matter; AOC shows that the activation criterion is a targeted safeguard. \textbf{Hence LPC calibrates DPR's restored class directions while preserving the prototype-based classifier.}
 
 \section{Theoretical Analysis}
 \label{app:theory}
 
-This section makes precise the two claims that motivate LAMP-Merge: that support-aware prototype aggregation controls the estimation error of the reconstructed class directions (Sec.~\ref{app:theory-dpr}), and that the centered, gated log-prior of LPC is a \emph{bounded} correction that adjusts, rather than overrides, those directions (Sec.~\ref{app:theory-lpc}). We work throughout in the shared reference space induced by the frozen encoder $\phi_0(T(\cdot))$, so that all client prototypes live in a common coordinate system and can be compared directly.
+This section makes precise the two claims that motivate LAMP-Merge: support-aware prototype aggregation controls the estimation error of the reconstructed class directions (Sec.~\ref{app:theory-dpr}), and the centered, gated log-prior of LPC is a \emph{bounded} correction that adjusts those directions (Sec.~\ref{app:theory-lpc}). We work throughout in the shared reference space induced by the frozen encoder:
+\begin{equation}
+\phi_0(T(\cdot)).
+\end{equation}
+All client prototypes therefore live in a common coordinate system and can be compared directly.
 
 \subsection{Assumptions}
 
@@ -480,7 +595,7 @@ Recall from Eq.~\ref{eq:appendix-dpr} that the reconstructed prototype is the cl
 \mathrm{Bias}_c:=\Big\|\sum_{i}\alpha_{i,c}\,\mu_{i,c}^{\star}-\mu_c^{\star}\Big\|_2 .
 \end{equation}
 
-\paragraph{Proposition 1 (Bias--variance bound).}
+\paragraph{Proposition 1 (Bias and variance bound).}
 \label{prop:bound}
 Under Assumption~\ref{as:sampling},
 \begin{equation}
@@ -519,7 +634,7 @@ Fix $x$ with $z\neq0$ and suppose $\Delta_{c,d}(x)>0$. If
 then $\widehat{\Delta}_{c,d}(x)>0$; that is, the prototype classifier ranks $c$ above $d$ exactly as the population prototypes do.
 
 \paragraph{Proof.}
-By linearity and the Cauchy--Schwarz inequality,
+By linearity and the Cauchy Schwarz inequality,
 \begin{equation}
 |\widehat{\Delta}_{c,d}(x)-\Delta_{c,d}(x)|
 =\big|(p_c-\mu_c^{\star})^{\top}z-(p_d-\mu_d^{\star})^{\top}z\big|.
@@ -530,7 +645,11 @@ By linearity and the Cauchy--Schwarz inequality,
 \end{equation}
 Under \eqref{eq:margin-condition} the right-hand side is strictly below $\Delta_{c,d}(x)$, hence $\widehat{\Delta}_{c,d}(x)>\Delta_{c,d}(x)-\Delta_{c,d}(x)=0$.
 
-The cosine head $w_c=s\,p_c/\|p_c\|_2$ used by LAMP-Merge scores in the direction of $p_c$, so Proposition~\ref{prop:margin} is the relevant guarantee: whenever DPR drives the per-class error below half the population margin (in the metric of \eqref{eq:margin-condition}), the reconstructed head reproduces the population ranking. Proposition~\ref{prop:bound} shows that this error \emph{can} be made small by class-specific support weighting; Proposition~\ref{prop:margin} shows why doing so matters. The four semantic controls break the antecedent rather than the conclusion: \textbf{CHA} and \textbf{GFM} replace $\mu_{i,c}$ by quantities whose expectation is not $\mu_c^{\star}$ (an uncontrolled $\mathrm{Bias}_c$), \textbf{SSH} discards $\mu_{i,c}$ for a data-independent vector (so $\Delta_{c,d}$ carries no signal), and \textbf{SLP} permutes prototypes across labels, replacing $\Delta_{c,d}$ by $\Delta_{\sigma(c),\sigma(d)}$; each destroys the margin the proposition relies on, consistent with their large losses ($35.71$--$51.32$ points).
+The cosine head used by LAMP-Merge is
+\begin{equation}
+w_c=s\frac{p_c}{\|p_c\|_2}.
+\end{equation}
+It scores in the direction of \(p_c\), so Proposition~\ref{prop:margin} is the relevant guarantee: whenever DPR drives the per-class error below half the population margin in the metric of \eqref{eq:margin-condition}, the reconstructed head reproduces the population ranking. Proposition~\ref{prop:bound} shows that this error \emph{can} be made small by class-specific support weighting. Proposition~\ref{prop:margin} shows why doing so matters. The four semantic controls break the antecedent: \textbf{CHA} and \textbf{GFM} replace \(\mu_{i,c}\) by quantities whose expectation is not \(\mu_c^{\star}\), \textbf{SSH} discards \(\mu_{i,c}\) for a data-independent vector, and \textbf{SLP} permutes prototypes across labels. Each control destroys the margin the proposition relies on, consistent with their large losses from 35.71 to 51.32 points.
 
 \subsection{Bounded prevalence correction}
 \label{app:theory-lpc}
@@ -557,7 +676,13 @@ Combining Propositions~\ref{prop:margin} and~\ref{prop:lpc} shows the two module
 \;\Longrightarrow\;
 \ell_c(x)>\ell_d(x).
 \end{equation}
-The correction therefore acts only on near-ties, tipping them toward the more prevalent class, and cannot override a confident reconstructed direction; the gate $\mathbf{1}[r>\tau]$ with $r=C\max_c\pi_c$ additionally switches it off when the configuration is close to balanced. This is the formal counterpart of the empirical finding that a prevalence-only mechanism cannot recover the semantic controls: by (i)--(ii) the bias contributes no class-discriminative direction of its own, and by (iii) its influence is bounded, so it can calibrate the directions DPR supplies but cannot substitute for them.
+The correction therefore acts only on near-ties, tipping them toward the more prevalent class, and cannot override a confident reconstructed direction. The gate is
+\begin{equation}
+\mathbf{1}[r>\tau],
+\qquad
+r=C\max_c\pi_c.
+\end{equation}
+It switches the correction off when the configuration is close to balanced. This is the formal counterpart of the empirical finding that a prevalence-only mechanism cannot recover the semantic controls. By (i) and (ii), the bias contributes no class-discriminative direction of its own. By (iii), its influence is bounded, so it can calibrate the directions DPR supplies without substituting for them.
 
 \section{Metric Definitions}
 \label{app:metric-geometry}
@@ -570,7 +695,7 @@ while Macro-F1 averages the per-class F1 scores and therefore gives rare classes
 
 The prediction-collapse metrics are defined on the predicted class distribution \(q_c\) in Eq.~\ref{eq:app-pred-dist}. The collapse ratio \(\rho\) in Eq.~\ref{eq:app-collapse-ratio} measures the largest predicted-class share, \(C_{\mathrm{eff}}\) in Eq.~\ref{eq:app-effective-classes} measures the effective number of classes used by the model, and \(\mathrm{TV}(q,\bar{q})\) in Eq.~\ref{eq:app-tv} measures distributional disagreement with the true labels. Lower \(\rho\) and TV and higher \(C_{\mathrm{eff}}\) indicate weaker collapse. The absolute per-class gaps visualized in the main paper are \(|q_c-\bar{q}_c|\) in percentage points and expose which classes contribute to TV.
 
-The long-tail metrics are defined on empirical class counts rather than model predictions. The majority prevalence \(\bar{p}_{\max}\) and imbalance ratio \(R_{\mathrm{imb}}\) in Eq.~\ref{eq:app-imbalance} quantify whether the data distribution itself is skewed. These data-side quantities are used only to justify prevalence-aware calibration; they are not treated as evidence that a merged model is correct. This distinction is important: a high \(\rho\) is a model failure when it arises from collapse, whereas a high \(\bar{p}_{\max}\) is a property of the dataset that LPC must preserve in a bounded manner.
+The long-tail metrics are defined on empirical class counts. The majority prevalence \(\bar{p}_{\max}\) and imbalance ratio \(R_{\mathrm{imb}}\) in Eq.~\ref{eq:app-imbalance} quantify whether the data distribution itself is skewed. These data-side quantities are used only to justify prevalence-aware calibration; they are not treated as evidence that a merged model is correct. This distinction is important: a high \(\rho\) is a model failure when it arises from collapse, whereas a high \(\bar{p}_{\max}\) is a property of the dataset that LPC must preserve in a bounded manner.
 
 \section{Hyperparameter-Sweep Reproducibility}
 \label{app:repro}
