@@ -46,7 +46,7 @@ for One-shot Asynchronous Clinical Models}
 
 This document provides the detailed material that supports the main paper. It follows the same notation and experimental protocol as the main text.
 Section~\ref{app:organ-s-results} reports the Organ-S comparison table in full. Section~\ref{app:datasets} reports dataset provenance and per-class statistics, distinguishing the four public MedMNIST~v2 benchmarks from the private ChaoShengMNIST ultrasound subset.
-Section~\ref{app:algorithm-figure} provides the algorithmic form of LAMP-Merge and the visual summary of the internal ablation results.
+Section~\ref{app:algorithm} provides the algorithmic form of LAMP-Merge and clarifies the client-side and server-side operations used to instantiate the method.
 Section~\ref{app:ablation-configurations} specifies, for every internal ablation, which quantity is substituted in the LAMP-Merge pipeline and what empirical effect the substitution produces.
 Section~\ref{app:theory} gives the theoretical analysis behind the two modules, including a bias--variance bound for diagnostic prototype reconstruction, a margin-preservation condition, and the boundedness of the prevalence correction.
 Section~\ref{app:metric-geometry} defines the diagnostic metrics used in the supplementary analyses, and Section~\ref{app:repro} records the hyperparameter grid used for the sensitivity study.
@@ -341,8 +341,12 @@ The experiments use five medical image benchmarks. \textbf{BloodMNIST, DermaMNIS
 }
 \end{table}
 
-\section{Algorithm and Ablation Figure}
-\label{app:algorithm-figure}
+\section{Algorithmic Specification}
+\label{app:algorithm}
+
+Algorithm~\ref{app:alg:lamp} gives the procedural form of LAMP-Merge. The purpose of this appendix algorithm is not to introduce an additional method beyond the main text, but to make explicit the execution order, the information boundary between hospitals and the server, and the exact quantities that are uploaded once by each client. The notation follows the main paper: \(D_i\) is the local dataset of client \(i\), \(D_{i,c}\) is the subset with diagnosis label \(c\), \(\phi_0\) is the frozen reference encoder, and \(T\) is the evaluation transform applied before feature extraction.
+
+The algorithm is divided into two stages. Lines~1--6 describe the hospital-side computation. Each client computes class-level prototypes \(\mu_{i,c}\), support counts \(n_{i,c}\), and prevalence counts \(m_{i,c}\) using its own local data. Only these class-level statistics are uploaded, while raw images and patient-level samples remain local. Lines~7--20 describe the single-pass server-side merge. The server first performs Diagnostic Prototype Reconstruction by assigning support-aware weights \(\alpha_{i,c}\) and reconstructing one global prototype \(p_c\) for each diagnosis class. It then converts \(p_c\) into the classifier weight \(w_c\) and applies Long-tail Prevalence Calibration through the gated centered log-prior \(b_c\). The returned model is therefore a single diagnostic classifier \(\theta_m=(\phi_0,\{w_c,b_c\}_{c=1}^{C})\), with a frozen shared encoder and a reconstructed class-aware head.
 
 \begin{algorithm}[!t]
 \caption{LAMP-Merge}
@@ -373,12 +377,7 @@ The experiments use five medical image benchmarks. \textbf{BloodMNIST, DermaMNIS
 \end{algorithmic}
 \end{algorithm}
 
-\begin{figure}[!t]
-    \centering
-    \includegraphics[width=\columnwidth]{figures/02_internal_module_ablations.pdf}
-    \caption{\textbf{Every internal variant of DPR and LPC falls below the full model.} Visual companion to the main-paper internal ablation tables; plotted abbreviations are defined in the ablation text above. No single component can be removed without loss, confirming that the two modules are jointly necessary.}
-    \label{app:fig:internal_module_ablations}
-\end{figure}
+This procedural view also clarifies the privacy and communication setting used in all experiments. The client upload in Line~6 consists of aggregated class-level objects \(\{(\mu_{i,c},n_{i,c},m_{i,c})\}_{c=1}^{C}\); it does not include raw images, sample identities, gradients, or iterative feedback from the server. The server-side computation is deterministic once these statistics and the hyperparameters \(\gamma,s,\tau,\lambda\) are fixed, which makes the reported merge reproducible from the same client statistics without running additional local training.
 
 \section{Ablation Configurations and Interpretation}
 \label{app:ablation-configurations}
