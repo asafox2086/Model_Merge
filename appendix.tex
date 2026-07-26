@@ -44,18 +44,52 @@ for One-shot Asynchronous Clinical Models}
 
 \section{Overview of the Supplementary Material}
 
-This document provides the detailed material that supports the main paper. It follows the same notation and experimental protocol as the main text.
-Section~\ref{app:organ-s-results} reports the Organ-S comparison table in full. Section~\ref{app:datasets} reports dataset provenance and per-class statistics, distinguishing the four public MedMNIST~v2 benchmarks from the private ChaoShengMNIST ultrasound subset.
-Section~\ref{app:algorithm} provides the algorithmic form of LAMP-Merge and clarifies the client-side and server-side operations used to instantiate the method.
-Section~\ref{app:ablation-configurations} specifies, for every internal ablation, which quantity is substituted in the LAMP-Merge pipeline and what empirical effect the substitution produces.
-Section~\ref{app:theory} gives the theoretical analysis behind the two modules, including a bias--variance bound for diagnostic prototype reconstruction, a margin-preservation condition, and the boundedness of the prevalence correction.
-Section~\ref{app:metric-geometry} defines the diagnostic metrics used in the supplementary analyses, and Section~\ref{app:repro} records the hyperparameter grid used for the sensitivity study.
-Unless otherwise stated, $K$ denotes the number of clients, $C$ denotes the number of diagnosis classes, $n_{i,c}$ denotes the support count of class $c$ on client $i$, $m_{i,c}$ denotes the corresponding prevalence count, and $\phi_0(T(\cdot))$ denotes the frozen reference encoder applied after the evaluation transform $T$.
+This supplement is intended to make the empirical and theoretical claims in the paper reproducible without repeating the main exposition. It contains four types of material. First, Section~\ref{app:algorithm} gives an executable-level specification of LAMP-Merge, emphasizing the boundary between local hospital computation and server-side merging. Second, Sections~\ref{app:organ-s-results} and~\ref{app:datasets} provide additional experimental context: the full Organ-S results omitted from the compact main tables, and the class-wise dataset statistics used to construct the reported client splits. Third, Section~\ref{app:ablation-configurations} defines every internal ablation by the exact mathematical substitution applied to the full method, so that each ablation tests a single modeling choice. Finally, Sections~\ref{app:theory}--\ref{app:repro} provide supporting theory, metric definitions, and hyperparameter-sweep details required for reproduction and checklist verification.
 
-\section{Organ-S Supplementary Results}
+Unless otherwise stated, \(K\) denotes the number of clients, \(C\) denotes the number of diagnosis classes, \(n_{i,c}\) denotes the support count of class \(c\) on client \(i\), \(m_{i,c}\) denotes the corresponding prevalence count, and \(\phi_0(T(\cdot))\) denotes the frozen reference encoder applied after the evaluation transform \(T\).
+
+\section{Algorithmic Specification}
+\label{app:algorithm}
+
+Algorithm~\ref{app:alg:lamp} provides the procedural specification corresponding to the method section of the paper. It is included here to clarify the execution order and the information boundary, rather than to introduce an additional variant of LAMP-Merge. The inputs are the local datasets \(\{D_i\}_{i=1}^{K}\), the shared frozen reference encoder \(\phi_0\), the evaluation transform \(T\), and four scalar hyperparameters \(\gamma,s,\tau,\lambda\). The output is a single merged diagnostic model \(\theta_m=(\phi_0,\{w_c,b_c\}_{c=1}^{C})\).
+
+The algorithm separates local statistic construction from server-side merging. Lines~1--6 are executed independently by each hospital. Client \(i\) computes the class prototype \(\mu_{i,c}\), support count \(n_{i,c}\), and prevalence count \(m_{i,c}\) for every observed diagnosis class. The upload contains only these class-level statistics. Lines~7--20 are executed once on the server. The server first reconstructs a class-specific prototype \(p_c\) through support-aware aggregation and then converts it into the classifier weight \(w_c\). The prevalence counts are used only to form the gated centered log-prior \(b_c\). Thus, the merged model is obtained in one pass, without raw-image transfer, gradient exchange, or additional local optimization after the upload.
+
+\begin{algorithm}[!t]
+\caption{LAMP-Merge}
+\label{app:alg:lamp}
+\begin{algorithmic}[1]
+\REQUIRE Clients $\{D_i\}_{i=1}^{K}$; frozen reference encoder $\phi_0$; transform $T$; hyperparameters $\gamma,s,\tau,\lambda$
+\ENSURE Merged diagnostic model $\theta_m=(\phi_0,\{w_c,b_c\}_{c=1}^{C})$
+\STATE \textbf{Hospital side} (each client $i$, uploaded once):
+\FOR{each class $c=1,\dots,C$}
+    \STATE $n_{i,c}\leftarrow |D_{i,c}|$;\quad $m_{i,c}\leftarrow$ local label count of class $c$
+    \STATE $\mu_{i,c}\leftarrow \frac{1}{n_{i,c}}\sum_{(x,y)\in D_i}\mathbf{1}[y=c]\,\phi_0(T(x))$ \quad\textbf{if } $n_{i,c}>0$
+\ENDFOR
+\STATE upload $\{(\mu_{i,c},n_{i,c},m_{i,c})\}_{c=1}^{C}$; \textbf{raw images stay local}
+\STATE \textbf{Merging} (single pass):
+\FOR{each class $c=1,\dots,C$}
+    \STATE $e_{i,c}\leftarrow (n_{i,c}+1)^{\gamma}\,\mathbf{1}[n_{i,c}>0]$ for all $i$
+    \STATE $\alpha_{i,c}\leftarrow e_{i,c}\big/\sum_{j=1}^{K} e_{j,c}$
+    \STATE $p_c\leftarrow \sum_{i=1}^{K}\alpha_{i,c}\,\mu_{i,c}$ \hfill $\triangleright$ DPR fusion
+    \STATE $w_c\leftarrow s\,p_c/\|p_c\|_2$
+\ENDFOR
+\STATE $\pi_c\leftarrow \sum_{i} m_{i,c}\big/\sum_{k}\sum_{i} m_{i,k}$;\quad $r\leftarrow C\max_c \pi_c$
+\IF{$r>\tau$}
+    \STATE $b_c\leftarrow \lambda\big(\log\pi_c-\frac{1}{C}\sum_{k}\log\pi_k\big)$ for all $c$ \hfill $\triangleright$ LPC
+\ELSE
+    \STATE $b_c\leftarrow 0$ for all $c$
+\ENDIF
+\RETURN $\theta_m=(\phi_0,\{w_c,b_c\}_{c=1}^{C})$
+\end{algorithmic}
+\end{algorithm}
+
+The algorithm also specifies the privacy and communication assumptions used throughout the experiments. The client upload is \(\{(\mu_{i,c},n_{i,c},m_{i,c})\}_{c=1}^{C}\); it does not contain raw images, sample identities, gradients, or a server-side validation set. Once these statistics and the hyperparameters are fixed, the server-side computation is deterministic. This makes the merge reproducible from the uploaded statistics alone and distinguishes the setting from multi-round federated optimization.
+
+\section{Additional Organ-S Results}
 \label{app:organ-s-results}
 
-The main paper emphasizes the representative benchmarks in the two-column body. For completeness, Tables~\ref{tab:appendix-organs-swin}--\ref{tab:appendix-organs-vit} report the Organ-S client-average results under the same protocol. Each cell gives ACC / Macro-F1 in percentage points. \textbf{Across all four backbones, LAMP-Merge remains the strongest method on Organ-S, showing that the reported conclusions are not an artifact of excluding this CT plane from a compact table layout.}
+The main paper reports the compact set of benchmark tables required to compare methods across model families. To keep the main body readable, the Organ-S table is moved to this supplement while preserving the same evaluation protocol, the same client counts, and the same reporting format. Tables~\ref{tab:appendix-organs-swin}--\ref{tab:appendix-organs-vit} report client-average ACC / Macro-F1 in percentage points. \textbf{Across all four backbones, LAMP-Merge remains the strongest method on Organ-S, confirming that the conclusion does not depend on omitting this CT view from the compact main tables.}
 
 \begin{table}[!t]
 \centering
@@ -194,7 +228,7 @@ RobustMerge & 6.91 / 3.22 & 6.31 / 2.87 & 5.41 / 2.59 & 6.21 / 2.89 \\
 \label{app:datasets}
 \FloatBarrier
 
-The experiments use five medical image benchmarks. \textbf{BloodMNIST, DermaMNIST, OrganCMNIST, and OrganSMNIST are public MedMNIST~v2 datasets~\citep{yang2023medmnist}; ChaoShengMNIST is a private eight-class ultrasound subset stored in the same NPZ schema as the public benchmarks.} The five datasets were selected to cover microscopy, dermoscopy, CT, and ultrasound while varying the number of classes, visual granularity, and prevalence profile. The per-class tables in this section (Tables~\ref{tab:appendix-blood-classes}--\ref{tab:appendix-ultrasound-classes}) report the exact training, validation, and test split sizes used by the experiments.
+This section provides the dataset-level information needed to reproduce the experimental setting. \textbf{BloodMNIST, DermaMNIST, OrganCMNIST, and OrganSMNIST are public MedMNIST~v2 datasets~\citep{yang2023medmnist}; ChaoShengMNIST is a private eight-class ultrasound subset stored in the same NPZ schema as the public benchmarks.} The five datasets cover microscopy, dermoscopy, CT, and ultrasound while varying the number of classes, visual granularity, and prevalence profile. Tables~\ref{tab:appendix-blood-classes}--\ref{tab:appendix-ultrasound-classes} report the exact training, validation, and test split sizes used by the experiments, together with representative training samples for each class.
 
 \paragraph{Blood.} BloodMNIST is an eight-class microscopy benchmark for recognizing peripheral blood-cell morphology. Its classes include granulocytes, lymphocytes, platelets, and other hematopoietic cells with visually similar staining patterns. This benchmark emphasizes fine-grained cell morphology; it therefore tests whether a merged classifier preserves class-specific evidence rather than collapsing onto a subset of visually dominant cell types.
 
@@ -341,48 +375,10 @@ The experiments use five medical image benchmarks. \textbf{BloodMNIST, DermaMNIS
 }
 \end{table}
 
-\section{Algorithmic Specification}
-\label{app:algorithm}
-
-Algorithm~\ref{app:alg:lamp} gives the procedural form of LAMP-Merge. The purpose of this appendix algorithm is not to introduce an additional method beyond the main text, but to make explicit the execution order, the information boundary between hospitals and the server, and the exact quantities that are uploaded once by each client. The notation follows the main paper: \(D_i\) is the local dataset of client \(i\), \(D_{i,c}\) is the subset with diagnosis label \(c\), \(\phi_0\) is the frozen reference encoder, and \(T\) is the evaluation transform applied before feature extraction.
-
-The algorithm is divided into two stages. Lines~1--6 describe the hospital-side computation. Each client computes class-level prototypes \(\mu_{i,c}\), support counts \(n_{i,c}\), and prevalence counts \(m_{i,c}\) using its own local data. Only these class-level statistics are uploaded, while raw images and patient-level samples remain local. Lines~7--20 describe the single-pass server-side merge. The server first performs Diagnostic Prototype Reconstruction by assigning support-aware weights \(\alpha_{i,c}\) and reconstructing one global prototype \(p_c\) for each diagnosis class. It then converts \(p_c\) into the classifier weight \(w_c\) and applies Long-tail Prevalence Calibration through the gated centered log-prior \(b_c\). The returned model is therefore a single diagnostic classifier \(\theta_m=(\phi_0,\{w_c,b_c\}_{c=1}^{C})\), with a frozen shared encoder and a reconstructed class-aware head.
-
-\begin{algorithm}[!t]
-\caption{LAMP-Merge}
-\label{app:alg:lamp}
-\begin{algorithmic}[1]
-\REQUIRE Clients $\{D_i\}_{i=1}^{K}$; frozen reference encoder $\phi_0$; transform $T$; hyperparameters $\gamma,s,\tau,\lambda$
-\ENSURE Merged diagnostic model $\theta_m=(\phi_0,\{w_c,b_c\}_{c=1}^{C})$
-\STATE \textbf{Hospital side} (each client $i$, uploaded once):
-\FOR{each class $c=1,\dots,C$}
-    \STATE $n_{i,c}\leftarrow |D_{i,c}|$;\quad $m_{i,c}\leftarrow$ local label count of class $c$
-    \STATE $\mu_{i,c}\leftarrow \frac{1}{n_{i,c}}\sum_{(x,y)\in D_i}\mathbf{1}[y=c]\,\phi_0(T(x))$ \quad\textbf{if } $n_{i,c}>0$
-\ENDFOR
-\STATE upload $\{(\mu_{i,c},n_{i,c},m_{i,c})\}_{c=1}^{C}$; \textbf{raw images stay local}
-\STATE \textbf{Merging} (single pass):
-\FOR{each class $c=1,\dots,C$}
-    \STATE $e_{i,c}\leftarrow (n_{i,c}+1)^{\gamma}\,\mathbf{1}[n_{i,c}>0]$ for all $i$
-    \STATE $\alpha_{i,c}\leftarrow e_{i,c}\big/\sum_{j=1}^{K} e_{j,c}$
-    \STATE $p_c\leftarrow \sum_{i=1}^{K}\alpha_{i,c}\,\mu_{i,c}$ \hfill $\triangleright$ DPR fusion
-    \STATE $w_c\leftarrow s\,p_c/\|p_c\|_2$
-\ENDFOR
-\STATE $\pi_c\leftarrow \sum_{i} m_{i,c}\big/\sum_{k}\sum_{i} m_{i,k}$;\quad $r\leftarrow C\max_c \pi_c$
-\IF{$r>\tau$}
-    \STATE $b_c\leftarrow \lambda\big(\log\pi_c-\frac{1}{C}\sum_{k}\log\pi_k\big)$ for all $c$ \hfill $\triangleright$ LPC
-\ELSE
-    \STATE $b_c\leftarrow 0$ for all $c$
-\ENDIF
-\RETURN $\theta_m=(\phi_0,\{w_c,b_c\}_{c=1}^{C})$
-\end{algorithmic}
-\end{algorithm}
-
-This procedural view also clarifies the privacy and communication setting used in all experiments. The client upload in Line~6 consists of aggregated class-level objects \(\{(\mu_{i,c},n_{i,c},m_{i,c})\}_{c=1}^{C}\); it does not include raw images, sample identities, gradients, or iterative feedback from the server. The server-side computation is deterministic once these statistics and the hyperparameters \(\gamma,s,\tau,\lambda\) are fixed, which makes the reported merge reproducible from the same client statistics without running additional local training.
-
 \section{Ablation Configurations and Interpretation}
 \label{app:ablation-configurations}
 
-All internal ablations use the same five datasets, four backbones, client counts, and Dirichlet settings as the main experiment. Thus, each row of the DPR and LPC internal-ablation tables in the main paper isolates one design choice while holding the remaining LAMP-Merge pipeline fixed. Below we specify, for every ablation label, the exact quantity that is substituted and the mean accuracy it attains; the LAMP-Merge operating point attains $62.21\%$ mean accuracy under the same protocol and serves as the reference throughout.
+This section makes the internal ablation study fully specified. Each ablation changes one mathematical object in the LAMP-Merge pipeline while keeping the datasets, backbones, client counts, Dirichlet settings, and all remaining implementation choices fixed. The full method attains \(62.21\%\) mean ACC under this protocol and is used as the reference point throughout. The goal is not to introduce alternative methods, but to identify which information source is necessary for the final design.
 
 \subsection{Diagnostic Prototype Reconstruction}
 
@@ -495,7 +491,7 @@ The three controls retain DPR and test the prior estimator or the activation gat
 \section{Theoretical Analysis}
 \label{app:theory}
 
-This section makes precise the two claims that motivate LAMP-Merge: that support-aware prototype aggregation controls the estimation error of the reconstructed class directions (Sec.~\ref{app:theory-dpr}), and that the centered, gated log-prior of LPC is a \emph{bounded} correction that adjusts, rather than overrides, those directions (Sec.~\ref{app:theory-lpc}). We work throughout in the shared reference space induced by the frozen encoder $\phi_0(T(\cdot))$, so that all client prototypes live in a common coordinate system and can be compared directly.
+This section gives the theoretical support for the two design choices used in LAMP-Merge. The first part analyzes Diagnostic Prototype Reconstruction and shows how support-aware aggregation controls the estimation error of the reconstructed class direction. The second part analyzes Long-tail Prevalence Calibration and shows that the centered log-prior acts as a bounded adjustment to the reconstructed head. Throughout the analysis, all features are represented in the shared reference space induced by the frozen encoder \(\phi_0(T(\cdot))\), so client prototypes are compared in a common coordinate system.
 
 \subsection{Assumptions}
 
@@ -507,7 +503,7 @@ Fix a class $c$. For every client $i$ with support $n_{i,c}>0$, the reference fe
 \label{as:prevalence}
 The global prior of Eq.~\ref{eq:appendix-lpc} satisfies $\pi_c\in[\pi_{\min},\pi_{\max}]\subseteq(0,1]$ for all $c$, with $\pi_{\min}>0$.
 
-Assumption~\ref{as:sampling} is the standard i.i.d.\ model applied \emph{within} each client-class stratum; cross-client independence reflects that hospitals sample patients separately. It does not assume that the client means agree: $\mu_{i,c}^{\star}$ may differ across $i$ because of scanner or population shift, and this discrepancy is exactly the bias term isolated below. Assumption~\ref{as:prevalence} holds whenever every class is observed at the population level; in practice the additive count in $e_{i,c}$ and the empirical prior keep $\pi_{\min}>0$.
+The within-client sampling assumption is the standard i.i.d.\ model applied inside each client-class stratum; cross-client independence reflects that hospitals sample patients separately. It does not assume that client means are identical. The quantity \(\mu_{i,c}^{\star}\) may differ across clients because of scanner or population shift, and this discrepancy appears as the bias term below. The prevalence positivity assumption holds whenever every class is observed at the population level; in practice, the additive count in \(e_{i,c}\) and the empirical prior keep \(\pi_{\min}>0\).
 
 \subsection{Prototype estimation and class margins}
 \label{app:theory-dpr}
@@ -519,7 +515,7 @@ Recall from Eq.~\ref{eq:appendix-dpr} that the reconstructed prototype is the cl
 
 \paragraph{Proposition 1 (Bias--variance bound).}
 \label{prop:bound}
-Under Assumption~\ref{as:sampling},
+Under the within-client sampling assumption,
 \begin{equation}
 \mathrm{E}\big\|p_c-\mu_c^{\star}\big\|_2^{2}
 \;\le\;\sigma_c^{2}\sum_{i:\,n_{i,c}>0}\frac{\alpha_{i,c}^{2}}{n_{i,c}}
@@ -530,14 +526,14 @@ Under Assumption~\ref{as:sampling},
 \paragraph{Proof.}
 Write $p_c-\mu_c^{\star}=(p_c-\mathrm{E}\,p_c)+(\mathrm{E}\,p_c-\mu_c^{\star})$. Since each $\mu_{i,c}$ is an average of $n_{i,c}$ i.i.d.\ features, $\mathrm{E}\,\mu_{i,c}=\mu_{i,c}^{\star}$ and $\mathrm{E}\,p_c=\sum_i\alpha_{i,c}\mu_{i,c}^{\star}$, so the second term has norm $\mathrm{Bias}_c$. The two terms are orthogonal in expectation because $\mathrm{E}[p_c-\mathrm{E}\,p_c]=0$, giving
 $\mathrm{E}\|p_c-\mu_c^{\star}\|_2^{2}=\mathrm{E}\|p_c-\mathrm{E}\,p_c\|_2^{2}+\mathrm{Bias}_c^{2}$.
-By cross-client independence (Assumption~\ref{as:sampling}) the variance term factorizes over clients,
+By cross-client independence, the variance term factorizes over clients,
 \begin{equation}
 \mathrm{E}\|p_c-\mathrm{E}\,p_c\|_2^{2}
 =\sum_{i}\alpha_{i,c}^{2}\,\mathrm{E}\|\mu_{i,c}-\mu_{i,c}^{\star}\|_2^{2},
 \end{equation}
 and for an average of $n_{i,c}$ i.i.d.\ vectors $\mathrm{E}\|\mu_{i,c}-\mu_{i,c}^{\star}\|_2^{2}=\mathrm{tr}(\Sigma_{i,c})/n_{i,c}\le\sigma_c^{2}/n_{i,c}$. Terms with $n_{i,c}=0$ carry $\alpha_{i,c}=0$ and drop out, yielding \eqref{eq:prototype-bound}.
 
-Proposition~\ref{prop:bound} makes the role of the support-aware weight explicit. The variance term $\sigma_c^2\sum_i\alpha_{i,c}^2/n_{i,c}$ is minimized, for fixed support, by concentrating $\alpha_{i,c}$ on clients with large $n_{i,c}$, which is precisely what $e_{i,c}=(n_{i,c}+1)^{\gamma}\mathbf{1}[n_{i,c}>0]$ does; the indicator forces $\alpha_{i,c}=0$ for clients that never observed class $c$, keeping absent-class noise out of the sum. This is the quantity the weighting controls perturb: \textbf{UCW} sets $\alpha_{i,c}\propto\mathbf{1}[n_{i,c}>0]$ and so ignores the unequal variances $\sigma_c^2/n_{i,c}$, while \textbf{GCSW} weights by the total size $N_i=\sum_k n_{i,k}$ and thus couples the class-$c$ variance to support the client accumulated on \emph{other} classes. Both raise the bound in \eqref{eq:prototype-bound} relative to class-specific support weighting, matching their measured drops ($3.88$ and $2.82$ points).
+This bound makes the role of the support-aware weight explicit. The variance term \(\sigma_c^2\sum_i\alpha_{i,c}^2/n_{i,c}\) is reduced by assigning larger weights to clients with larger class-specific support. This is precisely the role of \(e_{i,c}=(n_{i,c}+1)^{\gamma}\mathbf{1}[n_{i,c}>0]\). The indicator also forces \(\alpha_{i,c}=0\) for clients that never observed class \(c\), keeping absent-class noise out of the reconstruction. This is the quantity perturbed by the weighting controls: \textbf{UCW} ignores the unequal variances \(\sigma_c^2/n_{i,c}\), while \textbf{GCSW} weights by total client size \(N_i=\sum_k n_{i,k}\) and couples the class-\(c\) estimate to data collected for other classes. Their measured drops of \(3.88\) and \(2.82\) ACC points are therefore consistent with the variance term in Eq.~\eqref{eq:prototype-bound}.
 
 We now translate a small prototype error into preserved decision ordering. For a reference feature $z=\phi_0(T(x))$ define the population and reconstructed prototype margins between classes $c$ and $d$,
 \begin{equation}
@@ -567,7 +563,7 @@ By linearity and the Cauchy--Schwarz inequality,
 \end{equation}
 Under \eqref{eq:margin-condition} the right-hand side is strictly below $\Delta_{c,d}(x)$, hence $\widehat{\Delta}_{c,d}(x)>\Delta_{c,d}(x)-\Delta_{c,d}(x)=0$.
 
-The cosine head $w_c=s\,p_c/\|p_c\|_2$ used by LAMP-Merge scores in the direction of $p_c$, so Proposition~\ref{prop:margin} is the relevant guarantee: whenever DPR drives the per-class error below half the population margin (in the metric of \eqref{eq:margin-condition}), the reconstructed head reproduces the population ranking. Proposition~\ref{prop:bound} shows that this error \emph{can} be made small by class-specific support weighting; Proposition~\ref{prop:margin} shows why doing so matters. The four semantic controls break the antecedent rather than the conclusion: \textbf{CHA} and \textbf{GFM} replace $\mu_{i,c}$ by quantities whose expectation is not $\mu_c^{\star}$ (an uncontrolled $\mathrm{Bias}_c$), \textbf{SSH} discards $\mu_{i,c}$ for a data-independent vector (so $\Delta_{c,d}$ carries no signal), and \textbf{SLP} permutes prototypes across labels, replacing $\Delta_{c,d}$ by $\Delta_{\sigma(c),\sigma(d)}$; each destroys the margin the proposition relies on, consistent with their large losses ($35.71$--$51.32$ points).
+The cosine head \(w_c=s\,p_c/\|p_c\|_2\) used by LAMP-Merge scores in the direction of \(p_c\), so the margin condition above is the relevant guarantee: when DPR drives the per-class error below the population margin in Eq.~\eqref{eq:margin-condition}, the reconstructed head preserves the class ordering. The bias--variance bound explains how class-specific support weighting can reduce this error, and the margin condition explains why the error reduction matters for classification. The semantic controls violate the premise of the argument: \textbf{CHA} and \textbf{GFM} replace \(\mu_{i,c}\) by quantities whose expectation is not \(\mu_c^{\star}\), \textbf{SSH} discards the class prototype entirely, and \textbf{SLP} assigns the prototype to the wrong label. Their large losses of \(35.71\)--\(51.32\) ACC points are therefore aligned with the theory.
 
 \subsection{Bounded prevalence correction}
 \label{app:theory-lpc}
@@ -576,7 +572,7 @@ We finally show that LPC is a bounded, gauge-fixed adjustment. Recall the center
 
 \paragraph{Proposition 3 (Zero-sum, invariance, and boundedness).}
 \label{prop:lpc}
-Under Assumption~\ref{as:prevalence}, the bias satisfies:
+Under the prevalence positivity assumption, the bias satisfies:
 \begin{enumerate}
 \item[(i)] \emph{Zero-sum:} $\sum_{c=1}^{C}b_c=0$, so the correction adds no uniform shift to the logits.
 \item[(ii)] \emph{Gauge invariance:} $b_c-b_d=\lambda\log(\pi_c/\pi_d)$, independent of the centering constant; adding any constant to all class logits leaves every pairwise comparison, and hence the $\arg\max$, unchanged.
@@ -588,7 +584,7 @@ Under Assumption~\ref{as:prevalence}, the bias satisfies:
 (ii) The centering term is common to $b_c$ and $b_d$ and cancels, leaving $b_c-b_d=\lambda(\log\pi_c-\log\pi_d)$; since softmax and $\arg\max$ depend only on logit differences, the shared constant is irrelevant.
 (iii) Writing $\bar\ell=\tfrac1C\sum_k\log\pi_k$, we have $\log\pi_{\min}\le\bar\ell\le\log\pi_{\max}$, so $|\log\pi_c-\bar\ell|\le\log\pi_{\max}-\log\pi_{\min}=\log(\pi_{\max}/\pi_{\min})$; multiply by $\lambda$. The pairwise bound follows from $|\log\pi_c-\log\pi_d|\le\log(\pi_{\max}/\pi_{\min})$.
 
-Combining Propositions~\ref{prop:margin} and~\ref{prop:lpc} shows the two modules compose without conflict. The score used at test time is $\ell_c(x)=w_c^{\top}z+\mathbf{1}[r>\tau]\,b_c$, so calibration shifts the pairwise margin by at most $|b_c-b_d|\le\lambda\log(\pi_{\max}/\pi_{\min})$. Hence whenever the DPR margin already exceeds this bound, the class ordering is unchanged by LPC:
+Combining the margin condition with the boundedness result shows that the two modules compose without conflict. The score used at test time is \(\ell_c(x)=w_c^{\top}z+\mathbf{1}[r>\tau]\,b_c\), so calibration shifts the pairwise margin by at most \(|b_c-b_d|\le\lambda\log(\pi_{\max}/\pi_{\min})\). Hence whenever the DPR margin already exceeds this bound, the class ordering is unchanged by LPC:
 \begin{equation}
 \widehat{\Delta}_{c,d}(x)\;>\;\lambda\log\frac{\pi_{\max}}{\pi_{\min}}
 \;\Longrightarrow\;
