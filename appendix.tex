@@ -46,7 +46,7 @@ for One-shot Asynchronous Clinical Models}
 
 This document provides the detailed material that supports the main paper. It follows the same notation and experimental protocol as the main text.
 Section~\ref{app:organ-s-results} reports the Organ-S comparison table in full. Section~\ref{app:datasets} reports dataset provenance and per-class statistics, distinguishing the four public MedMNIST~v2 benchmarks from the private ChaoShengMNIST ultrasound subset.
-Section~\ref{app:observations} formalizes the two empirical observations used to motivate LAMP-Merge: aggregation-induced prediction collapse and long-tailed medical prevalence.
+Section~\ref{app:algorithm-figure} provides the algorithmic form of LAMP-Merge and the visual summary of the internal ablation results.
 Section~\ref{app:ablation-configurations} specifies, for every internal ablation, which quantity is substituted in the LAMP-Merge pipeline and what empirical effect the substitution produces.
 Section~\ref{app:theory} gives the theoretical analysis behind the two modules, including a bias--variance bound for diagnostic prototype reconstruction, a margin-preservation condition, and the boundedness of the prevalence correction.
 Section~\ref{app:metric-geometry} defines the diagnostic metrics used in the supplementary analyses, and Section~\ref{app:repro} records the hyperparameter grid used for the sensitivity study.
@@ -341,49 +341,44 @@ The experiments use five medical image benchmarks. \textbf{BloodMNIST, DermaMNIS
 }
 \end{table}
 
-\section{Observation Diagnostics}
-\label{app:observations}
+\section{Algorithm and Ablation Figure}
+\label{app:algorithm-figure}
 
-\textbf{The main paper uses two empirical observations to motivate the two components of LAMP-Merge, and the two observations are measured with different objects.} The first is a \textbf{model-side} observation: after generic model merging, the prediction distribution can collapse to a small number of classes. The second is a \textbf{data-side} observation: medical image datasets themselves can be long-tailed, so a prevalence signal should not be removed indiscriminately. This separation avoids treating long-tail prevalence as merely another name for model collapse.
+\begin{algorithm}[!t]
+\caption{LAMP-Merge}
+\label{app:alg:lamp}
+\begin{algorithmic}[1]
+\REQUIRE Clients $\{D_i\}_{i=1}^{K}$; frozen reference encoder $\phi_0$; transform $T$; hyperparameters $\gamma,s,\tau,\lambda$
+\ENSURE Merged diagnostic model $\theta_m=(\phi_0,\{w_c,b_c\}_{c=1}^{C})$
+\STATE \textbf{Hospital side} (each client $i$, uploaded once):
+\FOR{each class $c=1,\dots,C$}
+    \STATE $n_{i,c}\leftarrow |D_{i,c}|$;\quad $m_{i,c}\leftarrow$ local label count of class $c$
+    \STATE $\mu_{i,c}\leftarrow \frac{1}{n_{i,c}}\sum_{(x,y)\in D_i}\mathbf{1}[y=c]\,\phi_0(T(x))$ \quad\textbf{if } $n_{i,c}>0$
+\ENDFOR
+\STATE upload $\{(\mu_{i,c},n_{i,c},m_{i,c})\}_{c=1}^{C}$; \textbf{raw images stay local}
+\STATE \textbf{Merging} (single pass):
+\FOR{each class $c=1,\dots,C$}
+    \STATE $e_{i,c}\leftarrow (n_{i,c}+1)^{\gamma}\,\mathbf{1}[n_{i,c}>0]$ for all $i$
+    \STATE $\alpha_{i,c}\leftarrow e_{i,c}\big/\sum_{j=1}^{K} e_{j,c}$
+    \STATE $p_c\leftarrow \sum_{i=1}^{K}\alpha_{i,c}\,\mu_{i,c}$ \hfill $\triangleright$ DPR fusion
+    \STATE $w_c\leftarrow s\,p_c/\|p_c\|_2$
+\ENDFOR
+\STATE $\pi_c\leftarrow \sum_{i} m_{i,c}\big/\sum_{k}\sum_{i} m_{i,k}$;\quad $r\leftarrow C\max_c \pi_c$
+\IF{$r>\tau$}
+    \STATE $b_c\leftarrow \lambda\big(\log\pi_c-\frac{1}{C}\sum_{k}\log\pi_k\big)$ for all $c$ \hfill $\triangleright$ LPC
+\ELSE
+    \STATE $b_c\leftarrow 0$ for all $c$
+\ENDIF
+\RETURN $\theta_m=(\phi_0,\{w_c,b_c\}_{c=1}^{C})$
+\end{algorithmic}
+\end{algorithm}
 
-\subsection{Aggregation-Induced Prediction Collapse}
-
-For a test set with $N$ samples, let $\hat{y}_n$ be the predicted label of the merged model on sample $n$. The predicted class distribution is
-\begin{equation}
-q_c=\frac{1}{N}\sum_{n=1}^{N}\mathbf{1}[\hat{y}_n=c].
-\label{eq:app-pred-dist}
-\end{equation}
-\textbf{Prediction collapse occurs when $q_c$ concentrates on one or a few classes although the task contains a larger diagnosis space.} We quantify this phenomenon with the collapse ratio
-\begin{equation}
-\rho=\max_c q_c,
-\label{eq:app-collapse-ratio}
-\end{equation}
-the effective number of predicted classes
-\begin{equation}
-C_{\mathrm{eff}}=\exp\left(-\sum_c q_c\log q_c\right),
-\label{eq:app-effective-classes}
-\end{equation}
-and the total variation distance between the predicted and empirical test distributions,
-\begin{equation}
-\mathrm{TV}(q,\bar{q})=\frac{1}{2}\sum_c |q_c-\bar{q}_c|.
-\label{eq:app-tv}
-\end{equation}
-Here $\bar{q}_c=N^{-1}\sum_n\mathbf{1}[y_n=c]$ is the true test-set class distribution. A collapsed merger has large $\rho$, small $C_{\mathrm{eff}}$, and large TV. This observation motivates Diagnostic Prototype Reconstruction: if generic parameter-space merging loses class-discriminative directions, the server should reconstruct the diagnostic head from class-level evidence rather than average all parameters blindly.
-
-\subsection{Long-Tailed Medical Prevalence}
-
-\textbf{The second observation concerns the data distribution itself.} For a dataset split with class counts $N_c$, the empirical prevalence is
-\begin{equation}
-\bar{p}_c=\frac{N_c}{\sum_k N_k}.
-\label{eq:app-prevalence}
-\end{equation}
-We summarize its skewness by the majority-class prevalence and the imbalance ratio:
-\begin{equation}
-\bar{p}_{\max}=\max_c \bar{p}_c,\qquad
-R_{\mathrm{imb}}=\frac{\max_c N_c}{\min_c N_c}.
-\label{eq:app-imbalance}
-\end{equation}
-These quantities measure whether the dataset itself is long-tailed, independently of any model prediction. This matters because a model collapsed to a majority class can obtain a deceptively high accuracy on a long-tailed medical dataset, while an overly uniform correction can also discard clinically meaningful prevalence. This observation motivates Long-tail Prevalence Calibration: after DPR restores class directions, LPC injects a bounded prior from client-uploaded prevalence counts so that collapse is mitigated without forcing all classes to be equally likely.
+\begin{figure}[!t]
+    \centering
+    \includegraphics[width=\columnwidth]{figures/02_internal_module_ablations.pdf}
+    \caption{\textbf{Every internal variant of DPR and LPC falls below the full model.} Visual companion to the main-paper internal ablation tables; plotted abbreviations are defined in the ablation text above. No single component can be removed without loss, confirming that the two modules are jointly necessary.}
+    \label{app:fig:internal_module_ablations}
+\end{figure}
 
 \section{Ablation Configurations and Interpretation}
 \label{app:ablation-configurations}
@@ -611,9 +606,34 @@ The main tables report ACC and Macro-F1 as complementary classification metrics.
 \end{equation}
 while Macro-F1 averages the per-class F1 scores and therefore gives rare classes the same weight as majority classes. AUC is used in the radar summaries when probabilistic outputs are available; it measures ranking quality from class probabilities and is less tied to a single operating threshold than ACC.
 
-The prediction-collapse metrics are defined on the predicted class distribution \(q_c\) in Eq.~\ref{eq:app-pred-dist}. The collapse ratio \(\rho\) in Eq.~\ref{eq:app-collapse-ratio} measures the largest predicted-class share, \(C_{\mathrm{eff}}\) in Eq.~\ref{eq:app-effective-classes} measures the effective number of classes used by the model, and \(\mathrm{TV}(q,\bar{q})\) in Eq.~\ref{eq:app-tv} measures distributional disagreement with the true labels. Lower \(\rho\) and TV and higher \(C_{\mathrm{eff}}\) indicate weaker collapse. The absolute per-class gaps visualized in the main paper are \(|q_c-\bar{q}_c|\) in percentage points and expose which classes contribute to TV.
+The prediction-collapse metrics are defined on the predicted class distribution:
+\begin{equation}
+q_c=\frac{1}{N}\sum_{n=1}^{N}\mathbf{1}[\hat{y}_n=c].
+\end{equation}
+The collapse ratio measures the largest predicted-class share:
+\begin{equation}
+\rho=\max_c q_c.
+\end{equation}
+The effective number of predicted classes measures how many classes are actively used by the model:
+\begin{equation}
+C_{\mathrm{eff}}=\exp\left(-\sum_c q_c\log q_c\right).
+\end{equation}
+The total variation distance compares the predicted distribution \(q\) with the empirical test distribution \(\bar{q}\):
+\begin{equation}
+\mathrm{TV}(q,\bar{q})=\frac{1}{2}\sum_c |q_c-\bar{q}_c|.
+\end{equation}
+Lower \(\rho\) and TV and higher \(C_{\mathrm{eff}}\) indicate weaker collapse. The absolute per-class gaps visualized in the main paper are \(|q_c-\bar{q}_c|\) in percentage points and expose which classes contribute to TV.
 
-The long-tail metrics are defined on empirical class counts rather than model predictions. The majority prevalence \(\bar{p}_{\max}\) and imbalance ratio \(R_{\mathrm{imb}}\) in Eq.~\ref{eq:app-imbalance} quantify whether the data distribution itself is skewed. These data-side quantities are used only to justify prevalence-aware calibration; they are not treated as evidence that a merged model is correct. This distinction is important: a high \(\rho\) is a model failure when it arises from collapse, whereas a high \(\bar{p}_{\max}\) is a property of the dataset that LPC must preserve in a bounded manner.
+The long-tail metrics are defined on empirical class counts rather than model predictions. For class counts \(N_c\), the empirical prevalence is
+\begin{equation}
+\bar{p}_c=\frac{N_c}{\sum_k N_k}.
+\end{equation}
+The majority prevalence and imbalance ratio are
+\begin{equation}
+\bar{p}_{\max}=\max_c \bar{p}_c,\qquad
+R_{\mathrm{imb}}=\frac{\max_c N_c}{\min_c N_c}.
+\end{equation}
+These data-side quantities quantify whether the dataset itself is skewed. They are used only to justify prevalence-aware calibration; they are not treated as evidence that a merged model is correct. This distinction is important: a high \(\rho\) is a model failure when it arises from collapse, whereas a high \(\bar{p}_{\max}\) is a property of the dataset that LPC must preserve in a bounded manner.
 
 \section{Hyperparameter-Sweep Reproducibility}
 \label{app:repro}
