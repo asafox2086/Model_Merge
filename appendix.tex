@@ -40,6 +40,10 @@ for One-shot Asynchronous Clinical Models}
 \begin{document}
 \maketitle
 \appendix
+\newcommand{\appendixstandalonefooter}{\bibliography{aaai2026}\end{document}}
+\fi
+\ifdefined\appendixinmain
+\newcommand{\appendixstandalonefooter}{}
 \fi
 
 \section{Overview of the Supplementary Material}
@@ -248,7 +252,7 @@ This section provides the dataset-level information needed to reproduce the expe
 \renewcommand{\arraystretch}{1.25}
 \setlength{\tabcolsep}{3.8pt}
 \resizebox{\columnwidth}{!}{%
-\begin{tabular}{>{\cellcolor{white}}clrrrr:c}
+\begin{tabular}{>{\cellcolor{white}}clrrrrc}
 \noalign{\hrule height 1.25pt}
 \rowcolor[HTML]{F2F2F2}
 \multicolumn{1}{c}{\textbf{Dataset}} & \textbf{Class} & \textbf{Train} & \textbf{Val} & \textbf{Test} & \textbf{Total} & \textbf{Sample} \\
@@ -274,7 +278,7 @@ This section provides the dataset-level information needed to reproduce the expe
 \renewcommand{\arraystretch}{1.25}
 \setlength{\tabcolsep}{3.8pt}
 \resizebox{\columnwidth}{!}{%
-\begin{tabular}{>{\cellcolor{white}}clrrrr:c}
+\begin{tabular}{>{\cellcolor{white}}clrrrrc}
 \noalign{\hrule height 1.25pt}
 \rowcolor[HTML]{F2F2F2}
 \multicolumn{1}{c}{\textbf{Dataset}} & \textbf{Class} & \textbf{Train} & \textbf{Val} & \textbf{Test} & \textbf{Total} & \textbf{Sample} \\
@@ -299,7 +303,7 @@ This section provides the dataset-level information needed to reproduce the expe
 \renewcommand{\arraystretch}{1.25}
 \setlength{\tabcolsep}{3.8pt}
 \resizebox{\columnwidth}{!}{%
-\begin{tabular}{>{\cellcolor{white}}clrrrr:c}
+\begin{tabular}{>{\cellcolor{white}}clrrrrc}
 \noalign{\hrule height 1.25pt}
 \rowcolor[HTML]{F2F2F2}
 \multicolumn{1}{c}{\textbf{Dataset}} & \textbf{Class} & \textbf{Train} & \textbf{Val} & \textbf{Test} & \textbf{Total} & \textbf{Sample} \\
@@ -328,7 +332,7 @@ This section provides the dataset-level information needed to reproduce the expe
 \renewcommand{\arraystretch}{1.25}
 \setlength{\tabcolsep}{3.8pt}
 \resizebox{\columnwidth}{!}{%
-\begin{tabular}{>{\cellcolor{white}}clrrrr:c}
+\begin{tabular}{>{\cellcolor{white}}clrrrrc}
 \noalign{\hrule height 1.25pt}
 \rowcolor[HTML]{F2F2F2}
 \multicolumn{1}{c}{\textbf{Dataset}} & \textbf{Class} & \textbf{Train} & \textbf{Val} & \textbf{Test} & \textbf{Total} & \textbf{Sample} \\
@@ -357,7 +361,7 @@ This section provides the dataset-level information needed to reproduce the expe
 \renewcommand{\arraystretch}{1.25}
 \setlength{\tabcolsep}{3.8pt}
 \resizebox{\columnwidth}{!}{%
-\begin{tabular}{>{\cellcolor{white}}clrrrr:c}
+\begin{tabular}{>{\cellcolor{white}}clrrrrc}
 \noalign{\hrule height 1.25pt}
 \rowcolor[HTML]{F2F2F2}
 \multicolumn{1}{c}{\textbf{Dataset}} & \textbf{Class} & \textbf{Train} & \textbf{Val} & \textbf{Test} & \textbf{Total} & \textbf{Sample} \\
@@ -455,11 +459,10 @@ N_i=\sum_k n_{i,k}.
 \subsection{Long-tail Prevalence Calibration}
 
 LPC estimates an empirical prior and adds a centered, gated log-prior bias after DPR:
-\begin{equation}
-\pi_c=\frac{\sum_i m_{i,c}}{\sum_k\sum_i m_{i,k}},\qquad
-b_c=\lambda\left(\log\pi_c-\frac{1}{C}\sum_k\log\pi_k\right).
-\label{eq:appendix-lpc}
-\end{equation}
+\begin{align}
+\pi_c&=\frac{\sum_i m_{i,c}}{\sum_k\sum_i m_{i,k}},\label{eq:appendix-lpc}\\
+b_c&=\lambda\left(\log\pi_c-\frac{1}{C}\sum_k\log\pi_k\right).
+\end{align}
 \begin{equation}
 \ell_c(x)=w_c^\top\phi_0(T(x))+\mathbf{1}[r>\tau]b_c.
 \end{equation}
@@ -635,8 +638,4 @@ These data-side quantities quantify whether the dataset itself is skewed. They a
 
 Every point in the hyperparameter-sensitivity study of the main paper is a completed \textbf{full-scope experiment} covering five datasets, four backbones, three client counts, and three Dirichlet settings. The plotted curves retain measured points in ascending parameter order; no smoothing, interpolation, or best-run selection is applied. The LPC grid records \(\tau\in\{2.0,2.5,3.0\}\) and calibration strengths \(\lambda\in\{3.00,3.25,\ldots,5.25\}\), with \(\gamma=0.55\) and \(s=18.75\) fixed. DPR completion records are plotted only after the full grid point has succeeded. The selected operating point is \(\gamma=0.55\), \(s=18.75\), \(\tau=2.5\), and \(\lambda=4.25\), making its reported value traceable to the same completed grid as its neighboring points.
 
-\ifdefined\appendixinmain
-\else
-\bibliography{aaai2026}
-\end{document}
-\fi
+\appendixstandalonefooter
