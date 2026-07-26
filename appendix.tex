@@ -204,7 +204,7 @@ The experiments use five medical image benchmarks. \textbf{BloodMNIST, DermaMNIS
 
 \paragraph{ChaoShengMNIST.} ChaoShengMNIST is a private eight-class ultrasound image subset. The source retains anonymized class identifiers, so we report the labels as Class 0--Class 7 rather than assigning unverified clinical names. Compared with microscopy and CT, ultrasound images contain stronger speckle noise, lower contrast, and view-dependent boundaries. This makes ChaoShengMNIST a useful stress test for the prediction-collapse diagnostics and the per-class distribution-gap visualization reported in the main paper.
 
-\newcommand{\classsample}[2]{\makebox[1.05cm][c]{\raisebox{-0.16cm}{\includegraphics[width=0.95cm,height=0.52cm,keepaspectratio]{figures/appendix_sample_#1_#2.pdf}}}}
+\newcommand{\classsample}[2]{\raisebox{-0.13cm}{\includegraphics[width=1.05cm,height=0.58cm,keepaspectratio]{figures/appendix_sample_#1_#2.pdf}}}
 \newcommand{\datasetlabel}[1]{\makebox[1.35cm][c]{#1}}
 \begin{table}[!t]
 \centering
@@ -401,33 +401,66 @@ p_c=\sum_{i=1}^{K}\alpha_{i,c}\mu_{i,c},\qquad
 \begin{equation}
 e_{i,c}=(n_{i,c}+1)^\gamma\mathbf{1}[n_{i,c}>0].
 \end{equation}
-Here \(\mu_{i,c}\) is client \(i\)'s class-conditional reference-space mean and \(n_{i,c}\) is its support for that class. The substitutions below test whether the class semantics in \(\mu_{i,c}\) and the class-specific reliability in \(\alpha_{i,c}\) are both required.
+Here \(\mu_{i,c}\) is client \(i\)'s class-conditional reference-space mean and \(n_{i,c}\) is its support for that class. The substitutions below test whether the class semantics in \(\mu_{i,c}\) and the class-specific reliability in \(\alpha_{i,c}\) are both required. For clarity, each ablation is described by \textbf{the changed quantity}, \textbf{the diagnostic role of the control}, and \textbf{the measured effect}.
 
-\paragraph{Classifier-head aggregation (CHA).} CHA replaces the class prototype in Eq.~\ref{eq:appendix-dpr}, \(\mu_{i,c}\longrightarrow h_{i,c}\), with the local classifier-head direction. It tests whether client heads already provide a common, class-aligned representation. Its mean ACC is 25.63\%, a 36.58-point reduction from LAMP-Merge (62.21\%), showing that independently trained head directions are not a reliable substitute for shared-space class evidence.
-
-\paragraph{Global-feature mean (GFM).} GFM replaces the class-conditional prototype by the same class-agnostic feature mean for every class, \(\mu_{i,c}\longrightarrow g\). This tests whether generic client appearance alone can drive merging. Its 26.50\% mean ACC is 35.71 points below LAMP-Merge, indicating that class conditioning, not merely feature aggregation, is essential.
-
-\paragraph{Support-only synthetic head (SSH).} SSH replaces the aggregated prototype \(p_c=\sum_i\alpha_{i,c}\mu_{i,c}\) by \(p_c\longrightarrow u_c\), where \(u_c\) is a fixed random unit vector. It preserves the classifier interface while eliminating diagnostic content. The 10.89\% mean ACC, 51.32 points below LAMP-Merge, verifies that performance does not arise from support counts or the cosine-head form alone.
-
-\paragraph{Shuffled-label prototype (SLP).} SLP replaces the class-aligned aggregate by \(p_c\longrightarrow p_{\sigma(c)}\), for a permutation \(\sigma\) of the diagnosis labels. Its 19.57\% mean ACC (a 42.64-point reduction) directly tests semantic alignment: useful class evidence must be assigned to the correct output class.
-
-\paragraph{Uniform client weight (UCW).} UCW replaces the support-aware weight \(e_{i,c}=(n_{i,c}+1)^\gamma\mathbf{1}[n_{i,c}>0]\) by equal class-presence evidence:
+\paragraph{1) Classifier-head aggregation (CHA).}
+\textbf{Changed quantity.} CHA replaces the reference-space class prototype by the local classifier-head direction:
 \begin{equation}
-e_{i,c}\longrightarrow\mathbf{1}[n_{i,c}>0],\qquad
+\mu_{i,c}\longrightarrow h_{i,c}.
+\end{equation}
+Here \(h_{i,c}\) denotes the classifier weight for class \(c\) trained on client \(i\), while the aggregation weights remain those of Eq.~\ref{eq:appendix-dpr}. \textbf{Role.} This control evaluates whether independently trained classifier heads already live in a shared semantic coordinate system. \textbf{Effect.} CHA obtains \(25.63\% / 9.34\%\) mean ACC / Macro-F1, \(36.58 / 43.47\) points below LAMP-Merge. The result shows that local classifier-head directions cannot replace reference-space class evidence.
+
+\paragraph{2) Global-feature mean (GFM).}
+\textbf{Changed quantity.} GFM removes class conditioning by assigning the same client feature mean to every class:
+\begin{equation}
+\mu_{i,c}\longrightarrow g_i,\qquad
+g_i=\frac{1}{N_i}\sum_{(x,y)\in D_i}\phi_0(T(x)).
+\end{equation}
+Here \(N_i=\sum_k n_{i,k}\) is the total local sample count. \textbf{Role.} This control tests whether a generic medical-domain feature summary is sufficient for merging. \textbf{Effect.} GFM obtains \(26.50\% / 4.47\%\) mean ACC / Macro-F1, \(35.71 / 48.34\) points below LAMP-Merge. The drop indicates that the effective evidence is diagnosis-conditioned, not only domain-conditioned.
+
+\paragraph{3) Support-only synthetic head (SSH).}
+\textbf{Changed quantity.} SSH preserves the cosine-head form and support weights but replaces the aggregated prototype by a data-independent unit vector:
+\begin{equation}
+p_c\longrightarrow u_c,\qquad \|u_c\|_2=1.
+\end{equation}
+\textbf{Role.} This control tests whether the gain comes from the classifier parameterization or support weighting alone. \textbf{Effect.} SSH obtains \(10.89\% / 5.77\%\) mean ACC / Macro-F1, \(51.32 / 47.04\) points below LAMP-Merge. Thus, the diagnostic content of the prototype is indispensable.
+
+\paragraph{4) Shuffled-label prototype (SLP).}
+\textbf{Changed quantity.} SLP keeps the prototype set but permutes its class assignment:
+\begin{equation}
+p_c\longrightarrow p_{\sigma(c)}.
+\end{equation}
+Here \(\sigma\) is a fixed permutation over the \(C\) diagnosis labels. \textbf{Role.} This control tests whether correct prototype-label alignment is necessary beyond geometric separation. \textbf{Effect.} SLP obtains \(19.57\% / 13.10\%\) mean ACC / Macro-F1, \(42.64 / 39.71\) points below LAMP-Merge. The result shows that the reconstructed prototype must be assigned to the correct diagnosis.
+
+\paragraph{5) Uniform client weight (UCW).}
+\textbf{Changed quantity.} UCW keeps \(\mu_{i,c}\) unchanged but replaces support-aware reliability with equal weighting among clients that observed the class:
+\begin{equation}
+e_{i,c}\longrightarrow\mathbf{1}[n_{i,c}>0].
+\end{equation}
+\begin{equation}
 \alpha_{i,c}=\frac{e_{i,c}}{\sum_j e_{j,c}}.
 \end{equation}
-It tests whether observing a class is sufficient, independent of the amount of evidence. Its 58.33\% mean ACC is 3.88 points below LAMP-Merge, showing that support magnitude provides useful reliability information beyond class presence.
+\textbf{Role.} This control tests whether class presence alone is sufficient, independent of the amount of class evidence. \textbf{Effect.} UCW obtains \(58.33\% / 48.42\%\) mean ACC / Macro-F1, \(3.88 / 4.39\) points below LAMP-Merge. The result indicates that class-specific support magnitude improves the reliability of the aggregate.
 
-\paragraph{Binary support only (BSO).} BSO replaces both class support and prevalence counts by presence indicators, \(n_{i,c},m_{i,c}\longrightarrow\mathbf{1}[n_{i,c}>0]\). It tests whether fine-grained class frequency is necessary in both modules. The mean ACC falls to 55.18\% (7.03 points below LAMP-Merge), the largest loss among the weighting controls.
-
-\paragraph{Global client-size weight (GCSW).} GCSW replaces class-specific support in the reliability weight by total client size:
+\paragraph{6) Binary support only (BSO).}
+\textbf{Changed quantity.} BSO replaces both DPR support and LPC prevalence counts by class-presence indicators:
 \begin{equation}
-e_{i,c}=(n_{i,c}+1)^\gamma\mathbf{1}[n_{i,c}>0]
-\longrightarrow(N_i+1)^\gamma\mathbf{1}[n_{i,c}>0].
+n_{i,c}\longrightarrow\mathbf{1}[n_{i,c}>0],
+\qquad
+m_{i,c}\longrightarrow\mathbf{1}[n_{i,c}>0].
 \end{equation}
-Here \(N_i=\sum_k n_{i,k}\) is the total support of client \(i\). GCSW tests whether a generally large client can stand in for strong evidence of a particular class. Its 59.39\% mean ACC, 2.82 points below LAMP-Merge, shows that local data volume should be assigned at the class level.
+\textbf{Role.} This control tests whether fine-grained class counts can be reduced to binary class availability. \textbf{Effect.} BSO obtains \(55.18\% / 49.02\%\) mean ACC / Macro-F1, \(7.03 / 3.79\) points below LAMP-Merge. The result shows that count magnitude matters for both prototype reliability and prevalence calibration.
 
-\paragraph{DPR summary.} The semantic controls cause large reductions (35.71--51.32 points), while the weighting controls cause smaller but consistent reductions (2.82--7.03 points). \textbf{Together, these results support the two parts of Eq.~\ref{eq:appendix-dpr}: class-conditioned shared-space evidence provides the discriminative direction, and class-specific support determines how reliably each client contributes to that direction.}
+\paragraph{7) Global client-size weight (GCSW).}
+\textbf{Changed quantity.} GCSW replaces class-specific support with total client size:
+\begin{equation}
+e_{i,c}\longrightarrow(N_i+1)^\gamma\mathbf{1}[n_{i,c}>0],
+\qquad
+N_i=\sum_k n_{i,k}.
+\end{equation}
+\textbf{Role.} This control tests whether a generally large client should be trusted more for every diagnosis. \textbf{Effect.} GCSW obtains \(59.39\% / 48.74\%\) mean ACC / Macro-F1, \(2.82 / 4.07\) points below LAMP-Merge. The result supports class-level reliability: total client size cannot fully replace evidence for the current class.
+
+\paragraph{DPR summary.} The semantic controls cause large ACC reductions (35.71--51.32 points), while the weighting controls cause smaller but consistent ACC reductions (2.82--7.03 points). \textbf{Together, these results support the two parts of Eq.~\ref{eq:appendix-dpr}: class-conditioned shared-space evidence provides the discriminative direction, and class-specific support determines how reliably each client contributes to that direction.}
 
 \subsection{Long-tail Prevalence Calibration}
 
@@ -440,20 +473,30 @@ b_c=\lambda\left(\log\pi_c-\frac{1}{C}\sum_k\log\pi_k\right).
 \begin{equation}
 \ell_c(x)=w_c^\top\phi_0(T(x))+\mathbf{1}[r>\tau]b_c.
 \end{equation}
-The three controls retain DPR and test the prior estimator or the activation gate in Eq.~\ref{eq:appendix-lpc}.
+The three controls retain DPR and test the prior estimator or the activation gate in Eq.~\ref{eq:appendix-lpc}. Each item follows the same format as the DPR ablations.
 
-\paragraph{Uniform prevalence prior (UPP).} UPP replaces the empirical prior in Eq.~\ref{eq:appendix-lpc} by \(\pi_c\longrightarrow1/C\). It tests whether calibration should ignore the observed class distribution. Mean ACC is 58.91\%, 3.30 points below LAMP-Merge, demonstrating that the empirical prior is useful rather than a source of collapse.
-
-\paragraph{Always-on calibration (AOC).} AOC replaces the activation gate in the score \(\ell_c(x)\) by \(\mathbf{1}[r>\tau]\longrightarrow1\). It tests whether the prior should be applied uniformly to every configuration. Its 61.90\% mean ACC is 0.31 points below LAMP-Merge. The small aggregate gap indicates that calibration is broadly useful, while the gated design avoids imposing a prior when a configuration is not sufficiently long-tailed.
-
-\paragraph{Client-balanced prior (CBP).} CBP replaces the sample-count empirical prior by equal client influence:
+\paragraph{1) Uniform prevalence prior (UPP).}
+\textbf{Changed quantity.} UPP removes the empirical prevalence signal by replacing the prior with a uniform distribution:
 \begin{equation}
-\pi_c=\frac{\sum_i m_{i,c}}{\sum_k\sum_i m_{i,k}}
-\longrightarrow\frac{1}{K}\sum_i\frac{m_{i,c}}{\sum_k m_{i,k}}.
+\pi_c\longrightarrow\frac{1}{C}.
 \end{equation}
-It tests whether each client should contribute equally regardless of sample volume. The 58.97\% mean ACC, 3.24 points below LAMP-Merge, favors the sample-count empirical prior over a client-balanced estimate.
+\textbf{Role.} This control tests whether calibration should ignore the observed medical long-tail distribution after DPR has reconstructed the class directions. \textbf{Effect.} UPP obtains \(58.91\% / 53.52\%\) mean ACC / Macro-F1. Its ACC is \(3.30\) points below LAMP-Merge, while its Macro-F1 is slightly higher. This indicates that a uniform prior can favor rare-class balance, but it sacrifices the prevalence-aware accuracy target of the full model.
 
-\paragraph{LPC summary.} Every LPC control is below the 62.21\% LAMP-Merge mean. UPP and CBP show that both prevalence information and its sample-size weighting matter; AOC shows that the activation criterion is a targeted safeguard rather than the primary source of the gain. \textbf{Hence LPC calibrates DPR's restored class directions instead of replacing them with a prior.}
+\paragraph{2) Always-on calibration (AOC).}
+\textbf{Changed quantity.} AOC removes the long-tail activation gate and applies the prevalence bias to every configuration:
+\begin{equation}
+\mathbf{1}[r>\tau]\longrightarrow1.
+\end{equation}
+\textbf{Role.} This control tests whether prevalence calibration should be unconditional or activated only when the class distribution is sufficiently skewed. \textbf{Effect.} AOC obtains \(61.90\% / 51.96\%\) mean ACC / Macro-F1, \(0.31 / 0.85\) points below LAMP-Merge. The small but consistent reduction indicates that the gate is a targeted stabilizer rather than the primary source of the performance gain.
+
+\paragraph{3) Client-balanced prior (CBP).}
+\textbf{Changed quantity.} CBP replaces the sample-count empirical prior by equal client influence:
+\begin{equation}
+\pi_c\longrightarrow\frac{1}{K}\sum_i\frac{m_{i,c}}{\sum_k m_{i,k}}.
+\end{equation}
+\textbf{Role.} This control tests whether each client should contribute equally to the prior regardless of its sample volume. \textbf{Effect.} CBP obtains \(58.99\% / 52.40\%\) mean ACC / Macro-F1, \(3.22 / 0.41\) points below LAMP-Merge. The result favors the sample-count prevalence estimate in Eq.~\ref{eq:appendix-lpc}, because it better reflects the global long-tail distribution.
+
+\paragraph{LPC summary.} Every LPC control is below the \(62.21\%\) LAMP-Merge mean ACC. UPP and CBP show that both prevalence information and its sample-size weighting matter for the accuracy objective; AOC shows that the activation criterion is a targeted safeguard rather than the primary source of the gain. \textbf{Hence LPC calibrates DPR's restored class directions instead of replacing them with a prior.}
 
 \section{Theoretical Analysis}
 \label{app:theory}
