@@ -1,0 +1,7 @@
+{
+  "task_type": "small", "dataset": "chaoshengmnist_224", "model": "resnet", "num_clients": 7, "beta": 0.0, "seed": 42,
+  "method": "new_lamp_merge", "model_hub_root": "/data2/liyapeng_grp/program/MedMNISTMerge/model_hub", "data_root": "/data2/liyapeng_grp/program/MedMNISTMerge/Med_data",
+  "output_root": "/data2/liyapeng_grp/LAMP-Merge-release/outputs/new_lamp_merge_async_chaoshengmnist_resnet_k7", "async_client_upload_root": "/data2/liyapeng_grp/LAMP-Merge-release/outputs/new_lamp_merge_async_chaoshengmnist_resnet_k7/client_uploads",
+  "lamp_merge_proto_count_power": 0.55, "lamp_merge_reference_head_scale": 18.75, "lamp_merge_reference_prior_threshold": 2.5, "lamp_merge_reference_prior_max_tau": 4.25,
+  "async_client_order": [0, 1, 2, 3, 4, 5, 6], "split": "test", "device": "cuda:0", "batch_size": 128, "num_workers": 4, "amp": true
+}

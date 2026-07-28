@@ -190,7 +190,7 @@ def _client_feature_means(proto_stats, num_clients, num_classes):
 
 
 def _evidence_matrix(feature_counts, cfg):
-    gamma = float(_cfg_value(cfg, "lamp_merge_proto_count_power", default=0.45))
+    gamma = float(_cfg_value(cfg, "lamp_merge_proto_count_power", default=0.55))
     evidence = (feature_counts + 1.0).pow(gamma)
     return evidence * (feature_counts > 0).to(evidence.dtype), gamma
 
@@ -284,7 +284,7 @@ def _prevalence_calibration_strength(class_prior, num_classes, cfg):
     return float(_cfg_value(
         cfg,
         "lamp_merge_reference_prior_max_tau",
-        default=5.0,
+        default=4.25,
     ))
 
 
@@ -313,7 +313,7 @@ def _synthesize_reference_prototype_model(base_state, proto_stats, meta, cfg):
     scale = float(_cfg_value(
         cfg,
         "lamp_merge_reference_head_scale",
-        default=20.0,
+        default=18.75,
     ))
     class_counts = proto["class_counts"]
     class_prior = class_counts / class_counts.sum().clamp_min(EPS)
@@ -352,7 +352,7 @@ def _synthesize_reference_prototype_model(base_state, proto_stats, meta, cfg):
         "reference_prior_max_tau": float(_cfg_value(
             cfg,
             "lamp_merge_reference_prior_max_tau",
-            default=5.0,
+            default=4.25,
         )),
         "imbalance_ratio": imbalance_ratio,
         "num_clients": int(proto["num_clients"]),

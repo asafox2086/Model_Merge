@@ -19,3 +19,6 @@ Batch runs with `scripts/run_lamp_merge_eval.py` additionally write:
 ## Released Analysis Outputs
 
 The strict medical-versus-natural-image ResNet/K=3 feature t-SNE control is available in [`strict_domain_resnet_k3_tsne/`](strict_domain_resnet_k3_tsne/).
+
+The strict asynchronous `new_lamp_merge` dataset/backbone grid is available in
+[`new_lamp_merge_async_grid/`](new_lamp_merge_async_grid/).

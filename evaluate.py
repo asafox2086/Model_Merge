@@ -139,6 +139,7 @@ def run_evaluate(cfg, merged_dir=None, checkpoint_path=None, meta_path=None):
         'checkpoint_path': str(ckpt_path),
         'merged_dir': str(merged_dir),
         'test_acc': float(result['acc']),
+        'test_macro_f1': float(result['macro_f1']),
         'test_loss': float(result['loss']),
         'num_samples': int(result['num_samples']),
     }
@@ -168,7 +169,7 @@ def main():
         cfg = {}
         payload, eval_path = run_evaluate(cfg, merged_dir=args.merged_dir or None, checkpoint_path=args.checkpoint_path or None, meta_path=args.meta_path or None)
     print(f'eval result saved to: {eval_path}')
-    print(f"test_acc={payload['test_acc']:.4f} test_loss={payload['test_loss']:.4f}")
+    print(f"test_acc={payload['test_acc']:.4f} test_macro_f1={payload['test_macro_f1']:.4f} test_loss={payload['test_loss']:.4f}")
 
 
 if __name__ == '__main__':

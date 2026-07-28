@@ -1,0 +1,166 @@
+{
+  "strict_async": true,
+  "final_state_equivalent_to_lamp_merge": true,
+  "checks": [
+    {
+      "dataset": "bloodmnist_224",
+      "backbone": "resnet",
+      "strict_async_steps": true,
+      "final_state_matches_lamp_merge": true,
+      "max_abs_error": 9.5367431640625e-07,
+      "report_path": "outputs/new_lamp_merge_async_bloodmnist_resnet_k7/reports/new_lamp_merge_async_k1_to_k7.json"
+    },
+    {
+      "dataset": "bloodmnist_224",
+      "backbone": "convnext",
+      "strict_async_steps": true,
+      "final_state_matches_lamp_merge": true,
+      "max_abs_error": 3.5762786865234375e-07,
+      "report_path": "outputs/new_lamp_merge_async_bloodmnist_convnext_k7/reports/new_lamp_merge_async_k1_to_k7.json"
+    },
+    {
+      "dataset": "bloodmnist_224",
+      "backbone": "vit_t",
+      "strict_async_steps": true,
+      "final_state_matches_lamp_merge": true,
+      "max_abs_error": 9.5367431640625e-07,
+      "report_path": "outputs/new_lamp_merge_async_bloodmnist_vit_t_k7/reports/new_lamp_merge_async_k1_to_k7.json"
+    },
+    {
+      "dataset": "bloodmnist_224",
+      "backbone": "swin_tiny",
+      "strict_async_steps": true,
+      "final_state_matches_lamp_merge": true,
+      "max_abs_error": 2.384185791015625e-07,
+      "report_path": "outputs/new_lamp_merge_async_bloodmnist_swin_tiny_k7/reports/new_lamp_merge_async_k1_to_k7.json"
+    },
+    {
+      "dataset": "dermamnist_224",
+      "backbone": "resnet",
+      "strict_async_steps": true,
+      "final_state_matches_lamp_merge": true,
+      "max_abs_error": 4.76837158203125e-07,
+      "report_path": "outputs/new_lamp_merge_async_dermamnist_resnet_k7/reports/new_lamp_merge_async_k1_to_k7.json"
+    },
+    {
+      "dataset": "dermamnist_224",
+      "backbone": "convnext",
+      "strict_async_steps": true,
+      "final_state_matches_lamp_merge": true,
+      "max_abs_error": 2.384185791015625e-07,
+      "report_path": "outputs/new_lamp_merge_async_dermamnist_convnext_k7/reports/new_lamp_merge_async_k1_to_k7.json"
+    },
+    {
+      "dataset": "dermamnist_224",
+      "backbone": "vit_t",
+      "strict_async_steps": true,
+      "final_state_matches_lamp_merge": true,
+      "max_abs_error": 4.76837158203125e-07,
+      "report_path": "outputs/new_lamp_merge_async_dermamnist_vit_t_k7/reports/new_lamp_merge_async_k1_to_k7.json"
+    },
+    {
+      "dataset": "dermamnist_224",
+      "backbone": "swin_tiny",
+      "strict_async_steps": true,
+      "final_state_matches_lamp_merge": true,
+      "max_abs_error": 4.76837158203125e-07,
+      "report_path": "outputs/new_lamp_merge_async_dermamnist_swin_tiny_k7/reports/new_lamp_merge_async_k1_to_k7.json"
+    },
+    {
+      "dataset": "organcmnist_224",
+      "backbone": "resnet",
+      "strict_async_steps": true,
+      "final_state_matches_lamp_merge": true,
+      "max_abs_error": 9.5367431640625e-07,
+      "report_path": "outputs/new_lamp_merge_async_organcmnist_resnet_k7/reports/new_lamp_merge_async_k1_to_k7.json"
+    },
+    {
+      "dataset": "organcmnist_224",
+      "backbone": "convnext",
+      "strict_async_steps": true,
+      "final_state_matches_lamp_merge": true,
+      "max_abs_error": 4.76837158203125e-07,
+      "report_path": "outputs/new_lamp_merge_async_organcmnist_convnext_k7/reports/new_lamp_merge_async_k1_to_k7.json"
+    },
+    {
+      "dataset": "organcmnist_224",
+      "backbone": "vit_t",
+      "strict_async_steps": true,
+      "final_state_matches_lamp_merge": true,
+      "max_abs_error": 9.5367431640625e-07,
+      "report_path": "outputs/new_lamp_merge_async_organcmnist_vit_t_k7/reports/new_lamp_merge_async_k1_to_k7.json"
+    },
+    {
+      "dataset": "organcmnist_224",
+      "backbone": "swin_tiny",
+      "strict_async_steps": true,
+      "final_state_matches_lamp_merge": true,
+      "max_abs_error": 4.76837158203125e-07,
+      "report_path": "outputs/new_lamp_merge_async_organcmnist_swin_tiny_k7/reports/new_lamp_merge_async_k1_to_k7.json"
+    },
+    {
+      "dataset": "organsmnist_224",
+      "backbone": "resnet",
+      "strict_async_steps": true,
+      "final_state_matches_lamp_merge": true,
+      "max_abs_error": 9.5367431640625e-07,
+      "report_path": "outputs/new_lamp_merge_async_organsmnist_resnet_k7/reports/new_lamp_merge_async_k1_to_k7.json"
+    },
+    {
+      "dataset": "organsmnist_224",
+      "backbone": "convnext",
+      "strict_async_steps": true,
+      "final_state_matches_lamp_merge": true,
+      "max_abs_error": 3.5762786865234375e-07,
+      "report_path": "outputs/new_lamp_merge_async_organsmnist_convnext_k7/reports/new_lamp_merge_async_k1_to_k7.json"
+    },
+    {
+      "dataset": "organsmnist_224",
+      "backbone": "vit_t",
+      "strict_async_steps": true,
+      "final_state_matches_lamp_merge": true,
+      "max_abs_error": 2.384185791015625e-07,
+      "report_path": "outputs/new_lamp_merge_async_organsmnist_vit_t_k7/reports/new_lamp_merge_async_k1_to_k7.json"
+    },
+    {
+      "dataset": "organsmnist_224",
+      "backbone": "swin_tiny",
+      "strict_async_steps": true,
+      "final_state_matches_lamp_merge": true,
+      "max_abs_error": 7.152557373046875e-07,
+      "report_path": "outputs/new_lamp_merge_async_organsmnist_swin_tiny_k7/reports/new_lamp_merge_async_k1_to_k7.json"
+    },
+    {
+      "dataset": "chaoshengmnist_224",
+      "backbone": "resnet",
+      "strict_async_steps": true,
+      "final_state_matches_lamp_merge": true,
+      "max_abs_error": 4.76837158203125e-07,
+      "report_path": "outputs/new_lamp_merge_async_chaoshengmnist_resnet_k7/reports/new_lamp_merge_async_k1_to_k7.json"
+    },
+    {
+      "dataset": "chaoshengmnist_224",
+      "backbone": "convnext",
+      "strict_async_steps": true,
+      "final_state_matches_lamp_merge": true,
+      "max_abs_error": 2.384185791015625e-07,
+      "report_path": "outputs/new_lamp_merge_async_chaoshengmnist_convnext_k7/reports/new_lamp_merge_async_k1_to_k7.json"
+    },
+    {
+      "dataset": "chaoshengmnist_224",
+      "backbone": "vit_t",
+      "strict_async_steps": true,
+      "final_state_matches_lamp_merge": true,
+      "max_abs_error": 4.76837158203125e-07,
+      "report_path": "outputs/new_lamp_merge_async_chaoshengmnist_vit_t_k7/reports/new_lamp_merge_async_k1_to_k7.json"
+    },
+    {
+      "dataset": "chaoshengmnist_224",
+      "backbone": "swin_tiny",
+      "strict_async_steps": true,
+      "final_state_matches_lamp_merge": true,
+      "max_abs_error": 2.384185791015625e-07,
+      "report_path": "outputs/new_lamp_merge_async_chaoshengmnist_swin_tiny_k7/reports/new_lamp_merge_async_k1_to_k7.json"
+    }
+  ]
+}

@@ -85,6 +85,7 @@ The exported statistics are aggregate class-level tensors. They do not contain r
 
 ```text
 methods/lamp_merge.py                    # Formal LAMP-Merge implementation
+methods/new_lamp_merge.py                # Incremental asynchronous LAMP-Merge state API
 merge.py                                 # One-shot server-side merge entry
 evaluate.py                              # Evaluation entry for merged checkpoints
 scripts/export_lamp_merge_prototypes.py  # Client-side aggregate statistic export
@@ -204,10 +205,37 @@ python scripts/run_lamp_merge_eval.py \
 
 | Symbol | Config key | Default | Role |
 | --- | --- | ---: | --- |
-| `gamma` | `lamp_merge_proto_count_power` | `0.45` | Sublinear class-support evidence power |
-| `s` | `lamp_merge_reference_head_scale` | `20.0` | Cosine prototype head scale |
+| `gamma` | `lamp_merge_proto_count_power` | `0.55` | Sublinear class-support evidence power |
+| `s` | `lamp_merge_reference_head_scale` | `18.75` | Cosine prototype head scale |
 | `tau` | `lamp_merge_reference_prior_threshold` | `2.5` | Dominant-class imbalance threshold |
-| `lambda` | `lamp_merge_reference_prior_max_tau` | `5.0` | Centered log-prior calibration strength |
+| `lambda` | `lamp_merge_reference_prior_max_tau` | `4.25` | Centered log-prior calibration strength |
+
+## Incremental Asynchronous Experiment
+
+`new_lamp_merge` keeps running prototype numerators, evidence totals, and
+prevalence counts. Each client upload updates these sufficient statistics once,
+then immediately emits a deployable checkpoint; no earlier client payload needs
+to be loaded again. For classes not uploaded yet, the shared reference head is
+kept until a class prototype arrives. Prevalence calibration starts only after
+every class has a positive uploaded prevalence count.
+
+The runner reads exactly one `client_<id>.pt` upload at a time, updates the
+saved server state, and never reopens an earlier client upload. In deployment,
+clients write those files independently. The included experiment first creates
+equivalent replay artifacts from the already exported aggregate file, then
+evaluates clients `0` through `6` as they arrive:
+
+```bash
+/data2/liyapeng_grp/.conda/envs/MM/bin/python scripts/prepare_new_lamp_merge_async_uploads.py \
+  --prototype-stats-path /data2/liyapeng_grp/program/MedMNISTMerge/outputs/lamp_merge_client_local_proto_stats/small/bloodmnist_224/resnet/clients_7/beta_0/seed_42/prototype_stats.pt \
+  --output-root outputs/new_lamp_merge_async_bloodmnist_resnet_k7/client_uploads
+
+/data2/liyapeng_grp/.conda/envs/MM/bin/python scripts/run_new_lamp_merge_async.py \
+  --config configs/new_lamp_merge/async_bloodmnist_resnet_k7.json
+```
+
+The resulting table is saved to
+`outputs/new_lamp_merge_async_bloodmnist_resnet_k7/reports/new_lamp_merge_async_k1_to_k7.csv`.
 
 ## Privacy Boundary
 

@@ -6,7 +6,7 @@ from pathlib import Path
 
 import torch
 
-from methods import merge_lamp_merge, normalize_method_name
+from methods import merge_lamp_merge, merge_new_lamp_merge, normalize_method_name
 from utils import (
     append_summary_row,
     ensure_checkpoint_files,
@@ -27,10 +27,10 @@ METHOD_DEFAULTS = {
     "method": "lamp_merge",
     "merge_weight_mode": "sample",
     "lamp_merge_ablation_mode": "full",
-    "lamp_merge_proto_count_power": 0.45,
-    "lamp_merge_reference_head_scale": 20.0,
+    "lamp_merge_proto_count_power": 0.55,
+    "lamp_merge_reference_head_scale": 18.75,
     "lamp_merge_reference_prior_threshold": 2.5,
-    "lamp_merge_reference_prior_max_tau": 5.0,
+    "lamp_merge_reference_prior_max_tau": 4.25,
 }
 
 
@@ -58,7 +58,8 @@ def run_merge(cfg):
     ensure_state_dicts_compatible(state_dicts)
 
     weights = resolve_client_weights(meta, cfg)
-    merged_state_dict, method_info = merge_lamp_merge(
+    merge_fn = merge_new_lamp_merge if method == "new_lamp_merge" else merge_lamp_merge
+    merged_state_dict, method_info = merge_fn(
         state_dicts,
         weights,
         meta=meta,
