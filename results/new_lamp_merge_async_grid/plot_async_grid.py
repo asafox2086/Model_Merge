@@ -113,32 +113,48 @@ def draw_metric(axis, rows, metric, title, ylabel):
             markeredgewidth=1.3,
             zorder=3,
         )
-    axis.set_title(title, pad=8, fontweight="bold")
-    axis.set_xlabel("Received clients (k)")
-    axis.set_ylabel(ylabel)
+    axis.set_title(title, pad=5, fontweight="bold")
+    axis.set_xlabel("Received clients (k)", labelpad=3)
+    axis.set_ylabel(ylabel, labelpad=3)
     axis.set_xticks(range(1, 8))
     axis.set_ylim(0, 1.02)
+    axis.tick_params(pad=3)
     polish_axes(axis, y_grid=True, x_grid=False)
 
 
 def plot_metric(rows, metric, title, ylabel, output_base):
     setup_style("line")
-    figure, axis = plt.subplots(figsize=(7.4, 4.6), dpi=300)
+    figure, axis = plt.subplots(figsize=(8.0, 5.0), dpi=300)
     draw_metric(axis, rows, metric, title, ylabel)
-    axis.legend(loc="lower right", frameon=False)
-    figure.tight_layout()
+    axis.legend(
+        loc="lower right",
+        frameon=False,
+        borderaxespad=0.25,
+        handletextpad=0.4,
+        labelspacing=0.25,
+    )
+    figure.tight_layout(pad=0.45)
     save_png_pdf(figure, str(output_base))
     plt.close(figure)
 
 
 def plot_combined(rows, output_base):
     setup_style("line")
-    figure, axes = plt.subplots(1, 2, figsize=(14.8, 4.6), dpi=300, sharex=True, sharey=True)
-    draw_metric(axes[0], rows, "acc", "BloodMNIST: Accuracy", "Test accuracy")
-    draw_metric(axes[1], rows, "macro_f1", "BloodMNIST: Macro-F1", "Test macro-F1")
+    figure, axes = plt.subplots(1, 2, figsize=(15.2, 5.3), dpi=300, sharex=True, sharey=True)
+    draw_metric(axes[0], rows, "acc", "BloodMNIST: Acc", "Test Acc")
+    draw_metric(axes[1], rows, "macro_f1", "BloodMNIST: F1", "Test F1")
     handles, labels = axes[0].get_legend_handles_labels()
-    figure.legend(handles, labels, loc="lower center", ncol=4, frameon=False, bbox_to_anchor=(0.5, -0.01))
-    figure.tight_layout(rect=(0, 0.08, 1, 1))
+    figure.legend(
+        handles,
+        labels,
+        loc="lower center",
+        ncol=4,
+        frameon=False,
+        bbox_to_anchor=(0.5, 0.0),
+        handletextpad=0.4,
+        columnspacing=1.4,
+    )
+    figure.tight_layout(rect=(0, 0.11, 1, 1), pad=0.45)
     save_png_pdf(figure, str(output_base))
     plt.close(figure)
 
@@ -157,15 +173,15 @@ def main():
     plot_metric(
         rows,
         "macro_f1",
-        "BloodMNIST: Macro-F1",
-        "Test macro-F1",
+        "BloodMNIST: F1",
+        "Test F1",
         args.result_root / "async_macro_f1_k1_to_k7",
     )
     plot_metric(
         rows,
         "acc",
-        "BloodMNIST: Accuracy",
-        "Test accuracy",
+        "BloodMNIST: Acc",
+        "Test Acc",
         args.result_root / "async_blood_acc_k1_to_k7",
     )
     plot_combined(rows, args.result_root / "async_blood_acc_macro_f1_k1_to_k7")
