@@ -7,7 +7,8 @@ materializes and evaluates a deployable checkpoint after each arrival, yielding
 the 140 Acc and macro-F1 observations in
 [`async_grid_k1_to_k7.csv`](async_grid_k1_to_k7.csv). The figure plots only the
 four BloodMNIST backbone trajectories, with a distinct solid/dashed line style
-per backbone; its data are not smoothed.
+per backbone; its data are not smoothed. Separate accuracy and macro-F1 figures
+and a two-panel combined figure are exported beside this report.
 
 ## Asynchronous and Equivalence Checks
 

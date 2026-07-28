@@ -86,18 +86,20 @@ def write_csv(path, rows):
         writer.writerows(rows)
 
 
-def plot(rows, output_base):
-    setup_style("line")
-    figure, axis = plt.subplots(figsize=(7.4, 4.6), dpi=300)
-    dataset = "bloodmnist_224"
+def _metric_values(rows, model, metric):
+    values = [
+        float(row[metric])
+        for row in rows
+        if row["dataset"] == "bloodmnist_224" and row["backbone"] == model
+    ]
+    if len(values) != 7:
+        raise ValueError(f"Expected seven values for bloodmnist_224/{model}")
+    return values
+
+
+def draw_metric(axis, rows, metric, title, ylabel):
     for model in MODELS:
-        values = [
-            float(row["macro_f1"])
-            for row in rows
-            if row["dataset"] == dataset and row["backbone"] == model
-        ]
-        if len(values) != 7:
-            raise ValueError(f"Expected seven values for {dataset}/{model}")
+        values = _metric_values(rows, model, metric)
         color = METHOD_COLORS[model]
         axis.plot(
             range(1, 8),
@@ -111,14 +113,32 @@ def plot(rows, output_base):
             markeredgewidth=1.3,
             zorder=3,
         )
-    axis.set_title("BloodMNIST", pad=8, fontweight="bold")
+    axis.set_title(title, pad=8, fontweight="bold")
     axis.set_xlabel("Received clients (k)")
-    axis.set_ylabel("Test macro-F1")
+    axis.set_ylabel(ylabel)
     axis.set_xticks(range(1, 8))
     axis.set_ylim(0, 1.02)
-    axis.legend(loc="lower right", frameon=False)
     polish_axes(axis, y_grid=True, x_grid=False)
+
+
+def plot_metric(rows, metric, title, ylabel, output_base):
+    setup_style("line")
+    figure, axis = plt.subplots(figsize=(7.4, 4.6), dpi=300)
+    draw_metric(axis, rows, metric, title, ylabel)
+    axis.legend(loc="lower right", frameon=False)
     figure.tight_layout()
+    save_png_pdf(figure, str(output_base))
+    plt.close(figure)
+
+
+def plot_combined(rows, output_base):
+    setup_style("line")
+    figure, axes = plt.subplots(1, 2, figsize=(14.8, 4.6), dpi=300, sharex=True, sharey=True)
+    draw_metric(axes[0], rows, "acc", "BloodMNIST: Accuracy", "Test accuracy")
+    draw_metric(axes[1], rows, "macro_f1", "BloodMNIST: Macro-F1", "Test macro-F1")
+    handles, labels = axes[0].get_legend_handles_labels()
+    figure.legend(handles, labels, loc="lower center", ncol=4, frameon=False, bbox_to_anchor=(0.5, -0.01))
+    figure.tight_layout(rect=(0, 0.08, 1, 1))
     save_png_pdf(figure, str(output_base))
     plt.close(figure)
 
@@ -134,7 +154,21 @@ def main():
     write_csv(args.result_root / "async_grid_k1_to_k7.csv", rows)
     final_rows = [row for row in rows if row["k"] == 7]
     write_csv(args.result_root / "async_grid_k7.csv", final_rows)
-    plot(rows, args.result_root / "async_macro_f1_k1_to_k7")
+    plot_metric(
+        rows,
+        "macro_f1",
+        "BloodMNIST: Macro-F1",
+        "Test macro-F1",
+        args.result_root / "async_macro_f1_k1_to_k7",
+    )
+    plot_metric(
+        rows,
+        "acc",
+        "BloodMNIST: Accuracy",
+        "Test accuracy",
+        args.result_root / "async_blood_acc_k1_to_k7",
+    )
+    plot_combined(rows, args.result_root / "async_blood_acc_macro_f1_k1_to_k7")
 
 
 if __name__ == "__main__":
