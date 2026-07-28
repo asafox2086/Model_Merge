@@ -59,8 +59,8 @@ the same seven ordered client checkpoints, `beta=0`, seed 42, equal merge
 weights, and FP32 test evaluation as the LAMP-Merge asynchronous reports.
 
 The comparison deliberately uses separate method panels rather than overlaying
-TIES and LAMP-Merge: the left column is TIES and the right column is
-LAMP-Merge, while all panels share the same `k=1..7` and `0..1` metric axes.
+LAMP-Merge and TIES: the left column is LAMP-Merge and the right column is
+TIES, while all panels share the same `k=1..7` and `0..1` metric axes.
 The backbone encoding is consistent in every panel. TIES does not show stable
 improvement: ResNet falls three times, ConvNeXt plateaus after `k=4`, ViT-T
 falls sharply from `k=1` and then plateaus, and Swin-T falls twice.
