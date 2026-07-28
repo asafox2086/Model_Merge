@@ -5,8 +5,9 @@ datasets and four backbones. For every dataset/backbone pair, seven client
 uploads arrive in the fixed order `0 -> 1 -> ... -> 6`. The server immediately
 materializes and evaluates a deployable checkpoint after each arrival, yielding
 the 140 Acc and macro-F1 observations in
-[`async_grid_k1_to_k7.csv`](async_grid_k1_to_k7.csv). The figure plots the
-macro-F1 trajectories; its data are not smoothed.
+[`async_grid_k1_to_k7.csv`](async_grid_k1_to_k7.csv). The figure plots only the
+four BloodMNIST backbone trajectories, with a distinct solid/dashed line style
+per backbone; its data are not smoothed.
 
 ## Asynchronous and Equivalence Checks
 

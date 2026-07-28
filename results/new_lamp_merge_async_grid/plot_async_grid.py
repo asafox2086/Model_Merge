@@ -34,6 +34,7 @@ MODEL_LABELS = {
     "swin_tiny": "Swin-T",
 }
 MARKERS = {"resnet": "o", "convnext": "D", "vit_t": "^", "swin_tiny": "s"}
+LINESTYLES = {"resnet": "-", "convnext": "--", "vit_t": "-.", "swin_tiny": ":"}
 
 
 def report_path(outputs_root, dataset, model):
@@ -87,40 +88,37 @@ def write_csv(path, rows):
 
 def plot(rows, output_base):
     setup_style("line")
-    figure, axes = plt.subplots(2, 3, figsize=(14.8, 8.2), dpi=300, sharex=True, sharey=True)
-    axes = axes.ravel()
-    for axis, dataset in zip(axes, DATASETS):
-        for model in MODELS:
-            values = [
-                float(row["macro_f1"])
-                for row in rows
-                if row["dataset"] == dataset and row["backbone"] == model
-            ]
-            if len(values) != 7:
-                raise ValueError(f"Expected seven values for {dataset}/{model}")
-            color = METHOD_COLORS[model]
-            axis.plot(
-                range(1, 8),
-                values,
-                label=MODEL_LABELS[model],
-                color=color,
-                marker=MARKERS[model],
-                markerfacecolor=color,
-                markeredgecolor=darken_color(color, 0.65),
-                markeredgewidth=1.3,
-                zorder=3,
-            )
-        axis.set_title(DATASET_LABELS[dataset], pad=8, fontweight="bold")
-        axis.set_xticks(range(1, 8))
-        axis.set_ylim(0, 1.02)
-        polish_axes(axis, y_grid=True, x_grid=False)
-
-    axes[5].axis("off")
-    handles, labels = axes[0].get_legend_handles_labels()
-    figure.legend(handles, labels, loc="lower right", bbox_to_anchor=(0.985, 0.115), frameon=False)
-    figure.supxlabel("Received clients (k)", y=0.035)
-    figure.supylabel("Test macro-F1", x=0.035)
-    figure.tight_layout(rect=(0.04, 0.06, 0.99, 1.0))
+    figure, axis = plt.subplots(figsize=(7.4, 4.6), dpi=300)
+    dataset = "bloodmnist_224"
+    for model in MODELS:
+        values = [
+            float(row["macro_f1"])
+            for row in rows
+            if row["dataset"] == dataset and row["backbone"] == model
+        ]
+        if len(values) != 7:
+            raise ValueError(f"Expected seven values for {dataset}/{model}")
+        color = METHOD_COLORS[model]
+        axis.plot(
+            range(1, 8),
+            values,
+            label=MODEL_LABELS[model],
+            color=color,
+            linestyle=LINESTYLES[model],
+            marker=MARKERS[model],
+            markerfacecolor=color,
+            markeredgecolor=darken_color(color, 0.65),
+            markeredgewidth=1.3,
+            zorder=3,
+        )
+    axis.set_title("BloodMNIST", pad=8, fontweight="bold")
+    axis.set_xlabel("Received clients (k)")
+    axis.set_ylabel("Test macro-F1")
+    axis.set_xticks(range(1, 8))
+    axis.set_ylim(0, 1.02)
+    axis.legend(loc="lower right", frameon=False)
+    polish_axes(axis, y_grid=True, x_grid=False)
+    figure.tight_layout()
     save_png_pdf(figure, str(output_base))
     plt.close(figure)
 
