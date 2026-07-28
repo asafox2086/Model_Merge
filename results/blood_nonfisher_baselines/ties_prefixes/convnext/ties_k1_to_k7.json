@@ -1,0 +1,118 @@
+{
+  "method": "ties",
+  "dataset": "bloodmnist_224",
+  "backbone": "convnext",
+  "num_clients": 7,
+  "beta": 0.0,
+  "seed": 42,
+  "delivery_order": [
+    0,
+    1,
+    2,
+    3,
+    4,
+    5,
+    6
+  ],
+  "amp_enabled": false,
+  "rows": [
+    {
+      "k": 1,
+      "received_client_ids": [
+        0
+      ],
+      "acc": 0.07132417421806489,
+      "macro_f1": 0.016643928363919258,
+      "loss": 7.4424906465540985,
+      "num_samples": 3421,
+      "amp_enabled": false
+    },
+    {
+      "k": 2,
+      "received_client_ids": [
+        0,
+        1
+      ],
+      "acc": 0.0710318620286466,
+      "macro_f1": 0.016580240800976753,
+      "loss": 2.1410660797376724,
+      "num_samples": 3421,
+      "amp_enabled": false
+    },
+    {
+      "k": 3,
+      "received_client_ids": [
+        0,
+        1,
+        2
+      ],
+      "acc": 0.09090909090909091,
+      "macro_f1": 0.02083333395421505,
+      "loss": 3.1069598631425337,
+      "num_samples": 3421,
+      "amp_enabled": false
+    },
+    {
+      "k": 4,
+      "received_client_ids": [
+        0,
+        1,
+        2,
+        3
+      ],
+      "acc": 0.1373867290266004,
+      "macro_f1": 0.03019789233803749,
+      "loss": 2.97745682593153,
+      "num_samples": 3421,
+      "amp_enabled": false
+    },
+    {
+      "k": 5,
+      "received_client_ids": [
+        0,
+        1,
+        2,
+        3,
+        4
+      ],
+      "acc": 0.1373867290266004,
+      "macro_f1": 0.03019789233803749,
+      "loss": 2.6651621679575324,
+      "num_samples": 3421,
+      "amp_enabled": false
+    },
+    {
+      "k": 6,
+      "received_client_ids": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5
+      ],
+      "acc": 0.1373867290266004,
+      "macro_f1": 0.03019789233803749,
+      "loss": 2.3717782719028655,
+      "num_samples": 3421,
+      "amp_enabled": false
+    },
+    {
+      "k": 7,
+      "received_client_ids": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5,
+        6
+      ],
+      "acc": 0.1373867290266004,
+      "macro_f1": 0.03019789233803749,
+      "loss": 2.443695467001372,
+      "num_samples": 3421,
+      "amp_enabled": false
+    }
+  ]
+}

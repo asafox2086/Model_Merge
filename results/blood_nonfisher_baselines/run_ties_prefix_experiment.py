@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Evaluate TIES after each prefix of the BloodMNIST client-arrival order."""
+"""Evaluate TIES after each prefix of a BloodMNIST client-arrival order."""
 
 import argparse
 import copy
@@ -9,6 +9,8 @@ import sys
 from pathlib import Path
 
 import torch
+from torch.utils.data import DataLoader
+from torchvision import transforms
 
 
 RESULT_ROOT = Path(__file__).resolve().parent
@@ -20,10 +22,74 @@ def parse_args():
     parser.add_argument("--model-hub-root", type=Path, required=True)
     parser.add_argument("--data-root", type=Path, required=True)
     parser.add_argument("--device", default="cuda:0")
+    parser.add_argument("--backbone", choices=("resnet", "convnext", "vit_t", "swin_tiny"), default="resnet")
     parser.add_argument("--batch-size", type=int, default=128)
     parser.add_argument("--num-workers", type=int, default=0)
     parser.add_argument("--result-root", type=Path, default=RESULT_ROOT)
     return parser.parse_args()
+
+
+def evaluate_checkpoint(meta, state_dict, data_root, device, batch_size, num_workers):
+    from dataset import NpzTensorDataset, load_npz_splits
+    from model import build_model
+
+    splits = load_npz_splits(f"{data_root}/{meta['dataset']}.npz")
+    images = splits["test"].images
+    source_size = (int(images.shape[1]), int(images.shape[2]))
+    target_size = int(meta.get("image_size") or 0)
+    transform = None
+    if target_size > 0 and source_size != (target_size, target_size):
+        transform = transforms.Resize((target_size, target_size), antialias=True)
+    loader = DataLoader(
+        NpzTensorDataset(images, splits["test"].labels, transform=transform),
+        batch_size=batch_size,
+        shuffle=False,
+        num_workers=num_workers,
+        pin_memory=device.type == "cuda",
+    )
+    model, _, _, _ = build_model(
+        name=meta["model"],
+        num_classes=int(meta["num_classes"]),
+        in_channels=int(meta["in_channels"]),
+        pretrained=False,
+    )
+    model.load_state_dict(state_dict, strict=True)
+    model = model.to(device)
+    total_loss = 0.0
+    correct = 0
+    total = 0
+    targets = []
+    predictions = []
+    model.eval()
+    with torch.no_grad():
+        for features, labels in loader:
+            features = features.to(device, non_blocking=True)
+            labels = labels.to(device, non_blocking=True)
+            logits = model(features)
+            total_loss += torch.nn.functional.cross_entropy(logits, labels).item() * labels.size(0)
+            predicted = logits.argmax(dim=1)
+            correct += (predicted == labels).sum().item()
+            total += labels.size(0)
+            targets.append(labels.cpu())
+            predictions.append(predicted.cpu())
+    target = torch.cat(targets)
+    prediction = torch.cat(predictions)
+    num_classes = int(max(target.max().item(), prediction.max().item()) + 1)
+    confusion = torch.bincount(
+        target * num_classes + prediction,
+        minlength=num_classes * num_classes,
+    ).reshape(num_classes, num_classes).float()
+    true_positive = confusion.diag()
+    macro_f1 = (
+        2.0 * true_positive
+        / (2.0 * true_positive + (confusion.sum(0) - true_positive) + (confusion.sum(1) - true_positive)).clamp_min(1.0)
+    ).mean().item()
+    return {
+        "acc": correct / total,
+        "macro_f1": macro_f1,
+        "loss": total_loss / total,
+        "num_samples": total,
+    }
 
 
 def main():
@@ -32,7 +98,6 @@ def main():
     if str(framework_root) not in sys.path:
         sys.path.insert(0, str(framework_root))
 
-    from evaluators import evaluate_small_checkpoint
     from merge import METHOD_DEFAULTS, merge_with_method
     from utils import ensure_state_dicts_compatible, extract_state_dict, load_checkpoint, load_hub_meta, set_seed
 
@@ -40,7 +105,7 @@ def main():
         args.model_hub_root
         / "small"
         / "bloodmnist_224"
-        / "resnet"
+        / args.backbone
         / "clients_7"
         / "beta_0"
         / "seed_42"
@@ -66,27 +131,26 @@ def main():
             checkpoints[:k],
             cfg,
         )
-        result = evaluate_small_checkpoint(
+        result = evaluate_checkpoint(
             meta=step_meta,
-            checkpoint={"state_dict": merged_state},
             data_root=str(args.data_root),
-            split="test",
             device=device,
             batch_size=args.batch_size,
             num_workers=args.num_workers,
-            amp=False,
+            state_dict=merged_state,
         )
         rows.append(
             {
                 "k": k,
                 "received_client_ids": list(range(k)),
                 "acc": float(result["acc"]),
+                "macro_f1": float(result["macro_f1"]),
                 "loss": float(result["loss"]),
                 "num_samples": int(result["num_samples"]),
                 "amp_enabled": False,
             }
         )
-        print(f"k={k} acc={result['acc']:.6f}", flush=True)
+        print(f"k={k} acc={result['acc']:.6f} macro_f1={result['macro_f1']:.6f}", flush=True)
         if device.type == "cuda":
             torch.cuda.empty_cache()
 
@@ -99,7 +163,7 @@ def main():
     payload = {
         "method": "ties",
         "dataset": "bloodmnist_224",
-        "backbone": "resnet",
+        "backbone": args.backbone,
         "num_clients": 7,
         "beta": 0.0,
         "seed": 42,

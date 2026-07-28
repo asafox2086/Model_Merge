@@ -51,6 +51,27 @@ score. LAMP-Merge instead increases at every step from `0.2102` to `0.8004`.
 shows both methods on the same Acc axis. Its exact plotted values are in
 [`ties_vs_lamp_merge_k1_to_k7.csv`](ties_vs_lamp_merge_k1_to_k7.csv).
 
+## Four-Backbone Prefix Comparison
+
+The same prefix-wise TIES evaluation is run for all BloodMNIST backbones used
+by the asynchronous study: ResNet, ConvNeXt, ViT-T, and Swin-T. Each run uses
+the same seven ordered client checkpoints, `beta=0`, seed 42, equal merge
+weights, and FP32 test evaluation as the LAMP-Merge asynchronous reports.
+
+The comparison deliberately uses separate method panels rather than overlaying
+TIES and LAMP-Merge: the left column is TIES and the right column is
+LAMP-Merge, while all panels share the same `k=1..7` and `0..1` metric axes.
+The backbone encoding is consistent in every panel. TIES does not show stable
+improvement: ResNet falls three times, ConvNeXt plateaus after `k=4`, ViT-T
+falls sharply from `k=1` and then plateaus, and Swin-T falls twice.
+LAMP-Merge increases strictly at every arrival for both Acc and macro-F1 on
+all four backbones.
+
+- Acc: [`ties_vs_lamp_merge_blood_acc_k1_to_k7.png`](ties_vs_lamp_merge_blood_acc_k1_to_k7.png)
+- F1: [`ties_vs_lamp_merge_blood_macro_f1_k1_to_k7.png`](ties_vs_lamp_merge_blood_macro_f1_k1_to_k7.png)
+- Combined four-panel view: [`ties_vs_lamp_merge_blood_acc_macro_f1_k1_to_k7.png`](ties_vs_lamp_merge_blood_acc_macro_f1_k1_to_k7.png)
+- Exact values: [`ties_vs_lamp_merge_backbones_k1_to_k7.csv`](ties_vs_lamp_merge_backbones_k1_to_k7.csv)
+
 ## Reproduction
 
 ```bash
@@ -71,4 +92,17 @@ bash run_compare_multi_gpu.sh
 
 /data2/liyapeng_grp/.conda/envs/MM/bin/python \
   results/blood_nonfisher_baselines/plot_ties_vs_lamp_merge_acc.py
+
+for backbone in resnet convnext vit_t swin_tiny; do
+  /data2/liyapeng_grp/.conda/envs/MM/bin/python \
+    results/blood_nonfisher_baselines/run_ties_prefix_experiment.py \
+    --framework-root /data2/liyapeng_grp/program/MedMNISTMerge \
+    --model-hub-root /data2/liyapeng_grp/program/MedMNISTMerge/model_hub \
+    --data-root /data2/liyapeng_grp/program/MedMNISTMerge/Med_data \
+    --backbone "$backbone" \
+    --result-root "results/blood_nonfisher_baselines/ties_prefixes/$backbone"
+done
+
+/data2/liyapeng_grp/.conda/envs/MM/bin/python \
+  results/blood_nonfisher_baselines/plot_ties_vs_lamp_merge_backbones.py
 ```
