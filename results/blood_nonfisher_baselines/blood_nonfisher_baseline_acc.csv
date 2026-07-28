@@ -1,0 +1,14 @@
+method,test_acc,test_loss,role
+avg,0.194387605963,2.045842486562,non_fisher_baseline
+avg_head,0.179479684303,2.047198999071,non_fisher_baseline
+ties,0.094124524993,2.369324744915,non_fisher_baseline
+dare_linear,0.175679625840,2.056137928660,non_fisher_baseline
+dare_ties,0.208710903245,4.783923055163,non_fisher_baseline
+regmean,0.273604209296,1.914094185801,non_fisher_baseline
+breadcrumbs,0.179479684303,2.098053895741,non_fisher_baseline
+model_stock,0.172464191757,2.063406909916,non_fisher_baseline
+from,0.190295235311,2.011079886440,non_fisher_baseline
+iso_c,0.186495176849,2.049811254500,non_fisher_baseline
+free_merge,0.194387605963,2.045866177327,non_fisher_baseline
+robustmerge,0.184741303712,2.053715217117,non_fisher_baseline
+lamp_merge,0.800350774627,0.684767084664,proposed_method

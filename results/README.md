@@ -22,3 +22,6 @@ The strict medical-versus-natural-image ResNet/K=3 feature t-SNE control is avai
 
 The strict asynchronous `new_lamp_merge` dataset/backbone grid is available in
 [`new_lamp_merge_async_grid/`](new_lamp_merge_async_grid/).
+
+The BloodMNIST non-Fisher baseline experiment is available in
+[`blood_nonfisher_baselines/`](blood_nonfisher_baselines/).
