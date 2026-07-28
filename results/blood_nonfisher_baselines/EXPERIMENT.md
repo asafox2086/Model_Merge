@@ -38,6 +38,19 @@ LAMP-Merge (`0.8004`) in
 [`ties_vs_lamp_merge_acc.png`](ties_vs_lamp_merge_acc.png). The full exact
 values are in [`blood_nonfisher_baseline_acc.csv`](blood_nonfisher_baseline_acc.csv).
 
+## Prefix-Wise Accuracy
+
+To compare client-arrival behavior directly, TIES is re-merged after every
+prefix of the same seven client checkpoints (`0 -> 1 -> ... -> 6`). This uses
+FP32 test evaluation, matching the BloodMNIST asynchronous LAMP-Merge curve.
+TIES obtains `0.1736, 0.0710, 0.0737, 0.1660, 0.0994, 0.1172, 0.0938` from
+`k=1` to `7`: its accuracy decreases three times and ends below its first-step
+score. LAMP-Merge instead increases at every step from `0.2102` to `0.8004`.
+
+[`ties_vs_lamp_merge_acc_k1_to_k7.png`](ties_vs_lamp_merge_acc_k1_to_k7.png)
+shows both methods on the same Acc axis. Its exact plotted values are in
+[`ties_vs_lamp_merge_k1_to_k7.csv`](ties_vs_lamp_merge_k1_to_k7.csv).
+
 ## Reproduction
 
 ```bash
@@ -49,4 +62,13 @@ bash run_compare_multi_gpu.sh
 
 /data2/liyapeng_grp/.conda/envs/MM/bin/python \
   results/blood_nonfisher_baselines/plot_worst_baseline_acc.py
+
+/data2/liyapeng_grp/.conda/envs/MM/bin/python \
+  results/blood_nonfisher_baselines/run_ties_prefix_experiment.py \
+  --framework-root /data2/liyapeng_grp/program/MedMNISTMerge \
+  --model-hub-root /data2/liyapeng_grp/program/MedMNISTMerge/model_hub \
+  --data-root /data2/liyapeng_grp/program/MedMNISTMerge/Med_data
+
+/data2/liyapeng_grp/.conda/envs/MM/bin/python \
+  results/blood_nonfisher_baselines/plot_ties_vs_lamp_merge_acc.py
 ```

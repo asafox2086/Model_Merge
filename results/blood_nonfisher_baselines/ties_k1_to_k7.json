@@ -1,0 +1,111 @@
+{
+  "method": "ties",
+  "dataset": "bloodmnist_224",
+  "backbone": "resnet",
+  "num_clients": 7,
+  "beta": 0.0,
+  "seed": 42,
+  "delivery_order": [
+    0,
+    1,
+    2,
+    3,
+    4,
+    5,
+    6
+  ],
+  "amp_enabled": false,
+  "rows": [
+    {
+      "k": 1,
+      "received_client_ids": [
+        0
+      ],
+      "acc": 0.17363344051446947,
+      "loss": 6.048185707427925,
+      "num_samples": 3421,
+      "amp_enabled": false
+    },
+    {
+      "k": 2,
+      "received_client_ids": [
+        0,
+        1
+      ],
+      "acc": 0.0710318620286466,
+      "loss": 3.745611249128652,
+      "num_samples": 3421,
+      "amp_enabled": false
+    },
+    {
+      "k": 3,
+      "received_client_ids": [
+        0,
+        1,
+        2
+      ],
+      "acc": 0.07366267173341129,
+      "loss": 3.270346315239508,
+      "num_samples": 3421,
+      "amp_enabled": false
+    },
+    {
+      "k": 4,
+      "received_client_ids": [
+        0,
+        1,
+        2,
+        3
+      ],
+      "acc": 0.1660333235895937,
+      "loss": 2.928923139652987,
+      "num_samples": 3421,
+      "amp_enabled": false
+    },
+    {
+      "k": 5,
+      "received_client_ids": [
+        0,
+        1,
+        2,
+        3,
+        4
+      ],
+      "acc": 0.09938614440222157,
+      "loss": 2.640119197110062,
+      "num_samples": 3421,
+      "amp_enabled": false
+    },
+    {
+      "k": 6,
+      "received_client_ids": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5
+      ],
+      "acc": 0.1172171879567378,
+      "loss": 2.2748237066678714,
+      "num_samples": 3421,
+      "amp_enabled": false
+    },
+    {
+      "k": 7,
+      "received_client_ids": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5,
+        6
+      ],
+      "acc": 0.09383221280327389,
+      "loss": 2.369280335917803,
+      "num_samples": 3421,
+      "amp_enabled": false
+    }
+  ]
+}
