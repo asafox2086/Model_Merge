@@ -3,10 +3,10 @@ set -euo pipefail
 
 source "$(cd "$(dirname "$0")" && pwd)/scripts/multi_gpu_common.sh"
 
-TASK_TYPES=( ${TASK_TYPES:-small vlm} )
-CUSTOM_METHODS=( ${CUSTOM_METHODS:-my_merge} )
+TASK_TYPES=( ${TASK_TYPES:-small} )
+CUSTOM_METHODS=( ${CUSTOM_METHODS:-lamp_merge} )
 
-CUSTOM_EXTRA_ARGS="${CUSTOM_EXTRA_ARGS:-}"
+CUSTOM_EXTRA_ARGS="${CUSTOM_EXTRA_ARGS:---lamp-merge-prototype-root ${ROOT_DIR}/outputs/lamp_merge_client_local_proto_stats}"
 LOG_ROOT="${LOG_ROOT:-${ROOT_DIR}/logs/${RUN_TAG}/custom_methods}"
 OUTPUT_ROOT="${OUTPUT_ROOT:-${ROOT_DIR}/outputs/custom_methods_${RUN_TAG}}"
 

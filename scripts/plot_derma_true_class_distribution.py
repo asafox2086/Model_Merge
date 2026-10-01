@@ -20,8 +20,8 @@ from style import polish_axes, setup_style  # noqa: E402
 
 
 DATA_PATH = ROOT / "Med_data" / "dermamnist_224.npz"
-FIGURE_BASE = ROOT / "figures" / "derma_true_class_distribution"
-CSV_PATH = ROOT / "论文实验数据" / "Derma真实类别分布.csv"
+FIGURE_BASE = ROOT / "paper" / "figures" / "derma_true_class_distribution"
+CSV_PATH = ROOT / "paper" / "data" / "Derma真实类别分布.csv"
 BAR_COLOR = "#6E9FC8"
 BAR_EDGE = "#355C7D"
 

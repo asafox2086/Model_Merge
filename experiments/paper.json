@@ -1,0 +1,26 @@
+{
+  "manuscript": "paper/v5.tex",
+  "appendix": "paper/appendix.tex",
+  "datasets": ["bloodmnist_224", "dermamnist_224", "organcmnist_224", "organsmnist_224", "chaoshengmnist_224"],
+  "models": ["resnet", "convnext", "vit_t", "swin_tiny"],
+  "clients": [3, 5, 7],
+  "betas": [0, 0.01, 0.1],
+  "seed": 42,
+  "hyperparameters": {
+    "lamp-merge-proto-count-power": 0.55,
+    "lamp-merge-reference-head-scale": 18.75,
+    "lamp-merge-reference-prior-threshold": 2.5,
+    "lamp-merge-reference-prior-max-tau": 4.25
+  },
+  "baselines": ["head_avg", "head_ties", "head_dare_linear", "head_dare_ties", "head_regmean", "head_fisher", "head_breadcrumbs", "head_model_stock", "head_from", "head_iso_c", "head_free_merge", "head_robustmerge"],
+  "suites": {
+    "main": {"description": "Shared-backbone head-only baselines and LAMP-Merge; ACC, macro-F1 and collapse metrics", "kind": "diagnostics", "baselines": true, "modes": ["full"]},
+    "modules": {"description": "DPR x LPC module ablation with reference average head", "kind": "diagnostics", "modes": ["reference_avg_head", "reference_avg_head_lpc", "m1_only", "full"]},
+    "baseline_2x2": {"description": "TIES and DARE head baselines, with/without DPR and LPC; DPR branches are shared", "kind": "diagnostics", "modes": ["reference_ties_head", "reference_ties_head_lpc", "reference_dare_head", "reference_dare_head_lpc", "m1_only", "full"]},
+    "dpr": {"description": "Diagnostic prototype reconstruction internal ablations", "kind": "diagnostics", "modes": ["prototype_head_agg", "global_feature_mean", "support_only", "prototype_shuffle", "uniform_client_weight", "binary_support", "global_client_size_weight", "full"]},
+    "lpc": {"description": "Long-tail prevalence calibration internal ablations", "kind": "diagnostics", "modes": ["uniform_prevalence", "always_on_calibration", "client_balanced_prevalence", "full"]},
+    "collapse": {"description": "Prediction-collapse diagnostics and individual client metrics", "kind": "diagnostics", "baselines": true, "include_clients": true, "modes": ["full"]},
+    "hparam_dpr": {"description": "DPR measured grid from the final manuscript CSV (50 points)", "kind": "sweep", "csv": "paper/data/超参数分析_诊断原型重建.csv", "parameters": {"Support exponent gamma": "lamp-merge-proto-count-power", "Prototype head scale s": "lamp-merge-reference-head-scale"}},
+    "hparam_lpc": {"description": "LPC measured grid from the final manuscript CSV (50 points)", "kind": "sweep", "csv": "paper/data/超参数分析_长尾患病率校准.csv", "parameters": {"Activation threshold tau": "lamp-merge-reference-prior-threshold", "Calibration strength lambda": "lamp-merge-reference-prior-max-tau"}}
+  }
+}

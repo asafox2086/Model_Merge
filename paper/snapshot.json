@@ -1,0 +1,85 @@
+{
+  "source": "Working manuscript and CSV snapshot preserved during repository organization on 2026-10-01",
+  "files": [
+    {
+      "path": "paper/v5.tex",
+      "sha256": "395426225f0a85a5078df3a339f9f92323702ae86e5e26860a67c74435646a4d"
+    },
+    {
+      "path": "paper/appendix.tex",
+      "sha256": "9412f0c4b30104c7079088b8b3ce45edd52a65ce9f0d3f31719590d13ad98428"
+    },
+    {
+      "path": "paper/data/Derma代表性预测类别分布.csv",
+      "sha256": "3b7f69b0f31510ced6e5d8ff112c53305f397e53a9dfa4daf483929b4f885de8"
+    },
+    {
+      "path": "paper/data/Derma真实类别分布.csv",
+      "sha256": "dbfef5230495732b3e3a3e9b5f184d05dda5692d452cf1659a8afcb8232e3fb3"
+    },
+    {
+      "path": "paper/data/tSNE输出概率坐标.csv",
+      "sha256": "2ed89c4837e03f676317b7d055c21bacbb119b85314477041b5a0ce561fc75d0"
+    },
+    {
+      "path": "paper/data/主实验_ConvNeXt.csv",
+      "sha256": "febc2e7b145d963af09bb9864894350e3527ae5513314c74ac92d49c269517d8"
+    },
+    {
+      "path": "paper/data/主实验_ResNet.csv",
+      "sha256": "37530663e863c783604441622a23ff127c7eae02b9cf77c012ea46481a707f5c"
+    },
+    {
+      "path": "paper/data/主实验_Swin-Tiny.csv",
+      "sha256": "a913bab9e639a039b73543b3c142bf835c4d40daadb5e7109320f1ab3eecf336"
+    },
+    {
+      "path": "paper/data/主实验_ViT-Tiny.csv",
+      "sha256": "0204cf683332e1ee8890a661cf51f321111b55d333f511cd01a94c7230f71b42"
+    },
+    {
+      "path": "paper/data/图表与CSV对应关系.csv",
+      "sha256": "c980b00a6f1e76e7f7d82e0f4b734b31cf3ff0a9868a8050bb9744a0d17b2d5d"
+    },
+    {
+      "path": "paper/data/基线2x2消融.csv",
+      "sha256": "7c7a0b294f2e916a9cf46967a590edd0202d95a691e88dcee04105da54e86481"
+    },
+    {
+      "path": "paper/data/数据集统计.csv",
+      "sha256": "bbbcc7aa58cfa776b434576a7ca0c1d36c3ece8b7b456ea5cd51b95776ae73e7"
+    },
+    {
+      "path": "paper/data/数据集雷达图.csv",
+      "sha256": "7084e47faab2248b83a1ac0aac32371569c669220cb490b9877d20cd9c7e0777"
+    },
+    {
+      "path": "paper/data/消融.csv",
+      "sha256": "2365a045409202f940916ce12bcf0e9c7869d23752dffc25c298335bba06b0af"
+    },
+    {
+      "path": "paper/data/诊断原型重建内部消融.csv",
+      "sha256": "f4a96cd6e327ea7c53dd07721a7b15c4853033d41229eb3ebf7cd65874415f2e"
+    },
+    {
+      "path": "paper/data/超参数分析_诊断原型重建.csv",
+      "sha256": "ba3bdb41483eee8b1b5ac2ec7bfe7b859b3ecc1c048612c0ec695be1b768adfe"
+    },
+    {
+      "path": "paper/data/超参数分析_长尾患病率校准.csv",
+      "sha256": "16f9755c44f1ff30fb1a34a2f66b44b1cd72c2c48b711fb220b10aa9ce1d8b82"
+    },
+    {
+      "path": "paper/data/超声预测类别分布.csv",
+      "sha256": "00dbf69308eb562ca2761e0f6d7b8212701f41645d3c1c25638464a0e99ac7fe"
+    },
+    {
+      "path": "paper/data/长尾患病率校准内部消融.csv",
+      "sha256": "92f421a9f631d112e87f74ab224d6d68c9331f2de32c6aae34a1ceeecf04063d"
+    },
+    {
+      "path": "paper/data/预测坍缩诊断.csv",
+      "sha256": "bafe9c2d1a859b4d0ba22d9da2a1b1cc539c7eeb27fcf0468a1b2fbb163580a5"
+    }
+  ]
+}

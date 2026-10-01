@@ -3,8 +3,8 @@ set -euo pipefail
 
 source "$(cd "$(dirname "$0")" && pwd)/scripts/multi_gpu_common.sh"
 
-FORMAL_METHODS=( ${FORMAL_METHODS:-${FORMAL_METHODS_DEFAULT[*]}} )
-FORMAL_TASK_TYPES=( ${FORMAL_TASK_TYPES:-small vlm} )
+FORMAL_METHODS=( ${FORMAL_METHODS:-${HEAD_ONLY_METHODS_DEFAULT[*]}} )
+FORMAL_TASK_TYPES=( ${FORMAL_TASK_TYPES:-small} )
 FORMAL_EXTRA_ARGS="${FORMAL_EXTRA_ARGS:-}"
 
 LOG_ROOT="${LOG_ROOT:-${ROOT_DIR}/logs/${RUN_TAG}/formal_compare}"

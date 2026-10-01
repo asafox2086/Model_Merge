@@ -1,321 +1,67 @@
-# MedMNSITMerge
+# LAMP-Merge：论文复现与分析
 
-这个仓库不负责训练上游模型，它负责消费已经整理好的 `model_hub`，完成三件事：
+本仓库对应最终工作稿 `paper/v5.tex` 与 `paper/appendix.tex`，研究一次性医学模型融合。上游训练资产由 `model_hub/` 提供；本仓库负责客户端统计导出、融合、评估与分析。
 
-1. 读取多个 client checkpoint。
-2. 执行模型融合。
-3. 在 MedMNIST `test` 集上评估并汇总结果。
+正式方法由 **DPR（Diagnostic Prototype Reconstruction）** 和 **LPC（Long-tail Prevalence Calibration）** 组成。客户端在共享参考 encoder 中上传类别原型、支持数和本地类别计数；服务器保留参考 backbone，重建分类头并按门控加入类别先验偏置。
 
-一句话概括：
-
-- 上游训练并产出 `model_hub`
-- 这个仓库做 merge、eval、summary
-
-## 仓库是干什么的
-
-主要入口是：
-
-- [merge.py](/data/liyapeng_grp/program/MedMNISTMerge/merge.py)
-  - 单个配置的融合入口
-- [evaluate.py](/data/liyapeng_grp/program/MedMNISTMerge/evaluate.py)
-  - 单个 merged checkpoint 的评估入口
-- [scripts/run_all_avg_eval.py](/data/liyapeng_grp/program/MedMNISTMerge/scripts/run_all_avg_eval.py)
-  - 批量执行 `merge + eval`
-
-核心目录是：
-
-- `model_hub/`
-  - 上游整理好的输入资产
-- `reference_cache/`
-  - 为依赖 reference model 的 merge 方法固化的本地参考快照
-- `methods/`
-  - 所有融合方法实现
-- `evaluators/`
-  - `small` / `vlm` 的评测逻辑
-- `dataset/`
-  - MedMNIST `.npz` 数据读取
-- `model/`
-  - small backbone 和 CLIP 结构重建
-- `outputs/`
-  - merge 和 eval 产物
-- `logs/`
-  - 所有批量实验日志
-
-## 我们实现了哪些方法
-
-当前仓库里已经实现的方法有：
-
-- `avg`
-- `ties`
-- `dare_linear`
-- `dare_ties`
-- `regmean`
-- `fisher`
-- `breadcrumbs`
-- `model_stock`
-- `adamerging`
-- `from`
-- `iso_c`
-- `iso_cts`
-- `free_merge`
-- `robustmerge`
-
-当前正式对比脚本默认跑下面 12 个方法：
-
-- `avg`
-- `ties`
-- `dare_linear`
-- `dare_ties`
-- `regmean`
-- `fisher`
-- `breadcrumbs`
-- `model_stock`
-- `from`
-- `iso_c`
-- `free_merge`
-- `robustmerge`
-
-## model_hub 里有什么
-
-`model_hub` 里存的是上游训练好的 client 模型，以及对应实验元信息。
-
-small 目录结构：
+## 目录
 
 ```text
-model_hub/small/<dataset>/<model>/clients_<n>/beta_<beta>/seed_<seed>/
+paper/                 最终论文源码、figures/ 和冻结的 data/*.csv
+experiments/           按论文组织的配置、统一运行入口与结果汇总
+methods/               正式方法、分类头基线、消融实现
+merge.py evaluate.py    单任务融合与评估
+dataset/ model/        数据读取与模型重建（含 VLM 兼容代码）
+evaluators/ utils/     评估、参考缓存、统计量与运行工具
+scripts/               输入资产准备、批量融合评估、绘图工具
+exp_analyze/           预测诊断、消融、几何分析与历史实验编排
+configs/               使用仓库相对路径的单任务示例
+docs/                  复现流程、论文实验地图、维护说明
+My_merge_ret/          已有汇总表、报告与分析图，保持原路径
+remove/                历史版本、旧文档、重复副本及迁移清单
+model_hub/ Med_data/    本地 checkpoint 与数据，不进入 Git
+reference_cache/       本地参考模型，不进入 Git
+outputs/ logs/         本地运行产物，不进入 Git
 ```
 
-vlm 目录结构：
+`scripts/` 与 `exp_analyze/` 中的一些旧入口是相对软链接，同一脚本只有一份可维护的实现。正式算法在 `methods/lamp_merge.py`，消融在 `methods/lamp_merge_analysis.py`。
 
-```text
-model_hub/vlm/<dataset>/<clip_model>/clients_<n>/beta_<beta>/seed_<seed>/
-```
+## 从这里开始
 
-每个实验目录至少包含：
-
-- `meta.json`
-- `client_*.pt`
-
-当前正式实验用到的子集是：
-
-- 数据集：`bloodmnist_224`、`dermamnist_224`、`organcmnist_224`、`organsmnist_224`、`chaoshengmnist_224`
-- small backbone：`resnet`、`convnext`、`vit_t`、`swin_tiny`
-- VLM 兼容资产：`openai/clip-vit-base-patch32`；不参与当前正式实验、结果表或论文
-- 组合：`clients=3/5/7`，`beta=0/0.01/0.1`
-
-## 结果复现现在是怎么保证的
-
-为了让你在独立对话里直接运行脚本也尽量复现 `result/` 里的数字，仓库现在默认做了两件事：
-
-1. 把依赖 reference model 的方法所需 backbone / CLIP reference 固化到本地 `reference_cache/`
-2. 让正式对比脚本和自定义方法脚本共享同一份默认配置来源
-
-为什么要这样做：
-
-- `avg` 这类方法只依赖 `model_hub` 里的 client checkpoint
-- `ties`、`dare_*`、`breadcrumbs`、`model_stock`、`from`、`iso_*`、`free_merge`、`robustmerge` 这类方法还会额外构造一个 reference model
-- 如果 reference model 临时从外部缓存 / Hub 读取，或者读取失败后退回随机初始化，结果就可能和 `result/` 漂开
-
-现在的默认行为是：
-
-- 批跑脚本启动时会先检查并准备 `reference_cache/`
-- 准备完成后，正式运行阶段默认进入“离线复现模式”
-- 也就是默认等价于：
+使用 Python 3.10；`requirements.txt` 记录整理时 MM 环境的核心依赖版本。GPU 环境先安装 PyTorch 2.6.0 / torchvision 0.21.0 的 CUDA 11.8 构建，再安装其余依赖。本机可运行 `conda activate MM`，或使用 `/data2/liyapeng_grp/.conda/envs/MM/bin/python`。
 
 ```bash
-REPRO_MODE=1
-HF_LOCAL_FILES_ONLY=1
-HF_HUB_OFFLINE=1
-TRANSFORMERS_OFFLINE=1
+python scripts/check_repository.py
+python experiments/run.py --list
+python experiments/run.py main --check
 ```
 
-如果你明确想关闭这个复现模式，允许运行阶段重新访问外部 Hugging Face 资源：
+最后一条只打印计划并检查全部 180 个配置的输入路径，不执行评估。全新 clone 需要另外准备数据、客户端 checkpoint、参考缓存和客户端原型统计；这些大文件不随代码推送。
+
+先验证一个模型配置：
 
 ```bash
-REPRO_MODE=0 bash run_compare_multi_gpu.sh
+python experiments/run.py main --tag smoke \
+  --datasets bloodmnist_224 --models resnet --clients 3 --betas 0 \
+  --methods head_avg lamp_merge --device cuda:0 --execute
 ```
 
-仓库里用于提前生成本地 reference 快照的工具是：
-
-- `scripts/cache_reference_models.py`
-
-例如只预热 `small`：
+运行完整主实验：
 
 ```bash
-./.gpuenv/bin/python scripts/cache_reference_models.py --model-hub-root model_hub --task-type small
+python experiments/run.py main --tag paper_main --device cuda:0 --execute
+python experiments/summarize.py outputs/paper/paper_main/main/reports/metrics.csv
 ```
 
-例如只预热 `vlm`：
+统一入口默认只显示命令；加 `--execute` 才执行。主实验包含 12 个 **head-only** 基线与正式 LAMP-Merge，同时收集 ACC、macro-F1、AUC 和预测坍缩指标。输出位于 `outputs/paper/<tag>/<suite>/`，包含计划、日志、逐配置指标、汇总和图，不覆盖论文 CSV。复用同一 tag 可恢复同一计划；更换配置请使用新 tag。
 
-```bash
-./.gpuenv/bin/python scripts/cache_reference_models.py --model-hub-root model_hub --task-type vlm
-```
+## 论文口径
 
-如果你已经有了 `reference_cache/`，后续独立对话里直接运行批跑脚本即可，不需要额外手工设置这些离线环境变量。
+- 数据：Blood、Derma、Organ-C、Organ-S、Ultrasound；模型：ResNet、ConvNeXt、ViT-Tiny、Swin-Tiny。
+- `K={3,5,7}`，`beta={0,0.01,0.1}`，`seed=42`；每方法 180 个配置。
+- 固定数据集、模型和 K，对三个 beta 取平均，得到 60 个 client-average 单元。
+- 超参数：`gamma=0.55, s=18.75, tau=2.5, lambda=4.25`。
+- `head_*` 是最终稿共享参考 backbone 的基线；裸 `avg/ties/...` 是全参数对照，两种口径不可混用。
+- `My_merge_ret/汇总表.md` 是历史 ACC 汇总，不能直接当作最终稿 head-only ACC/F1 表。最终数值快照在 `paper/data/`。
 
-## 怎么跑对比方法 .sh
-
-正式对比脚本只有一个：
-
-- [run_compare_multi_gpu.sh](/data/liyapeng_grp/program/MedMNISTMerge/run_compare_multi_gpu.sh)
-
-它的行为是：
-
-- 多 GPU 之间并行
-- 每张 GPU 内部串行
-- 同时覆盖 `small` 和 `vlm`
-- 覆盖上面那 5 个数据集、4 个 small backbone、1 个 CLIP
-- 覆盖 12 个正式对比方法
-- 与自定义方法脚本共用同一份默认变量和方法超参
-- 默认先准备 `reference_cache/`，再以离线复现模式运行
-- 自动把日志写到 `logs/<RUN_TAG>/formal_compare/`
-
-直接运行：
-
-```bash
-cd /data/liyapeng_grp/program/MedMNISTMerge
-bash run_compare_multi_gpu.sh
-```
-
-默认行为：
-
-- 优先准备本地 `reference_cache/`
-- 正式运行阶段只读取本地缓存和本地 reference 资产
-- 同一套默认配置会同时作用于正式方法和自定义方法
-- 不再依赖“当前对话里是否恰好先跑过一次 reference model”
-
-如果你明确想关闭默认复现模式，允许运行阶段访问外部资源：
-
-```bash
-REPRO_MODE=0 bash run_compare_multi_gpu.sh
-```
-
-常用环境变量：
-
-- 指定 GPU：
-
-```bash
-GPU_IDS="0 1 2" bash run_compare_multi_gpu.sh
-```
-
-- 指定输出标签：
-
-```bash
-RUN_TAG=formal_20260317 bash run_compare_multi_gpu.sh
-```
-
-- 关闭离线复现模式：
-
-```bash
-REPRO_MODE=0 bash run_compare_multi_gpu.sh
-```
-
-- 保留 `merged.pt`：
-
-```bash
-DELETE_FLAG=--no-delete-merged bash run_compare_multi_gpu.sh
-```
-
-日志位置示例：
-
-```text
-logs/<RUN_TAG>/formal_compare/small__ties__gpu1.log
-logs/<RUN_TAG>/formal_compare/vlm__fisher__gpu0.log
-```
-
-输出位置示例：
-
-```text
-outputs/formal_compare_<RUN_TAG>/small/ties/
-outputs/formal_compare_<RUN_TAG>/vlm/fisher/
-```
-
-## 怎么设计自己的方法，然后跑自己的 .sh
-
-你如果要加一个自己的方法，例如 `my_merge`，通常改这几处：
-
-1. 在 `methods/` 下新增实现文件，比如 `methods/my_merge.py`
-2. 在 [methods/__init__.py](/data/liyapeng_grp/program/MedMNISTMerge/methods/__init__.py) 里注册 import 和别名
-3. 在 [merge.py](/data/liyapeng_grp/program/MedMNISTMerge/merge.py) 的 `merge_with_method(...)` 里接入 dispatch
-4. 如果有新超参：
-   - 改 [merge.py](/data/liyapeng_grp/program/MedMNISTMerge/merge.py) 里的 `METHOD_DEFAULTS`
-   - 改 [scripts/run_all_avg_eval.py](/data/liyapeng_grp/program/MedMNISTMerge/scripts/run_all_avg_eval.py) 里的 `parse_args()`
-
-开发自己的方法时，用这个脚本：
-
-- [run_custom_methods_multi_gpu.sh](/data/liyapeng_grp/program/MedMNISTMerge/run_custom_methods_multi_gpu.sh)
-
-它同样是：
-
-- 多 GPU 之间并行
-- 每张 GPU 内部串行
-- 默认覆盖同一套数据集和模型子集
-- 默认和正式对比脚本共用同一份变量、方法超参和复现模式
-- 若任务包含 `small` / `vlm`，会先准备对应的 `reference_cache/`
-- 日志写到 `logs/<RUN_TAG>/custom_methods/`
-
-最常用的运行方式：
-
-```bash
-cd /data/liyapeng_grp/program/MedMNISTMerge
-CUSTOM_METHODS="my_merge" bash run_custom_methods_multi_gpu.sh
-```
-
-脚本默认方法是 `my_merge`。如果你之前习惯写 `my_method`，现在它也会自动映射到 `my_merge`。
-
-它和正式对比脚本一样，默认会先准备 reference cache，然后以离线复现模式运行。如果你明确想关闭复现模式：
-
-```bash
-REPRO_MODE=0 CUSTOM_METHODS="my_merge" bash run_custom_methods_multi_gpu.sh
-```
-
-如果你要一次测试多个自己的方法：
-
-```bash
-CUSTOM_METHODS="my_merge my_merge_v2" bash run_custom_methods_multi_gpu.sh
-```
-
-如果你的方法只支持 `small`：
-
-```bash
-CUSTOM_METHODS="my_merge" TASK_TYPES="small" bash run_custom_methods_multi_gpu.sh
-```
-
-如果你的方法有额外超参，需要直接透传给批量入口：
-
-```bash
-CUSTOM_METHODS="my_merge" CUSTOM_EXTRA_ARGS="--my-alpha 0.3 --my-temp 2.0" bash run_custom_methods_multi_gpu.sh
-```
-
-日志位置示例：
-
-```text
-logs/<RUN_TAG>/custom_methods/small__my_merge__gpu0.log
-logs/<RUN_TAG>/custom_methods/vlm__my_merge__gpu1.log
-```
-
-输出位置示例：
-
-```text
-outputs/custom_methods_<RUN_TAG>/small/my_merge/
-outputs/custom_methods_<RUN_TAG>/vlm/my_merge/
-```
-
-## 单个实验怎么跑
-
-单个 merge：
-
-```bash
-cd /data/liyapeng_grp/program/MedMNISTMerge
-./.gpuenv/bin/python merge.py \
-  --config configs/merge/small/blood_resnet_c3_b0_s42.json
-```
-
-单个 evaluate：
-
-```bash
-cd /data/liyapeng_grp/program/MedMNISTMerge
-./.gpuenv/bin/python evaluate.py \
-  --config configs/eval/small/blood_resnet_c3_b0_s42.json \
-  --merged-dir outputs/merged/small/bloodmnist_224/resnet/clients_3/beta_0/seed_42/avg
-```
+详细操作见 [复现指南](docs/reproduction.md)、[论文实验地图](docs/experiments.md)、[整理记录](docs/repository.md)。归档可按 [迁移清单](remove/manifest.json) 恢复。

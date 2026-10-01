@@ -7,9 +7,9 @@
   "seed": 42,
   "method": "avg",
   "split": "test",
-  "data_root": "/data1/users/weiyipan/FL/data/Med_data",
+  "data_root": "Med_data",
   "device": "cuda:0",
   "batch_size": 128,
   "num_workers": 4,
-  "output_root": "/data1/users/weiyipan/ML/MedMNSITMerge/outputs"
+  "output_root": "outputs"
 }

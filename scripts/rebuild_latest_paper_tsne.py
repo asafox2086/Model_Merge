@@ -117,7 +117,7 @@ def infer_formal_lamp_probabilities(checkpoint_path: Path) -> tuple[object, obje
 def main() -> None:
     parser = argparse.ArgumentParser()
     parser.add_argument("--historical-csv", type=Path, required=True)
-    parser.add_argument("--csv-dir", type=Path, default=ROOT / "论文实验数据")
+    parser.add_argument("--csv-dir", type=Path, default=ROOT / "paper" / "data")
     parser.add_argument("--formal-checkpoint", type=Path, default=FORMAL_CHECKPOINT)
     args = parser.parse_args()
 

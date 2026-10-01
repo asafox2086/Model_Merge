@@ -1,5 +1,10 @@
 # LAMP-Merge Experiment Analysis Code
 
+> 最终论文的新实验入口为 `python experiments/run.py --list`，详见
+> `docs/experiments.md` 与 `docs/reproduction.md`。本目录保留低层分析实现
+> 和历史调度器；下文固定报告路径、23 点等完整性假设属于旧实验集合，
+> 不能代替最终稿 head-only ACC/F1 复现。与 `scripts/` 同名的入口已去重为软链接。
+
 This directory contains the experiment-side code for LAMP-Merge. The release method implementation remains in `methods/lamp_merge.py`; this directory is only for full-scope evaluation, ablation, diagnostics, hyperparameter analysis, and result validation.
 
 ## Full-Scope Runners

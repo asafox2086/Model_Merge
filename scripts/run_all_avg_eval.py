@@ -97,6 +97,7 @@ def parse_args():
     p.add_argument('--clip-models', nargs='*', default=None)
     p.add_argument('--num-clients', nargs='*', type=int, default=None)
     p.add_argument('--betas', nargs='*', type=float, default=None)
+    p.add_argument('--seeds', nargs='*', type=int, default=None)
     p.add_argument('--skip', type=int, default=0)
     p.add_argument('--limit', type=int, default=0)
     p.add_argument('--resume', action=argparse.BooleanOptionalAction, default=True)
@@ -206,6 +207,8 @@ def filter_manifest(rows, args):
     if args.betas:
         betas = {format(float(x), 'g') for x in args.betas}
         selected = [row for row in selected if format(float(row['beta']), 'g') in betas]
+    if args.seeds:
+        selected = [row for row in selected if int(row['seed']) in args.seeds]
     if args.skip > 0:
         selected = selected[args.skip:]
     if args.limit > 0:
@@ -437,15 +440,18 @@ def main():
         validate_lamp_merge_stats_root(Path(args.lamp_merge_prototype_root), min_files=1)
     if not args.output_root:
         stamp = datetime.now().strftime('%Y%m%d_%H%M%S')
-        args.output_root = f'/data1/users/weiyipan/ML/MedMNSITMerge/outputs/{args.method}_{stamp}'
+        args.output_root = str(ROOT / 'outputs' / f'{args.method}_{stamp}')
     manifest = load_manifest(Path(args.model_hub_root) / 'manifest.csv')
     manifest = filter_manifest(manifest, args)
+    if not manifest:
+        raise SystemExit('No manifest rows matched the requested filters.')
 
     status_csv = Path(args.output_root) / 'reports' / 'batch_status.csv'
     status_rows = load_status_rows(status_csv)
     save_json(Path(args.output_root) / 'reports' / 'batch_config.json', vars(args))
 
     print(f'[{ts()}] batch start | tasks={len(manifest)} | output_root={args.output_root} | method={args.method}')
+    failures = 0
     for idx, row in enumerate(manifest, start=1):
         cfg = build_cfg(row, args)
         label = f"{cfg['task_type']}:{cfg['dataset']}:{cfg.get('model') or cfg.get('clip_model')}|c={cfg['num_clients']}|b={cfg['beta']}|s={cfg['seed']}|m={cfg['method']}|w={cfg['merge_weight_mode']}"
@@ -493,6 +499,7 @@ def main():
             )
             print(f"[{ts()}] done ({idx}/{len(manifest)}) {label} | acc={payload['test_acc']:.4f} | loss={payload['test_loss']:.4f} | removed={removed}")
         except Exception as exc:
+            failures += 1
             update_status_row(
                 status_csv,
                 status_rows,
@@ -508,6 +515,8 @@ def main():
         finally:
             release_case_resources()
     print(f'[{ts()}] batch done | output_root={args.output_root}')
+    if failures:
+        raise SystemExit(f'{failures} merge/evaluation cases failed; see {status_csv}')
 
 
 if __name__ == '__main__':

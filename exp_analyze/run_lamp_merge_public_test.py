@@ -32,7 +32,7 @@ os.environ.setdefault("HF_LOCAL_FILES_ONLY", "1")
 os.environ.setdefault("HF_HUB_OFFLINE", "1")
 os.environ.setdefault("TRANSFORMERS_OFFLINE", "1")
 
-from medmerge_empirical_study.scripts.collect_prediction_metrics import evaluate_checkpoint_predictions
+from exp_analyze.public_prediction_metrics import evaluate_checkpoint_predictions
 from merge import METHOD_DEFAULTS, run_merge
 from utils import load_checkpoint, load_json
 

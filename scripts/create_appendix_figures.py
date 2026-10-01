@@ -30,7 +30,7 @@ def create_class_samples() -> None:
             samples = [images[index] for index in sample_indices]
         for class_id, image in enumerate(samples):
             kwargs = {"cmap": "gray"} if image.ndim == 2 else {}
-            plt.imsave(ROOT / "figures" / f"appendix_sample_{dataset}_{class_id}.png", image, **kwargs)
+            plt.imsave(ROOT / "paper" / "figures" / f"appendix_sample_{dataset}_{class_id}.png", image, **kwargs)
 
 
 if __name__ == "__main__":

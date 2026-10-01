@@ -1091,8 +1091,8 @@ def plot_dataset_radars(csv_dir: Path, figure_dir: Path) -> None:
 
 def main() -> None:
     parser = argparse.ArgumentParser()
-    parser.add_argument("--paper-dir", type=Path, required=True)
-    parser.add_argument("--csv-dir", type=Path, default=ROOT / "论文实验数据")
+    parser.add_argument("--paper-dir", type=Path, default=ROOT / "paper")
+    parser.add_argument("--csv-dir", type=Path, default=ROOT / "paper" / "data")
     args = parser.parse_args()
     figure_dir = args.paper_dir.resolve() / "figures"
     csv_dir = args.csv_dir.resolve()
