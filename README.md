@@ -1,13 +1,13 @@
 # LAMP-Merge：论文复现与分析
 
-本仓库对应最终工作稿 `paper/v5.tex` 与 `paper/appendix.tex`，研究一次性医学模型融合。上游训练资产由 `model_hub/` 提供；本仓库负责客户端统计导出、融合、评估与分析。
+本仓库对应上传的 IEEE/TMI 稿件 `paper/LAMP_Merge_TMI.tex`，研究一次性医学模型融合。上游训练资产由 `model_hub/` 提供；本仓库负责客户端统计导出、融合、评估与分析。
 
 正式方法由 **DPR（Diagnostic Prototype Reconstruction）** 和 **LPC（Long-tail Prevalence Calibration）** 组成。客户端在共享参考 encoder 中上传类别原型、支持数和本地类别计数；服务器保留参考 backbone，重建分类头并按门控加入类别先验偏置。
 
 ## 目录
 
 ```text
-paper/                 最终论文源码、figures/ 和冻结的 data/*.csv
+paper/                 IEEE/TMI 论文源码、figures/ 和保留的 data/*.csv
 experiments/           按论文组织的配置、统一运行入口与结果汇总
 methods/               正式方法、分类头基线、消融实现
 merge.py evaluate.py    单任务融合与评估

@@ -66,7 +66,7 @@ python experiments/run.py hparam_lpc --tag hparam_v1 --point 0 --device cuda:1 -
 
 ## 4. 图与论文
 
-`paper/data/` 与 `paper/figures/` 是冻结快照。新图先写独立目录：
+`paper/figures/` 使用 IEEE/TMI 上传包配图；`paper/data/` 保留原有实验 CSV，不表示已对新稿全部图表重新核对。新图先写独立目录：
 
 ```bash
 python scripts/plot_latest_paper_figures.py --csv-dir paper/data --paper-dir outputs/paper_preview
@@ -77,13 +77,12 @@ python scripts/plot_latest_paper_figures.py --csv-dir paper/data --paper-dir out
 ```bash
 cd paper
 mkdir -p build
-latexmk -pdf -interaction=nonstopmode -outdir=build v5.tex
-latexmk -pdf -interaction=nonstopmode -outdir=build appendix.tex
+latexmk -pdf -interaction=nonstopmode -outdir=build LAMP_Merge_TMI.tex
 ```
 
 ## 5. 复现边界
 
-- 附录写 LPC 3×10 网格，但最终 CSV 是 5×10；统一入口以 CSV 的实测点为准。附录的 30 点对应 tau=2/2.5/3。原文与数值均保留，待作者统一。
+- 当前稿件以 GitHub 上传的 IEEE/TMI 包为准；旧独立附录已删除。原有超参数 CSV 和实验配置继续保留，每份 CSV 含 50 个实测点。
 - 历史 `exp_analyze/validate_full_outputs.py` 面向旧固定报告集合，含 23 点等历史假设；它不验证新的 `outputs/paper/`。
 - 冻结 CSV 未提供每个数值到原始运行目录的完整统一映射。新入口记录计划和指标，不承诺尚未重新运行的结果逐位相同。
 - 目录整理不触发全量 GPU 实验；代码检查、输入路径检查与完整数值复现是不同层级。

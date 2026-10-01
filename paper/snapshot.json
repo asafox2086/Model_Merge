@@ -1,13 +1,23 @@
 {
-  "source": "Working manuscript and CSV snapshot preserved during repository organization on 2026-10-01",
+  "compatibility_changes": [
+    "LAMP_Merge_TMI.tex: release labelindent before enumitem loads",
+    "LAMP_Merge_TMI.tex: provide refname for the bibliography environment",
+    "ieeecolor.cls: correct invalid itemsep glue from plus pt to plus 0pt"
+  ],
+  "source": "IEEE/TMI source upload b82ba8b (LAMP_Merge_TMI.zip), plus preserved experiment CSVs",
+  "upload_sha256": "176e9f17d22a18f21341b87fde2f07280ce35802a1ecc3a87f5510dc76676d39",
   "files": [
     {
-      "path": "paper/v5.tex",
-      "sha256": "395426225f0a85a5078df3a339f9f92323702ae86e5e26860a67c74435646a4d"
+      "path": "paper/LAMP_Merge_TMI.tex",
+      "sha256": "0de8b7f08798de34ce395568854715d1a2d3c09796aa4369b152da3a5f290bc8"
     },
     {
-      "path": "paper/appendix.tex",
-      "sha256": "9412f0c4b30104c7079088b8b3ce45edd52a65ce9f0d3f31719590d13ad98428"
+      "path": "paper/UPLOAD_README.md",
+      "sha256": "1922f5c8d4caddeb3847050f0b18598e4dc16e315a4f265d3d72fd173e068235"
+    },
+    {
+      "path": "paper/aaai2026.bib",
+      "sha256": "7f385bd91b58cf25089e12f726ae0df40008efc1cf5fff1fe1ad70f91ac4611a"
     },
     {
       "path": "paper/data/Derma代表性预测类别分布.csv",
@@ -80,6 +90,286 @@
     {
       "path": "paper/data/预测坍缩诊断.csv",
       "sha256": "bafe9c2d1a859b4d0ba22d9da2a1b1cc539c7eeb27fcf0468a1b2fbb163580a5"
+    },
+    {
+      "path": "paper/figures/01_module_ablation_accuracy.pdf",
+      "sha256": "5fec4092cefe4ce17d738107e2afd85c42d7141279ac29bc76372620d0bb2dd6"
+    },
+    {
+      "path": "paper/figures/02_internal_module_ablations.pdf",
+      "sha256": "507b6810eacc0f75730708bbbb5b05fec765475fbd494d587edc7983345845e6"
+    },
+    {
+      "path": "paper/figures/03_baseline_2x2_ablation.pdf",
+      "sha256": "3c84ccaea68ea0abc45a8908f6ac2f3c0808bbbbd95e3aef53595975b417d5c5"
+    },
+    {
+      "path": "paper/figures/03_baseline_2x2_ablation.png",
+      "sha256": "e3e79058fc2e57c09129a508882086f76bb33d27f332a2eefe2c2005aa74f4bd"
+    },
+    {
+      "path": "paper/figures/04_ultrasound_class_distribution.pdf",
+      "sha256": "dc17469bd2b5bae2aa903755ab16a2be88c9246b77fb4d7b1f59a804ed5d40c0"
+    },
+    {
+      "path": "paper/figures/05_hyperparameter_sensitivity.pdf",
+      "sha256": "b9d289d38cd61f28636216d8119dd21368d4b3562dedac41e2acf22858ae34ae"
+    },
+    {
+      "path": "paper/figures/06_prevalence_calibration_hparams.png",
+      "sha256": "e31c5dca3f77462765d2525c1d044d862029d76e0d45d8e421d333537da7472c"
+    },
+    {
+      "path": "paper/figures/appendix_sample_blood_0.pdf",
+      "sha256": "b70641c374dd5cbaa5c9d7c572f2de7463a14fdbc4269422c1cf782e09fa6a95"
+    },
+    {
+      "path": "paper/figures/appendix_sample_blood_1.pdf",
+      "sha256": "64a32e56d49a7552aeae52c6035d0736caf27d4ec4b984a36e347bd06887ca9e"
+    },
+    {
+      "path": "paper/figures/appendix_sample_blood_2.pdf",
+      "sha256": "128940d0dffa952544944868fa48f9d7276f2e018d08799a3b96ed06a6fb843b"
+    },
+    {
+      "path": "paper/figures/appendix_sample_blood_3.pdf",
+      "sha256": "683c5e8ea3e5c92ade3bf2fe3b00ea278ee34f05418b0141c1fc98c4df7e9116"
+    },
+    {
+      "path": "paper/figures/appendix_sample_blood_4.pdf",
+      "sha256": "8ecb83aaabdf9036e2c1367018eb309ba88cb9e0b21dfcb2b6e581c0511fe386"
+    },
+    {
+      "path": "paper/figures/appendix_sample_blood_5.pdf",
+      "sha256": "40d1cff50025ef722a6375a400fcc3a3df3f350c850b34deef4a0feadbc28ef9"
+    },
+    {
+      "path": "paper/figures/appendix_sample_blood_6.pdf",
+      "sha256": "7dd443d89765ff6953812df6e23d015cba1e9b56a61c5436a0af59b516d6c7f5"
+    },
+    {
+      "path": "paper/figures/appendix_sample_blood_7.pdf",
+      "sha256": "43c982ff8c928dcf61fad1f84cb1d3a118b49bcb873eb4fc5e98b6041c5452a1"
+    },
+    {
+      "path": "paper/figures/appendix_sample_blood_7.png",
+      "sha256": "2c1ef5716a5345fc2c6b7fe47d4154b823dc2c72d9b7817ae7f4835fb7eceb07"
+    },
+    {
+      "path": "paper/figures/appendix_sample_derma_0.pdf",
+      "sha256": "46dceee6f629a8a5f447c9e2ccf8d9c6e2c9af41c8e206d013d444d537af2429"
+    },
+    {
+      "path": "paper/figures/appendix_sample_derma_1.pdf",
+      "sha256": "b2ff06b23b1011762b637ba2238c4d2133b96bf2609fd2dbf035855550f9d81a"
+    },
+    {
+      "path": "paper/figures/appendix_sample_derma_2.pdf",
+      "sha256": "fabf4b50f3b447474c8a21749b2c2ecd7d71f36f5db87e8db45a6181e6d3cc14"
+    },
+    {
+      "path": "paper/figures/appendix_sample_derma_3.pdf",
+      "sha256": "fff86a46e80fb5a9a2969ae80369b886c37f0dc1e9341adc8ba760ed061592a6"
+    },
+    {
+      "path": "paper/figures/appendix_sample_derma_4.pdf",
+      "sha256": "6f975ce0aeadacd260968cd35c746c0d30bff1a96ff8450132419f55acb09e04"
+    },
+    {
+      "path": "paper/figures/appendix_sample_derma_5.pdf",
+      "sha256": "a65cc40a949e699d73606528c95cd43621540844b42e658a7b860b35268b9925"
+    },
+    {
+      "path": "paper/figures/appendix_sample_derma_6.pdf",
+      "sha256": "82e86c73f3455365000cf74ca15cf918cf3e77c01498cea5a8d4c1d6f82eab5e"
+    },
+    {
+      "path": "paper/figures/appendix_sample_organ_c_0.pdf",
+      "sha256": "a4aa121dcd611737704954b2f87035d6c55f592f88be3c65b8809735b65efa65"
+    },
+    {
+      "path": "paper/figures/appendix_sample_organ_c_1.pdf",
+      "sha256": "1b07b25f58128d0ca988eb2a5544f4ac8d576da335514bf3003f45eb61eaad4b"
+    },
+    {
+      "path": "paper/figures/appendix_sample_organ_c_10.pdf",
+      "sha256": "8eaf49bec09517401df374638db5d28cc95c0b072e4877ee0dc85855aa8c01f1"
+    },
+    {
+      "path": "paper/figures/appendix_sample_organ_c_2.pdf",
+      "sha256": "408343f570af9886f1456ade95da1a87510abc2e8b822ca22e765fd0a9443ccb"
+    },
+    {
+      "path": "paper/figures/appendix_sample_organ_c_3.pdf",
+      "sha256": "83e0ac5f4f36fd5c04df9884b8822e23c8cdb1d1b51a0162b5ef1f4df7417803"
+    },
+    {
+      "path": "paper/figures/appendix_sample_organ_c_4.pdf",
+      "sha256": "5d9dbab274110da4827274a8a33d68156bf1767173febe2dd733c1534b8473f1"
+    },
+    {
+      "path": "paper/figures/appendix_sample_organ_c_5.pdf",
+      "sha256": "ff89e2473532be4b1e7a8f72fecc54788b9e09d4c0651b901c289830b989e0b7"
+    },
+    {
+      "path": "paper/figures/appendix_sample_organ_c_6.pdf",
+      "sha256": "b31ba0eb1baa085cb89d8cd944e9194058b4fa7af86525bee3c4458bfe81e7a1"
+    },
+    {
+      "path": "paper/figures/appendix_sample_organ_c_6.png",
+      "sha256": "e8d314426e79a96f68c64807b4f96cfac750c1840d2e352888676800824d1bb1"
+    },
+    {
+      "path": "paper/figures/appendix_sample_organ_c_7.pdf",
+      "sha256": "7407f335d5b63b64d1f58e85de6cdf0d5dd2a9adb7146e7e88033025536ed8b4"
+    },
+    {
+      "path": "paper/figures/appendix_sample_organ_c_8.pdf",
+      "sha256": "14b808a89dd8b353f946b2bb8cd5653bf85778820cd8ec80f9c67175bfa347f0"
+    },
+    {
+      "path": "paper/figures/appendix_sample_organ_c_9.pdf",
+      "sha256": "e801ba0141103b2484c3bbb4e904773cc21fd7130241029493379bef49eb39f4"
+    },
+    {
+      "path": "paper/figures/appendix_sample_organ_s_0.pdf",
+      "sha256": "e21318f76b09c89e41b8c3c52fc8c9197192bfbb7baf28d94869b11cd2d61349"
+    },
+    {
+      "path": "paper/figures/appendix_sample_organ_s_1.pdf",
+      "sha256": "a4dcd8e80050ffaf41f8c4e4b0f5020d5e0a9307e95ca3dec8ac0d8cab2522ae"
+    },
+    {
+      "path": "paper/figures/appendix_sample_organ_s_1.png",
+      "sha256": "841fdd7ef2f2599a455c07cb10dc58d4fe7117befc4e88bba25c3737474fe7fb"
+    },
+    {
+      "path": "paper/figures/appendix_sample_organ_s_10.pdf",
+      "sha256": "d33ac788ae1ce01abfff1958b575559e13e1fdf512ecc33780334c0011e5972c"
+    },
+    {
+      "path": "paper/figures/appendix_sample_organ_s_2.pdf",
+      "sha256": "32953df305fea77937d1a4c253958ee06ac334d57463089fd74d4e24e90840b8"
+    },
+    {
+      "path": "paper/figures/appendix_sample_organ_s_3.pdf",
+      "sha256": "4123147b148c33b4df2174713c6d842364229943cdd2adefbf7470f79d8ee22d"
+    },
+    {
+      "path": "paper/figures/appendix_sample_organ_s_4.pdf",
+      "sha256": "f0c6a03ab932dbd740d9589e4d5f6fc3b1d9502d2b1a59aa2171804349bcad12"
+    },
+    {
+      "path": "paper/figures/appendix_sample_organ_s_5.pdf",
+      "sha256": "746319bd3eaf45ee4980d6409b27ad40f4b8fd075ca38de6a0ff06f42e59308c"
+    },
+    {
+      "path": "paper/figures/appendix_sample_organ_s_6.pdf",
+      "sha256": "da48e194a2c159166cc8212ae410fe57be347422f5296a2217c5b8c7822dd6ad"
+    },
+    {
+      "path": "paper/figures/appendix_sample_organ_s_7.pdf",
+      "sha256": "d7a7b4f830e280f61ee88a13dab1e352e13fd8e3b54345131fded2d43cfe61fb"
+    },
+    {
+      "path": "paper/figures/appendix_sample_organ_s_8.pdf",
+      "sha256": "fe6874d024292ad15ba6f846868be49dd2c46cd08f9c2a46b58c62ddee5eb7a7"
+    },
+    {
+      "path": "paper/figures/appendix_sample_organ_s_9.pdf",
+      "sha256": "ab771d328c4116110eff3c2456b0af57991c23c5af38339961cb48b874ca1a11"
+    },
+    {
+      "path": "paper/figures/appendix_sample_ultrasound_0.pdf",
+      "sha256": "29a6709722ad385306d497b729646a1fb5ae5d3bbdb29650af33f2142ec9d474"
+    },
+    {
+      "path": "paper/figures/appendix_sample_ultrasound_1.pdf",
+      "sha256": "378e3e6e1fd4e27a537e60090bee48ea7495eef2c5d40f25e89b33367bd05e79"
+    },
+    {
+      "path": "paper/figures/appendix_sample_ultrasound_2.pdf",
+      "sha256": "60ac319841ecd25564a3c8ab4b5cd110dcb2d3c0ed099e090df344beb334468e"
+    },
+    {
+      "path": "paper/figures/appendix_sample_ultrasound_3.pdf",
+      "sha256": "da3f309af224a6aafd96b50ff776bf8cafc47c371d7d1487db11d5ca82b80189"
+    },
+    {
+      "path": "paper/figures/appendix_sample_ultrasound_4.pdf",
+      "sha256": "cd686d7aafb0fc31e545150a5bcbe4f486d7ba5e1cbee96f2fa302bdf4f54740"
+    },
+    {
+      "path": "paper/figures/appendix_sample_ultrasound_5.pdf",
+      "sha256": "ca9f410ddd335a61f251847f1d287d205ce9808e6433371c2071f9ad4053dd7f"
+    },
+    {
+      "path": "paper/figures/appendix_sample_ultrasound_6.pdf",
+      "sha256": "1f263eb2510fbfb8e18096e2ab292dc9f5b32a7a97911a5c92796705357517b8"
+    },
+    {
+      "path": "paper/figures/appendix_sample_ultrasound_7.pdf",
+      "sha256": "ec46299150d68ccfbfd8a31d87085ceeb6f6f1de169aef9aef77c5f6870de700"
+    },
+    {
+      "path": "paper/figures/async_blood_acc_k1_to_k7.pdf",
+      "sha256": "e7c83cd5714154424f4e0d50cb020eed572fe69e972841e54f14b3bd79342230"
+    },
+    {
+      "path": "paper/figures/async_blood_acc_macro_f1_k1_to_k7.pdf",
+      "sha256": "a6861e4dda644ef2c0830f1c908335555b94e4dc785ad4dd82570e17b9cf5a1e"
+    },
+    {
+      "path": "paper/figures/compare_nl_me.pdf",
+      "sha256": "9a922552dafac1e77b51b0a263d38ff6d9a8008db3d063c4820f00c516462f5d"
+    },
+    {
+      "path": "paper/figures/derma_true_class_distribution.pdf",
+      "sha256": "c6c12e3ed213d2a848707c57e80f89280b9b4d8dbdfac07740e3f8bcf5dd4c06"
+    },
+    {
+      "path": "paper/figures/intro.pdf",
+      "sha256": "f270cb76f959fe90a275861f867d3dc49f88cb83c90c6b19e284826445804f05"
+    },
+    {
+      "path": "paper/figures/method.pdf",
+      "sha256": "9fb41cc0c57caf90e506e48e608b5fb1d3dc75ddcc13c8164a7caaf874358b38"
+    },
+    {
+      "path": "paper/figures/sample_blood.pdf",
+      "sha256": "bb4da1e03905a3f082155d88aea0c90b50c370ab0b6f628e9b94fd69f3f535af"
+    },
+    {
+      "path": "paper/figures/sample_derma.pdf",
+      "sha256": "9d71df98b874068fe2a15b756b39a88965ca5bb127016fa964a2d91389ac2aad"
+    },
+    {
+      "path": "paper/figures/sample_organ_c.pdf",
+      "sha256": "6f57f0cac49b4abef22cb2d0630f5597f0848b51d03360fc80d1b7aedace3f09"
+    },
+    {
+      "path": "paper/figures/sample_organ_s.pdf",
+      "sha256": "dc0bcc9a0bd5a285f37ddbb6e05b8026976c9721dcb3d2333ab0b48a051704ff"
+    },
+    {
+      "path": "paper/figures/sample_ultrasound.pdf",
+      "sha256": "da9ece8fe1d89d327364b64b1b37c6d2e30700c1f32d5864bc06c1860f1f21f6"
+    },
+    {
+      "path": "paper/figures/ties_vs_lamp_merge_blood_acc_k1_to_k7.pdf",
+      "sha256": "911b7feae8bfed272bc0c6bfa2ff8c8d4c751f97aa504b5fb9c2e1a03c414c93"
+    },
+    {
+      "path": "paper/generic.sty",
+      "sha256": "43fa0ab104f9d85c16c20a73a16dbbb433e93ee11cfc1597767baf37276c2883"
+    },
+    {
+      "path": "paper/ieeecolor.cls",
+      "sha256": "dcc4fee8246bd9e63734b544253400a96d0270a82d310b37bdeb9d4ede63b797"
+    },
+    {
+      "path": "paper/logo.eps",
+      "sha256": "e48d5b6389ddc42bea7cfdc5e9115904371401bb5492c4aeb7f54c181817bdf3"
     }
   ]
 }

@@ -1,6 +1,6 @@
 {
-  "manuscript": "paper/v5.tex",
-  "appendix": "paper/appendix.tex",
+  "manuscript": "paper/LAMP_Merge_TMI.tex",
+  "appendix": null,
   "datasets": ["bloodmnist_224", "dermamnist_224", "organcmnist_224", "organsmnist_224", "chaoshengmnist_224"],
   "models": ["resnet", "convnext", "vit_t", "swin_tiny"],
   "clients": [3, 5, 7],

@@ -22,6 +22,7 @@ reference_cache/
 /My_merge_ret/reports/
 /My_merge_ret/figures/
 /paper/build/
+/paper/*-eps-converted-to.pdf
 *.aux
 *.bbl
 *.blg

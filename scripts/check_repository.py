@@ -58,11 +58,15 @@ def main():
         if not path.exists() or hashlib.sha256(path.read_bytes()).hexdigest() != record["sha256"]:
             errors.append(f"Changed frozen paper asset: {record['path']}")
     if args.archive:
-        for record in json.loads((ROOT / "remove/manifest.json").read_text())["files"]:
+        archive_manifest = json.loads((ROOT / "remove/manifest.json").read_text())
+        removed_roots = archive_manifest.get("removed_manuscript_roots", [])
+        for record in archive_manifest["files"]:
             if not record["destination"].startswith("remove/"):
                 continue
             path = ROOT / record["destination"]
             if not path.exists():
+                if any(path == ROOT / removed or (ROOT / removed) in path.parents for removed in removed_roots):
+                    continue
                 if record["tracked_before"]:
                     errors.append(f"Missing tracked archive: {record['destination']}")
             elif "sha256" in record and hashlib.sha256(path.read_bytes()).hexdigest() != record["sha256"]:

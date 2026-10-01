@@ -1,4 +1,11 @@
 {
+  "removed_manuscript_roots": [
+    "remove/legacy/LAMP_Merge_v5_pdf_only",
+    "remove/legacy/paper_figures_png_pdf",
+    "remove/legacy/My_merge_ret/aaai_lamp_merge_docx_tex",
+    "remove/legacy/root"
+  ],
+  "manuscript_removal_reason": "User requested direct deletion of old manuscripts when adopting IEEE/TMI upload b82ba8b on 2026-10-01; other experiment archives remain.",
   "description": "Reversible repository organization; SHA-256 refers to content before relocation.",
   "files": [
     {

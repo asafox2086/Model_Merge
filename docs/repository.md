@@ -1,10 +1,10 @@
 # 目录整理记录
 
-基准为根目录 `v5.tex`（2026-07-25）、`appendix.tex`（2026-07-26）和论文实验 CSV；比 2026-07-23 打包稿更新。现统一放到 `paper/`。
+当前论文以 GitHub 提交 `b82ba8b` 上传的 `LAMP_Merge_TMI.zip` 为准，解包到 `paper/`。正文与上传稿一致，三处模板编译修复记录在 `paper/README.md`。按用户要求，旧 AAAI 主稿、独立附录、模板、checklist、编译产物和旧打包稿已删除，不再归档；可通过 Git 历史查阅。实验代码、数据 CSV 和运行结果保留。
 
 ## 归档原则
 
-1. 旧论文包、旧版本、旧 my_merge 文档进入 `remove/legacy/`。
+1. 旧方法文档和实验历史仍在 `remove/legacy/`；旧论文包已按 TMI 切换要求删除。
 2. 重复脚本进入 `remove/duplicates/`；原入口改成相对软链接，指向唯一实现。
 3. 数据、checkpoint、参考缓存、原型统计与有效实验报告保持原路径。
 4. 用途不能确定的报告保留在 `My_merge_ret/`，不会因名称含日期就归档。
@@ -21,7 +21,7 @@
 - 新入口固定 seed；批量融合空选择或出现失败时返回非零状态。
 - 比较脚本默认 head-only；自定义脚本默认 `lamp_merge`。
 - 绘图默认指向 `paper/data/` 与 `paper/figures/`。
-- 论文正文、CSV 和正式 DPR/LPC 算法保持原内容。
+- TMI 切换使用上传稿原文，保留原有 CSV 和正式 DPR/LPC 算法。
 
 ## 维护
 

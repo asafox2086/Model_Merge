@@ -12,8 +12,8 @@
 | Prediction-collapse Diagnostics | `collapse` | `paper/data/预测坍缩诊断.csv`；新运行还包含各客户端 |
 | Distribution Analysis | `collapse` 的逐类别指标与图 | 超声与 Derma 类别分布 CSV |
 | Hyperparameter Analysis | `hparam_dpr` / `hparam_lpc` | 两份 `paper/data/超参数分析_*.csv` |
-| 附录 Algorithmic Specification | `methods/lamp_merge.py` | `paper/appendix.tex` |
-| 附录 Organ-S / 数据集统计 | `main` 中 Organ-S；数据统计快照 | 主实验与数据集统计 CSV |
+| Method / Algorithmic Specification | `methods/lamp_merge.py` | `paper/LAMP_Merge_TMI.tex` |
+| Organ-S / 数据集统计 | `main` 中 Organ-S；数据统计快照 | 保留的主实验与数据集统计 CSV |
 | 扩展：原型几何 / t-SNE | `exp_analyze/analyze_lamp_merge_prototype_geometry.py` | 参数见 `--help` |
 | 扩展：公共域评估 | `exp_analyze/run_lamp_merge_public_test.py` | 公共数据仅作评估，不作融合输入 |
 
