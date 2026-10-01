@@ -4,12 +4,20 @@
     "LAMP_Merge_TMI.tex: provide refname for the bibliography environment",
     "ieeecolor.cls: correct invalid itemsep glue from plus pt to plus 0pt"
   ],
-  "source": "IEEE/TMI source upload b82ba8b (LAMP_Merge_TMI.zip), plus preserved experiment CSVs",
+  "source": "IEEE/TMI source upload b82ba8b (LAMP_Merge_TMI.zip), revised 2026-10-01 against archived experiment evidence",
   "upload_sha256": "176e9f17d22a18f21341b87fde2f07280ce35802a1ecc3a87f5510dc76676d39",
   "files": [
     {
       "path": "paper/LAMP_Merge_TMI.tex",
-      "sha256": "0de8b7f08798de34ce395568854715d1a2d3c09796aa4369b152da3a5f290bc8"
+      "sha256": "bb497e2b9a80c5c6901dfefbb08c539313954c8f54e8e2f70fce0cc352894adc"
+    },
+    {
+      "path": "paper/README.md",
+      "sha256": "beee85ca3ff442b2141c8b6c880d390d7c9f5b413a5ab533c52812591177e3b3"
+    },
+    {
+      "path": "paper/REVISION_NOTES.md",
+      "sha256": "fe70c3e597670e38f04846f48a2621b8a9afde9b78561d387fcf5aaf277593d1"
     },
     {
       "path": "paper/UPLOAD_README.md",
@@ -17,7 +25,7 @@
     },
     {
       "path": "paper/aaai2026.bib",
-      "sha256": "7f385bd91b58cf25089e12f726ae0df40008efc1cf5fff1fe1ad70f91ac4611a"
+      "sha256": "8dd9ec4c331537347e93d3d046096b2947fe2b8e447832ba92732c31f60acfc1"
     },
     {
       "path": "paper/data/Derma代表性预测类别分布.csv",
@@ -28,8 +36,24 @@
       "sha256": "dbfef5230495732b3e3a3e9b5f184d05dda5692d452cf1659a8afcb8232e3fb3"
     },
     {
+      "path": "paper/data/swin_full_grid.csv",
+      "sha256": "6be6b1206a55832be74f92fb5941254b7950d25d26968438f5608f52334678e9"
+    },
+    {
+      "path": "paper/data/swin_full_grid.tex",
+      "sha256": "cdfe431fd75ac88cf85d4e7e5b43d27fae52f08c6c9cca3b6b0d3695f615bd2d"
+    },
+    {
       "path": "paper/data/tSNE输出概率坐标.csv",
       "sha256": "2ed89c4837e03f676317b7d055c21bacbb119b85314477041b5a0ce561fc75d0"
+    },
+    {
+      "path": "paper/data/tmi_partition_audit.json",
+      "sha256": "d14e9778c900c99cf05b3280b3c2446cd6d983432d70cc83bf98d3c627e069b8"
+    },
+    {
+      "path": "paper/data/tmi_revision_audit.json",
+      "sha256": "7219beb25718e57e1aff8c128d1b60849a2d5968c9b9a9df89fae5d8202da14e"
     },
     {
       "path": "paper/data/主实验_ConvNeXt.csv",
@@ -371,5 +395,6 @@
       "path": "paper/logo.eps",
       "sha256": "e48d5b6389ddc42bea7cfdc5e9115904371401bb5492c4aeb7f54c181817bdf3"
     }
-  ]
+  ],
+  "revision": "paper/REVISION_NOTES.md"
 }

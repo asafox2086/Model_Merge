@@ -1,0 +1,45 @@
+{
+  "source": "My_merge_ret/reports/head_only_baselines_20260724_v5.csv",
+  "sha256": "2a5f789ae29d4a5c3f396e890244020588b8685d82684b328ed8a814ee9432ba",
+  "main_table_metric_pairs": 768,
+  "confusion_matrices_verified": 2160,
+  "all_test_classes_present": true,
+  "lamp_mean_accuracy_by_backbone": {
+    "swin_tiny": 0.6397227398808745,
+    "convnext": 0.6261682315908625,
+    "resnet": 0.6157485558012741,
+    "vit_t": 0.6075345162419838
+  },
+  "selected_backbone": "swin_tiny",
+  "selection_rule": "Highest LAMP mean ACC across all five datasets and all nine K/beta settings",
+  "hyperparameter_grids": {
+    "DPR": {
+      "source": "paper/data/超参数分析_诊断原型重建.csv",
+      "sha256": "ba3bdb41483eee8b1b5ac2ec7bfe7b859b3ecc1c048612c0ec695be1b768adfe",
+      "points": 50,
+      "min_acc_percent": 61.8023,
+      "max_acc_percent": 62.289,
+      "best_parameters": {
+        "Support exponent gamma": 0.6,
+        "Prototype head scale s": 16.25
+      },
+      "selected_acc_percent": 62.2065,
+      "gap_pp": 0.0825,
+      "interpretation": "Retrospective test-set sensitivity; not evidence of independent validation selection"
+    },
+    "LPC": {
+      "source": "paper/data/超参数分析_长尾患病率校准.csv",
+      "sha256": "16f9755c44f1ff30fb1a34a2f66b44b1cd72c2c48b711fb220b10aa9ce1d8b82",
+      "points": 50,
+      "min_acc_percent": 61.6468,
+      "max_acc_percent": 62.2971,
+      "best_parameters": {
+        "Activation threshold tau": 3.0,
+        "Calibration strength lambda": 5.25
+      },
+      "selected_acc_percent": 62.2065,
+      "gap_pp": 0.0906,
+      "interpretation": "Retrospective test-set sensitivity; not evidence of independent validation selection"
+    }
+  }
+}

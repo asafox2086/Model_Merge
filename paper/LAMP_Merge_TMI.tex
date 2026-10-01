@@ -170,7 +170,7 @@ To address these problems, we propose \textbf{LAMP-Merge}, a class-aware medical
 \begin{figure*}[!t]
     \centering
     \includegraphics[width=0.80\textwidth,height=0.3\textheight]{figures/method.pdf}
-    \caption{\textbf{Overview of LAMP-Merge.} All local models share the same frozen backbone $\phi_0$, and only the diagnostic head is merged. Each hospital uploads class-level statistics---reference-space prototypes with sample support and diagnosis support counts---while raw images stay local. On the server, Diagnostic Prototype Reconstruction (DPR) merges the prototypes by support-aware weighting into the classifier weights $\mathbf{w}_c$, and Long-tail Prevalence Calibration (LPC) adds a gated, scaled, and centered log-prior bias $b_c$. The resulting head is attached to the unchanged $\phi_0$, giving $\ell_c(x)=\mathbf{w}_c^{\top}\phi_0(T(x))+\mathbf{1}[r>\tau]\,b_c$ without raw-data sharing or federated rounds.}
+    \caption{\textbf{Overview of LAMP-Merge.} All prototypes and the merged model use the same frozen reference backbone $\phi_0$, and only the diagnostic head is reconstructed. Each hospital uploads class-level statistics---reference-space prototypes with sample support and diagnosis support counts---while raw images stay local. On the server, Diagnostic Prototype Reconstruction (DPR) merges the prototypes by support-aware weighting into the classifier weights $\mathbf{w}_c$, and Long-tail Prevalence Calibration (LPC) adds a gated, scaled, and centered log-prior bias $b_c$. The resulting head is attached to the unchanged $\phi_0$, giving $\ell_c(x)=\mathbf{w}_c^{\top}\phi_0(T(x))+\mathbf{1}[r>\tau]\,b_c$ without raw-data sharing or federated rounds.}
  
     \label{fig_method}
 \end{figure*}
@@ -204,7 +204,11 @@ However, these methods operate on patient-level inputs or multimodal records and
 
 Federated and decentralized learning perform collaborative training through communication protocols. FedAvg~\cite{pmlr-v54-mcmahan17a} and its variants or medical deployments~\cite{li2020fedprox,karimireddy2020scaffold,li2021fedbn,kaissis2020secure,sheller2020federated,rieke2020future,kairouz2021advances,li2021moon,collins2021fedrep} rely on repeated server-client updates, and Gossip Learning~\cite{hegedhus_gossip_2019} reduce centralization but still require participants to continue training, exchanging models, and optimizing from intermediate states.
 
-However, our setting begins after local training has finished. Hospitals may not remain online, receive global checkpoints repeatedly, or run additional optimization rounds. \textbf{The bottleneck is therefore communication feasibility in addition to privacy.} 
+Prototype exchange and classifier calibration are closely related to our approach. FedProto~\cite{tan2022fedproto} iteratively exchanges class prototypes and uses global prototypes to regularize local representation learning across heterogeneous clients. Thus, prototype aggregation itself is not new; LAMP-Merge instead uses one upload in a fixed reference space to directly synthesize a diagnostic head, without subsequent local training. CCVR~\cite{luo2021ccvr} is also a post-hoc calibration method: after federated training, it collects class-wise feature means and covariances under the global encoder, samples virtual features, and retrains the classifier. LAMP-Merge uses means and counts without covariance estimation, virtual-feature sampling, or server-side classifier optimization.
+
+CReFF~\cite{shang2022creff} communicates local models and class-wise classifier gradients computed from real features; the server learns federated features by gradient matching and retrains the classifier within an iterative federated procedure. FedLC~\cite{zhang2022fedlc} addresses label skew by label-frequency-dependent logit calibration during local training. In contrast, LPC adds a gated log-prior bias after training, using pooled observed counts. These methods also avoid direct raw-image sharing; our distinction concerns the communication protocol, information supplied, and optimization required, rather than an exclusive privacy property.
+
+Our setting begins after local training has finished. Hospitals may not remain online, receive global checkpoints repeatedly, or run additional optimization rounds. LAMP-Merge therefore targets a single statistics upload and direct head synthesis. This distinguishes it from iterative training approaches, while CCVR remains a relevant post-hoc alternative with different statistics and server optimization requirements.
 %LAMP-Merge requires one upload of a local model interface and class-level statistics, enabling the server to construct a unified diagnostic model without a multi-round feedback loop.
 
 \section{Method}
@@ -215,6 +219,10 @@ We study post-training medical model merging: \textbf{LAMP-Merge reconstructs th
 \subsection{Problem Setting}
 
 Consider $K$ medical clients that share a frozen \textbf{reference encoder} $\phi_0$, the common pretrained backbone every client keeps identical before local training. Client $i$ owns a private labeled dataset $D_i=\{(x,y)\}$ drawn from a class-skewed distribution over $C$ diagnosis classes, with subset $D_{i,c}$ for class $c$. In medical partitions $D_{i,c}$ is empty for many classes: client $i$ carries reliable supervision only for the classes it has observed, and is thus a \textbf{partial diagnostic expert}. After local training, each client makes a \textbf{single upload} of the support count and reference-space prototype for each observed class, never raw images, per-sample features, or a validation set.
+
+\textbf{Shared feature coordinates are a prerequisite for direct prototype aggregation.} All prototypes must be computed with the identical $\phi_0$ and preprocessing $T$, and the merged head must act on that same representation. A common architecture or initialization alone does not ensure this property after independent encoder fine-tuning. Prototypes from independently adapted encoders are outside the scope of the present method: combining them would require an explicit representation-alignment mechanism and constitute a different methodological problem. We assume every evaluated class is observed by at least one participating client.
+
+Keeping raw images local reduces direct exposure of patient-level records, but uploaded prototypes and counts can still disclose sensitive information. Our protocol provides neither differential privacy nor secure aggregation, and we do not claim quantified protection against inference or reconstruction attacks.
 
 
 \subsection{Diagnostic Prototype Reconstruction}
@@ -229,6 +237,7 @@ where $n_{i,c}=|D_{i,c}|$ is the class support and a client with $n_{i,c}=0$ con
 \begin{equation}
 e_{i,c}=(n_{i,c}+1)^{\gamma}\,\mathbf{1}[n_{i,c}>0],\qquad
 \alpha_{i,c}=\frac{e_{i,c}}{\sum_{j=1}^{K} e_{j,c}},
+\label{eq:support-weight}
 \end{equation}
 with $\gamma=0.55$ interpolating between uniform ($\gamma=0$) and smoothed support-proportional ($\gamma=1$) averaging. Crucially, $\alpha_{i,c}=0$ whenever $n_{i,c}=0$, so \textbf{absent-class clients can never enter a class reconstruction}. This exclusion prevents models without evidence for class $c$ from diluting its reconstructed direction. The global prototype is then the reliability-weighted average
 \begin{equation}
@@ -240,6 +249,8 @@ summing one homogeneous quantity per client like weight averaging, yet reconstru
 w_c=s\,\frac{p_c}{\|p_c\|_2},
 \end{equation}
 with $s=18.75$. The resulting classifier is \textbf{synthesized from class evidence, not averaged from local classifier weights}.
+
+\textbf{Motivation for support tempering.} In an idealized model with independent class-conditional samples, common mean, and covariance $\Sigma_c$, the sample mean has covariance $\Sigma_c/n_{i,c}$. For nonnegative weights summing to one, the trace variance of their aggregate is $\operatorname{tr}(\Sigma_c)\sum_i\alpha_{i,c}^2/n_{i,c}$, minimized by $\alpha_{i,c}\propto n_{i,c}$ over observing clients. Equation~\ref{eq:support-weight} is a regularized relaxation of this variance-based rule, not its exact minimizer: adding one smooths small supports, while $0<\gamma<1$ compresses the ratio of two clients' weights to $((n_{i,c}+1)/(n_{j,c}+1))^\gamma$. This limits dominance by a large client when the idealized assumptions are imperfect. More precisely, on the simplex of observing clients, the rule maximizes $\sum_i\alpha_i\log(n_{i,c}+1)+H(\alpha)/\gamma$, where $H(\alpha)=-\sum_i\alpha_i\log\alpha_i$. The entropy term trades support preference against concentration, and the mask still excludes absent classes. This motivates the weighting family, but does not establish $\gamma=0.55$ as theoretically optimal; its empirical sensitivity is reported below.
 
 \subsection{Long-tail Prevalence Calibration}
 
@@ -257,7 +268,7 @@ Assembling the two terms gives the score assigned to class $c$ for an input $x$,
 \label{eq:score}
 \end{equation}
 realized as a single checkpoint. \textbf{Merging is confined entirely to the diagnostic head}: the frozen $\phi_0$ is reused as the shared body, and the head weight and bias are exactly the reconstructed $\{w_c\}$ and calibration $\{b_c\}$. The result $\theta_m=(\phi_0,\{w_c,b_c\})$ is a single global diagnostic model built \textbf{in one pass from class-level prototypes}, with no raw-image access and no federated rounds.
-Complete pseudocode is given in the supplementary material.
+The construction requires only the uploaded prototypes and counts, followed by weighted averaging, normalization, and the gated bias calculation above.
 
 
 
@@ -267,7 +278,7 @@ Complete pseudocode is given in the supplementary material.
 
 \subsubsection{Evaluation datasets.}
 
-We evaluate on four public MedMNIST v2 benchmarks~\cite{yang2023medmnist}---BloodMNIST, DermaMNIST, OrganCMNIST, and OrganSMNIST---and a private eight-class ultrasound subset, ChaoShengMNIST, with anonymized class identifiers. These datasets span blood-cell microscopy, dermoscopy, abdominal CT, and ultrasound, with different class counts and empirical class distributions. Table~\ref{tab:dataset-statistics} summarizes the datasets; full Organ-S comparison tables are provided in the supplementary material.
+We evaluate on four public MedMNIST v2 benchmarks~\cite{yang2023medmnist}---BloodMNIST, DermaMNIST, OrganCMNIST, and OrganSMNIST---and a private eight-class ultrasound subset, ChaoShengMNIST, with anonymized class identifiers. These datasets span blood-cell microscopy, dermoscopy, abdominal CT, and ultrasound, with different class counts and empirical class distributions. Table~\ref{tab:dataset-statistics} summarizes the datasets; Organ-S is included in the five-dataset analyses and the unaveraged results below.
 
 
 
@@ -297,6 +308,8 @@ ChaoShengMNIST & 8 & 3,869 & 549 & 1,113 & 5,531 & \makebox[1.05cm][c]{\raisebox
 \end{table}
 
 \subsubsection{Comparison baselines.}
+
+The eleven baselines in Tables~\ref{tab:client-avg-swin-tiny}--\ref{tab:client-avg-vit-tiny} retain their own information interfaces; none consumes LAMP-Merge's class-prototype/support-count payload. Parameter-based methods use supervised local-head parameters, task deltas, or their sign and spectral structure. These learned quantities contain information from local images that LAMP-Merge's head synthesis does not use. RegMean additionally uses activation second moments, computed in our implementation from the benchmark validation split; this statistics loader is not restricted to the reconstructed client partitions. Such second moments are not determined by class means and counts. Conversely, LAMP-Merge receives explicit class summaries unavailable to the baseline operators. The comparison therefore evaluates distinct information acquisition and merging procedures on a common reference backbone, rather than identical information budgets. It does not imply that every baseline accesses raw images at server merge time, nor that LAMP-Merge uses validation activations or locally trained head values.
 
 \begin{table*}[!t]
 \centering
@@ -548,7 +561,13 @@ We compare LAMP-Merge with eleven model-merging baselines: Weight Averaging~\cit
 
 % Experiments follow a single-shot asynchronous model-merging protocol. Each client independently trains a local model on its own medical imaging data and then computes the class-level statistics required by LAMP-Merge locally, including class-support counts, reference-space class prototypes, and class-prevalence counts. These statistics are uploaded once together with an interface to the local checkpoint. The server performs a single model-merging step using only the uploaded checkpoints and class-level statistics, and evaluates the resulting merged model on a global test set.
 
-All clients use \textbf{the same frozen backbone} and train only their local diagnostic heads. The baselines merge these locally trained heads, whereas LAMP-Merge reconstructs the head from client-side class statistics on the same frozen backbone. We evaluate ResNet~\cite{he2016deep}, ConvNeXt~\cite{liu2022convnet}, ViT-Tiny~\cite{dosovitskiy2021image}, and Swin-Tiny~\cite{liu2021swin}. For each dataset--backbone pair, we construct non-IID partitions with $K\in\{3,5,7\}$ clients and skew settings $\beta\in\{0,0.01,0.1\}$~\cite{hsu2019measuringeffectsnonidenticaldata}. Each $K$ entry averages the three $\beta$ settings, and the Avg column further averages the three client counts. We report test ACC and Macro-F1 in percentage points; the smaller line beneath each LAMP-Merge entry is its absolute point difference from the strongest baseline reported in that table. Every configuration is run once with seed 42.
+All merged models retain \textbf{the same frozen reference backbone} for a given model family. The baselines merge locally trained diagnostic-head parameters, whereas LAMP-Merge reconstructs the head from reference-space class statistics. The available upstream checkpoint metadata does not independently establish that the encoders were frozen throughout local training; our verified comparison concerns the head-only merge and its common output backbone. We evaluate ResNet~\cite{he2016deep}, ConvNeXt~\cite{liu2022convnet}, ViT-Tiny~\cite{dosovitskiy2021image}, and Swin-Tiny~\cite{liu2021swin}. For each dataset--backbone pair, we use $K\in\{3,5,7\}$ clients and skew settings $\beta\in\{0,0.01,0.1\}$~\cite{hsu2019measuringeffectsnonidenticaldata}. Every configuration is run once with seed 42.
+
+For statistics extraction, simulated hospitals are reconstructed from the saved class-count metadata by randomly shuffling each class's training indices and allocating disjoint slices to clients. Images are exchangeable within each class under this sampling procedure, with no imposed acquisition-site shift, but hospitals are \textbf{not jointly IID}: their class proportions and class supports differ. An audit of all 180 dataset--backbone--$K$--$\beta$ configurations found no repeated assigned indices or omitted training samples, and the uploaded counts exactly matched the pooled training-label histograms. This verifies the reconstructed statistics partitions, not the unavailable original training-index provenance of upstream checkpoints. Nonoverlap refers to dataset indices, not a patient-level or image-content deduplication audit.
+
+Consequently, $\pi_c=\sum_i n_{i,c}/\sum_{i,k}n_{i,k}$ exactly recovers the sample-size-weighted empirical class prior of the participating assigned samples. This counting identity follows from disjoint, complete allocation; it does not require IID hospital label distributions. LPC incorporates that prior into class scores, but neither estimates population disease prevalence nor guarantees that predicted class frequencies equal the prior. In all audited payloads, prototype-support counts equal prevalence counts; if prototype extraction were subsampled, prevalence would instead require separate full-sample counts.
+
+We report test \textbf{ACC / Macro-F1}, both in percent. ACC is the fraction of correctly classified test images. For each class, $F1_c=2TP_c/(2TP_c+FP_c+FN_c)$, with a zero value when the denominator is zero; Macro-F1 is the unweighted mean over classes with positive test support. All classes have positive test support in the reported configurations, so this is $C^{-1}\sum_{c=1}^{C}F1_c$. This is not Micro-F1, which equals ACC for single-label multiclass classification. Metrics are computed separately for each configuration before averaging: each $K$ entry averages the three $\beta$ settings, and Avg further averages the three client counts, rather than pooling confusion matrices. The smaller line reports the absolute gain in percentage points over the strongest baseline for each metric separately.
 
 \subsubsection{Implementation environment.}
 
@@ -566,7 +585,7 @@ All experiments run on two Intel Xeon Silver 4210 CPUs (20 cores / 40 threads), 
 
 % The main comparison uses client-average ACC: for each fixed dataset, model, and client number, we first average over the three $\beta$ skew levels and then compare merging methods. A cell is counted as successful when LAMP-Merge is greater than or equal to the strongest non-LAMP baseline in that cell.
 
-Tables~\ref{tab:client-avg-swin-tiny}--\ref{tab:client-avg-vit-tiny} report the four main-text datasets, with Organ-S in the supplementary material. Across the dataset-level Avg columns, LAMP-Merge achieves the highest ACC and Macro-F1 for every backbone and dataset. The largest gains occur on Blood: with ViT-Tiny it reaches \textbf{85.21\%/82.96\%}, exceeding the strongest baseline by \textcolor{DropRed}{66.54/74.63} percentage points (pp), and with ConvNeXt \textbf{85.05\%/83.46\%} (\textcolor{DropRed}{59.13/71.36} pp). Derma exposes the gap between raw accuracy and multiclass coverage: under ConvNeXt with $K=3$, Iso-C obtains 60.91\% ACC versus our 59.68\%, but only 13.43\% Macro-F1 versus 33.61\%. After averaging client counts, LAMP-Merge is again best on both (59.29\%/33.28\%), and this isolated ACC exception with far higher Macro-F1 is consistent with the majority-class concentration analyzed below.
+Tables~\ref{tab:client-avg-swin-tiny}--\ref{tab:client-avg-vit-tiny} report four datasets. Across these dataset-level Avg columns, LAMP-Merge achieves the highest ACC and Macro-F1 for every backbone and dataset. The largest gains occur on Blood: with ViT-Tiny it reaches \textbf{85.21\%/82.96\%}, exceeding the strongest baseline by \textcolor{DropRed}{66.54/74.63} percentage points (pp), and with ConvNeXt \textbf{85.05\%/83.46\%} (\textcolor{DropRed}{59.13/71.36} pp). Derma exposes the gap between raw accuracy and multiclass coverage: under ConvNeXt with $K=3$, Iso-C obtains 60.91\% ACC versus our 59.68\%, but only 13.43\% Macro-F1 versus 33.61\%. After averaging client counts, LAMP-Merge is again best on both (59.29\%/33.28\%), and this isolated ACC exception with far higher Macro-F1 is consistent with the majority-class concentration analyzed below.
 
 
 % \setcounter{dbltopnumber}{4}
@@ -663,6 +682,10 @@ We test three controls for LPC. Two probe the \textbf{prior estimator}: UPP repl
 %Table~\ref{tab:prevalence-internal-ablation} and Fig.~\ref{fig:internal_module_ablations} 
 Table~\ref{tab:prevalence-internal-ablation} shows all three controls reduce average ACC from \textbf{62.21\%}: UPP and CBP lose 3.30 and 3.22 pp, AOC 0.31 pp. UPP raises Macro-F1 from 52.81\% to 53.52\%, the expected trade-off: flattening the prior favors class-balanced performance but sacrifices accuracy under the long tail, while removing the gate loses 0.85 Macro-F1 pp. Gated calibration thus gives a better ACC--Macro-F1 balance than applying the prior everywhere.
 
+\subsubsection{Unaveraged client-count and skew results}
+Table~\ref{tab:swin-full-grid} reports every $K\times\beta$ setting for Swin-Tiny, including Organ-S, without averaging over either axis. Swin-Tiny is selected by the highest LAMP-Merge mean ACC over all five datasets and all nine settings: 63.97\%, compared with 62.62\% for ConvNeXt, 61.57\% for ResNet, and 60.75\% for ViT-Tiny. This explicit, retrospective selection provides a compact descriptive view of the strongest backbone; the single-seed results do not quantify run-to-run uncertainty.
+\input{data/swin_full_grid.tex}
+
 
 
 \begin{table}[!t]
@@ -738,14 +761,18 @@ Examining the absolute per-class gap between predicted and true class frequencie
 Merging the seven BloodMNIST clients one at a time as they arrive, across all four backbones (Fig.~\ref{fig:async-bloodmnist}), LAMP-Merge \textbf{raises test accuracy monotonically as clients accumulate}, so a usable model is available at every step and keeps improving with each new arrival. TIES, by contrast, \textbf{stays flat and low throughout}, as a generic parameter-space merge cannot turn incremental arrivals into progressive gains.
 
 \subsection{Hyperparameter Sensitivity}
-Fig.~\ref{fig:hparam-analysis} varies DPR's prototype-head scale $s$ under several $\gamma$ values and LPC's calibration strength $\lambda$ under several $\tau$ values. The full-scope mean ACC changes gradually across both grids, and the selected configuration lies inside a broad plateau rather than at an isolated peak. We therefore use $\gamma=0.55$, $s=18.75$, $\tau=2.5$, and $\lambda=4.25$ for all reported settings without dataset-specific tuning.
+Fig.~\ref{fig:hparam-analysis} varies DPR's prototype-head scale $s$ under several $\gamma$ values and LPC's calibration strength $\lambda$ under several $\tau$ values. The two recorded grids each contain 50 points, each evaluated over 180 configurations (five datasets, four backbones, and nine $K\times\beta$ settings). DPR scans $\gamma\in\{0.40,0.45,0.50,0.55,0.60\}$ and $s=12.50,13.75,\ldots,23.75$; LPC scans $\tau\in\{1.5,2.0,2.5,3.0,3.5\}$ and $\lambda=3.00,3.25,\ldots,5.25$, keeping the other module at its selected setting.
+
+The common choice $\gamma=0.55$, $s=18.75$, $\tau=2.5$, $\lambda=4.25$ is an interior operating point used without dataset-specific tuning. Sublinear $\gamma$ tempers support dominance; $s$ controls the prototype-score magnitude relative to the LPC bias; $\tau$ limits prior adjustment to pronounced imbalance; and $\lambda$ controls its strength. The recorded mean ACC is 62.2065\% at this setting. Across the DPR grid, ACC ranges from 61.8023\% to 62.2890\%; the maximum at $(\gamma,s)=(0.60,16.25)$ exceeds the selected setting by only 0.0825 pp. Across the LPC grid, the range is 61.6468\%--62.2971\%, with the maximum at $(\tau,\lambda)=(3.0,5.25)$ only 0.0906 pp higher. These observations support a stable operating region, not unique optimality or a theoretical derivation of the numerical constants.
+
+The archived sweeps evaluate the test split and are retrospective sensitivity analyses. They do not establish test-independent hyperparameter selection; selection on a separate validation set and multi-seed confirmation remain necessary for an unbiased prospective assessment.
 
 
 \section{Conclusion}
 
 We study medical model merging under a raw-data-free protocol. Generic parameter-space merging collapses when hospitals cover different diagnostic classes, while an observed long-tailed prior makes collapse correction different from enforcing uniform predictions. LAMP-Merge addresses these coupled problems by \textbf{reconstructing diagnostic class directions} from client-side prototypes and calibrating the classifier with empirical class statistics, improving both ACC and Macro-F1.
 
-Our evaluation covers head-only merging with a shared frozen backbone; independently adapted backbones, real multicenter data, and formal privacy remain future work.
+Our conclusions are limited to head-only synthesis in a shared frozen feature space. Identical feature coordinates are essential for direct prototype aggregation; independently fine-tuned encoders are unsupported without an additional representation-alignment mechanism, which would change the method. The reconstructed benchmark partitions isolate label skew through disjoint within-class sampling and do not establish robustness to real hospital acquisition shifts. Uploaded counts recover the participating samples' empirical prior, not population prevalence or exact predicted frequencies. Keeping raw images local reduces direct data exposure, but aggregate statistics are not a formal privacy guarantee; no differential privacy, secure aggregation, or attack-resistance evaluation is provided. Single-seed evaluation, retrospective test-set sensitivity grids, and unequal information interfaces across baselines further limit the claims. Real multicenter validation, independently validated hyperparameter selection, and explicit privacy mechanisms remain future work.
 
 
 \bibliographystyle{IEEEtran}
