@@ -2,6 +2,8 @@
 
 当前唯一主文件：`LAMP_Merge_TMI.tex`。来源为 GitHub 提交 `b82ba8b` 上传的根目录 `LAMP_Merge_TMI.zip`。
 
+2026-10-03 新增 TMI 2022 的 **Pscore-MLP (adapted)** 非联邦监督式预测融合对照，180 个配置全部完成并通过预测/选模审计。四张主表及增益已更新；详细协议、完整结果和例外见 `PSCORE_REVISION.md`、`data/pscore/README.md`。最新 PDF 为 **11 页、56 个引用键**，无未解析引用及新增 overfull 警告。
+
 - 主稿和配套资源来自上传包；2026-10-01 已按实验记录完成正文修订，详见 `REVISION_NOTES.md`。上传 ZIP 保留原始版本，当前正文不再与其逐字节一致。
 - `aaai2026.bib` 是新稿继续使用的参考文献数据库文件名；参考文献样式是 `IEEEtran`，旧 AAAI 的 `.sty/.bst` 已删除。
 - 上传包说明原件保留为 `UPLOAD_README.md`。包内没有启用独立附录，本仓库不再保留旧附录或 checklist。
@@ -51,3 +53,5 @@ python scripts/audit_tmi_revision.py --partitions
 ```
 
 只有明确更新论文数据时才使用 `--write --partitions`，随后检查差异并更新 `snapshot.json`。原始指标 CSV 已纳入 Git；原图、模型和逐客户端载荷不会因论文核验而上传。
+
+新增 Pscore 后，该审计还验证其 64 对主表指标和包含新基线的 64 对增益。`scripts/summarize_pscore_baseline.py` 可从本地完整运行产物重新核验 180 组预测与验证选择，并导出 `data/pscore/` 的四份结果文件。其运行命令见仓库 `docs/pscore_baseline.md`。

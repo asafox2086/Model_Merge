@@ -112,6 +112,41 @@ def grid_artifacts(rows):
     return means, buffer.getvalue(), "\n".join(lines)
 
 
+def audit_pscore(rows):
+    text = PAPER.read_text()
+    if "Pscore-MLP (adapted)\\pub" not in text:
+        return {}
+    source = ROOT / "paper/data/pscore/pscore_raw.csv"
+    with source.open() as handle:
+        additional = list(csv.DictReader(handle))
+    require(len(additional) == 180, "Incomplete Pscore source")
+    checked = 0
+    for model, label in MODELS.items():
+        table = text.split(r"\label{tab:client-avg-" + label + "}", 1)[1].split(r"\end{table*}", 1)[0]
+        pscore_line = next(line for line in table.splitlines() if line.startswith("Pscore-MLP (adapted)"))
+        lamp_line = next(line for line in table.splitlines() if line.startswith(r"\textbf{LAMP-Merge} &"))
+        pscore_cells = pscore_line.split(" &")[1:]
+        gain_cells = re.findall(r"\}\{([+-][0-9]+\.[0-9]+) / ([+-][0-9]+\.[0-9]+)\}", lamp_line)
+        require(len(pscore_cells) == 16 and len(gain_cells) == 16, "Malformed extended main table")
+        index = 0
+        for dataset in (DATASETS[0], DATASETS[1], DATASETS[2], DATASETS[4]):
+            for clients in (3, 5, 7, None):
+                group = [row for row in rows + additional if row["model"] == model and row["dataset"] == dataset
+                         and (clients is None or int(row["num_clients"]) == clients)]
+                means = {method: tuple(100 * mean(float(row[metric]) for row in group if row["method"] == method)
+                                       for metric in ("accuracy", "macro_f1"))
+                         for method in [*METHODS.values(), "pscore_mlp"]}
+                plain = re.sub(r"\\textbf\{([^{}]*)\}", r"\1", pscore_cells[index])
+                match = re.search(r"([0-9]+\.[0-9]+) / ([0-9]+\.[0-9]+)", plain)
+                require(match and match.groups() == tuple(f"{value:.2f}" for value in means["pscore_mlp"]), "Pscore table mismatch")
+                gains = tuple(means["lamp_merge"][metric] - max(pair[metric] for method, pair in means.items() if method != "lamp_merge") for metric in range(2))
+                require(gain_cells[index] == tuple(f"{value:+.2f}" for value in gains), "Extended baseline gain mismatch")
+                index += 1
+                checked += 1
+    return {"pscore_table_metric_pairs": checked, "updated_gain_pairs": checked,
+            "pscore_source_sha256": digest(source)}
+
+
 def hyperparameters():
     summaries = {}
     for name, filename, keys, chosen in (
@@ -191,6 +226,7 @@ def main():
         rows = [row for row in csv.DictReader(handle) if row["method"] in METHODS.values()]
     require(len(rows) == 2160 and all(row["status"] == "OK" and row["split"] == "test" and row["seed"] == "42" for row in rows), "Unexpected run coverage")
     audit = audit_metrics(rows)
+    audit.update(audit_pscore(rows))
     means, csv_text, tex_text = grid_artifacts(rows)
     evidence = {
         "source": str(SOURCE.relative_to(ROOT)), "sha256": digest(SOURCE), **audit,

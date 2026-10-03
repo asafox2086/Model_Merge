@@ -65,3 +65,14 @@ python experiments/summarize.py outputs/paper/paper_main/main/reports/metrics.cs
 - `My_merge_ret/汇总表.md` 是历史 ACC 汇总，不能直接当作最终稿 head-only ACC/F1 表。最终数值快照在 `paper/data/`。
 
 详细操作见 [复现指南](docs/reproduction.md)、[论文实验地图](docs/experiments.md)、[整理记录](docs/repository.md)。归档可按 [迁移清单](remove/manifest.json) 恢复。
+
+## 新增 TMI 非联邦融合基线
+
+`Pscore-MLP (adapted)` 来自 Wimmer 等的 TMI 2022 多任务融合论文，复用相同客户端分类头和冻结参考 backbone，拼接专家概率后训练融合器。它使用带标签的训练数据及验证集选择，属于监督式预测融合，不是无训练参数合并。适配定义、信息预算和运行命令见 [Pscore 基线](docs/pscore_baseline.md)。
+
+```bash
+python scripts/run_pscore_baseline.py --models resnet --output-root outputs/pscore_full_20261003 --device cuda:0
+python scripts/summarize_pscore_baseline.py --input-root outputs/pscore_full_20261003 --output-dir paper/data/pscore
+```
+
+新基线使用独立入口，不通过 `merge.py` 或现有 `--methods head_*` 接口冒充线性参数合并。完整数据和验证通过后的结果位于 `paper/data/pscore/`。
