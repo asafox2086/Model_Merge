@@ -49,11 +49,11 @@
     },
     {
       "path": "paper/data/pscore/pscore_raw.csv",
-      "sha256": "09be41c33a749e9ae8253aafccf74f52ff776f55b5e3ba96f9a8db80f5a3943d"
+      "sha256": "922def04ae7955ffd1f976fcd3bf2aed69070c2a9ff6dcadfe69e9a01e936831"
     },
     {
       "path": "paper/data/pscore/pscore_summary.csv",
-      "sha256": "4728ffc428c1733a008b4ddde5983a431ac5bf9a51e70a8a746cc26e75075c76"
+      "sha256": "9b6e8eb19fd02ca2597982aa67703fe200d505d5af71d2074f7b3a7429b4f3eb"
     },
     {
       "path": "paper/data/swin_full_grid.csv",
@@ -73,7 +73,7 @@
     },
     {
       "path": "paper/data/tmi_revision_audit.json",
-      "sha256": "963dba422da02dd042edcdef6eb6f5797c84b66b09af3e4731a915aeb3e3fa4f"
+      "sha256": "3b09d905217db307e32b6c2858149b1392d0fadb30338a8d4ad014807d66827a"
     },
     {
       "path": "paper/data/主实验_ConvNeXt.csv",

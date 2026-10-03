@@ -6,7 +6,7 @@
   "all_test_classes_present": true,
   "pscore_table_metric_pairs": 64,
   "updated_gain_pairs": 64,
-  "pscore_source_sha256": "09be41c33a749e9ae8253aafccf74f52ff776f55b5e3ba96f9a8db80f5a3943d",
+  "pscore_source_sha256": "922def04ae7955ffd1f976fcd3bf2aed69070c2a9ff6dcadfe69e9a01e936831",
   "lamp_mean_accuracy_by_backbone": {
     "swin_tiny": 0.6397227398808745,
     "convnext": 0.6261682315908625,
