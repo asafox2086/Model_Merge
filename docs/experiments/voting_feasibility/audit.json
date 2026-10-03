@@ -1,0 +1,1461 @@
+{
+  "scope": "Hard-voting component feasibility only, NOT the Xie meta-ensemble",
+  "tie_rule": "smallest class index; fixed before evaluation",
+  "sensitivity_rule": "maximum mean expert probability among tied classes; added after observing frequent ties; both reported",
+  "source_sha256": "991dd959f5808d9fa566b8daa37f858d9e68591cb82214d0fe1b4258cbeaba27",
+  "probability_code_sha256": "3ee9e6f777c901d85c54d2a823cebda147ea8a1cfdfcc0c948aee7c8d6f59db8",
+  "baseline_sha256": "2a5f789ae29d4a5c3f396e890244020588b8685d82684b328ed8a814ee9432ba",
+  "totals": {
+    "accuracy": 15.811951489073103,
+    "macro_f1": 6.79159748627352,
+    "probability_tiebreak_accuracy": 24.463755350927936,
+    "probability_tiebreak_macro_f1": 9.662587988946012,
+    "lamp_accuracy": 62.229351087874875,
+    "lamp_macro_f1": 52.821957266118204,
+    "cases": 180,
+    "accuracy_wins": 1,
+    "macro_f1_wins": 0
+  },
+  "cases": [
+    {
+      "case": "/data2/liyapeng_grp/program/MedMNISTMerge/outputs/pscore_full_20261003/cases/small/bloodmnist_224/convnext/clients_3/beta_0/seed_42",
+      "checkpoint_sha256": "5a0da5e0241d78933a1707eb2f42fb2e64d5f356403684dc8e86015e4485ce1c",
+      "features_sha256": "f927382977a7d4da579dcad970b5723abca21a25e6f155fc2c973785b6809c2a",
+      "protocol_sha256": "955615f96eb3c8322cfbede5b6b3d9d47d0292e0558d8afa4bf18ff4b06d284b",
+      "predictions_path": "/data2/liyapeng_grp/program/MedMNISTMerge/outputs/voting_feasibility_20261003/bloodmnist_224/convnext/clients_3/beta_0/seed_42/predictions.npz",
+      "predictions_sha256": "c68a1940057e6c68da0895d34605fc0a26bfc1c9e7d2da0a69f4496ae97d771a"
+    },
+    {
+      "case": "/data2/liyapeng_grp/program/MedMNISTMerge/outputs/pscore_full_20261003/cases/small/bloodmnist_224/convnext/clients_3/beta_0p01/seed_42",
+      "checkpoint_sha256": "74881e9c1f49712bfb5663b44ca5e16d2b0bf855be15ed718c053efca1451050",
+      "features_sha256": "f927382977a7d4da579dcad970b5723abca21a25e6f155fc2c973785b6809c2a",
+      "protocol_sha256": "3ae072d4d41976258dd73ba0a08c8c7513cafbebd3c0fed335e3843d616eea96",
+      "predictions_path": "/data2/liyapeng_grp/program/MedMNISTMerge/outputs/voting_feasibility_20261003/bloodmnist_224/convnext/clients_3/beta_0p01/seed_42/predictions.npz",
+      "predictions_sha256": "10c6592d61b62d2d9c4e9e9a4f16f476b8b92da8a20dbda4bb94d3e4324fb0c1"
+    },
+    {
+      "case": "/data2/liyapeng_grp/program/MedMNISTMerge/outputs/pscore_full_20261003/cases/small/bloodmnist_224/convnext/clients_3/beta_0p1/seed_42",
+      "checkpoint_sha256": "fd647f8b913552ff2161608af05cdcbe2b5747d95ba80878657c0554faf5a86d",
+      "features_sha256": "f927382977a7d4da579dcad970b5723abca21a25e6f155fc2c973785b6809c2a",
+      "protocol_sha256": "f75687067b7639bdd58a90e8191aa779af3c0c7f37d5e146db81b90e3a5c05d1",
+      "predictions_path": "/data2/liyapeng_grp/program/MedMNISTMerge/outputs/voting_feasibility_20261003/bloodmnist_224/convnext/clients_3/beta_0p1/seed_42/predictions.npz",
+      "predictions_sha256": "38632ecdc3f2069761c94f540a11fa879ee7b4d3cc588480fc5652e444a89251"
+    },
+    {
+      "case": "/data2/liyapeng_grp/program/MedMNISTMerge/outputs/pscore_full_20261003/cases/small/bloodmnist_224/convnext/clients_5/beta_0/seed_42",
+      "checkpoint_sha256": "58d22e6197d6e3142a2f8b36bb8bc13f7cc2e6d24428b9cd2f23152ac34a764b",
+      "features_sha256": "f927382977a7d4da579dcad970b5723abca21a25e6f155fc2c973785b6809c2a",
+      "protocol_sha256": "ef20c6be223dccf60775d06207adb407e3a7cddebbdc6c529d9046bfb5aef64d",
+      "predictions_path": "/data2/liyapeng_grp/program/MedMNISTMerge/outputs/voting_feasibility_20261003/bloodmnist_224/convnext/clients_5/beta_0/seed_42/predictions.npz",
+      "predictions_sha256": "7b22fc544e3e05a77ec13c5d15e1fa108dbf68eb501c40f29f78b99b36bf31b9"
+    },
+    {
+      "case": "/data2/liyapeng_grp/program/MedMNISTMerge/outputs/pscore_full_20261003/cases/small/bloodmnist_224/convnext/clients_5/beta_0p01/seed_42",
+      "checkpoint_sha256": "3f2f2be2b37d7e8d3de346665df83fa978c3132a8dfcc668874b6f0255e75950",
+      "features_sha256": "f927382977a7d4da579dcad970b5723abca21a25e6f155fc2c973785b6809c2a",
+      "protocol_sha256": "89339e83f80530714a65d4e9988b210e262e01c08f017670dcea31c4e6d5d273",
+      "predictions_path": "/data2/liyapeng_grp/program/MedMNISTMerge/outputs/voting_feasibility_20261003/bloodmnist_224/convnext/clients_5/beta_0p01/seed_42/predictions.npz",
+      "predictions_sha256": "3172bc12d7ca0fddf95db0a30ffe985e0b58d212191039ea8f29718473340ee9"
+    },
+    {
+      "case": "/data2/liyapeng_grp/program/MedMNISTMerge/outputs/pscore_full_20261003/cases/small/bloodmnist_224/convnext/clients_5/beta_0p1/seed_42",
+      "checkpoint_sha256": "dc808af67b3d278366c42bbd38dca5e5e1ba16ad6b0d75b5eb375ba38bc9b15f",
+      "features_sha256": "f927382977a7d4da579dcad970b5723abca21a25e6f155fc2c973785b6809c2a",
+      "protocol_sha256": "78eb4392417d15ada0e5a94c266c2c5c120add16f28d1cd46e986252d5f4d9a1",
+      "predictions_path": "/data2/liyapeng_grp/program/MedMNISTMerge/outputs/voting_feasibility_20261003/bloodmnist_224/convnext/clients_5/beta_0p1/seed_42/predictions.npz",
+      "predictions_sha256": "9e54edb90f024221d04d190e9dd26a9bb6e91001ec49c9055b02d98103f828f0"
+    },
+    {
+      "case": "/data2/liyapeng_grp/program/MedMNISTMerge/outputs/pscore_full_20261003/cases/small/bloodmnist_224/convnext/clients_7/beta_0/seed_42",
+      "checkpoint_sha256": "0c9d80bc0dc544d3755883a04f0da17a4977f3e50e181fdd3526b7c2bf97527f",
+      "features_sha256": "f927382977a7d4da579dcad970b5723abca21a25e6f155fc2c973785b6809c2a",
+      "protocol_sha256": "7815aee3af45279a5b331999f6cf121de90aba40ea2acec3e75a3a08b15d95fe",
+      "predictions_path": "/data2/liyapeng_grp/program/MedMNISTMerge/outputs/voting_feasibility_20261003/bloodmnist_224/convnext/clients_7/beta_0/seed_42/predictions.npz",
+      "predictions_sha256": "9b7b13bdb330f105e0ddc1555502a661708444939678a2f2ae64ff487bc9a64a"
+    },
+    {
+      "case": "/data2/liyapeng_grp/program/MedMNISTMerge/outputs/pscore_full_20261003/cases/small/bloodmnist_224/convnext/clients_7/beta_0p01/seed_42",
+      "checkpoint_sha256": "f724f8a67fc86a293b2c1ed6c92c97cedbcf5b749ff2980ee20cc49014239163",
+      "features_sha256": "f927382977a7d4da579dcad970b5723abca21a25e6f155fc2c973785b6809c2a",
+      "protocol_sha256": "e6a3c236336b8124ff12be78f3615df3bae2b49bf136b3672466a6f4417f0cca",
+      "predictions_path": "/data2/liyapeng_grp/program/MedMNISTMerge/outputs/voting_feasibility_20261003/bloodmnist_224/convnext/clients_7/beta_0p01/seed_42/predictions.npz",
+      "predictions_sha256": "4c4f3aa12ac1573554262235eea858004872b83c649d50e8d8ea765e97bc4c9a"
+    },
+    {
+      "case": "/data2/liyapeng_grp/program/MedMNISTMerge/outputs/pscore_full_20261003/cases/small/bloodmnist_224/convnext/clients_7/beta_0p1/seed_42",
+      "checkpoint_sha256": "cae6fadbeb091cb5afd2784928095cfa8579994eeeae08e4b2e23491b62d90f6",
+      "features_sha256": "f927382977a7d4da579dcad970b5723abca21a25e6f155fc2c973785b6809c2a",
+      "protocol_sha256": "7f4ea9fea7b470bef36fb51d4bf876f01ffd7dd084885513ede73509e1f80d4e",
+      "predictions_path": "/data2/liyapeng_grp/program/MedMNISTMerge/outputs/voting_feasibility_20261003/bloodmnist_224/convnext/clients_7/beta_0p1/seed_42/predictions.npz",
+      "predictions_sha256": "6735868ab1139d2769e29c681a85a8287cac80d0879ee583197e252f2435e935"
+    },
+    {
+      "case": "/data2/liyapeng_grp/program/MedMNISTMerge/outputs/pscore_full_20261003/cases/small/bloodmnist_224/resnet/clients_3/beta_0/seed_42",
+      "checkpoint_sha256": "3b25cfb30420d84f618f1e8a678f4fb7d51cbc9ea3f13eff3678facf68ad3796",
+      "features_sha256": "e4403fd3abd486f3e1f352cc717e0f91602399e80810d99ef2d1362bc15c111c",
+      "protocol_sha256": "47adcfb04fa7f6aae6b838446ba5cc045c48c725041afe8753f8949c38862a8d",
+      "predictions_path": "/data2/liyapeng_grp/program/MedMNISTMerge/outputs/voting_feasibility_20261003/bloodmnist_224/resnet/clients_3/beta_0/seed_42/predictions.npz",
+      "predictions_sha256": "07d858b85a07856d0e9c6304698a48d3fe9aa50943a535d424b4b3fef744c377"
+    },
+    {
+      "case": "/data2/liyapeng_grp/program/MedMNISTMerge/outputs/pscore_full_20261003/cases/small/bloodmnist_224/resnet/clients_3/beta_0p01/seed_42",
+      "checkpoint_sha256": "b8ea39a5befc5400f337689c452861cb70d1a9712f5677b89d049118291285db",
+      "features_sha256": "e4403fd3abd486f3e1f352cc717e0f91602399e80810d99ef2d1362bc15c111c",
+      "protocol_sha256": "1c83a0de496c24166cc6588efb8521da90e02a70aee5c19521b110c973b53d46",
+      "predictions_path": "/data2/liyapeng_grp/program/MedMNISTMerge/outputs/voting_feasibility_20261003/bloodmnist_224/resnet/clients_3/beta_0p01/seed_42/predictions.npz",
+      "predictions_sha256": "b49d3e1e355664f56658d17d3b05db754553ea22261d714865a5ce5c0cf0ebaf"
+    },
+    {
+      "case": "/data2/liyapeng_grp/program/MedMNISTMerge/outputs/pscore_full_20261003/cases/small/bloodmnist_224/resnet/clients_3/beta_0p1/seed_42",
+      "checkpoint_sha256": "219f09cd1c1eeecfb378d133277e3f734cfe7bedf18826b191029afd94c0f6a0",
+      "features_sha256": "e4403fd3abd486f3e1f352cc717e0f91602399e80810d99ef2d1362bc15c111c",
+      "protocol_sha256": "ff637fbdc277328a0f9876ee27506c3e9c67a6d208c7a107518918a95f10a749",
+      "predictions_path": "/data2/liyapeng_grp/program/MedMNISTMerge/outputs/voting_feasibility_20261003/bloodmnist_224/resnet/clients_3/beta_0p1/seed_42/predictions.npz",
+      "predictions_sha256": "114ac65285b2e97edf7d8e4e8235ef899b446c6512b3122c5ad5c20482dafecc"
+    },
+    {
+      "case": "/data2/liyapeng_grp/program/MedMNISTMerge/outputs/pscore_full_20261003/cases/small/bloodmnist_224/resnet/clients_5/beta_0/seed_42",
+      "checkpoint_sha256": "fe72ccb1650780f0fc94cc1ca4fc01758e64d68b676e07376a3b30e4343d19f9",
+      "features_sha256": "e4403fd3abd486f3e1f352cc717e0f91602399e80810d99ef2d1362bc15c111c",
+      "protocol_sha256": "497dd5e03ed45859a8fce97f6b7bec5ebf1116fa91efefc2bcc675a9fb3c9283",
+      "predictions_path": "/data2/liyapeng_grp/program/MedMNISTMerge/outputs/voting_feasibility_20261003/bloodmnist_224/resnet/clients_5/beta_0/seed_42/predictions.npz",
+      "predictions_sha256": "272e5eaf7e51774a30b4baba6893b690cfc5d9135eeefcee2a5e13ebe9bc3429"
+    },
+    {
+      "case": "/data2/liyapeng_grp/program/MedMNISTMerge/outputs/pscore_full_20261003/cases/small/bloodmnist_224/resnet/clients_5/beta_0p01/seed_42",
+      "checkpoint_sha256": "72ce9629ca147b55c092b0dd39039d508a43d82a9b349f5932e01abf027c32a5",
+      "features_sha256": "e4403fd3abd486f3e1f352cc717e0f91602399e80810d99ef2d1362bc15c111c",
+      "protocol_sha256": "cd7b31ef9fe2469f05bf2300077a24e92f82426e517486422800dde641ce74d9",
+      "predictions_path": "/data2/liyapeng_grp/program/MedMNISTMerge/outputs/voting_feasibility_20261003/bloodmnist_224/resnet/clients_5/beta_0p01/seed_42/predictions.npz",
+      "predictions_sha256": "c4eeec5c5d4c9c10267bd252fc4f1ddcaac82a6a481b1e80727ee2d97bf53b1a"
+    },
+    {
+      "case": "/data2/liyapeng_grp/program/MedMNISTMerge/outputs/pscore_full_20261003/cases/small/bloodmnist_224/resnet/clients_5/beta_0p1/seed_42",
+      "checkpoint_sha256": "b4caa78ea9c4ecfbe7baf82886f7418455c60c40c5c48957135218a5a295cb38",
+      "features_sha256": "e4403fd3abd486f3e1f352cc717e0f91602399e80810d99ef2d1362bc15c111c",
+      "protocol_sha256": "0a6c2298da303db8a8f8a7ade20adf626087db31cd7b935928dabb7a787477a3",
+      "predictions_path": "/data2/liyapeng_grp/program/MedMNISTMerge/outputs/voting_feasibility_20261003/bloodmnist_224/resnet/clients_5/beta_0p1/seed_42/predictions.npz",
+      "predictions_sha256": "67bb55a241aed3c83f2421fb50942271327596b89f195bee61bca50d8fdf5103"
+    },
+    {
+      "case": "/data2/liyapeng_grp/program/MedMNISTMerge/outputs/pscore_full_20261003/cases/small/bloodmnist_224/resnet/clients_7/beta_0/seed_42",
+      "checkpoint_sha256": "2d419f34080990d660bbc1ee8dca79bcb740b27a9df59f31d906f771d0718dfa",
+      "features_sha256": "e4403fd3abd486f3e1f352cc717e0f91602399e80810d99ef2d1362bc15c111c",
+      "protocol_sha256": "d6d2238c2df5e06d45e290958c90bda271710858b955674efae3a6baad2379ba",
+      "predictions_path": "/data2/liyapeng_grp/program/MedMNISTMerge/outputs/voting_feasibility_20261003/bloodmnist_224/resnet/clients_7/beta_0/seed_42/predictions.npz",
+      "predictions_sha256": "97466780dd9c25599e56f91d5f5ddd337f00af289f9381692533abd7b825db53"
+    },
+    {
+      "case": "/data2/liyapeng_grp/program/MedMNISTMerge/outputs/pscore_full_20261003/cases/small/bloodmnist_224/resnet/clients_7/beta_0p01/seed_42",
+      "checkpoint_sha256": "aee2b814157454fd765e99ce75ff0316d05e157a3db6bb542d5bc240b71314cb",
+      "features_sha256": "e4403fd3abd486f3e1f352cc717e0f91602399e80810d99ef2d1362bc15c111c",
+      "protocol_sha256": "4173e7a13f3f9f433ebc2f5cc4737f9a0e89d8d7523908459c2dfb52019fcbe4",
+      "predictions_path": "/data2/liyapeng_grp/program/MedMNISTMerge/outputs/voting_feasibility_20261003/bloodmnist_224/resnet/clients_7/beta_0p01/seed_42/predictions.npz",
+      "predictions_sha256": "7badcbd3a52c534b5a1790c82adcac06d271ae051238751ec1540355cb369ed1"
+    },
+    {
+      "case": "/data2/liyapeng_grp/program/MedMNISTMerge/outputs/pscore_full_20261003/cases/small/bloodmnist_224/resnet/clients_7/beta_0p1/seed_42",
+      "checkpoint_sha256": "8c474e7d0c5265c4b82463a6f91cc6ca7ae792a3f127d71757cc5919bc524369",
+      "features_sha256": "e4403fd3abd486f3e1f352cc717e0f91602399e80810d99ef2d1362bc15c111c",
+      "protocol_sha256": "8f60a61443743507087d7d4fe24bf9329eb252e6e0e7ffc1be77043b01aaa773",
+      "predictions_path": "/data2/liyapeng_grp/program/MedMNISTMerge/outputs/voting_feasibility_20261003/bloodmnist_224/resnet/clients_7/beta_0p1/seed_42/predictions.npz",
+      "predictions_sha256": "88df40d61df1c3ca9660ff0fc00f5fe54e1960d04af9aa333bde57d8f42e1be6"
+    },
+    {
+      "case": "/data2/liyapeng_grp/program/MedMNISTMerge/outputs/pscore_full_20261003/cases/small/bloodmnist_224/swin_tiny/clients_3/beta_0/seed_42",
+      "checkpoint_sha256": "4da83e4136e50e7e04d6ebdd0293063055e701a2c0d5c07acf373711faa0a997",
+      "features_sha256": "3c4e9a80593f4f808c00c9902712e567ad24945508827457ae383b75be6a30b5",
+      "protocol_sha256": "feb4d2ce1cb6374ad45ce3708a33c8c4cc144dd8542378273e82c56832f7de29",
+      "predictions_path": "/data2/liyapeng_grp/program/MedMNISTMerge/outputs/voting_feasibility_20261003/bloodmnist_224/swin_tiny/clients_3/beta_0/seed_42/predictions.npz",
+      "predictions_sha256": "01d8751f6cd035fc3d87f02f61433478ecf39dad6e6bb7139da351b3863c4218"
+    },
+    {
+      "case": "/data2/liyapeng_grp/program/MedMNISTMerge/outputs/pscore_full_20261003/cases/small/bloodmnist_224/swin_tiny/clients_3/beta_0p01/seed_42",
+      "checkpoint_sha256": "b7b337ed312eda037e30b7bd8e3051d45006b0c96547d6bb291aec907a9c4f52",
+      "features_sha256": "3c4e9a80593f4f808c00c9902712e567ad24945508827457ae383b75be6a30b5",
+      "protocol_sha256": "af9bab33f79a59d5d98ac4c6ef8c2fda57868901ed9ca62ee9d5fe7123810fc2",
+      "predictions_path": "/data2/liyapeng_grp/program/MedMNISTMerge/outputs/voting_feasibility_20261003/bloodmnist_224/swin_tiny/clients_3/beta_0p01/seed_42/predictions.npz",
+      "predictions_sha256": "703ea3f5f0b75b0f89e4502a5c07301820fba9face17b092e5fe500cb32a1707"
+    },
+    {
+      "case": "/data2/liyapeng_grp/program/MedMNISTMerge/outputs/pscore_full_20261003/cases/small/bloodmnist_224/swin_tiny/clients_3/beta_0p1/seed_42",
+      "checkpoint_sha256": "301faffc1beb19c06ee820967ab3a0457d91b1235d4a048ee69d1352ac196f9a",
+      "features_sha256": "3c4e9a80593f4f808c00c9902712e567ad24945508827457ae383b75be6a30b5",
+      "protocol_sha256": "87f639b0911c1402be17e2d4ef7cfe5996012943d2d6e56ae4ebfa3fe6458c4c",
+      "predictions_path": "/data2/liyapeng_grp/program/MedMNISTMerge/outputs/voting_feasibility_20261003/bloodmnist_224/swin_tiny/clients_3/beta_0p1/seed_42/predictions.npz",
+      "predictions_sha256": "706c68068fffee09af30db61cfae974284971fb6610642b4a5afb021cdb2bc1e"
+    },
+    {
+      "case": "/data2/liyapeng_grp/program/MedMNISTMerge/outputs/pscore_full_20261003/cases/small/bloodmnist_224/swin_tiny/clients_5/beta_0/seed_42",
+      "checkpoint_sha256": "b60da8895918e35e9e93b748c9d7fde738c27849915d45a9464c4ed756d2d8aa",
+      "features_sha256": "3c4e9a80593f4f808c00c9902712e567ad24945508827457ae383b75be6a30b5",
+      "protocol_sha256": "7744ac807c4c4ce75a57ac52619589ce4bbd718405674f2a4696285043b1f3cd",
+      "predictions_path": "/data2/liyapeng_grp/program/MedMNISTMerge/outputs/voting_feasibility_20261003/bloodmnist_224/swin_tiny/clients_5/beta_0/seed_42/predictions.npz",
+      "predictions_sha256": "35c1ade08498656d39d2a17818c612b7834966c552e44f72b6dc2c19e1e40262"
+    },
+    {
+      "case": "/data2/liyapeng_grp/program/MedMNISTMerge/outputs/pscore_full_20261003/cases/small/bloodmnist_224/swin_tiny/clients_5/beta_0p01/seed_42",
+      "checkpoint_sha256": "5261a976c8ad1a084a06c9523a302477ba957d0e84f61dffd81e33c7e9735b40",
+      "features_sha256": "3c4e9a80593f4f808c00c9902712e567ad24945508827457ae383b75be6a30b5",
+      "protocol_sha256": "d7b48bdf3166b00bcd357c5c56babeb774ed26ae44d86c7ed2096fa35462bf12",
+      "predictions_path": "/data2/liyapeng_grp/program/MedMNISTMerge/outputs/voting_feasibility_20261003/bloodmnist_224/swin_tiny/clients_5/beta_0p01/seed_42/predictions.npz",
+      "predictions_sha256": "8cefee492bfe833f0a15bf3e15b42d768fe5eba84892db763aa75e52acd48e8f"
+    },
+    {
+      "case": "/data2/liyapeng_grp/program/MedMNISTMerge/outputs/pscore_full_20261003/cases/small/bloodmnist_224/swin_tiny/clients_5/beta_0p1/seed_42",
+      "checkpoint_sha256": "128763a436ddd1445a8920ad806ebc5ab249b3cf4feea2dfdfae8b21c9977ef1",
+      "features_sha256": "3c4e9a80593f4f808c00c9902712e567ad24945508827457ae383b75be6a30b5",
+      "protocol_sha256": "9de8113012c6ec4c2fd532aed0be72e46ca951a85c8caf12c7d008aa97c468d4",
+      "predictions_path": "/data2/liyapeng_grp/program/MedMNISTMerge/outputs/voting_feasibility_20261003/bloodmnist_224/swin_tiny/clients_5/beta_0p1/seed_42/predictions.npz",
+      "predictions_sha256": "63c151e4b3ebdb6d08c9dc585b78e4c89033ae2dae7841aa5d03f6f0f3fe0b50"
+    },
+    {
+      "case": "/data2/liyapeng_grp/program/MedMNISTMerge/outputs/pscore_full_20261003/cases/small/bloodmnist_224/swin_tiny/clients_7/beta_0/seed_42",
+      "checkpoint_sha256": "90107eb08421070b8ec8cf68e17271940724b5a325e8a945ea56ffa3ea825a7e",
+      "features_sha256": "3c4e9a80593f4f808c00c9902712e567ad24945508827457ae383b75be6a30b5",
+      "protocol_sha256": "a34c764482817712bda3f1967aa15a6aab1ede6fdefd8e399754b593633ef2bf",
+      "predictions_path": "/data2/liyapeng_grp/program/MedMNISTMerge/outputs/voting_feasibility_20261003/bloodmnist_224/swin_tiny/clients_7/beta_0/seed_42/predictions.npz",
+      "predictions_sha256": "c486023a8c34b22cc4e90e4c3399d1e567cf51528c07d8ab6fbb363460bc5f80"
+    },
+    {
+      "case": "/data2/liyapeng_grp/program/MedMNISTMerge/outputs/pscore_full_20261003/cases/small/bloodmnist_224/swin_tiny/clients_7/beta_0p01/seed_42",
+      "checkpoint_sha256": "1460339764989f30327b65112fee87873a92e53151d34ad52806de74bf90b459",
+      "features_sha256": "3c4e9a80593f4f808c00c9902712e567ad24945508827457ae383b75be6a30b5",
+      "protocol_sha256": "54485511fd871f746579ce876178760041c93460d9e586e126cfaf28d75f2e6b",
+      "predictions_path": "/data2/liyapeng_grp/program/MedMNISTMerge/outputs/voting_feasibility_20261003/bloodmnist_224/swin_tiny/clients_7/beta_0p01/seed_42/predictions.npz",
+      "predictions_sha256": "5825d4b89341c39dff3202667753777947e9e9f6252e563c3a220e65acf6869d"
+    },
+    {
+      "case": "/data2/liyapeng_grp/program/MedMNISTMerge/outputs/pscore_full_20261003/cases/small/bloodmnist_224/swin_tiny/clients_7/beta_0p1/seed_42",
+      "checkpoint_sha256": "05b4912c4e80939efdfa4651b819df3ef887922ca4a5459bf3ae4d65c11eae42",
+      "features_sha256": "3c4e9a80593f4f808c00c9902712e567ad24945508827457ae383b75be6a30b5",
+      "protocol_sha256": "b5d08b343f38c4ea96cc2d6b0c3ccf95087ab09d6b1a50a223242f8d78f8cd9e",
+      "predictions_path": "/data2/liyapeng_grp/program/MedMNISTMerge/outputs/voting_feasibility_20261003/bloodmnist_224/swin_tiny/clients_7/beta_0p1/seed_42/predictions.npz",
+      "predictions_sha256": "18f4ca6ab06286bd056a32c1363859552da404b992cfc2f1d863795dc9561c03"
+    },
+    {
+      "case": "/data2/liyapeng_grp/program/MedMNISTMerge/outputs/pscore_full_20261003/cases/small/bloodmnist_224/vit_t/clients_3/beta_0/seed_42",
+      "checkpoint_sha256": "cb2abdfaef1e6e1b9f785ce8425490334f436d418b8f43415f743828c939bd17",
+      "features_sha256": "c9ccad508cf90567b421c1b7a0b0ad23b2a520a32b58843960fdebf26aacbe61",
+      "protocol_sha256": "11cb9c4704a2adefeca298d1fc375c28fe02035b08c1c912b693f9969c9dcf4e",
+      "predictions_path": "/data2/liyapeng_grp/program/MedMNISTMerge/outputs/voting_feasibility_20261003/bloodmnist_224/vit_t/clients_3/beta_0/seed_42/predictions.npz",
+      "predictions_sha256": "8769d1104e280d9fbc99d178a0ddd7a3c62726a94f6610d6f09337a43677978c"
+    },
+    {
+      "case": "/data2/liyapeng_grp/program/MedMNISTMerge/outputs/pscore_full_20261003/cases/small/bloodmnist_224/vit_t/clients_3/beta_0p01/seed_42",
+      "checkpoint_sha256": "7c92d99749ccb1865f8c19f1d9de73f795c673e19f04f83ed0d98688e9a19e5c",
+      "features_sha256": "c9ccad508cf90567b421c1b7a0b0ad23b2a520a32b58843960fdebf26aacbe61",
+      "protocol_sha256": "34ffdba7764b880a54a90083bf20ba81998606811200c36c21ad03cda4a43d95",
+      "predictions_path": "/data2/liyapeng_grp/program/MedMNISTMerge/outputs/voting_feasibility_20261003/bloodmnist_224/vit_t/clients_3/beta_0p01/seed_42/predictions.npz",
+      "predictions_sha256": "af81013d125bfe013090a010902b6d5a912249b3d035dcd8805e1b6409bad9b0"
+    },
+    {
+      "case": "/data2/liyapeng_grp/program/MedMNISTMerge/outputs/pscore_full_20261003/cases/small/bloodmnist_224/vit_t/clients_3/beta_0p1/seed_42",
+      "checkpoint_sha256": "fb46251b9abfea51e990c27600a01e54693c615616b930e33ae3aed519f94559",
+      "features_sha256": "c9ccad508cf90567b421c1b7a0b0ad23b2a520a32b58843960fdebf26aacbe61",
+      "protocol_sha256": "0f5c5ee88ffefbb1b13f4f9b05ffd0307433d422b3d75f91ee783c7f3bbf93bc",
+      "predictions_path": "/data2/liyapeng_grp/program/MedMNISTMerge/outputs/voting_feasibility_20261003/bloodmnist_224/vit_t/clients_3/beta_0p1/seed_42/predictions.npz",
+      "predictions_sha256": "b0d3fac0855fa2928a4c9733c214b2c3061a32c277155ab99a0a4e7dad005aa6"
+    },
+    {
+      "case": "/data2/liyapeng_grp/program/MedMNISTMerge/outputs/pscore_full_20261003/cases/small/bloodmnist_224/vit_t/clients_5/beta_0/seed_42",
+      "checkpoint_sha256": "90a6cd813d75eb2b4751c6790f84eebfff8842f3b7da330841f72a5d06949951",
+      "features_sha256": "c9ccad508cf90567b421c1b7a0b0ad23b2a520a32b58843960fdebf26aacbe61",
+      "protocol_sha256": "290772c4aef6c6fd9a45b9138b103a0a217a0f40b91eed056d35086d1ff62f3a",
+      "predictions_path": "/data2/liyapeng_grp/program/MedMNISTMerge/outputs/voting_feasibility_20261003/bloodmnist_224/vit_t/clients_5/beta_0/seed_42/predictions.npz",
+      "predictions_sha256": "958bf4c97ad06f43044ec6bb2b1c43f24dafaf9a4608f1808d878bf33a99841a"
+    },
+    {
+      "case": "/data2/liyapeng_grp/program/MedMNISTMerge/outputs/pscore_full_20261003/cases/small/bloodmnist_224/vit_t/clients_5/beta_0p01/seed_42",
+      "checkpoint_sha256": "8baa08eb93a27f3e82380e299b64bbef2e6d9b202a1815b4d8a0470f0b89ba01",
+      "features_sha256": "c9ccad508cf90567b421c1b7a0b0ad23b2a520a32b58843960fdebf26aacbe61",
+      "protocol_sha256": "67d48f4453b1bd115a9d818ea39c105f2ef36469b16b196f0a029b621c71d3f8",
+      "predictions_path": "/data2/liyapeng_grp/program/MedMNISTMerge/outputs/voting_feasibility_20261003/bloodmnist_224/vit_t/clients_5/beta_0p01/seed_42/predictions.npz",
+      "predictions_sha256": "7601f711dafd68ae01da6a3228075e7dac02d92808513ce973d89221aeea7a73"
+    },
+    {
+      "case": "/data2/liyapeng_grp/program/MedMNISTMerge/outputs/pscore_full_20261003/cases/small/bloodmnist_224/vit_t/clients_5/beta_0p1/seed_42",
+      "checkpoint_sha256": "32186f0d9bcae76d1463ce09c425ad15364b3e25896cc28058251dd2c75b96cc",
+      "features_sha256": "c9ccad508cf90567b421c1b7a0b0ad23b2a520a32b58843960fdebf26aacbe61",
+      "protocol_sha256": "f505cc34d6f8055efeec0be4be65e35b69b8116d4bef80a2c261822a87f645c2",
+      "predictions_path": "/data2/liyapeng_grp/program/MedMNISTMerge/outputs/voting_feasibility_20261003/bloodmnist_224/vit_t/clients_5/beta_0p1/seed_42/predictions.npz",
+      "predictions_sha256": "e6288c0a7f9c21314fd0572e9fca4fadedb92273059174ff711c7917e8081ca3"
+    },
+    {
+      "case": "/data2/liyapeng_grp/program/MedMNISTMerge/outputs/pscore_full_20261003/cases/small/bloodmnist_224/vit_t/clients_7/beta_0/seed_42",
+      "checkpoint_sha256": "d4d6f4b1044415642d37a53500dc0a2fea92768caf4f628f9323ea66bd5ac533",
+      "features_sha256": "c9ccad508cf90567b421c1b7a0b0ad23b2a520a32b58843960fdebf26aacbe61",
+      "protocol_sha256": "9c055d1ae20d872935b6fdd28d40a97535a78ac1e64c48fd1aa735f51ca4dff6",
+      "predictions_path": "/data2/liyapeng_grp/program/MedMNISTMerge/outputs/voting_feasibility_20261003/bloodmnist_224/vit_t/clients_7/beta_0/seed_42/predictions.npz",
+      "predictions_sha256": "9c23487de5d479fe296efd2e7ca68b7c498770f3963bdee4081d6381437444eb"
+    },
+    {
+      "case": "/data2/liyapeng_grp/program/MedMNISTMerge/outputs/pscore_full_20261003/cases/small/bloodmnist_224/vit_t/clients_7/beta_0p01/seed_42",
+      "checkpoint_sha256": "04613e391a64a3137ece133adbb1a66312d404d9e2a62e48804d1193fe3436ae",
+      "features_sha256": "c9ccad508cf90567b421c1b7a0b0ad23b2a520a32b58843960fdebf26aacbe61",
+      "protocol_sha256": "8c555aa60838bb4cc95dfd856b3935876ab66feeaefc34a4116bba55caa1a0b1",
+      "predictions_path": "/data2/liyapeng_grp/program/MedMNISTMerge/outputs/voting_feasibility_20261003/bloodmnist_224/vit_t/clients_7/beta_0p01/seed_42/predictions.npz",
+      "predictions_sha256": "e2ac7f477cde67f76345b81a7c191dbca37cfddaf35bda846acdeda27ba43653"
+    },
+    {
+      "case": "/data2/liyapeng_grp/program/MedMNISTMerge/outputs/pscore_full_20261003/cases/small/bloodmnist_224/vit_t/clients_7/beta_0p1/seed_42",
+      "checkpoint_sha256": "7758e20ad5b72dd370b3383ec8a6c8bf2ed4095910820c60f0b0492ef9904557",
+      "features_sha256": "c9ccad508cf90567b421c1b7a0b0ad23b2a520a32b58843960fdebf26aacbe61",
+      "protocol_sha256": "5cd3167475a612cda862234581bd9c661b10c42ef9c3307b8d140cebe464ed5a",
+      "predictions_path": "/data2/liyapeng_grp/program/MedMNISTMerge/outputs/voting_feasibility_20261003/bloodmnist_224/vit_t/clients_7/beta_0p1/seed_42/predictions.npz",
+      "predictions_sha256": "3e1f60c58f6b175ccea6547a1dee56a583a4bbab7ed5776a6f0f7e8f105d9e2a"
+    },
+    {
+      "case": "/data2/liyapeng_grp/program/MedMNISTMerge/outputs/pscore_full_20261003/shards/chaoshengmnist_224/cases/small/chaoshengmnist_224/convnext/clients_3/beta_0/seed_42",
+      "checkpoint_sha256": "a674e3fe2f4b3af1fc5c5b27dd155ce728ef83bb7acb68e589eabd8b27fbf0a1",
+      "features_sha256": "bf6b1bc7006a33f3c077a990de38a6945e6a376de9508879a7834d4388878eb6",
+      "protocol_sha256": "61130f2e24e32f7ea070f76f79b554411a763e4dc9b00e2457540ffb35ea34f2",
+      "predictions_path": "/data2/liyapeng_grp/program/MedMNISTMerge/outputs/voting_feasibility_20261003/chaoshengmnist_224/convnext/clients_3/beta_0/seed_42/predictions.npz",
+      "predictions_sha256": "67861514f3000eec716976ab2f1ee6f593193ecc479da78e0b6faaf29e419d36"
+    },
+    {
+      "case": "/data2/liyapeng_grp/program/MedMNISTMerge/outputs/pscore_full_20261003/shards/chaoshengmnist_224/cases/small/chaoshengmnist_224/convnext/clients_3/beta_0p01/seed_42",
+      "checkpoint_sha256": "ba85cb34f0f2174fca8d381ca2aadce8962393d65521a4780387611f5ae59528",
+      "features_sha256": "bf6b1bc7006a33f3c077a990de38a6945e6a376de9508879a7834d4388878eb6",
+      "protocol_sha256": "638eff2caee47c46c9b2246a074fc04c240c0463dfd3b6553653f77b0dc3639f",
+      "predictions_path": "/data2/liyapeng_grp/program/MedMNISTMerge/outputs/voting_feasibility_20261003/chaoshengmnist_224/convnext/clients_3/beta_0p01/seed_42/predictions.npz",
+      "predictions_sha256": "2443b9afc00b7bec07565c76bf422ed0e2e5b0dab38f12e6092294d9a3f6c48a"
+    },
+    {
+      "case": "/data2/liyapeng_grp/program/MedMNISTMerge/outputs/pscore_full_20261003/shards/chaoshengmnist_224/cases/small/chaoshengmnist_224/convnext/clients_3/beta_0p1/seed_42",
+      "checkpoint_sha256": "d6df8eaeee4d985987b0f5f2349a1beb1242200a5e1686cd64ccfd9a80fff332",
+      "features_sha256": "bf6b1bc7006a33f3c077a990de38a6945e6a376de9508879a7834d4388878eb6",
+      "protocol_sha256": "957774a6b9ab3bc6c3d2d018c16b6c786fac4764c96d09e8ae749b02c1036bac",
+      "predictions_path": "/data2/liyapeng_grp/program/MedMNISTMerge/outputs/voting_feasibility_20261003/chaoshengmnist_224/convnext/clients_3/beta_0p1/seed_42/predictions.npz",
+      "predictions_sha256": "961cb9548f4eba2e8db9daf66bd7bdd04b9539f2e8d473541a63df18f0bd4a40"
+    },
+    {
+      "case": "/data2/liyapeng_grp/program/MedMNISTMerge/outputs/pscore_full_20261003/shards/chaoshengmnist_224/cases/small/chaoshengmnist_224/convnext/clients_5/beta_0/seed_42",
+      "checkpoint_sha256": "ac244d65e46c405cc28ed7b66b3c694f38188717817dc6e76855718f28c794da",
+      "features_sha256": "bf6b1bc7006a33f3c077a990de38a6945e6a376de9508879a7834d4388878eb6",
+      "protocol_sha256": "9e6b12234a8c8db579f71de91cef92800126e7cd44e970dfc9a81d9a5a877205",
+      "predictions_path": "/data2/liyapeng_grp/program/MedMNISTMerge/outputs/voting_feasibility_20261003/chaoshengmnist_224/convnext/clients_5/beta_0/seed_42/predictions.npz",
+      "predictions_sha256": "e5c89b1e1f15e5226916ed4401b6fe64f4007f2205998aca33e4a024a16c5819"
+    },
+    {
+      "case": "/data2/liyapeng_grp/program/MedMNISTMerge/outputs/pscore_full_20261003/shards/chaoshengmnist_224/cases/small/chaoshengmnist_224/convnext/clients_5/beta_0p01/seed_42",
+      "checkpoint_sha256": "1ca22aabbb12f5da1949707e509fa6aa0778932ecd76b8b2417d1bcdc757ed46",
+      "features_sha256": "bf6b1bc7006a33f3c077a990de38a6945e6a376de9508879a7834d4388878eb6",
+      "protocol_sha256": "97ac309e8719d698b1d36c471c61d6da69710a3b5e89949337b0efeedd5a1a74",
+      "predictions_path": "/data2/liyapeng_grp/program/MedMNISTMerge/outputs/voting_feasibility_20261003/chaoshengmnist_224/convnext/clients_5/beta_0p01/seed_42/predictions.npz",
+      "predictions_sha256": "7e532950d688978282e2566a4caa99dadfb9181ccac0bf9587571a0b5f155c53"
+    },
+    {
+      "case": "/data2/liyapeng_grp/program/MedMNISTMerge/outputs/pscore_full_20261003/shards/chaoshengmnist_224/cases/small/chaoshengmnist_224/convnext/clients_5/beta_0p1/seed_42",
+      "checkpoint_sha256": "0eff31c5f255671c064d5056ec2308513d3a844cd68fcbd3ce151b15b6b75982",
+      "features_sha256": "bf6b1bc7006a33f3c077a990de38a6945e6a376de9508879a7834d4388878eb6",
+      "protocol_sha256": "7d0dd1c12189d9f4085aa1c52c06bc58b8bb92e4f349fc73c427ea37e1ccedb9",
+      "predictions_path": "/data2/liyapeng_grp/program/MedMNISTMerge/outputs/voting_feasibility_20261003/chaoshengmnist_224/convnext/clients_5/beta_0p1/seed_42/predictions.npz",
+      "predictions_sha256": "da1e63b0f6e9c4e0c77581bab734960f316c98c4758f717572b9060f3712d0da"
+    },
+    {
+      "case": "/data2/liyapeng_grp/program/MedMNISTMerge/outputs/pscore_full_20261003/shards/chaoshengmnist_224/cases/small/chaoshengmnist_224/convnext/clients_7/beta_0/seed_42",
+      "checkpoint_sha256": "73d8d137bfe4166f6624a8c9fe52ce3e782edb7e2f2cc4cc3e647ddb84cb3ec3",
+      "features_sha256": "bf6b1bc7006a33f3c077a990de38a6945e6a376de9508879a7834d4388878eb6",
+      "protocol_sha256": "88b8874def26b5a62776b46e098b62ffa024272ecd3408fb686580967ce073cc",
+      "predictions_path": "/data2/liyapeng_grp/program/MedMNISTMerge/outputs/voting_feasibility_20261003/chaoshengmnist_224/convnext/clients_7/beta_0/seed_42/predictions.npz",
+      "predictions_sha256": "84cea7d7a73db9f5cafca4532c12b81756bb5db662f47fc34991a2723fbb8a44"
+    },
+    {
+      "case": "/data2/liyapeng_grp/program/MedMNISTMerge/outputs/pscore_full_20261003/shards/chaoshengmnist_224/cases/small/chaoshengmnist_224/convnext/clients_7/beta_0p01/seed_42",
+      "checkpoint_sha256": "cf4334ec41e6b5b36ecbd5ef7daadf9f8274cb55f2dba53a5b5e69125cfa9d1f",
+      "features_sha256": "bf6b1bc7006a33f3c077a990de38a6945e6a376de9508879a7834d4388878eb6",
+      "protocol_sha256": "cec0a547e8fe3e27634fd4c9c4b27e4be40beb6c89bd80e481ab49e81471224e",
+      "predictions_path": "/data2/liyapeng_grp/program/MedMNISTMerge/outputs/voting_feasibility_20261003/chaoshengmnist_224/convnext/clients_7/beta_0p01/seed_42/predictions.npz",
+      "predictions_sha256": "c688fa94b848bd27f3cd355cb104d6ff67747d927d373163bc41aed061564e86"
+    },
+    {
+      "case": "/data2/liyapeng_grp/program/MedMNISTMerge/outputs/pscore_full_20261003/shards/chaoshengmnist_224/cases/small/chaoshengmnist_224/convnext/clients_7/beta_0p1/seed_42",
+      "checkpoint_sha256": "090f16c2c13a4ea9c935438f5109841e2127401f14782c63bc36168cb90a2301",
+      "features_sha256": "bf6b1bc7006a33f3c077a990de38a6945e6a376de9508879a7834d4388878eb6",
+      "protocol_sha256": "4bc6c90e7e698725626afdde070f7f2802a1ecafd2718b881655b9b1c786d32e",
+      "predictions_path": "/data2/liyapeng_grp/program/MedMNISTMerge/outputs/voting_feasibility_20261003/chaoshengmnist_224/convnext/clients_7/beta_0p1/seed_42/predictions.npz",
+      "predictions_sha256": "c7409b65660c063ff8cd580bde8de5505f4dc25888280e9856a99edf3d0c31fb"
+    },
+    {
+      "case": "/data2/liyapeng_grp/program/MedMNISTMerge/outputs/pscore_full_20261003/shards/chaoshengmnist_224/cases/small/chaoshengmnist_224/resnet/clients_3/beta_0/seed_42",
+      "checkpoint_sha256": "c4018f22bdd6df9375885ea9eaea80cb44928132902224debdca1bba68d2ae3c",
+      "features_sha256": "33edddd7647a87f102bcbe6f9a24f29c3c9dab6bdaa469f884981655d0a5ca14",
+      "protocol_sha256": "57e464f8bcfbe90922187051adbbbeb59f25cf90dd6db18ac16bacbe611d37bc",
+      "predictions_path": "/data2/liyapeng_grp/program/MedMNISTMerge/outputs/voting_feasibility_20261003/chaoshengmnist_224/resnet/clients_3/beta_0/seed_42/predictions.npz",
+      "predictions_sha256": "69a4a76dc853eac1e6bf4f88c21cd197e1eb2111ad3156611921c4a0a12c8dba"
+    },
+    {
+      "case": "/data2/liyapeng_grp/program/MedMNISTMerge/outputs/pscore_full_20261003/shards/chaoshengmnist_224/cases/small/chaoshengmnist_224/resnet/clients_3/beta_0p01/seed_42",
+      "checkpoint_sha256": "8eca880eb7b40b9ae8014f1cb1711a972b886f1d41bfeb7a266f999184bd4559",
+      "features_sha256": "33edddd7647a87f102bcbe6f9a24f29c3c9dab6bdaa469f884981655d0a5ca14",
+      "protocol_sha256": "f3d4d363a1ff86321978a3b74cc09334b5af79804da8129c29f62feb38c26765",
+      "predictions_path": "/data2/liyapeng_grp/program/MedMNISTMerge/outputs/voting_feasibility_20261003/chaoshengmnist_224/resnet/clients_3/beta_0p01/seed_42/predictions.npz",
+      "predictions_sha256": "79dd80594fa25f2c066051a79da71bcbcc6be3d34d6f07c61dca24c54a535394"
+    },
+    {
+      "case": "/data2/liyapeng_grp/program/MedMNISTMerge/outputs/pscore_full_20261003/shards/chaoshengmnist_224/cases/small/chaoshengmnist_224/resnet/clients_3/beta_0p1/seed_42",
+      "checkpoint_sha256": "36b3d8bfcb9c725084f791a8619e606520fa761e70d7a5c71a7f97e3818636ce",
+      "features_sha256": "33edddd7647a87f102bcbe6f9a24f29c3c9dab6bdaa469f884981655d0a5ca14",
+      "protocol_sha256": "dc4c548bd8626be4b16f92351a10a8352f7cce6dd434216c01896805f9a37e36",
+      "predictions_path": "/data2/liyapeng_grp/program/MedMNISTMerge/outputs/voting_feasibility_20261003/chaoshengmnist_224/resnet/clients_3/beta_0p1/seed_42/predictions.npz",
+      "predictions_sha256": "6d8075e40f3ea24cd7bef6b16573aeaf02e4a184ee670814ead7193237db6f2e"
+    },
+    {
+      "case": "/data2/liyapeng_grp/program/MedMNISTMerge/outputs/pscore_full_20261003/shards/chaoshengmnist_224/cases/small/chaoshengmnist_224/resnet/clients_5/beta_0/seed_42",
+      "checkpoint_sha256": "110f24ff7aa5c24bb64f01d96e1c7561b7f43068ff67a311c4aff23f2a07eed1",
+      "features_sha256": "33edddd7647a87f102bcbe6f9a24f29c3c9dab6bdaa469f884981655d0a5ca14",
+      "protocol_sha256": "598e0d0af33420df1bf8383403217cb9f62d7d3560f8c24d2c72d96e1dd802d8",
+      "predictions_path": "/data2/liyapeng_grp/program/MedMNISTMerge/outputs/voting_feasibility_20261003/chaoshengmnist_224/resnet/clients_5/beta_0/seed_42/predictions.npz",
+      "predictions_sha256": "e6c9ca19e764a75064ec14e07009b43e4e8738ae391409ce1fae99a527511b44"
+    },
+    {
+      "case": "/data2/liyapeng_grp/program/MedMNISTMerge/outputs/pscore_full_20261003/shards/chaoshengmnist_224/cases/small/chaoshengmnist_224/resnet/clients_5/beta_0p01/seed_42",
+      "checkpoint_sha256": "d79b5a7dc518bff3a1c648bd7118fcff637f81f6d258de72a79ac1c3b5f3b770",
+      "features_sha256": "33edddd7647a87f102bcbe6f9a24f29c3c9dab6bdaa469f884981655d0a5ca14",
+      "protocol_sha256": "e745464ba9b1c002099a0f4c4a21e8066a368dafc3dca58d9a812a6252c28bbb",
+      "predictions_path": "/data2/liyapeng_grp/program/MedMNISTMerge/outputs/voting_feasibility_20261003/chaoshengmnist_224/resnet/clients_5/beta_0p01/seed_42/predictions.npz",
+      "predictions_sha256": "39e7399da3b532ae96383f31cc65f6ef5c60f21777abafc4d7a3160deb2d8063"
+    },
+    {
+      "case": "/data2/liyapeng_grp/program/MedMNISTMerge/outputs/pscore_full_20261003/shards/chaoshengmnist_224/cases/small/chaoshengmnist_224/resnet/clients_5/beta_0p1/seed_42",
+      "checkpoint_sha256": "50f5a038ee32557ffe0a389e9ccad0d7023b58aa47cdd63e69cff592d8dc3ef6",
+      "features_sha256": "33edddd7647a87f102bcbe6f9a24f29c3c9dab6bdaa469f884981655d0a5ca14",
+      "protocol_sha256": "1912ba00bb953f87fc15ab03e057780d5dbe788dfab795cd776567691553c103",
+      "predictions_path": "/data2/liyapeng_grp/program/MedMNISTMerge/outputs/voting_feasibility_20261003/chaoshengmnist_224/resnet/clients_5/beta_0p1/seed_42/predictions.npz",
+      "predictions_sha256": "45a3048d6538e4330b665fb3b78d8cafa5577263e342ec516b9a3f3b5b60dd4a"
+    },
+    {
+      "case": "/data2/liyapeng_grp/program/MedMNISTMerge/outputs/pscore_full_20261003/shards/chaoshengmnist_224/cases/small/chaoshengmnist_224/resnet/clients_7/beta_0/seed_42",
+      "checkpoint_sha256": "c40284dfb6bc423c46a82c84ddcff44cacad948558dd60d7a4f8c649cd72d714",
+      "features_sha256": "33edddd7647a87f102bcbe6f9a24f29c3c9dab6bdaa469f884981655d0a5ca14",
+      "protocol_sha256": "9a794299ed543cc29e9fac5e644d4f1e31de6a4dc3e397f72a72152cf35ec954",
+      "predictions_path": "/data2/liyapeng_grp/program/MedMNISTMerge/outputs/voting_feasibility_20261003/chaoshengmnist_224/resnet/clients_7/beta_0/seed_42/predictions.npz",
+      "predictions_sha256": "73837a6b31354e0ace19b84ba86f9d27c8ad4e0c5ece1e1fbe80e9463b9d1d3b"
+    },
+    {
+      "case": "/data2/liyapeng_grp/program/MedMNISTMerge/outputs/pscore_full_20261003/shards/chaoshengmnist_224/cases/small/chaoshengmnist_224/resnet/clients_7/beta_0p01/seed_42",
+      "checkpoint_sha256": "a24cc02694a998c0ad914707c375ad20b26681f2089bd3016b510cd1970e8063",
+      "features_sha256": "33edddd7647a87f102bcbe6f9a24f29c3c9dab6bdaa469f884981655d0a5ca14",
+      "protocol_sha256": "f53e5293342f51b5edff409b064fdc8a6d4a7a2d1d95bd0277c2e3178dbb3943",
+      "predictions_path": "/data2/liyapeng_grp/program/MedMNISTMerge/outputs/voting_feasibility_20261003/chaoshengmnist_224/resnet/clients_7/beta_0p01/seed_42/predictions.npz",
+      "predictions_sha256": "b1ddacb123747680e876a6744569d19664d98b9e224f8cd8ac0a864329391a92"
+    },
+    {
+      "case": "/data2/liyapeng_grp/program/MedMNISTMerge/outputs/pscore_full_20261003/shards/chaoshengmnist_224/cases/small/chaoshengmnist_224/resnet/clients_7/beta_0p1/seed_42",
+      "checkpoint_sha256": "310c836304fcec6f68e45b14b8cd91d9c02c7cf99db769a3dc9dd1f798809413",
+      "features_sha256": "33edddd7647a87f102bcbe6f9a24f29c3c9dab6bdaa469f884981655d0a5ca14",
+      "protocol_sha256": "e0eadadf23a3f934aa282f3fd2be4c6321a57abc1b7356355c0642861df5e99b",
+      "predictions_path": "/data2/liyapeng_grp/program/MedMNISTMerge/outputs/voting_feasibility_20261003/chaoshengmnist_224/resnet/clients_7/beta_0p1/seed_42/predictions.npz",
+      "predictions_sha256": "7f21cf29950e276968fc033036895bd7ab1d48eaf9ea82acf5a9b002c1c63c72"
+    },
+    {
+      "case": "/data2/liyapeng_grp/program/MedMNISTMerge/outputs/pscore_full_20261003/shards/chaoshengmnist_224/cases/small/chaoshengmnist_224/swin_tiny/clients_3/beta_0/seed_42",
+      "checkpoint_sha256": "9e8e799c2a33dee3e3b23ddfa4ea4dae81ecaeb679cd32e608929ee0426f342a",
+      "features_sha256": "98042491552a0919f784e5b55e92277b109befc1765210b32e72ab1d42d92df8",
+      "protocol_sha256": "ebee20483454522d67b60112481e4042da8e8c3afd95a95c20faec26ce448b3f",
+      "predictions_path": "/data2/liyapeng_grp/program/MedMNISTMerge/outputs/voting_feasibility_20261003/chaoshengmnist_224/swin_tiny/clients_3/beta_0/seed_42/predictions.npz",
+      "predictions_sha256": "90166e3a7923af94c5977c8906e7721245ff98b6501de7541e581fc80a9c352d"
+    },
+    {
+      "case": "/data2/liyapeng_grp/program/MedMNISTMerge/outputs/pscore_full_20261003/shards/chaoshengmnist_224/cases/small/chaoshengmnist_224/swin_tiny/clients_3/beta_0p01/seed_42",
+      "checkpoint_sha256": "2e9f3c50c875b0445e24b90b0a71f646098f8e0951419283e94fb7fe085a57af",
+      "features_sha256": "98042491552a0919f784e5b55e92277b109befc1765210b32e72ab1d42d92df8",
+      "protocol_sha256": "598494b07a65b08344bfffd12681a587f16b86f739ef40efbf92c3d2e8b6b3e9",
+      "predictions_path": "/data2/liyapeng_grp/program/MedMNISTMerge/outputs/voting_feasibility_20261003/chaoshengmnist_224/swin_tiny/clients_3/beta_0p01/seed_42/predictions.npz",
+      "predictions_sha256": "72a4eb5ba55663fe5328c8921f458e2fbca956aa5c8404d194a142e2de0e28a3"
+    },
+    {
+      "case": "/data2/liyapeng_grp/program/MedMNISTMerge/outputs/pscore_full_20261003/shards/chaoshengmnist_224/cases/small/chaoshengmnist_224/swin_tiny/clients_3/beta_0p1/seed_42",
+      "checkpoint_sha256": "80e94dc949092a5ce1e65ba42a142b3135882c011964b852c6ae28372b52d3e6",
+      "features_sha256": "98042491552a0919f784e5b55e92277b109befc1765210b32e72ab1d42d92df8",
+      "protocol_sha256": "4e8d15c7dbd73795d4a4053d488cf03338475bce68b05cf856b0330837a356e6",
+      "predictions_path": "/data2/liyapeng_grp/program/MedMNISTMerge/outputs/voting_feasibility_20261003/chaoshengmnist_224/swin_tiny/clients_3/beta_0p1/seed_42/predictions.npz",
+      "predictions_sha256": "9504582677f5e27c922a0065726313174b3a18406c87682255e0f7e23fc15471"
+    },
+    {
+      "case": "/data2/liyapeng_grp/program/MedMNISTMerge/outputs/pscore_full_20261003/shards/chaoshengmnist_224/cases/small/chaoshengmnist_224/swin_tiny/clients_5/beta_0/seed_42",
+      "checkpoint_sha256": "e037c8438029fcf8fddbd88123adfce5a8029348f3db100d4742f4eee75de899",
+      "features_sha256": "98042491552a0919f784e5b55e92277b109befc1765210b32e72ab1d42d92df8",
+      "protocol_sha256": "3199424f91f621c9bd9d75481001e39d2a9e1e4a039e2a93460dad303ae82596",
+      "predictions_path": "/data2/liyapeng_grp/program/MedMNISTMerge/outputs/voting_feasibility_20261003/chaoshengmnist_224/swin_tiny/clients_5/beta_0/seed_42/predictions.npz",
+      "predictions_sha256": "243df6fda838e154facbd8643ee2ad89cb8610cfab5b08be76ca62207c2e9e5a"
+    },
+    {
+      "case": "/data2/liyapeng_grp/program/MedMNISTMerge/outputs/pscore_full_20261003/shards/chaoshengmnist_224/cases/small/chaoshengmnist_224/swin_tiny/clients_5/beta_0p01/seed_42",
+      "checkpoint_sha256": "c09c52473186b3f5bf7a8bc3fbd0b5955604d9db77a437698baf3e483db89d18",
+      "features_sha256": "98042491552a0919f784e5b55e92277b109befc1765210b32e72ab1d42d92df8",
+      "protocol_sha256": "2227608bb352f609209aee6e24e0a2febcf7ab737cdb2d1dca6946608ca4368c",
+      "predictions_path": "/data2/liyapeng_grp/program/MedMNISTMerge/outputs/voting_feasibility_20261003/chaoshengmnist_224/swin_tiny/clients_5/beta_0p01/seed_42/predictions.npz",
+      "predictions_sha256": "ac3e7dc63cdb177d19656bde653946129ee2664931b1a047cb4179a53d66dc3f"
+    },
+    {
+      "case": "/data2/liyapeng_grp/program/MedMNISTMerge/outputs/pscore_full_20261003/shards/chaoshengmnist_224/cases/small/chaoshengmnist_224/swin_tiny/clients_5/beta_0p1/seed_42",
+      "checkpoint_sha256": "f037afe70933a6f6996e6d805599cd0dd05becafd967b6b2c2a01fd6a1708df5",
+      "features_sha256": "98042491552a0919f784e5b55e92277b109befc1765210b32e72ab1d42d92df8",
+      "protocol_sha256": "722056e66d3df04f6bd1c73c54fd0db2a475b92371c314b58008ef61f83dcdad",
+      "predictions_path": "/data2/liyapeng_grp/program/MedMNISTMerge/outputs/voting_feasibility_20261003/chaoshengmnist_224/swin_tiny/clients_5/beta_0p1/seed_42/predictions.npz",
+      "predictions_sha256": "d70eb8893ec4f9a00404e2784edfabeec36f51e895564cea850597443d4ea02f"
+    },
+    {
+      "case": "/data2/liyapeng_grp/program/MedMNISTMerge/outputs/pscore_full_20261003/shards/chaoshengmnist_224/cases/small/chaoshengmnist_224/swin_tiny/clients_7/beta_0/seed_42",
+      "checkpoint_sha256": "c6fd6462ba955c03559c20931643550922cd1ac2cf4b50123da70bae2ee0f4b3",
+      "features_sha256": "98042491552a0919f784e5b55e92277b109befc1765210b32e72ab1d42d92df8",
+      "protocol_sha256": "48e367e5f1028c46ba7b4b5e6de1f42302ad59f8f629ca86b9b7b0e9e9945f28",
+      "predictions_path": "/data2/liyapeng_grp/program/MedMNISTMerge/outputs/voting_feasibility_20261003/chaoshengmnist_224/swin_tiny/clients_7/beta_0/seed_42/predictions.npz",
+      "predictions_sha256": "0311e4ad06fbba5c7f6d4140789dd462e6db93d3cfe05be3f7196f939d45ae0b"
+    },
+    {
+      "case": "/data2/liyapeng_grp/program/MedMNISTMerge/outputs/pscore_full_20261003/shards/chaoshengmnist_224/cases/small/chaoshengmnist_224/swin_tiny/clients_7/beta_0p01/seed_42",
+      "checkpoint_sha256": "22919d7d2956340a3d4c20d4583151e6d528ca3691c42e0cff8356c6d960b9e7",
+      "features_sha256": "98042491552a0919f784e5b55e92277b109befc1765210b32e72ab1d42d92df8",
+      "protocol_sha256": "5a4f4dc8fdf688e979709171aac735f2fb24730dd62d3e0d8ccbddcff61b5a74",
+      "predictions_path": "/data2/liyapeng_grp/program/MedMNISTMerge/outputs/voting_feasibility_20261003/chaoshengmnist_224/swin_tiny/clients_7/beta_0p01/seed_42/predictions.npz",
+      "predictions_sha256": "71a1259c6c870c1225b775ba477c0e216d9ad283368d6151abd43158d62fefd1"
+    },
+    {
+      "case": "/data2/liyapeng_grp/program/MedMNISTMerge/outputs/pscore_full_20261003/shards/chaoshengmnist_224/cases/small/chaoshengmnist_224/swin_tiny/clients_7/beta_0p1/seed_42",
+      "checkpoint_sha256": "2ba0a2ab2d931cdd79ebf04afe0d2a6cb2222adcd57ce37b73deedc5061c9f6b",
+      "features_sha256": "98042491552a0919f784e5b55e92277b109befc1765210b32e72ab1d42d92df8",
+      "protocol_sha256": "76b957fa0794208ab790ad970db3037eb151378f15a3ad1341ac93dd9e0bebf1",
+      "predictions_path": "/data2/liyapeng_grp/program/MedMNISTMerge/outputs/voting_feasibility_20261003/chaoshengmnist_224/swin_tiny/clients_7/beta_0p1/seed_42/predictions.npz",
+      "predictions_sha256": "f85e5202deef6e77e5da5acd29b68a35b42e6ca20c1a52b998f19b06acaa4863"
+    },
+    {
+      "case": "/data2/liyapeng_grp/program/MedMNISTMerge/outputs/pscore_full_20261003/shards/chaoshengmnist_224/cases/small/chaoshengmnist_224/vit_t/clients_3/beta_0/seed_42",
+      "checkpoint_sha256": "c4de49145b374325bd36b4b32dd24657784ef51e173d4b522001c3ebc463cfb2",
+      "features_sha256": "71e5b88c9f9d9afe28ef2b1b73c0f7fcb66a7e72a6d4ace7a30c8a3d01a5a711",
+      "protocol_sha256": "e57f8d24ed759cbd58f9c1acc236ce6a2dcf0b84da4444233c64ec8c7be8e401",
+      "predictions_path": "/data2/liyapeng_grp/program/MedMNISTMerge/outputs/voting_feasibility_20261003/chaoshengmnist_224/vit_t/clients_3/beta_0/seed_42/predictions.npz",
+      "predictions_sha256": "433371ae41674b699e08c222a3d67216f8f3ed54cc1b4343793f301962dc8479"
+    },
+    {
+      "case": "/data2/liyapeng_grp/program/MedMNISTMerge/outputs/pscore_full_20261003/shards/chaoshengmnist_224/cases/small/chaoshengmnist_224/vit_t/clients_3/beta_0p01/seed_42",
+      "checkpoint_sha256": "70ea11775bc09e1c5e8f1a5dcb34207e43e5e7543d5a9440d556e4eb58fb136e",
+      "features_sha256": "71e5b88c9f9d9afe28ef2b1b73c0f7fcb66a7e72a6d4ace7a30c8a3d01a5a711",
+      "protocol_sha256": "ad8c1420850a06ff4efe4206d83e52703280d64f4c0079b4755965ac316c3a79",
+      "predictions_path": "/data2/liyapeng_grp/program/MedMNISTMerge/outputs/voting_feasibility_20261003/chaoshengmnist_224/vit_t/clients_3/beta_0p01/seed_42/predictions.npz",
+      "predictions_sha256": "90ffb9a15fdc72d664f9d22c4ad81e833e14a000645d1fd592dc121a2792f6ba"
+    },
+    {
+      "case": "/data2/liyapeng_grp/program/MedMNISTMerge/outputs/pscore_full_20261003/shards/chaoshengmnist_224/cases/small/chaoshengmnist_224/vit_t/clients_3/beta_0p1/seed_42",
+      "checkpoint_sha256": "ea7ef92888519afb303ae768972bc4612e6b761738f31ddea32e20a4a95135e8",
+      "features_sha256": "71e5b88c9f9d9afe28ef2b1b73c0f7fcb66a7e72a6d4ace7a30c8a3d01a5a711",
+      "protocol_sha256": "df11d070d84b5bda9dbd35c633c6f97a41fb3b6228a167dc143858e9318d24ef",
+      "predictions_path": "/data2/liyapeng_grp/program/MedMNISTMerge/outputs/voting_feasibility_20261003/chaoshengmnist_224/vit_t/clients_3/beta_0p1/seed_42/predictions.npz",
+      "predictions_sha256": "397ea22b2cdab4468684b4e4fab57157697679bb1dc4b6425224c8ace64812ac"
+    },
+    {
+      "case": "/data2/liyapeng_grp/program/MedMNISTMerge/outputs/pscore_full_20261003/shards/chaoshengmnist_224/cases/small/chaoshengmnist_224/vit_t/clients_5/beta_0/seed_42",
+      "checkpoint_sha256": "496d660f0a9005be5fbba2a230b20f0856f607cb68231600b186f196785953a6",
+      "features_sha256": "71e5b88c9f9d9afe28ef2b1b73c0f7fcb66a7e72a6d4ace7a30c8a3d01a5a711",
+      "protocol_sha256": "ebb16dba8e7386fcb90f4455d1dafe0b80b764bfe6ec6306a60ffe70d32e5022",
+      "predictions_path": "/data2/liyapeng_grp/program/MedMNISTMerge/outputs/voting_feasibility_20261003/chaoshengmnist_224/vit_t/clients_5/beta_0/seed_42/predictions.npz",
+      "predictions_sha256": "1970d28948187ba0092af1cd1381823288494ccf0935f2ee98a3371f154184b8"
+    },
+    {
+      "case": "/data2/liyapeng_grp/program/MedMNISTMerge/outputs/pscore_full_20261003/shards/chaoshengmnist_224/cases/small/chaoshengmnist_224/vit_t/clients_5/beta_0p01/seed_42",
+      "checkpoint_sha256": "2d6db00f866bdabd1f4ebe4c0d0d86a57db68ff57ab468418062fd043c93db33",
+      "features_sha256": "71e5b88c9f9d9afe28ef2b1b73c0f7fcb66a7e72a6d4ace7a30c8a3d01a5a711",
+      "protocol_sha256": "3e148b87ee1e67b1880bdf231533e9362acf3b6cc305b0243b623d6ebe56f30b",
+      "predictions_path": "/data2/liyapeng_grp/program/MedMNISTMerge/outputs/voting_feasibility_20261003/chaoshengmnist_224/vit_t/clients_5/beta_0p01/seed_42/predictions.npz",
+      "predictions_sha256": "72d8eb1b8a877fa5fc61048280db11229b4ec85390fe63d030e6b3e38cbb2f85"
+    },
+    {
+      "case": "/data2/liyapeng_grp/program/MedMNISTMerge/outputs/pscore_full_20261003/shards/chaoshengmnist_224/cases/small/chaoshengmnist_224/vit_t/clients_5/beta_0p1/seed_42",
+      "checkpoint_sha256": "b3c830d5f4210d320558fb3c7e5c37fbaaa337d3810e53f3c9c2cdf72f8ea958",
+      "features_sha256": "71e5b88c9f9d9afe28ef2b1b73c0f7fcb66a7e72a6d4ace7a30c8a3d01a5a711",
+      "protocol_sha256": "25442443d788c2f6a99a350c9009b482e0c2cd4aa0525c8dc064d902adfb5ad0",
+      "predictions_path": "/data2/liyapeng_grp/program/MedMNISTMerge/outputs/voting_feasibility_20261003/chaoshengmnist_224/vit_t/clients_5/beta_0p1/seed_42/predictions.npz",
+      "predictions_sha256": "15bce459cb9c2d7a01ba924bb806f254915bebe034c31e8632b7c93ec952fc0c"
+    },
+    {
+      "case": "/data2/liyapeng_grp/program/MedMNISTMerge/outputs/pscore_full_20261003/shards/chaoshengmnist_224/cases/small/chaoshengmnist_224/vit_t/clients_7/beta_0/seed_42",
+      "checkpoint_sha256": "79b5d04b4721fca2fa70315e0c1e5ba73dccf0cc7febb76ad431ca34a9d9f4a3",
+      "features_sha256": "71e5b88c9f9d9afe28ef2b1b73c0f7fcb66a7e72a6d4ace7a30c8a3d01a5a711",
+      "protocol_sha256": "646ac202dd23f206821336e65e1d3940c99a86998c170bea71462b59420a4787",
+      "predictions_path": "/data2/liyapeng_grp/program/MedMNISTMerge/outputs/voting_feasibility_20261003/chaoshengmnist_224/vit_t/clients_7/beta_0/seed_42/predictions.npz",
+      "predictions_sha256": "263be0c0bcc1546c262c57640c4067a7f18f82b457904f7c116a393be117e614"
+    },
+    {
+      "case": "/data2/liyapeng_grp/program/MedMNISTMerge/outputs/pscore_full_20261003/shards/chaoshengmnist_224/cases/small/chaoshengmnist_224/vit_t/clients_7/beta_0p01/seed_42",
+      "checkpoint_sha256": "abce014b8aae3c370c7671841ec8ce60631e1be88add2f1aa1ce31cbb0d0c01d",
+      "features_sha256": "71e5b88c9f9d9afe28ef2b1b73c0f7fcb66a7e72a6d4ace7a30c8a3d01a5a711",
+      "protocol_sha256": "7c486bf6333c1b47edbeaf4fc22256f0a09f9201c326cc4294366846cf3e8554",
+      "predictions_path": "/data2/liyapeng_grp/program/MedMNISTMerge/outputs/voting_feasibility_20261003/chaoshengmnist_224/vit_t/clients_7/beta_0p01/seed_42/predictions.npz",
+      "predictions_sha256": "70db12d591f368cad7deef8c1015cf013f76e67c286459568f85495ac972344c"
+    },
+    {
+      "case": "/data2/liyapeng_grp/program/MedMNISTMerge/outputs/pscore_full_20261003/shards/chaoshengmnist_224/cases/small/chaoshengmnist_224/vit_t/clients_7/beta_0p1/seed_42",
+      "checkpoint_sha256": "7361d950242127b47d290b09e7da2c9d5b8fbfc635ce56596642a672d168a879",
+      "features_sha256": "71e5b88c9f9d9afe28ef2b1b73c0f7fcb66a7e72a6d4ace7a30c8a3d01a5a711",
+      "protocol_sha256": "357bd2c153101b8fd8a7590feb6da927e347774ddf01cebd7a39772e2aaadcd2",
+      "predictions_path": "/data2/liyapeng_grp/program/MedMNISTMerge/outputs/voting_feasibility_20261003/chaoshengmnist_224/vit_t/clients_7/beta_0p1/seed_42/predictions.npz",
+      "predictions_sha256": "3fcc8cba5a48a4507263cf2c6b18e1fad43ae06c433308bf07840699391f9b7a"
+    },
+    {
+      "case": "/data2/liyapeng_grp/program/MedMNISTMerge/outputs/pscore_full_20261003/shards/dermamnist_224/cases/small/dermamnist_224/convnext/clients_3/beta_0/seed_42",
+      "checkpoint_sha256": "2ec8aa57a0037d9304920b3284beac250338db01dc60a95053fdfb765b434e75",
+      "features_sha256": "5a851050f9a2c266c0f4e57fc03c9f389add3ded08fa88f24b8d85bc11190897",
+      "protocol_sha256": "d6bcfd0edc266a1e33b4e52d35e794e1e12769c7d961b33c6fce4ba71e6f8688",
+      "predictions_path": "/data2/liyapeng_grp/program/MedMNISTMerge/outputs/voting_feasibility_20261003/dermamnist_224/convnext/clients_3/beta_0/seed_42/predictions.npz",
+      "predictions_sha256": "235be9eca4c03fe9dad15fd44c96683d01eb16892f8d7d064c9933cb03858181"
+    },
+    {
+      "case": "/data2/liyapeng_grp/program/MedMNISTMerge/outputs/pscore_full_20261003/shards/dermamnist_224/cases/small/dermamnist_224/convnext/clients_3/beta_0p01/seed_42",
+      "checkpoint_sha256": "28ea20be494f0c15e4fe9168fb03b0fee0f5e67f39e0cd460c1bd6d68fdab7c8",
+      "features_sha256": "5a851050f9a2c266c0f4e57fc03c9f389add3ded08fa88f24b8d85bc11190897",
+      "protocol_sha256": "55819b15acb92fd003216e414e87b47fe0c242d722c023e0f37ae112a66a2d5c",
+      "predictions_path": "/data2/liyapeng_grp/program/MedMNISTMerge/outputs/voting_feasibility_20261003/dermamnist_224/convnext/clients_3/beta_0p01/seed_42/predictions.npz",
+      "predictions_sha256": "40f057d6254fe8375bc84561aead397843c938f8463f60eb85ec4d4b47045bc0"
+    },
+    {
+      "case": "/data2/liyapeng_grp/program/MedMNISTMerge/outputs/pscore_full_20261003/shards/dermamnist_224/cases/small/dermamnist_224/convnext/clients_3/beta_0p1/seed_42",
+      "checkpoint_sha256": "e7a611732bf224bea89025c75ca7bb8ee2367e72fbfe371ae37c580682cc5fa0",
+      "features_sha256": "5a851050f9a2c266c0f4e57fc03c9f389add3ded08fa88f24b8d85bc11190897",
+      "protocol_sha256": "0756a1499899b69dd19519cb46fea6ab4a764c21636437a049c4d11de643dd64",
+      "predictions_path": "/data2/liyapeng_grp/program/MedMNISTMerge/outputs/voting_feasibility_20261003/dermamnist_224/convnext/clients_3/beta_0p1/seed_42/predictions.npz",
+      "predictions_sha256": "155f195145317958b09942437d323039ed4e98a84bf87490f65970736df5c647"
+    },
+    {
+      "case": "/data2/liyapeng_grp/program/MedMNISTMerge/outputs/pscore_full_20261003/shards/dermamnist_224/cases/small/dermamnist_224/convnext/clients_5/beta_0/seed_42",
+      "checkpoint_sha256": "a24a9f74dceecab0c49c9e37d53c48599ebe0c0a2594aa3b912103521408acbb",
+      "features_sha256": "5a851050f9a2c266c0f4e57fc03c9f389add3ded08fa88f24b8d85bc11190897",
+      "protocol_sha256": "8d20eaa131db525359cb72fbf121e002db8b751feb1965311af6523c4918addf",
+      "predictions_path": "/data2/liyapeng_grp/program/MedMNISTMerge/outputs/voting_feasibility_20261003/dermamnist_224/convnext/clients_5/beta_0/seed_42/predictions.npz",
+      "predictions_sha256": "698c9e58723bee006407a2b47b8e9d5fd153c515d726a708a932f41cc03bece6"
+    },
+    {
+      "case": "/data2/liyapeng_grp/program/MedMNISTMerge/outputs/pscore_full_20261003/shards/dermamnist_224/cases/small/dermamnist_224/convnext/clients_5/beta_0p01/seed_42",
+      "checkpoint_sha256": "edd6067d18ff40a3f81799230227251a798d85048c104fe7fdd24a6fd76229ce",
+      "features_sha256": "5a851050f9a2c266c0f4e57fc03c9f389add3ded08fa88f24b8d85bc11190897",
+      "protocol_sha256": "37a7c080b6345679aae9284bc1a11b096b06947d8a1cdc8bb56611c77668b3d8",
+      "predictions_path": "/data2/liyapeng_grp/program/MedMNISTMerge/outputs/voting_feasibility_20261003/dermamnist_224/convnext/clients_5/beta_0p01/seed_42/predictions.npz",
+      "predictions_sha256": "801a741ffb4bf95ef38021e9f5754a6998ddbc5443305bbed343d32a09055ba3"
+    },
+    {
+      "case": "/data2/liyapeng_grp/program/MedMNISTMerge/outputs/pscore_full_20261003/shards/dermamnist_224/cases/small/dermamnist_224/convnext/clients_5/beta_0p1/seed_42",
+      "checkpoint_sha256": "8c6a2f44fffa796eabb18768c805665bc73a7b3ab746362044ca2f2480d939cd",
+      "features_sha256": "5a851050f9a2c266c0f4e57fc03c9f389add3ded08fa88f24b8d85bc11190897",
+      "protocol_sha256": "9fe308bfe88abebc99c11af9248ac545e643601cb9809c189bd81874131ead72",
+      "predictions_path": "/data2/liyapeng_grp/program/MedMNISTMerge/outputs/voting_feasibility_20261003/dermamnist_224/convnext/clients_5/beta_0p1/seed_42/predictions.npz",
+      "predictions_sha256": "b2d75a2e0be505188bb2add72ae0a594ae17321581843cd24e5afcdd0a51732d"
+    },
+    {
+      "case": "/data2/liyapeng_grp/program/MedMNISTMerge/outputs/pscore_full_20261003/shards/dermamnist_224/cases/small/dermamnist_224/convnext/clients_7/beta_0/seed_42",
+      "checkpoint_sha256": "28dfe3aaebe13deaa6ff129bc0b7bfdef7d54ee96e17ac65f3d1a0d368ad266e",
+      "features_sha256": "5a851050f9a2c266c0f4e57fc03c9f389add3ded08fa88f24b8d85bc11190897",
+      "protocol_sha256": "dc49094461a9d4feb0b4d3529b2b32b9d7e059aaf2ede69d423bc14d5ffa407b",
+      "predictions_path": "/data2/liyapeng_grp/program/MedMNISTMerge/outputs/voting_feasibility_20261003/dermamnist_224/convnext/clients_7/beta_0/seed_42/predictions.npz",
+      "predictions_sha256": "561d9c7906da7dc466fe13e19dbb67c946f338e83c5af7e7a5f6fad6d3476e59"
+    },
+    {
+      "case": "/data2/liyapeng_grp/program/MedMNISTMerge/outputs/pscore_full_20261003/shards/dermamnist_224/cases/small/dermamnist_224/convnext/clients_7/beta_0p01/seed_42",
+      "checkpoint_sha256": "e455b64fcaf02f12219ab6af682b1a8eb975b780c1463e39ee3c98fd04e5a31d",
+      "features_sha256": "5a851050f9a2c266c0f4e57fc03c9f389add3ded08fa88f24b8d85bc11190897",
+      "protocol_sha256": "35b75d19e2bca668d076d2061114971240297d20a1dff17202750cf29bf55509",
+      "predictions_path": "/data2/liyapeng_grp/program/MedMNISTMerge/outputs/voting_feasibility_20261003/dermamnist_224/convnext/clients_7/beta_0p01/seed_42/predictions.npz",
+      "predictions_sha256": "24f3f64acf53b492e5e66bbc561bc83580eaad78453d3d25660209e47e025275"
+    },
+    {
+      "case": "/data2/liyapeng_grp/program/MedMNISTMerge/outputs/pscore_full_20261003/shards/dermamnist_224/cases/small/dermamnist_224/convnext/clients_7/beta_0p1/seed_42",
+      "checkpoint_sha256": "3673bf3c8c520c24322e6c0c3d8125e24b009b705b13d8ac5464cb3f344ee49b",
+      "features_sha256": "5a851050f9a2c266c0f4e57fc03c9f389add3ded08fa88f24b8d85bc11190897",
+      "protocol_sha256": "0b40a8bee3723a4e8584f821bc56f247c0e4cb8c575fd72eddab58a86c0597ab",
+      "predictions_path": "/data2/liyapeng_grp/program/MedMNISTMerge/outputs/voting_feasibility_20261003/dermamnist_224/convnext/clients_7/beta_0p1/seed_42/predictions.npz",
+      "predictions_sha256": "55b68b3236376f16c8e0bc2d9f109b1e898cead89d40ed0c5acdd45e2f5ffa74"
+    },
+    {
+      "case": "/data2/liyapeng_grp/program/MedMNISTMerge/outputs/pscore_full_20261003/shards/dermamnist_224/cases/small/dermamnist_224/resnet/clients_3/beta_0/seed_42",
+      "checkpoint_sha256": "3d661b95bf1e309cf83cf2e3e20c0918bb62538fc6a0cefe33b4c0ed09412535",
+      "features_sha256": "f98b311168764e7937012e0d7f61399bce558bd26785d771bc62ff3b7fed0b76",
+      "protocol_sha256": "c07308d08387ca96feac180d758eee5ce9985e6b01a8a93cf3d494dedae8b0b9",
+      "predictions_path": "/data2/liyapeng_grp/program/MedMNISTMerge/outputs/voting_feasibility_20261003/dermamnist_224/resnet/clients_3/beta_0/seed_42/predictions.npz",
+      "predictions_sha256": "9e50a124e7f48c84d5f7523acb08fb3e256145b645996a39b0b498d8945c1f62"
+    },
+    {
+      "case": "/data2/liyapeng_grp/program/MedMNISTMerge/outputs/pscore_full_20261003/shards/dermamnist_224/cases/small/dermamnist_224/resnet/clients_3/beta_0p01/seed_42",
+      "checkpoint_sha256": "697779bf0dba68ff13be4aeab14ce41828d1bdafd6e34e5be06deed932e992c1",
+      "features_sha256": "f98b311168764e7937012e0d7f61399bce558bd26785d771bc62ff3b7fed0b76",
+      "protocol_sha256": "5695e15a58125866ae2dfddb0fe130f97c9eec566d9ccdc2f364945e2d00597a",
+      "predictions_path": "/data2/liyapeng_grp/program/MedMNISTMerge/outputs/voting_feasibility_20261003/dermamnist_224/resnet/clients_3/beta_0p01/seed_42/predictions.npz",
+      "predictions_sha256": "377c52880cc43670b2f293d38d7cf90a69d662b52d4ea6ee036fd0040b7d4600"
+    },
+    {
+      "case": "/data2/liyapeng_grp/program/MedMNISTMerge/outputs/pscore_full_20261003/shards/dermamnist_224/cases/small/dermamnist_224/resnet/clients_3/beta_0p1/seed_42",
+      "checkpoint_sha256": "d734977954af466e43bab02c4c8c1b61fec03d89baa46a103e2d0ecdfdca3e34",
+      "features_sha256": "f98b311168764e7937012e0d7f61399bce558bd26785d771bc62ff3b7fed0b76",
+      "protocol_sha256": "d2396497ea954d80c6af57aa9d49aa9fbdb5f384fad0505e58f6fa885495bf9a",
+      "predictions_path": "/data2/liyapeng_grp/program/MedMNISTMerge/outputs/voting_feasibility_20261003/dermamnist_224/resnet/clients_3/beta_0p1/seed_42/predictions.npz",
+      "predictions_sha256": "ddbfee263f97a3079f9df254fd1d497de8df02da59b90a2134915ba801b2d42e"
+    },
+    {
+      "case": "/data2/liyapeng_grp/program/MedMNISTMerge/outputs/pscore_full_20261003/shards/dermamnist_224/cases/small/dermamnist_224/resnet/clients_5/beta_0/seed_42",
+      "checkpoint_sha256": "9e7646653344c33e7dcd4b685c543ef4fd842997f8e9e62de9c3044cb4e921c7",
+      "features_sha256": "f98b311168764e7937012e0d7f61399bce558bd26785d771bc62ff3b7fed0b76",
+      "protocol_sha256": "0538dcce533da862d607cc6bf5ae3adb4e3c0daa90eb95960a29c4adbfb3c03c",
+      "predictions_path": "/data2/liyapeng_grp/program/MedMNISTMerge/outputs/voting_feasibility_20261003/dermamnist_224/resnet/clients_5/beta_0/seed_42/predictions.npz",
+      "predictions_sha256": "f308e47de7babc7262ca949baabaa36509b328639d22172eda0f56cce3d9d7dc"
+    },
+    {
+      "case": "/data2/liyapeng_grp/program/MedMNISTMerge/outputs/pscore_full_20261003/shards/dermamnist_224/cases/small/dermamnist_224/resnet/clients_5/beta_0p01/seed_42",
+      "checkpoint_sha256": "9f572a0c0f0ffa7bfc274626ebf3ac5e576211be6679fd4e9c9c12381ca2aba1",
+      "features_sha256": "f98b311168764e7937012e0d7f61399bce558bd26785d771bc62ff3b7fed0b76",
+      "protocol_sha256": "dee8a901dac0a1bb4a13ba3a14c60be711090efc9ab08794510bd537034832bc",
+      "predictions_path": "/data2/liyapeng_grp/program/MedMNISTMerge/outputs/voting_feasibility_20261003/dermamnist_224/resnet/clients_5/beta_0p01/seed_42/predictions.npz",
+      "predictions_sha256": "4f8cdae2efef3b36dbd1cf16ec25186d083365f3e25816177f240be45efc286b"
+    },
+    {
+      "case": "/data2/liyapeng_grp/program/MedMNISTMerge/outputs/pscore_full_20261003/shards/dermamnist_224/cases/small/dermamnist_224/resnet/clients_5/beta_0p1/seed_42",
+      "checkpoint_sha256": "3e9ce1e143b8e2443ea9ae31e26a91361bac55bd465ec0603bc5f710d8354c5d",
+      "features_sha256": "f98b311168764e7937012e0d7f61399bce558bd26785d771bc62ff3b7fed0b76",
+      "protocol_sha256": "2348d19ff77472d063abc8531600f3f3549d56440a9f67f6567ef67afc1d449c",
+      "predictions_path": "/data2/liyapeng_grp/program/MedMNISTMerge/outputs/voting_feasibility_20261003/dermamnist_224/resnet/clients_5/beta_0p1/seed_42/predictions.npz",
+      "predictions_sha256": "b5c99371cf9e53320c717b2a32ac6824a257e33bd6f47dd5b40ac2544325a04d"
+    },
+    {
+      "case": "/data2/liyapeng_grp/program/MedMNISTMerge/outputs/pscore_full_20261003/shards/dermamnist_224/cases/small/dermamnist_224/resnet/clients_7/beta_0/seed_42",
+      "checkpoint_sha256": "83807b1af5d705c736044fa5192c6da4860fe7e6ff5ccc889d0898c0e23b9a35",
+      "features_sha256": "f98b311168764e7937012e0d7f61399bce558bd26785d771bc62ff3b7fed0b76",
+      "protocol_sha256": "c10d45f5f9027b468a269078fe68d36287405aa155ff954dc54f9be59f8b9313",
+      "predictions_path": "/data2/liyapeng_grp/program/MedMNISTMerge/outputs/voting_feasibility_20261003/dermamnist_224/resnet/clients_7/beta_0/seed_42/predictions.npz",
+      "predictions_sha256": "3a10b22e63b0b68bfa3562795455605e6c562f4a19ae8c3f19a49ecb09386a41"
+    },
+    {
+      "case": "/data2/liyapeng_grp/program/MedMNISTMerge/outputs/pscore_full_20261003/shards/dermamnist_224/cases/small/dermamnist_224/resnet/clients_7/beta_0p01/seed_42",
+      "checkpoint_sha256": "05a71c6ff01fffba17934d6863a43e73ac9b6849bac477f0b931a17b8e3487c1",
+      "features_sha256": "f98b311168764e7937012e0d7f61399bce558bd26785d771bc62ff3b7fed0b76",
+      "protocol_sha256": "2173aa642ddc8dc97a375966544512d9f85300ae6518d793376c67e2dfb0c422",
+      "predictions_path": "/data2/liyapeng_grp/program/MedMNISTMerge/outputs/voting_feasibility_20261003/dermamnist_224/resnet/clients_7/beta_0p01/seed_42/predictions.npz",
+      "predictions_sha256": "da0b4cc8dba0d5be1818e1d2c655112798d9a9f712487d4203a66a6582b758d4"
+    },
+    {
+      "case": "/data2/liyapeng_grp/program/MedMNISTMerge/outputs/pscore_full_20261003/shards/dermamnist_224/cases/small/dermamnist_224/resnet/clients_7/beta_0p1/seed_42",
+      "checkpoint_sha256": "3ae76e3ce6ce65b146a3c73bb6a6fc7102c086a2a70c7d00c96c56b9cf713151",
+      "features_sha256": "f98b311168764e7937012e0d7f61399bce558bd26785d771bc62ff3b7fed0b76",
+      "protocol_sha256": "7dd7b665488235ac2396503e29b952d408adf883a20935e125c57324f6b01157",
+      "predictions_path": "/data2/liyapeng_grp/program/MedMNISTMerge/outputs/voting_feasibility_20261003/dermamnist_224/resnet/clients_7/beta_0p1/seed_42/predictions.npz",
+      "predictions_sha256": "52e4384a7622f287a5365ec536aea7af4b87b4c1b7a2f13075ef7cc9a8d7fe2b"
+    },
+    {
+      "case": "/data2/liyapeng_grp/program/MedMNISTMerge/outputs/pscore_full_20261003/shards/dermamnist_224/cases/small/dermamnist_224/swin_tiny/clients_3/beta_0/seed_42",
+      "checkpoint_sha256": "d3cc6d964facb8a4f3b581e93057a6f0c86e46606436568958b1b1c5c00401f9",
+      "features_sha256": "5ee7f4352c500813684241b71aea929bb7d59519cd9c6cee13844fe56ba6f8fa",
+      "protocol_sha256": "06066a495ce555e4cbdb9125872c17a1bdd0c76911a939b81ade2442909a110d",
+      "predictions_path": "/data2/liyapeng_grp/program/MedMNISTMerge/outputs/voting_feasibility_20261003/dermamnist_224/swin_tiny/clients_3/beta_0/seed_42/predictions.npz",
+      "predictions_sha256": "9b047a2d8341f8763976daf949fd7b1b3034733218d0cdadeae816c112674b88"
+    },
+    {
+      "case": "/data2/liyapeng_grp/program/MedMNISTMerge/outputs/pscore_full_20261003/shards/dermamnist_224/cases/small/dermamnist_224/swin_tiny/clients_3/beta_0p01/seed_42",
+      "checkpoint_sha256": "294e9a78525c52da48722f523542e781e86bff493de94c411215f97779716fda",
+      "features_sha256": "5ee7f4352c500813684241b71aea929bb7d59519cd9c6cee13844fe56ba6f8fa",
+      "protocol_sha256": "b95ce3281e905ec1c216c852810bd5accfa99a511cb2a65f2fa03032703f0e37",
+      "predictions_path": "/data2/liyapeng_grp/program/MedMNISTMerge/outputs/voting_feasibility_20261003/dermamnist_224/swin_tiny/clients_3/beta_0p01/seed_42/predictions.npz",
+      "predictions_sha256": "51072fca8fbba0d74f45a6a888989b7c7768e95f9a8ada004dc69896822c337e"
+    },
+    {
+      "case": "/data2/liyapeng_grp/program/MedMNISTMerge/outputs/pscore_full_20261003/shards/dermamnist_224/cases/small/dermamnist_224/swin_tiny/clients_3/beta_0p1/seed_42",
+      "checkpoint_sha256": "ad00fd006bae7d22351e6f239b3e000be1bd435ff5c0b8c9b3c549c8642ca5cd",
+      "features_sha256": "5ee7f4352c500813684241b71aea929bb7d59519cd9c6cee13844fe56ba6f8fa",
+      "protocol_sha256": "e0134838f111c52e5cb32457f2c66b56774dc9ed24a59d4d78b5ad067e987f2b",
+      "predictions_path": "/data2/liyapeng_grp/program/MedMNISTMerge/outputs/voting_feasibility_20261003/dermamnist_224/swin_tiny/clients_3/beta_0p1/seed_42/predictions.npz",
+      "predictions_sha256": "b43e9d0f01228c62a420d4e4085421853170b3c3085353ccce796163132665a9"
+    },
+    {
+      "case": "/data2/liyapeng_grp/program/MedMNISTMerge/outputs/pscore_full_20261003/shards/dermamnist_224/cases/small/dermamnist_224/swin_tiny/clients_5/beta_0/seed_42",
+      "checkpoint_sha256": "06b751a958aa24bfa20c10bc0f76ee8b040d665e9c222379def6ad7524960e70",
+      "features_sha256": "5ee7f4352c500813684241b71aea929bb7d59519cd9c6cee13844fe56ba6f8fa",
+      "protocol_sha256": "e9dad9f278bead3a3d04f6a4e8b9f6b248a6321112a0f337de8fd75f47307077",
+      "predictions_path": "/data2/liyapeng_grp/program/MedMNISTMerge/outputs/voting_feasibility_20261003/dermamnist_224/swin_tiny/clients_5/beta_0/seed_42/predictions.npz",
+      "predictions_sha256": "bd72c5c74c605af5bb4923a8c5b9b0d6a33c098036e9760ba0127bc633e2b991"
+    },
+    {
+      "case": "/data2/liyapeng_grp/program/MedMNISTMerge/outputs/pscore_full_20261003/shards/dermamnist_224/cases/small/dermamnist_224/swin_tiny/clients_5/beta_0p01/seed_42",
+      "checkpoint_sha256": "50359823acf0bc352bc792f3af2d1c3628384dffb28968a4aef91f3f0f95de2a",
+      "features_sha256": "5ee7f4352c500813684241b71aea929bb7d59519cd9c6cee13844fe56ba6f8fa",
+      "protocol_sha256": "d4ca9931d1c64a5a7b75d145e6cca71c85429f8833a028bf6d779ab9b0938149",
+      "predictions_path": "/data2/liyapeng_grp/program/MedMNISTMerge/outputs/voting_feasibility_20261003/dermamnist_224/swin_tiny/clients_5/beta_0p01/seed_42/predictions.npz",
+      "predictions_sha256": "4e83a384df2277003d49f4eedbbe0a4aedea90f951fa10da1472c0d2de768615"
+    },
+    {
+      "case": "/data2/liyapeng_grp/program/MedMNISTMerge/outputs/pscore_full_20261003/shards/dermamnist_224/cases/small/dermamnist_224/swin_tiny/clients_5/beta_0p1/seed_42",
+      "checkpoint_sha256": "2c8ca55a2fe2aaae08d04f3f7440ac48fc2a325265450127eb70a4b320df3ee7",
+      "features_sha256": "5ee7f4352c500813684241b71aea929bb7d59519cd9c6cee13844fe56ba6f8fa",
+      "protocol_sha256": "33ce66521a32112664caaaaf3066797cd09b369868eb387fb3120d7c4a1fcdc2",
+      "predictions_path": "/data2/liyapeng_grp/program/MedMNISTMerge/outputs/voting_feasibility_20261003/dermamnist_224/swin_tiny/clients_5/beta_0p1/seed_42/predictions.npz",
+      "predictions_sha256": "887f1fa4c47bf531f8671371c3bfe4c406d3fff33362e53105c2c6f49e1c2d85"
+    },
+    {
+      "case": "/data2/liyapeng_grp/program/MedMNISTMerge/outputs/pscore_full_20261003/shards/dermamnist_224/cases/small/dermamnist_224/swin_tiny/clients_7/beta_0/seed_42",
+      "checkpoint_sha256": "06547b4e00e2eb9ea57eb749e2510e4e07389862b88acab031cedd1ed9a932a0",
+      "features_sha256": "5ee7f4352c500813684241b71aea929bb7d59519cd9c6cee13844fe56ba6f8fa",
+      "protocol_sha256": "1cdd395fffbb521a57ed428968a4ed213f6b801945eba041bfa35aee7baf54ce",
+      "predictions_path": "/data2/liyapeng_grp/program/MedMNISTMerge/outputs/voting_feasibility_20261003/dermamnist_224/swin_tiny/clients_7/beta_0/seed_42/predictions.npz",
+      "predictions_sha256": "bfca18a0d24a8bc43a9ae546afa8fd4dff013635808aeb1dc8d38674b6a7a941"
+    },
+    {
+      "case": "/data2/liyapeng_grp/program/MedMNISTMerge/outputs/pscore_full_20261003/shards/dermamnist_224/cases/small/dermamnist_224/swin_tiny/clients_7/beta_0p01/seed_42",
+      "checkpoint_sha256": "d8573ab722d60b342f53959bca209d05c537c38689950089ce7d0edd9a2f4108",
+      "features_sha256": "5ee7f4352c500813684241b71aea929bb7d59519cd9c6cee13844fe56ba6f8fa",
+      "protocol_sha256": "c6c0c3b495738cf542c9cae92c4aa1b51fb97762511bd5f6827edaa57d168e08",
+      "predictions_path": "/data2/liyapeng_grp/program/MedMNISTMerge/outputs/voting_feasibility_20261003/dermamnist_224/swin_tiny/clients_7/beta_0p01/seed_42/predictions.npz",
+      "predictions_sha256": "5ba8bd7b64f7800c639b77f14dc400e3d99eba731ddd45cab90ab70c55d37b22"
+    },
+    {
+      "case": "/data2/liyapeng_grp/program/MedMNISTMerge/outputs/pscore_full_20261003/shards/dermamnist_224/cases/small/dermamnist_224/swin_tiny/clients_7/beta_0p1/seed_42",
+      "checkpoint_sha256": "9b0fddf5879e50b2ff87f7da81a790457f4bccd485be0eb94b4269fe1337b38d",
+      "features_sha256": "5ee7f4352c500813684241b71aea929bb7d59519cd9c6cee13844fe56ba6f8fa",
+      "protocol_sha256": "ece5cc84387b763d551c923492fb332a37b7694e571123738f78e74ecba9285a",
+      "predictions_path": "/data2/liyapeng_grp/program/MedMNISTMerge/outputs/voting_feasibility_20261003/dermamnist_224/swin_tiny/clients_7/beta_0p1/seed_42/predictions.npz",
+      "predictions_sha256": "b3d8a0fe5795081d6de272ef0a8a8f4e5bea4cc4047c49edd1769056680c3d98"
+    },
+    {
+      "case": "/data2/liyapeng_grp/program/MedMNISTMerge/outputs/pscore_full_20261003/shards/dermamnist_224/cases/small/dermamnist_224/vit_t/clients_3/beta_0/seed_42",
+      "checkpoint_sha256": "d1565a65850015dc6d6da489677e5d4773a38b7b20187808f36eec105da3e2dc",
+      "features_sha256": "fdd657c452969390b043a67caad2fb36a66afadd3cce26a9901353246fe045ad",
+      "protocol_sha256": "05edf6dd54457eaa3b0bbfbc32121ee7cb71f939096faddd2bcd551759bb0efc",
+      "predictions_path": "/data2/liyapeng_grp/program/MedMNISTMerge/outputs/voting_feasibility_20261003/dermamnist_224/vit_t/clients_3/beta_0/seed_42/predictions.npz",
+      "predictions_sha256": "4cf6cf09679da343976866b382e726d7eeac75741e1988b64b43583cd31ea2c2"
+    },
+    {
+      "case": "/data2/liyapeng_grp/program/MedMNISTMerge/outputs/pscore_full_20261003/shards/dermamnist_224/cases/small/dermamnist_224/vit_t/clients_3/beta_0p01/seed_42",
+      "checkpoint_sha256": "6036893c43c93891b724cfbdcb3c3966b9bad7e146f87e0bd24f27938c20bafc",
+      "features_sha256": "fdd657c452969390b043a67caad2fb36a66afadd3cce26a9901353246fe045ad",
+      "protocol_sha256": "903d4328867343894af3d3232a3688b580d62027f04e79bbd1bc231cf7f82378",
+      "predictions_path": "/data2/liyapeng_grp/program/MedMNISTMerge/outputs/voting_feasibility_20261003/dermamnist_224/vit_t/clients_3/beta_0p01/seed_42/predictions.npz",
+      "predictions_sha256": "95c83f3043d07d9a76c8927b09e89f84314f58c8dd4a0936b8c3fd26aeeee433"
+    },
+    {
+      "case": "/data2/liyapeng_grp/program/MedMNISTMerge/outputs/pscore_full_20261003/shards/dermamnist_224/cases/small/dermamnist_224/vit_t/clients_3/beta_0p1/seed_42",
+      "checkpoint_sha256": "482b674895204bc44c45952a21e6dd191e6036dc414f071394ec0029a37903a4",
+      "features_sha256": "fdd657c452969390b043a67caad2fb36a66afadd3cce26a9901353246fe045ad",
+      "protocol_sha256": "e0fc34423d547bb7923302249135504a9199d05048410816b23c8df7a3ee510c",
+      "predictions_path": "/data2/liyapeng_grp/program/MedMNISTMerge/outputs/voting_feasibility_20261003/dermamnist_224/vit_t/clients_3/beta_0p1/seed_42/predictions.npz",
+      "predictions_sha256": "fb085b1caae10ba174a7f3261dac9f63494320fa7ba830161f691bc6cdfb6fbd"
+    },
+    {
+      "case": "/data2/liyapeng_grp/program/MedMNISTMerge/outputs/pscore_full_20261003/shards/dermamnist_224/cases/small/dermamnist_224/vit_t/clients_5/beta_0/seed_42",
+      "checkpoint_sha256": "5c5eb683f70d5f18db2d825cfb7f553af501f0350e27ef7b5ea04c9d47917e38",
+      "features_sha256": "fdd657c452969390b043a67caad2fb36a66afadd3cce26a9901353246fe045ad",
+      "protocol_sha256": "d006bedc694c23530acb3b363b68ea92b3f90b58ee99478f02a00a6b5725edd2",
+      "predictions_path": "/data2/liyapeng_grp/program/MedMNISTMerge/outputs/voting_feasibility_20261003/dermamnist_224/vit_t/clients_5/beta_0/seed_42/predictions.npz",
+      "predictions_sha256": "e2d14263b1f4031982c77c56eb608614c691dc43eb224ff772e9b75c2d95b22a"
+    },
+    {
+      "case": "/data2/liyapeng_grp/program/MedMNISTMerge/outputs/pscore_full_20261003/shards/dermamnist_224/cases/small/dermamnist_224/vit_t/clients_5/beta_0p01/seed_42",
+      "checkpoint_sha256": "b0d5c6d002385e6f174fd8769258fe3ab8b90dc3a8f61b776b5d0c974b7bd674",
+      "features_sha256": "fdd657c452969390b043a67caad2fb36a66afadd3cce26a9901353246fe045ad",
+      "protocol_sha256": "c7ddef2b9a48141869991dc14e9d86435718cd9666400b2e5469235de88255e7",
+      "predictions_path": "/data2/liyapeng_grp/program/MedMNISTMerge/outputs/voting_feasibility_20261003/dermamnist_224/vit_t/clients_5/beta_0p01/seed_42/predictions.npz",
+      "predictions_sha256": "a0a58c132d4c56914fbce5e8873c174c56639f8f64ac32885547cb1eb2bf9102"
+    },
+    {
+      "case": "/data2/liyapeng_grp/program/MedMNISTMerge/outputs/pscore_full_20261003/shards/dermamnist_224/cases/small/dermamnist_224/vit_t/clients_5/beta_0p1/seed_42",
+      "checkpoint_sha256": "34aac6c5093cdb04f0febcacbcf74105c4092db5459a9e0dcbc292010635f94d",
+      "features_sha256": "fdd657c452969390b043a67caad2fb36a66afadd3cce26a9901353246fe045ad",
+      "protocol_sha256": "ad56ab92b1e6ac80db4f0fa5643990029cd65f5eee3480b7a9110c352f7a849d",
+      "predictions_path": "/data2/liyapeng_grp/program/MedMNISTMerge/outputs/voting_feasibility_20261003/dermamnist_224/vit_t/clients_5/beta_0p1/seed_42/predictions.npz",
+      "predictions_sha256": "a1855addfa6a2e05e435096f4072db2ca9144bc8889be22d7c630e21f9cac224"
+    },
+    {
+      "case": "/data2/liyapeng_grp/program/MedMNISTMerge/outputs/pscore_full_20261003/shards/dermamnist_224/cases/small/dermamnist_224/vit_t/clients_7/beta_0/seed_42",
+      "checkpoint_sha256": "fe9fa3fdb808cf27ffe4f5e7c7155db53ec7c504059965396646a167f1e5ff58",
+      "features_sha256": "fdd657c452969390b043a67caad2fb36a66afadd3cce26a9901353246fe045ad",
+      "protocol_sha256": "0b8da7331a404e3355f1b7e00dec056e78ff346b2172865ed82045cbfde8977c",
+      "predictions_path": "/data2/liyapeng_grp/program/MedMNISTMerge/outputs/voting_feasibility_20261003/dermamnist_224/vit_t/clients_7/beta_0/seed_42/predictions.npz",
+      "predictions_sha256": "b0231796b3244f21bccfb6688b0a56cd6c50456a3a09e772d0affaa7163da971"
+    },
+    {
+      "case": "/data2/liyapeng_grp/program/MedMNISTMerge/outputs/pscore_full_20261003/shards/dermamnist_224/cases/small/dermamnist_224/vit_t/clients_7/beta_0p01/seed_42",
+      "checkpoint_sha256": "436251abf5f04dd065cdd81a59124de237a0e1bad5196d4b79d2c431c144df0e",
+      "features_sha256": "fdd657c452969390b043a67caad2fb36a66afadd3cce26a9901353246fe045ad",
+      "protocol_sha256": "5eb68d710da6af109c634aa066c746cf3728642156c0e7c0250119233e8032a3",
+      "predictions_path": "/data2/liyapeng_grp/program/MedMNISTMerge/outputs/voting_feasibility_20261003/dermamnist_224/vit_t/clients_7/beta_0p01/seed_42/predictions.npz",
+      "predictions_sha256": "46c373cae630e8672c3c00be8384111f55765a4a4e2b0d4fa789cd4b0a659553"
+    },
+    {
+      "case": "/data2/liyapeng_grp/program/MedMNISTMerge/outputs/pscore_full_20261003/shards/dermamnist_224/cases/small/dermamnist_224/vit_t/clients_7/beta_0p1/seed_42",
+      "checkpoint_sha256": "f601a3362996145e5e0daf48e8a12f6b0a28cfded849e502cd0bb5b31e8db16a",
+      "features_sha256": "fdd657c452969390b043a67caad2fb36a66afadd3cce26a9901353246fe045ad",
+      "protocol_sha256": "3abd31c4f7e9be5a79702c4d628df92637cf7cd32b02efdbe02f8665be83db96",
+      "predictions_path": "/data2/liyapeng_grp/program/MedMNISTMerge/outputs/voting_feasibility_20261003/dermamnist_224/vit_t/clients_7/beta_0p1/seed_42/predictions.npz",
+      "predictions_sha256": "11273117ca04e5436fe8ce2a5fadfad7c1a8124dddb24fc97a1548e882ea45b5"
+    },
+    {
+      "case": "/data2/liyapeng_grp/program/MedMNISTMerge/outputs/pscore_full_20261003/shards/organcmnist_224/cases/small/organcmnist_224/convnext/clients_3/beta_0/seed_42",
+      "checkpoint_sha256": "e4fc21c7e36097e09c7537aa1a732b7814363f28e6a090e34b692b81117674a6",
+      "features_sha256": "29e058b962e41b854f7d2c02941aa84ab38244544b879e7811445713a34dbb26",
+      "protocol_sha256": "c6505ac1c0dc3de815591bd4b3d41286d609534a33db85f5fe7af07fb282c0cb",
+      "predictions_path": "/data2/liyapeng_grp/program/MedMNISTMerge/outputs/voting_feasibility_20261003/organcmnist_224/convnext/clients_3/beta_0/seed_42/predictions.npz",
+      "predictions_sha256": "9bb674c535abc6f4b4d248c8fa41686f372ad369a1e75fae892019a0775bae34"
+    },
+    {
+      "case": "/data2/liyapeng_grp/program/MedMNISTMerge/outputs/pscore_full_20261003/shards/organcmnist_224/cases/small/organcmnist_224/convnext/clients_3/beta_0p01/seed_42",
+      "checkpoint_sha256": "179cc26f367a195e8097ede4ebb14e9e8d9ee13d50c7cc2e07f3fd2e838291b1",
+      "features_sha256": "29e058b962e41b854f7d2c02941aa84ab38244544b879e7811445713a34dbb26",
+      "protocol_sha256": "897ab06a2f53fa758383e6c5544d325e80207fb5b76fba95ab0a46b1ad6f6f46",
+      "predictions_path": "/data2/liyapeng_grp/program/MedMNISTMerge/outputs/voting_feasibility_20261003/organcmnist_224/convnext/clients_3/beta_0p01/seed_42/predictions.npz",
+      "predictions_sha256": "b3cbfab3df60d5172ba53495161ebff3b115268f0cc7b9209b127a68d83fac84"
+    },
+    {
+      "case": "/data2/liyapeng_grp/program/MedMNISTMerge/outputs/pscore_full_20261003/shards/organcmnist_224/cases/small/organcmnist_224/convnext/clients_3/beta_0p1/seed_42",
+      "checkpoint_sha256": "f417a32ed4a11a42c6fef0c3683d3887de79fcaeacf6cdfe0417f16e4a4faff9",
+      "features_sha256": "29e058b962e41b854f7d2c02941aa84ab38244544b879e7811445713a34dbb26",
+      "protocol_sha256": "6c5d0db0ef70fb58c3bfd2057f2e8daf7492901ee4a7a5de9d3a7ca61e9290f1",
+      "predictions_path": "/data2/liyapeng_grp/program/MedMNISTMerge/outputs/voting_feasibility_20261003/organcmnist_224/convnext/clients_3/beta_0p1/seed_42/predictions.npz",
+      "predictions_sha256": "025b72c6b5fd35c4473299543fc6ade44f58e4bb1ea4a86a213ec67fac376661"
+    },
+    {
+      "case": "/data2/liyapeng_grp/program/MedMNISTMerge/outputs/pscore_full_20261003/shards/organcmnist_224/cases/small/organcmnist_224/convnext/clients_5/beta_0/seed_42",
+      "checkpoint_sha256": "fccd44eea7c09e600b2b74635141b0ddc7b7e5f34397c6f14a8fdb8017e32ed4",
+      "features_sha256": "29e058b962e41b854f7d2c02941aa84ab38244544b879e7811445713a34dbb26",
+      "protocol_sha256": "3b635ba95d3d77a41aa273b0bcea019d33c7655e9c255fe20ad3bd4f80a15277",
+      "predictions_path": "/data2/liyapeng_grp/program/MedMNISTMerge/outputs/voting_feasibility_20261003/organcmnist_224/convnext/clients_5/beta_0/seed_42/predictions.npz",
+      "predictions_sha256": "2d2905ec01c1266e30c1d5c238d925e7e97f617473971ec87cf55bc062cd05ba"
+    },
+    {
+      "case": "/data2/liyapeng_grp/program/MedMNISTMerge/outputs/pscore_full_20261003/shards/organcmnist_224/cases/small/organcmnist_224/convnext/clients_5/beta_0p01/seed_42",
+      "checkpoint_sha256": "33fc36ae3ca5df363bfe4fa3759701e5090e5ae82d0a2df6f2c5571fad17999d",
+      "features_sha256": "29e058b962e41b854f7d2c02941aa84ab38244544b879e7811445713a34dbb26",
+      "protocol_sha256": "2a3136cf72ee6442bd8dd1e72fb60129b904dffd488fe6c3903b965ee1ef2bfb",
+      "predictions_path": "/data2/liyapeng_grp/program/MedMNISTMerge/outputs/voting_feasibility_20261003/organcmnist_224/convnext/clients_5/beta_0p01/seed_42/predictions.npz",
+      "predictions_sha256": "520586360666a43166bdb92ab44f9c9d6dee648791ae243047ac47b02f9574c7"
+    },
+    {
+      "case": "/data2/liyapeng_grp/program/MedMNISTMerge/outputs/pscore_full_20261003/shards/organcmnist_224/cases/small/organcmnist_224/convnext/clients_5/beta_0p1/seed_42",
+      "checkpoint_sha256": "e45a13bac6116dcc6c3fc8eaeff0e229b66276050befb84bbb12dfbaed59ee88",
+      "features_sha256": "29e058b962e41b854f7d2c02941aa84ab38244544b879e7811445713a34dbb26",
+      "protocol_sha256": "3bc73a59a9df25a53b7a460108157881abdde3c53684a1d59383a8dbe4770f9c",
+      "predictions_path": "/data2/liyapeng_grp/program/MedMNISTMerge/outputs/voting_feasibility_20261003/organcmnist_224/convnext/clients_5/beta_0p1/seed_42/predictions.npz",
+      "predictions_sha256": "358a13750f250a03dc2116b9ac4a8fb42c213d22ca01d84b63a67155c7e27cb7"
+    },
+    {
+      "case": "/data2/liyapeng_grp/program/MedMNISTMerge/outputs/pscore_full_20261003/shards/organcmnist_224/cases/small/organcmnist_224/convnext/clients_7/beta_0/seed_42",
+      "checkpoint_sha256": "091c9aed37fc749318d986a1ba1d3ec883c74f5e1f2d2b11572f7fdf54cd4432",
+      "features_sha256": "29e058b962e41b854f7d2c02941aa84ab38244544b879e7811445713a34dbb26",
+      "protocol_sha256": "37f73f60d72c3923d6fb517b4dcabdfc70cf2dd079a07c4754b3175fcb4482d1",
+      "predictions_path": "/data2/liyapeng_grp/program/MedMNISTMerge/outputs/voting_feasibility_20261003/organcmnist_224/convnext/clients_7/beta_0/seed_42/predictions.npz",
+      "predictions_sha256": "1fdf72b2d921c625eb42f3d600cb0c453e21f5187d926ddb95cb6932ff22ccd6"
+    },
+    {
+      "case": "/data2/liyapeng_grp/program/MedMNISTMerge/outputs/pscore_full_20261003/shards/organcmnist_224/cases/small/organcmnist_224/convnext/clients_7/beta_0p01/seed_42",
+      "checkpoint_sha256": "9c385eaa2a07b9b90066a917c0d10ddd1a10d74f3e09f7e6695150e950de0667",
+      "features_sha256": "29e058b962e41b854f7d2c02941aa84ab38244544b879e7811445713a34dbb26",
+      "protocol_sha256": "763f67f665fb93ce653071e48fab5b1d9369eb392e1d792ebca4ae81f688aed6",
+      "predictions_path": "/data2/liyapeng_grp/program/MedMNISTMerge/outputs/voting_feasibility_20261003/organcmnist_224/convnext/clients_7/beta_0p01/seed_42/predictions.npz",
+      "predictions_sha256": "75e60de5b7e5f167c8677c9f8e6a07680e7931d7f6912e847a81722b7539a1e5"
+    },
+    {
+      "case": "/data2/liyapeng_grp/program/MedMNISTMerge/outputs/pscore_full_20261003/shards/organcmnist_224/cases/small/organcmnist_224/convnext/clients_7/beta_0p1/seed_42",
+      "checkpoint_sha256": "47b2b644a1ab263d428df3caeeefe24677fea18f8a7cda974e0a971541f0e5df",
+      "features_sha256": "29e058b962e41b854f7d2c02941aa84ab38244544b879e7811445713a34dbb26",
+      "protocol_sha256": "2fc15ebd9066ade5b3e43f70e9aca039109cafde921096cd2460b22b6087c33d",
+      "predictions_path": "/data2/liyapeng_grp/program/MedMNISTMerge/outputs/voting_feasibility_20261003/organcmnist_224/convnext/clients_7/beta_0p1/seed_42/predictions.npz",
+      "predictions_sha256": "17d6731a2814f76b587568bfa39ba18cb13b5c937a03f891a419b49e7e09d191"
+    },
+    {
+      "case": "/data2/liyapeng_grp/program/MedMNISTMerge/outputs/pscore_full_20261003/shards/organcmnist_224/cases/small/organcmnist_224/resnet/clients_3/beta_0/seed_42",
+      "checkpoint_sha256": "bf749020585a453c97b5a02ff012c3a35c71759a0e5db170bdf295dbc685910c",
+      "features_sha256": "ba5ea9b594e83c762aaed3edf8b1b8a704bb71d617726804a2a51ab8001dab26",
+      "protocol_sha256": "c4ef23c7c6b83f3e8131f3ce2d1cb48c17fa7b6c9a8984bc2bf529684f0d354e",
+      "predictions_path": "/data2/liyapeng_grp/program/MedMNISTMerge/outputs/voting_feasibility_20261003/organcmnist_224/resnet/clients_3/beta_0/seed_42/predictions.npz",
+      "predictions_sha256": "ed8dc400b673d6fd00cbdec8165e9b4aabb4a4dc3bdb56572fe575ee95ff3825"
+    },
+    {
+      "case": "/data2/liyapeng_grp/program/MedMNISTMerge/outputs/pscore_full_20261003/shards/organcmnist_224/cases/small/organcmnist_224/resnet/clients_3/beta_0p01/seed_42",
+      "checkpoint_sha256": "97be9f1a0d87b646c9abfa03afba2f11f3111a47a97ffc5be2892cc3d36fd60c",
+      "features_sha256": "ba5ea9b594e83c762aaed3edf8b1b8a704bb71d617726804a2a51ab8001dab26",
+      "protocol_sha256": "42ad3e5ed639b4eabbd1f56ee8ef573bd4ba33020714a88038f5af2face7dd0b",
+      "predictions_path": "/data2/liyapeng_grp/program/MedMNISTMerge/outputs/voting_feasibility_20261003/organcmnist_224/resnet/clients_3/beta_0p01/seed_42/predictions.npz",
+      "predictions_sha256": "c54673d7aee17a96dc4622aa0fc26cec78a5adff307aaaf6ad57eebda2ae4cdd"
+    },
+    {
+      "case": "/data2/liyapeng_grp/program/MedMNISTMerge/outputs/pscore_full_20261003/shards/organcmnist_224/cases/small/organcmnist_224/resnet/clients_3/beta_0p1/seed_42",
+      "checkpoint_sha256": "57a75d99fe8771b4cff4d8e5f0a4750acbdc1a0ee51dc7dd5a084664c068fcc2",
+      "features_sha256": "ba5ea9b594e83c762aaed3edf8b1b8a704bb71d617726804a2a51ab8001dab26",
+      "protocol_sha256": "c2bab9e708b768464784568a244da453c7df6b88b927a8c5df7ca5fd8a072f08",
+      "predictions_path": "/data2/liyapeng_grp/program/MedMNISTMerge/outputs/voting_feasibility_20261003/organcmnist_224/resnet/clients_3/beta_0p1/seed_42/predictions.npz",
+      "predictions_sha256": "c1aff926388601ee5805d8abdb6e014e73a58290f51364e971b8b6bbe0da836d"
+    },
+    {
+      "case": "/data2/liyapeng_grp/program/MedMNISTMerge/outputs/pscore_full_20261003/shards/organcmnist_224/cases/small/organcmnist_224/resnet/clients_5/beta_0/seed_42",
+      "checkpoint_sha256": "e03f7477f60243d598e471f5ec9a0915f0b6de30f74fcf4de975c7f0ef357456",
+      "features_sha256": "ba5ea9b594e83c762aaed3edf8b1b8a704bb71d617726804a2a51ab8001dab26",
+      "protocol_sha256": "76490a6ab275341dfdd1f594044e6eec461eb36fc2550c09dafdc10fc5337b34",
+      "predictions_path": "/data2/liyapeng_grp/program/MedMNISTMerge/outputs/voting_feasibility_20261003/organcmnist_224/resnet/clients_5/beta_0/seed_42/predictions.npz",
+      "predictions_sha256": "8b376cdd94cadf6681eb2ce4718cab0d901996b99115b4883af675bbc8ffc6ad"
+    },
+    {
+      "case": "/data2/liyapeng_grp/program/MedMNISTMerge/outputs/pscore_full_20261003/shards/organcmnist_224/cases/small/organcmnist_224/resnet/clients_5/beta_0p01/seed_42",
+      "checkpoint_sha256": "651d483b8fe668b013612ba588f490fe2fa223231c6399608ca1896c44f13c97",
+      "features_sha256": "ba5ea9b594e83c762aaed3edf8b1b8a704bb71d617726804a2a51ab8001dab26",
+      "protocol_sha256": "afb0b597a7f5451a0332c7c56a388c59860e06fd7d1fbb17d70a02a5796552d6",
+      "predictions_path": "/data2/liyapeng_grp/program/MedMNISTMerge/outputs/voting_feasibility_20261003/organcmnist_224/resnet/clients_5/beta_0p01/seed_42/predictions.npz",
+      "predictions_sha256": "1aff7d81f3e6ec5a9f06d5bff79c7a3ce49f513aa3273bd218215ed09a637a0a"
+    },
+    {
+      "case": "/data2/liyapeng_grp/program/MedMNISTMerge/outputs/pscore_full_20261003/shards/organcmnist_224/cases/small/organcmnist_224/resnet/clients_5/beta_0p1/seed_42",
+      "checkpoint_sha256": "aff01b9a6fb9a474552670a64a2ff0a2a6a025208de346e7548b95176ed9357c",
+      "features_sha256": "ba5ea9b594e83c762aaed3edf8b1b8a704bb71d617726804a2a51ab8001dab26",
+      "protocol_sha256": "1c0c5ea0e15f70399ad96981e00ad30b71e1ed0836b6f78d762919e05c6c2f4c",
+      "predictions_path": "/data2/liyapeng_grp/program/MedMNISTMerge/outputs/voting_feasibility_20261003/organcmnist_224/resnet/clients_5/beta_0p1/seed_42/predictions.npz",
+      "predictions_sha256": "5d688e64f6da86ccf11fd85b3945a3bdf2920b3189610e124551fa43d6b903c2"
+    },
+    {
+      "case": "/data2/liyapeng_grp/program/MedMNISTMerge/outputs/pscore_full_20261003/shards/organcmnist_224/cases/small/organcmnist_224/resnet/clients_7/beta_0/seed_42",
+      "checkpoint_sha256": "ca61c45674637f8d2b5b4a5eb4ff26c212137a805324543024daff12999261a2",
+      "features_sha256": "ba5ea9b594e83c762aaed3edf8b1b8a704bb71d617726804a2a51ab8001dab26",
+      "protocol_sha256": "ca2ae2f9dd7738cb2daa45744b22cd5caea2658070be3c0eed6209930215e76e",
+      "predictions_path": "/data2/liyapeng_grp/program/MedMNISTMerge/outputs/voting_feasibility_20261003/organcmnist_224/resnet/clients_7/beta_0/seed_42/predictions.npz",
+      "predictions_sha256": "6d1b40c0768418774235a5606e4870efb6d1eed9904cee19381bb8084cb4f34e"
+    },
+    {
+      "case": "/data2/liyapeng_grp/program/MedMNISTMerge/outputs/pscore_full_20261003/shards/organcmnist_224/cases/small/organcmnist_224/resnet/clients_7/beta_0p01/seed_42",
+      "checkpoint_sha256": "86acab4efe03ecb945a218fe9e68ede1e1fcbe0cf05e7c339ee08edbb0a9cfd3",
+      "features_sha256": "ba5ea9b594e83c762aaed3edf8b1b8a704bb71d617726804a2a51ab8001dab26",
+      "protocol_sha256": "a5226cab684c67776d4fc7b1ebb7a8f666cbce521605b489af164dfa8a87560f",
+      "predictions_path": "/data2/liyapeng_grp/program/MedMNISTMerge/outputs/voting_feasibility_20261003/organcmnist_224/resnet/clients_7/beta_0p01/seed_42/predictions.npz",
+      "predictions_sha256": "b188e0130b9a5309919929b6a3f36a78005d460003c1576f3114394ad4f9424d"
+    },
+    {
+      "case": "/data2/liyapeng_grp/program/MedMNISTMerge/outputs/pscore_full_20261003/shards/organcmnist_224/cases/small/organcmnist_224/resnet/clients_7/beta_0p1/seed_42",
+      "checkpoint_sha256": "42c66423847224e167ca1d9b246074a808c4b4c02a5c0af00b59a1ba2ddde5c6",
+      "features_sha256": "ba5ea9b594e83c762aaed3edf8b1b8a704bb71d617726804a2a51ab8001dab26",
+      "protocol_sha256": "d3ffe78c65850178dd10800f2add2452a474fc2b63483bfa95d08c4ab6307bc4",
+      "predictions_path": "/data2/liyapeng_grp/program/MedMNISTMerge/outputs/voting_feasibility_20261003/organcmnist_224/resnet/clients_7/beta_0p1/seed_42/predictions.npz",
+      "predictions_sha256": "0218e16b1ea5146d2154b095411752966f1ebe771a40d7949c404c43faac6d7b"
+    },
+    {
+      "case": "/data2/liyapeng_grp/program/MedMNISTMerge/outputs/pscore_full_20261003/shards/organcmnist_224/cases/small/organcmnist_224/swin_tiny/clients_3/beta_0/seed_42",
+      "checkpoint_sha256": "0da9282a805c4c337becc97fa5664110c8e896f309a9d7fb0eb6f76b0e4ed473",
+      "features_sha256": "c2b2c29076ec22ea654b6832d74719351ad252970b3765fd7e1b44753cd0de19",
+      "protocol_sha256": "a718029066d7c2128f8c3b42336167454ed652c0617b6ba20c63249357106f31",
+      "predictions_path": "/data2/liyapeng_grp/program/MedMNISTMerge/outputs/voting_feasibility_20261003/organcmnist_224/swin_tiny/clients_3/beta_0/seed_42/predictions.npz",
+      "predictions_sha256": "231658aea850b33788acfd7cf11afcc930d8f4add280371f75936ae7388c2ca4"
+    },
+    {
+      "case": "/data2/liyapeng_grp/program/MedMNISTMerge/outputs/pscore_full_20261003/shards/organcmnist_224/cases/small/organcmnist_224/swin_tiny/clients_3/beta_0p01/seed_42",
+      "checkpoint_sha256": "1ee203080de317e686dcc681b86d4a7961dd00db4f0dfa046a023ccb787a4c59",
+      "features_sha256": "c2b2c29076ec22ea654b6832d74719351ad252970b3765fd7e1b44753cd0de19",
+      "protocol_sha256": "d97b054148b974d87a34e2d3fe821ca30921d3df40ae48346c1ca01ccae4bfed",
+      "predictions_path": "/data2/liyapeng_grp/program/MedMNISTMerge/outputs/voting_feasibility_20261003/organcmnist_224/swin_tiny/clients_3/beta_0p01/seed_42/predictions.npz",
+      "predictions_sha256": "1dddd22b32a10ca89ff3c90db92b4819c557b285ee0c9fd9da47044cfba799b9"
+    },
+    {
+      "case": "/data2/liyapeng_grp/program/MedMNISTMerge/outputs/pscore_full_20261003/shards/organcmnist_224/cases/small/organcmnist_224/swin_tiny/clients_3/beta_0p1/seed_42",
+      "checkpoint_sha256": "d01ae6e4e5ca030e97af9b01043771d8d287dcbd8d5f7081f6892e4e22ea4968",
+      "features_sha256": "c2b2c29076ec22ea654b6832d74719351ad252970b3765fd7e1b44753cd0de19",
+      "protocol_sha256": "4d7498a1f822e8eab38ccb9c994330f6e33ddb5b80d57181332832611efb4bad",
+      "predictions_path": "/data2/liyapeng_grp/program/MedMNISTMerge/outputs/voting_feasibility_20261003/organcmnist_224/swin_tiny/clients_3/beta_0p1/seed_42/predictions.npz",
+      "predictions_sha256": "10a87d911dec0df7d93664a2667053dd07e242fcee378ed5a410e1bc19ed06fd"
+    },
+    {
+      "case": "/data2/liyapeng_grp/program/MedMNISTMerge/outputs/pscore_full_20261003/shards/organcmnist_224/cases/small/organcmnist_224/swin_tiny/clients_5/beta_0/seed_42",
+      "checkpoint_sha256": "b0b966e1d9bd9c250af99bb614a9183df2b26216a2f3d66f8b6240b691ca4b4a",
+      "features_sha256": "c2b2c29076ec22ea654b6832d74719351ad252970b3765fd7e1b44753cd0de19",
+      "protocol_sha256": "8c1fd630d69eb3d38a7692bab5dc8425a3eb77904c7ba10a206bacb13f98e5f7",
+      "predictions_path": "/data2/liyapeng_grp/program/MedMNISTMerge/outputs/voting_feasibility_20261003/organcmnist_224/swin_tiny/clients_5/beta_0/seed_42/predictions.npz",
+      "predictions_sha256": "f42d14aad220d38b2256cc4cd76c04474ad8c04c8aaa50c4227b55802e1fd13d"
+    },
+    {
+      "case": "/data2/liyapeng_grp/program/MedMNISTMerge/outputs/pscore_full_20261003/shards/organcmnist_224/cases/small/organcmnist_224/swin_tiny/clients_5/beta_0p01/seed_42",
+      "checkpoint_sha256": "55c73c6417d8fa2a7434395b5c858414feca0715b9b984f60d623eaf387f85c6",
+      "features_sha256": "c2b2c29076ec22ea654b6832d74719351ad252970b3765fd7e1b44753cd0de19",
+      "protocol_sha256": "79b2f1308e6d6d96dca168eff259451d4a0141c32d08a902649cf5d8e0cfab4a",
+      "predictions_path": "/data2/liyapeng_grp/program/MedMNISTMerge/outputs/voting_feasibility_20261003/organcmnist_224/swin_tiny/clients_5/beta_0p01/seed_42/predictions.npz",
+      "predictions_sha256": "f5b4559eb714e496c43dc1a754d5e8035b206dfab9f0d6cf504d8926789153f9"
+    },
+    {
+      "case": "/data2/liyapeng_grp/program/MedMNISTMerge/outputs/pscore_full_20261003/shards/organcmnist_224/cases/small/organcmnist_224/swin_tiny/clients_5/beta_0p1/seed_42",
+      "checkpoint_sha256": "80a121b8b83aed0efe22f2c8bf5955f6df7150ce821a8279686970f246cb7e02",
+      "features_sha256": "c2b2c29076ec22ea654b6832d74719351ad252970b3765fd7e1b44753cd0de19",
+      "protocol_sha256": "3db044d5b96a5a12976e6d9079287a930bb55b3ffb2a4f11d18ccf2b5dbf86d7",
+      "predictions_path": "/data2/liyapeng_grp/program/MedMNISTMerge/outputs/voting_feasibility_20261003/organcmnist_224/swin_tiny/clients_5/beta_0p1/seed_42/predictions.npz",
+      "predictions_sha256": "6f8d6ae9eb661398a87e38687dd986bb24aa5d2ee2b4d804818ac4eff33748d1"
+    },
+    {
+      "case": "/data2/liyapeng_grp/program/MedMNISTMerge/outputs/pscore_full_20261003/shards/organcmnist_224/cases/small/organcmnist_224/swin_tiny/clients_7/beta_0/seed_42",
+      "checkpoint_sha256": "c66faaa620876fdf00676335cabb1b0c51972e9ebae82af56ace9ec1e741900d",
+      "features_sha256": "c2b2c29076ec22ea654b6832d74719351ad252970b3765fd7e1b44753cd0de19",
+      "protocol_sha256": "06c9e660a359c86b9f321bbc90a700adfad43fcc5adab0a72c6bd6e53689eec9",
+      "predictions_path": "/data2/liyapeng_grp/program/MedMNISTMerge/outputs/voting_feasibility_20261003/organcmnist_224/swin_tiny/clients_7/beta_0/seed_42/predictions.npz",
+      "predictions_sha256": "6b79c4cd4d70bb81626bb7b79c853c14151f7accfc873a93655b4d5fa99bbf2d"
+    },
+    {
+      "case": "/data2/liyapeng_grp/program/MedMNISTMerge/outputs/pscore_full_20261003/shards/organcmnist_224/cases/small/organcmnist_224/swin_tiny/clients_7/beta_0p01/seed_42",
+      "checkpoint_sha256": "0298b60ffaeb6af6e4847d79dfa235c3f4f9359fa791c1c9ce7763b39613abfc",
+      "features_sha256": "c2b2c29076ec22ea654b6832d74719351ad252970b3765fd7e1b44753cd0de19",
+      "protocol_sha256": "187e469632cc75715b8d6a7d9f430b855eb5a9d57c1ca8030874cadcf6dc342e",
+      "predictions_path": "/data2/liyapeng_grp/program/MedMNISTMerge/outputs/voting_feasibility_20261003/organcmnist_224/swin_tiny/clients_7/beta_0p01/seed_42/predictions.npz",
+      "predictions_sha256": "e5cdf4ef2e7dcd5dbc7c604ec0a2eec593b8a4d02f601ace694c4d008f4106c2"
+    },
+    {
+      "case": "/data2/liyapeng_grp/program/MedMNISTMerge/outputs/pscore_full_20261003/shards/organcmnist_224/cases/small/organcmnist_224/swin_tiny/clients_7/beta_0p1/seed_42",
+      "checkpoint_sha256": "b1b9365855547fae2dd677c195c4769bde49ef310e77e66142445a99a3498f46",
+      "features_sha256": "c2b2c29076ec22ea654b6832d74719351ad252970b3765fd7e1b44753cd0de19",
+      "protocol_sha256": "2656743c2c77731b812fe1c31a0075f2f0201571d448db5380df618e121e46d0",
+      "predictions_path": "/data2/liyapeng_grp/program/MedMNISTMerge/outputs/voting_feasibility_20261003/organcmnist_224/swin_tiny/clients_7/beta_0p1/seed_42/predictions.npz",
+      "predictions_sha256": "d2d2d0e9d5a48fec93614a0221acafb949dea3e11c9d68bcb637fe27e9bbe4bc"
+    },
+    {
+      "case": "/data2/liyapeng_grp/program/MedMNISTMerge/outputs/pscore_full_20261003/shards/organcmnist_224/cases/small/organcmnist_224/vit_t/clients_3/beta_0/seed_42",
+      "checkpoint_sha256": "85efe9d5b41e8e5f3a52a792ec4db9e1751969ff4738bdacd14f19ad42c270f5",
+      "features_sha256": "82bbda13c9dd96c8c95324d9e2c3624aba86dc6a33f3841957a7b255ac83b2b9",
+      "protocol_sha256": "183aabd35cc07b466c3640d58a2fe7cbdce65678b5ee3d30869daea7e591222a",
+      "predictions_path": "/data2/liyapeng_grp/program/MedMNISTMerge/outputs/voting_feasibility_20261003/organcmnist_224/vit_t/clients_3/beta_0/seed_42/predictions.npz",
+      "predictions_sha256": "25903e6572d2484503af6d4d1ba33af31e5229ed3f30f1febfa8733821ec0314"
+    },
+    {
+      "case": "/data2/liyapeng_grp/program/MedMNISTMerge/outputs/pscore_full_20261003/shards/organcmnist_224/cases/small/organcmnist_224/vit_t/clients_3/beta_0p01/seed_42",
+      "checkpoint_sha256": "d92670d3bbc682d32da299c405f424beef3209d4bbfc0709b0e3481fe8c48ae3",
+      "features_sha256": "82bbda13c9dd96c8c95324d9e2c3624aba86dc6a33f3841957a7b255ac83b2b9",
+      "protocol_sha256": "dc595e0ce05d78e09aaf42a83cf83599177d6a6a7da8abe5adcfabeb62763b0e",
+      "predictions_path": "/data2/liyapeng_grp/program/MedMNISTMerge/outputs/voting_feasibility_20261003/organcmnist_224/vit_t/clients_3/beta_0p01/seed_42/predictions.npz",
+      "predictions_sha256": "3ff500791940738c671dd810d7bb7c8f19c4941073d7efb6a3cc73cb7152441a"
+    },
+    {
+      "case": "/data2/liyapeng_grp/program/MedMNISTMerge/outputs/pscore_full_20261003/shards/organcmnist_224/cases/small/organcmnist_224/vit_t/clients_3/beta_0p1/seed_42",
+      "checkpoint_sha256": "69eab757b5f4e282ead703b20bb9b91980fe0751cd6eba5c7bb8a374fb740a84",
+      "features_sha256": "82bbda13c9dd96c8c95324d9e2c3624aba86dc6a33f3841957a7b255ac83b2b9",
+      "protocol_sha256": "d27a90f97367ce9bf0d0ad63bc93be2b5ee387afbcead7f08bef61fbc7b7f73e",
+      "predictions_path": "/data2/liyapeng_grp/program/MedMNISTMerge/outputs/voting_feasibility_20261003/organcmnist_224/vit_t/clients_3/beta_0p1/seed_42/predictions.npz",
+      "predictions_sha256": "d0d629d62b8e96ff980d9a35f621a3be5203df12dcf7a4ce7a87d528ccd17489"
+    },
+    {
+      "case": "/data2/liyapeng_grp/program/MedMNISTMerge/outputs/pscore_full_20261003/shards/organcmnist_224/cases/small/organcmnist_224/vit_t/clients_5/beta_0/seed_42",
+      "checkpoint_sha256": "52b08adf2aeb169aeb783d6c7607d40358415a8ede37eccd27e3b14242b33490",
+      "features_sha256": "82bbda13c9dd96c8c95324d9e2c3624aba86dc6a33f3841957a7b255ac83b2b9",
+      "protocol_sha256": "6a761a23801ccde3a92181d986149e2c29c611e5724ec433433d7238895c8ae6",
+      "predictions_path": "/data2/liyapeng_grp/program/MedMNISTMerge/outputs/voting_feasibility_20261003/organcmnist_224/vit_t/clients_5/beta_0/seed_42/predictions.npz",
+      "predictions_sha256": "664d68483bfbb1119d0a629fd587896cd4966756dd9b927be726eccb7dad5d9b"
+    },
+    {
+      "case": "/data2/liyapeng_grp/program/MedMNISTMerge/outputs/pscore_full_20261003/shards/organcmnist_224/cases/small/organcmnist_224/vit_t/clients_5/beta_0p01/seed_42",
+      "checkpoint_sha256": "c675bffb813d75d6d10a14eaa02aa03ae11dab2d45c52a2c39c7381007855a1b",
+      "features_sha256": "82bbda13c9dd96c8c95324d9e2c3624aba86dc6a33f3841957a7b255ac83b2b9",
+      "protocol_sha256": "c630127e1a441a630a94ee836b31f94679dfca00e882b7470753b0855e3a19e5",
+      "predictions_path": "/data2/liyapeng_grp/program/MedMNISTMerge/outputs/voting_feasibility_20261003/organcmnist_224/vit_t/clients_5/beta_0p01/seed_42/predictions.npz",
+      "predictions_sha256": "2ce347f20c2ab5e01c5d438177c5854da5aa5a9d2bc940e8b41da18ed48938d5"
+    },
+    {
+      "case": "/data2/liyapeng_grp/program/MedMNISTMerge/outputs/pscore_full_20261003/shards/organcmnist_224/cases/small/organcmnist_224/vit_t/clients_5/beta_0p1/seed_42",
+      "checkpoint_sha256": "7b70ec808691fafb31dca9515d128a471ea80b532ffd9e3c9a2430f86ffa7fb8",
+      "features_sha256": "82bbda13c9dd96c8c95324d9e2c3624aba86dc6a33f3841957a7b255ac83b2b9",
+      "protocol_sha256": "f64e57d13c6bfe1eae7541db150ed4c29d4ee316455424c13d9ffe3c1be5ec6f",
+      "predictions_path": "/data2/liyapeng_grp/program/MedMNISTMerge/outputs/voting_feasibility_20261003/organcmnist_224/vit_t/clients_5/beta_0p1/seed_42/predictions.npz",
+      "predictions_sha256": "ee55c6d9e0767649a0401589762d28fb4d778bfc67a6a4c4f10969b83d1ec28d"
+    },
+    {
+      "case": "/data2/liyapeng_grp/program/MedMNISTMerge/outputs/pscore_full_20261003/shards/organcmnist_224/cases/small/organcmnist_224/vit_t/clients_7/beta_0/seed_42",
+      "checkpoint_sha256": "07d0c94d91c35be22698ed7075b16fff584d09f7dd752341571402884c07ca04",
+      "features_sha256": "82bbda13c9dd96c8c95324d9e2c3624aba86dc6a33f3841957a7b255ac83b2b9",
+      "protocol_sha256": "2b3bfd4941b3dc54e089f87eb7e2d32adf6493b38fc17d620021b7dd05c238c6",
+      "predictions_path": "/data2/liyapeng_grp/program/MedMNISTMerge/outputs/voting_feasibility_20261003/organcmnist_224/vit_t/clients_7/beta_0/seed_42/predictions.npz",
+      "predictions_sha256": "055463e0faf73efd038bcd1faba2ce0ddfa475e515a192ee65be1a810a22e37f"
+    },
+    {
+      "case": "/data2/liyapeng_grp/program/MedMNISTMerge/outputs/pscore_full_20261003/shards/organcmnist_224/cases/small/organcmnist_224/vit_t/clients_7/beta_0p01/seed_42",
+      "checkpoint_sha256": "f86aad5f5ed8cf9897892156afd02559101333a56f5c48eca367aa7bf1c66c10",
+      "features_sha256": "82bbda13c9dd96c8c95324d9e2c3624aba86dc6a33f3841957a7b255ac83b2b9",
+      "protocol_sha256": "ddd7273c185f7f038ddf81c87e32506093c67a44163375993c33ae61d24a2492",
+      "predictions_path": "/data2/liyapeng_grp/program/MedMNISTMerge/outputs/voting_feasibility_20261003/organcmnist_224/vit_t/clients_7/beta_0p01/seed_42/predictions.npz",
+      "predictions_sha256": "0187fc52705cf6cf55fd4fb38e4454e5bf388736253f6eaddf4df8b6ec30870a"
+    },
+    {
+      "case": "/data2/liyapeng_grp/program/MedMNISTMerge/outputs/pscore_full_20261003/shards/organcmnist_224/cases/small/organcmnist_224/vit_t/clients_7/beta_0p1/seed_42",
+      "checkpoint_sha256": "718fe4c0e7e79d67b151e77d8379bd97ba5a7a86829203470b76386bb54b623a",
+      "features_sha256": "82bbda13c9dd96c8c95324d9e2c3624aba86dc6a33f3841957a7b255ac83b2b9",
+      "protocol_sha256": "68425b165ee48e639b35f32dc80d79cfe67eed482eed317c184f9dbbbc236b69",
+      "predictions_path": "/data2/liyapeng_grp/program/MedMNISTMerge/outputs/voting_feasibility_20261003/organcmnist_224/vit_t/clients_7/beta_0p1/seed_42/predictions.npz",
+      "predictions_sha256": "d8e8857b27a6bccc55fc0b96e4ba5280434021a28dd3f7345725522097d412ff"
+    },
+    {
+      "case": "/data2/liyapeng_grp/program/MedMNISTMerge/outputs/pscore_full_20261003/shards/organsmnist_224/cases/small/organsmnist_224/convnext/clients_3/beta_0/seed_42",
+      "checkpoint_sha256": "4f65f4e3cb6b690f468688b7ba03575808ac514bc7e1d28ea18859fa63473d9d",
+      "features_sha256": "04357a20bea2eaa952d657e5114d285e1ba0d05f167a8940d36d1a025bec48d8",
+      "protocol_sha256": "8ceff294829c715c94e78b31d5c722a01806060b381b0544ecf314048713ce40",
+      "predictions_path": "/data2/liyapeng_grp/program/MedMNISTMerge/outputs/voting_feasibility_20261003/organsmnist_224/convnext/clients_3/beta_0/seed_42/predictions.npz",
+      "predictions_sha256": "c2841215a07e98607533e67c6276fc23fdaab07c07a4f36c47f6eb3e35fd7c55"
+    },
+    {
+      "case": "/data2/liyapeng_grp/program/MedMNISTMerge/outputs/pscore_full_20261003/shards/organsmnist_224/cases/small/organsmnist_224/convnext/clients_3/beta_0p01/seed_42",
+      "checkpoint_sha256": "fa6452c3d3b3e734de783468ee221298f45a93a959c0978b39c7896b23bafdf9",
+      "features_sha256": "04357a20bea2eaa952d657e5114d285e1ba0d05f167a8940d36d1a025bec48d8",
+      "protocol_sha256": "194df91f633b548fa2f2fd5edb016dd107b10a26c918a5403b10909a70bc2209",
+      "predictions_path": "/data2/liyapeng_grp/program/MedMNISTMerge/outputs/voting_feasibility_20261003/organsmnist_224/convnext/clients_3/beta_0p01/seed_42/predictions.npz",
+      "predictions_sha256": "7e7612cf3c38bd1d79acfeef3e9188eb72bd628a791590931b132b73bfe14bc0"
+    },
+    {
+      "case": "/data2/liyapeng_grp/program/MedMNISTMerge/outputs/pscore_full_20261003/shards/organsmnist_224/cases/small/organsmnist_224/convnext/clients_3/beta_0p1/seed_42",
+      "checkpoint_sha256": "b57b26353ee1b63337fc17e2995b72023125f587ee1d305588c3773ceef6c9c7",
+      "features_sha256": "04357a20bea2eaa952d657e5114d285e1ba0d05f167a8940d36d1a025bec48d8",
+      "protocol_sha256": "a4a25422e15a226e2f53b36aa9f60d264035eeeb93b82bbe6a89f2440bbc6f32",
+      "predictions_path": "/data2/liyapeng_grp/program/MedMNISTMerge/outputs/voting_feasibility_20261003/organsmnist_224/convnext/clients_3/beta_0p1/seed_42/predictions.npz",
+      "predictions_sha256": "dfef10194c211339758613b04a94074c1beab4d52540cd9a8972e33036a630ba"
+    },
+    {
+      "case": "/data2/liyapeng_grp/program/MedMNISTMerge/outputs/pscore_full_20261003/shards/organsmnist_224/cases/small/organsmnist_224/convnext/clients_5/beta_0/seed_42",
+      "checkpoint_sha256": "5d76a2d395292bca540d771f8a0b01882a19fa5544615b478995b6ffc27b3b43",
+      "features_sha256": "04357a20bea2eaa952d657e5114d285e1ba0d05f167a8940d36d1a025bec48d8",
+      "protocol_sha256": "34f89f12481f6c88dc5a1f4f4eacf3c4f56a2676c088a42db6a27c1e2f338003",
+      "predictions_path": "/data2/liyapeng_grp/program/MedMNISTMerge/outputs/voting_feasibility_20261003/organsmnist_224/convnext/clients_5/beta_0/seed_42/predictions.npz",
+      "predictions_sha256": "5bc91d75b6801613f308b55376da3b54fbc0cb8e1504e078b8cfd3f5c09dd4f3"
+    },
+    {
+      "case": "/data2/liyapeng_grp/program/MedMNISTMerge/outputs/pscore_full_20261003/shards/organsmnist_224/cases/small/organsmnist_224/convnext/clients_5/beta_0p01/seed_42",
+      "checkpoint_sha256": "c6ab67e35a513c500c699b23f0af42cce0b9b9f9cb26550e9171cd9a2d863b79",
+      "features_sha256": "04357a20bea2eaa952d657e5114d285e1ba0d05f167a8940d36d1a025bec48d8",
+      "protocol_sha256": "aa3e10d017a810922414700ed0af9648b3cccbb7c8aaf1dc56435ffd09cc571f",
+      "predictions_path": "/data2/liyapeng_grp/program/MedMNISTMerge/outputs/voting_feasibility_20261003/organsmnist_224/convnext/clients_5/beta_0p01/seed_42/predictions.npz",
+      "predictions_sha256": "2264506e416632f28ba3a23a2d8647e1141491a4ace3ae3eaf012c08addfc376"
+    },
+    {
+      "case": "/data2/liyapeng_grp/program/MedMNISTMerge/outputs/pscore_full_20261003/shards/organsmnist_224/cases/small/organsmnist_224/convnext/clients_5/beta_0p1/seed_42",
+      "checkpoint_sha256": "3f22c3b13fb741ca532c1895ebf8cac32d0dfa7bb69cbf2b554b617bb666b239",
+      "features_sha256": "04357a20bea2eaa952d657e5114d285e1ba0d05f167a8940d36d1a025bec48d8",
+      "protocol_sha256": "7227558ade8ae13a253a8b42dc8d86d63fbb5886f4bb5b9c8797a8647e775b19",
+      "predictions_path": "/data2/liyapeng_grp/program/MedMNISTMerge/outputs/voting_feasibility_20261003/organsmnist_224/convnext/clients_5/beta_0p1/seed_42/predictions.npz",
+      "predictions_sha256": "2cdd681839dfa12dce38fdcbb499dd4ade9d194ac3a25568c55260865bc8ec72"
+    },
+    {
+      "case": "/data2/liyapeng_grp/program/MedMNISTMerge/outputs/pscore_full_20261003/shards/organsmnist_224/cases/small/organsmnist_224/convnext/clients_7/beta_0/seed_42",
+      "checkpoint_sha256": "cc058b7897c2df813033ba9a3111ca2da88395b72c05161c92762329c27971ae",
+      "features_sha256": "04357a20bea2eaa952d657e5114d285e1ba0d05f167a8940d36d1a025bec48d8",
+      "protocol_sha256": "1813b3f5a9679997304473756898c5d3da9d1095e5f38920efbd5cd01e9a204f",
+      "predictions_path": "/data2/liyapeng_grp/program/MedMNISTMerge/outputs/voting_feasibility_20261003/organsmnist_224/convnext/clients_7/beta_0/seed_42/predictions.npz",
+      "predictions_sha256": "c2a22fecd411121b01c6f66c8afbecf3b8fe904ead84ab2461587671ec894f32"
+    },
+    {
+      "case": "/data2/liyapeng_grp/program/MedMNISTMerge/outputs/pscore_full_20261003/shards/organsmnist_224/cases/small/organsmnist_224/convnext/clients_7/beta_0p01/seed_42",
+      "checkpoint_sha256": "058265c753aa56a157afae9e1fe2173969bbdde47052d946347ab53d8b739fc1",
+      "features_sha256": "04357a20bea2eaa952d657e5114d285e1ba0d05f167a8940d36d1a025bec48d8",
+      "protocol_sha256": "140d831721f8032522893bfaadcd34bf2310e337b6456987d14bda19a218e9ca",
+      "predictions_path": "/data2/liyapeng_grp/program/MedMNISTMerge/outputs/voting_feasibility_20261003/organsmnist_224/convnext/clients_7/beta_0p01/seed_42/predictions.npz",
+      "predictions_sha256": "bd37dbc65e0e2c5f1a990bc2d3253959834f3d6229ad74ab539eda383c47e218"
+    },
+    {
+      "case": "/data2/liyapeng_grp/program/MedMNISTMerge/outputs/pscore_full_20261003/shards/organsmnist_224/cases/small/organsmnist_224/convnext/clients_7/beta_0p1/seed_42",
+      "checkpoint_sha256": "458d732f95975a08e9497514cfa7a0949920e29d1a1374d89ee0de7c2f8235e3",
+      "features_sha256": "04357a20bea2eaa952d657e5114d285e1ba0d05f167a8940d36d1a025bec48d8",
+      "protocol_sha256": "28e0234cae9e395f7b1704d154da7e5116db264498400a05274ef46eb7872b50",
+      "predictions_path": "/data2/liyapeng_grp/program/MedMNISTMerge/outputs/voting_feasibility_20261003/organsmnist_224/convnext/clients_7/beta_0p1/seed_42/predictions.npz",
+      "predictions_sha256": "15053d6ab192c96fe12a5396ec963219903dc7e6bc97cdf9a5575b98dbd3c5d4"
+    },
+    {
+      "case": "/data2/liyapeng_grp/program/MedMNISTMerge/outputs/pscore_full_20261003/shards/organsmnist_224/cases/small/organsmnist_224/resnet/clients_3/beta_0/seed_42",
+      "checkpoint_sha256": "64724044ddba887478fda01ffc8394f82463e34d0b80a5826fb64ab66a6aaf96",
+      "features_sha256": "a001f97eb2f583286f88b29a340b3759cfebd0ea9afd9a3491c3ab3dde927dc4",
+      "protocol_sha256": "416e06c52655da311012e170ceefa8d6c4eb54e3b210df2ba3cdbe6c34f26dc1",
+      "predictions_path": "/data2/liyapeng_grp/program/MedMNISTMerge/outputs/voting_feasibility_20261003/organsmnist_224/resnet/clients_3/beta_0/seed_42/predictions.npz",
+      "predictions_sha256": "78edf4b1cf0577d4fd7959a416ac5884373fbc1cf63534157522f3e8ff258f80"
+    },
+    {
+      "case": "/data2/liyapeng_grp/program/MedMNISTMerge/outputs/pscore_full_20261003/shards/organsmnist_224/cases/small/organsmnist_224/resnet/clients_3/beta_0p01/seed_42",
+      "checkpoint_sha256": "47dfdcca74d5e432cb34bf336947e571c0d61529d1bec9d5185e381760cb022f",
+      "features_sha256": "a001f97eb2f583286f88b29a340b3759cfebd0ea9afd9a3491c3ab3dde927dc4",
+      "protocol_sha256": "08d2fff597542f60c5b30eb267ee6411cacda404e60efda3db06fefec8522fab",
+      "predictions_path": "/data2/liyapeng_grp/program/MedMNISTMerge/outputs/voting_feasibility_20261003/organsmnist_224/resnet/clients_3/beta_0p01/seed_42/predictions.npz",
+      "predictions_sha256": "f595b21b7eab282e9ec2e00428e19b8eaab48609b5f62305cafcea60ec2a1a58"
+    },
+    {
+      "case": "/data2/liyapeng_grp/program/MedMNISTMerge/outputs/pscore_full_20261003/shards/organsmnist_224/cases/small/organsmnist_224/resnet/clients_3/beta_0p1/seed_42",
+      "checkpoint_sha256": "5090f8016c3218834af5295111f8dfd02bf1f35009e1f3551a05cfb914df465d",
+      "features_sha256": "a001f97eb2f583286f88b29a340b3759cfebd0ea9afd9a3491c3ab3dde927dc4",
+      "protocol_sha256": "988ddd5408989bad1fe1bae32455db2cc4dcb1a9c123ee94eb2bbba5960aa365",
+      "predictions_path": "/data2/liyapeng_grp/program/MedMNISTMerge/outputs/voting_feasibility_20261003/organsmnist_224/resnet/clients_3/beta_0p1/seed_42/predictions.npz",
+      "predictions_sha256": "ff4af3324d7e5097157eff11b91435ea65881f5cfe1ad1f0be0ccf82073ec094"
+    },
+    {
+      "case": "/data2/liyapeng_grp/program/MedMNISTMerge/outputs/pscore_full_20261003/shards/organsmnist_224/cases/small/organsmnist_224/resnet/clients_5/beta_0/seed_42",
+      "checkpoint_sha256": "9182dc2b23fff95d5eae53c9b505509c0c8619cc6e961e89380c0ce85ff44723",
+      "features_sha256": "a001f97eb2f583286f88b29a340b3759cfebd0ea9afd9a3491c3ab3dde927dc4",
+      "protocol_sha256": "fbfe424bff4ba066c9facade3164cde4ba5a3109509d6f15b8e26781709fcb57",
+      "predictions_path": "/data2/liyapeng_grp/program/MedMNISTMerge/outputs/voting_feasibility_20261003/organsmnist_224/resnet/clients_5/beta_0/seed_42/predictions.npz",
+      "predictions_sha256": "4af88c145042860cb9484b9ce845043b450afb2e5e06438229aeaad6ec9199a4"
+    },
+    {
+      "case": "/data2/liyapeng_grp/program/MedMNISTMerge/outputs/pscore_full_20261003/shards/organsmnist_224/cases/small/organsmnist_224/resnet/clients_5/beta_0p01/seed_42",
+      "checkpoint_sha256": "2d18b4c97ddca6af444128f46bd9b93debdb6cab60542d582a87107009d502dc",
+      "features_sha256": "a001f97eb2f583286f88b29a340b3759cfebd0ea9afd9a3491c3ab3dde927dc4",
+      "protocol_sha256": "2d64f596ac679584e8b554f95d73ad0879120682f1235571bf0f88a1856bcde9",
+      "predictions_path": "/data2/liyapeng_grp/program/MedMNISTMerge/outputs/voting_feasibility_20261003/organsmnist_224/resnet/clients_5/beta_0p01/seed_42/predictions.npz",
+      "predictions_sha256": "36717a969662aeabb691a4074bc8fc071cc11865ecde2636673a8c526b2ef9d4"
+    },
+    {
+      "case": "/data2/liyapeng_grp/program/MedMNISTMerge/outputs/pscore_full_20261003/shards/organsmnist_224/cases/small/organsmnist_224/resnet/clients_5/beta_0p1/seed_42",
+      "checkpoint_sha256": "f40366f558387c4947ac683b2845cf5fd79548bf918e0ba3f0cd390e386a96b2",
+      "features_sha256": "a001f97eb2f583286f88b29a340b3759cfebd0ea9afd9a3491c3ab3dde927dc4",
+      "protocol_sha256": "7028b54e611dfc9cf61fe93c78eb6525ab94321ca838000c4230258ba51d7bb6",
+      "predictions_path": "/data2/liyapeng_grp/program/MedMNISTMerge/outputs/voting_feasibility_20261003/organsmnist_224/resnet/clients_5/beta_0p1/seed_42/predictions.npz",
+      "predictions_sha256": "8917f12acf3a403edb8576f0a5bf56fdce968fec60d7a36fbe711649148214c6"
+    },
+    {
+      "case": "/data2/liyapeng_grp/program/MedMNISTMerge/outputs/pscore_full_20261003/shards/organsmnist_224/cases/small/organsmnist_224/resnet/clients_7/beta_0/seed_42",
+      "checkpoint_sha256": "a2a83c1a0f8439a4d88969dcf112a7efab6394b02c306de9fb07470d4adce57b",
+      "features_sha256": "a001f97eb2f583286f88b29a340b3759cfebd0ea9afd9a3491c3ab3dde927dc4",
+      "protocol_sha256": "b2b14850345b98235879dda3c5b7010a47fc4af316d67605a1d8dce9da3ae958",
+      "predictions_path": "/data2/liyapeng_grp/program/MedMNISTMerge/outputs/voting_feasibility_20261003/organsmnist_224/resnet/clients_7/beta_0/seed_42/predictions.npz",
+      "predictions_sha256": "24c18183ff35707eab703a2871ddeda3ad7e7059bba7fb1cf03891bb59bfcd2d"
+    },
+    {
+      "case": "/data2/liyapeng_grp/program/MedMNISTMerge/outputs/pscore_full_20261003/shards/organsmnist_224/cases/small/organsmnist_224/resnet/clients_7/beta_0p01/seed_42",
+      "checkpoint_sha256": "e88f9e506f65a63627a98af690735b72db29e8a933b0df5112ab5c4a7063f3ed",
+      "features_sha256": "a001f97eb2f583286f88b29a340b3759cfebd0ea9afd9a3491c3ab3dde927dc4",
+      "protocol_sha256": "cff211ef9ebb1036ebb2fdf8749755af8dde71ab2e2600c05f77bbabe9555eec",
+      "predictions_path": "/data2/liyapeng_grp/program/MedMNISTMerge/outputs/voting_feasibility_20261003/organsmnist_224/resnet/clients_7/beta_0p01/seed_42/predictions.npz",
+      "predictions_sha256": "4e62ac6622e10fa8e74e5438dd35137f4e7549e5f004ce6560f53afa1ea60256"
+    },
+    {
+      "case": "/data2/liyapeng_grp/program/MedMNISTMerge/outputs/pscore_full_20261003/shards/organsmnist_224/cases/small/organsmnist_224/resnet/clients_7/beta_0p1/seed_42",
+      "checkpoint_sha256": "a4f9288e288e6635b0511b68651bfa0dd5630286d296a031d89442f2493b98f8",
+      "features_sha256": "a001f97eb2f583286f88b29a340b3759cfebd0ea9afd9a3491c3ab3dde927dc4",
+      "protocol_sha256": "6cab9c82e2aa4f4c26d1a83e30d84307fea9a978fcd9f6024744c2636ae6df34",
+      "predictions_path": "/data2/liyapeng_grp/program/MedMNISTMerge/outputs/voting_feasibility_20261003/organsmnist_224/resnet/clients_7/beta_0p1/seed_42/predictions.npz",
+      "predictions_sha256": "d53a169ada7971a7ba82f19163ff5ad0b673883c53c80f7fb779e561c7b510f0"
+    },
+    {
+      "case": "/data2/liyapeng_grp/program/MedMNISTMerge/outputs/pscore_full_20261003/shards/organsmnist_224/cases/small/organsmnist_224/swin_tiny/clients_3/beta_0/seed_42",
+      "checkpoint_sha256": "0767223475451c325f4c66cc7f2eeae9e7547f73b968cd0a08439db5ccda60d0",
+      "features_sha256": "c3a985a0a78c976f52ebda90330f445aa7a0a1c078534a35dc893e48f0654e44",
+      "protocol_sha256": "6d8cb022660dd912c86533c4b320d0faa03163e94c9117997e755cafffe99002",
+      "predictions_path": "/data2/liyapeng_grp/program/MedMNISTMerge/outputs/voting_feasibility_20261003/organsmnist_224/swin_tiny/clients_3/beta_0/seed_42/predictions.npz",
+      "predictions_sha256": "c811132bb47a3b8db57b429c40f7452e312af5824b025922f78129ab48b9cb2b"
+    },
+    {
+      "case": "/data2/liyapeng_grp/program/MedMNISTMerge/outputs/pscore_full_20261003/shards/organsmnist_224/cases/small/organsmnist_224/swin_tiny/clients_3/beta_0p01/seed_42",
+      "checkpoint_sha256": "c962c67047422a6e1660463166cbb302bcd046771cbab26ca60154a70de53da9",
+      "features_sha256": "c3a985a0a78c976f52ebda90330f445aa7a0a1c078534a35dc893e48f0654e44",
+      "protocol_sha256": "12d2a043210f203176d55740d21f74bb47a8d2fa30a2a5c345551935d83c252c",
+      "predictions_path": "/data2/liyapeng_grp/program/MedMNISTMerge/outputs/voting_feasibility_20261003/organsmnist_224/swin_tiny/clients_3/beta_0p01/seed_42/predictions.npz",
+      "predictions_sha256": "2390cdc450e13f55d7f3ae4f0a81abe4314d0f9a574e07c29816b955a19b4a89"
+    },
+    {
+      "case": "/data2/liyapeng_grp/program/MedMNISTMerge/outputs/pscore_full_20261003/shards/organsmnist_224/cases/small/organsmnist_224/swin_tiny/clients_3/beta_0p1/seed_42",
+      "checkpoint_sha256": "de3906a220af12266a3c94fb2ed023bf73286677344eccaa836e46e7ab6f4076",
+      "features_sha256": "c3a985a0a78c976f52ebda90330f445aa7a0a1c078534a35dc893e48f0654e44",
+      "protocol_sha256": "79f967785c40a7686c88795cff5c23e77aa725cfe05d149a8d8e084577ad2283",
+      "predictions_path": "/data2/liyapeng_grp/program/MedMNISTMerge/outputs/voting_feasibility_20261003/organsmnist_224/swin_tiny/clients_3/beta_0p1/seed_42/predictions.npz",
+      "predictions_sha256": "59f058ed5fb6d2a44258b920b5b90c079601fb96f62542c6b034518480740719"
+    },
+    {
+      "case": "/data2/liyapeng_grp/program/MedMNISTMerge/outputs/pscore_full_20261003/shards/organsmnist_224/cases/small/organsmnist_224/swin_tiny/clients_5/beta_0/seed_42",
+      "checkpoint_sha256": "047ea8e8e0d0ac68b34c7bfacf2d5596b39c1fda2113915c17df2adc80eb3a7c",
+      "features_sha256": "c3a985a0a78c976f52ebda90330f445aa7a0a1c078534a35dc893e48f0654e44",
+      "protocol_sha256": "72c107e9fa52e8d41ca8afb043c01b1c9c11e68df0fc25667f29f840cfdbb046",
+      "predictions_path": "/data2/liyapeng_grp/program/MedMNISTMerge/outputs/voting_feasibility_20261003/organsmnist_224/swin_tiny/clients_5/beta_0/seed_42/predictions.npz",
+      "predictions_sha256": "3456b3b8ee3b576cce5c6de93a3c427e672eb83be72027486edc293739397ca9"
+    },
+    {
+      "case": "/data2/liyapeng_grp/program/MedMNISTMerge/outputs/pscore_full_20261003/shards/organsmnist_224/cases/small/organsmnist_224/swin_tiny/clients_5/beta_0p01/seed_42",
+      "checkpoint_sha256": "50875f42d7f701597f09c1b9841ecde1432764869b05507b8b1cf1517b51a850",
+      "features_sha256": "c3a985a0a78c976f52ebda90330f445aa7a0a1c078534a35dc893e48f0654e44",
+      "protocol_sha256": "a18bb09262ff55b3918263a18e94413239d0ac69e2733b036708d69ee2773797",
+      "predictions_path": "/data2/liyapeng_grp/program/MedMNISTMerge/outputs/voting_feasibility_20261003/organsmnist_224/swin_tiny/clients_5/beta_0p01/seed_42/predictions.npz",
+      "predictions_sha256": "6a62ad27dc06d4779a6519320b9026ebedb9e02023014b0a2c86979cad08956f"
+    },
+    {
+      "case": "/data2/liyapeng_grp/program/MedMNISTMerge/outputs/pscore_full_20261003/shards/organsmnist_224/cases/small/organsmnist_224/swin_tiny/clients_5/beta_0p1/seed_42",
+      "checkpoint_sha256": "ec8210fe2f6b7c2578a29e513b8660e972487f420780f4d4ea040fd740b70692",
+      "features_sha256": "c3a985a0a78c976f52ebda90330f445aa7a0a1c078534a35dc893e48f0654e44",
+      "protocol_sha256": "05ad6f56d41bbcce99d95564cb35c3ce03b4f81f7d4c4ea6c5d7c9469740615f",
+      "predictions_path": "/data2/liyapeng_grp/program/MedMNISTMerge/outputs/voting_feasibility_20261003/organsmnist_224/swin_tiny/clients_5/beta_0p1/seed_42/predictions.npz",
+      "predictions_sha256": "bd8a55f1e0ea56888bdccad0ba62a61230ed1cc6dadd01ce8c2d8f66f70cfc46"
+    },
+    {
+      "case": "/data2/liyapeng_grp/program/MedMNISTMerge/outputs/pscore_full_20261003/shards/organsmnist_224/cases/small/organsmnist_224/swin_tiny/clients_7/beta_0/seed_42",
+      "checkpoint_sha256": "54ddd83c0dde984956d100400914609707508bfdb71cc93e94a516aa0990822a",
+      "features_sha256": "c3a985a0a78c976f52ebda90330f445aa7a0a1c078534a35dc893e48f0654e44",
+      "protocol_sha256": "97d983b8d58a379a7169ebf6205dfaa879a228180d0042dfc7b0e413ca793743",
+      "predictions_path": "/data2/liyapeng_grp/program/MedMNISTMerge/outputs/voting_feasibility_20261003/organsmnist_224/swin_tiny/clients_7/beta_0/seed_42/predictions.npz",
+      "predictions_sha256": "339ac76a58db09d4323da543b801794ba1db11f0965010effd1381e9e4d35be2"
+    },
+    {
+      "case": "/data2/liyapeng_grp/program/MedMNISTMerge/outputs/pscore_full_20261003/shards/organsmnist_224/cases/small/organsmnist_224/swin_tiny/clients_7/beta_0p01/seed_42",
+      "checkpoint_sha256": "c6f0429c60f76474ee2243755e637887d7cf99523ef677082cc2d96f5afd15dc",
+      "features_sha256": "c3a985a0a78c976f52ebda90330f445aa7a0a1c078534a35dc893e48f0654e44",
+      "protocol_sha256": "af71ae39ff5273bcce9af3260a5084762c727a27f8726e8e8b530c0c97489e9d",
+      "predictions_path": "/data2/liyapeng_grp/program/MedMNISTMerge/outputs/voting_feasibility_20261003/organsmnist_224/swin_tiny/clients_7/beta_0p01/seed_42/predictions.npz",
+      "predictions_sha256": "4b751eec2e7e96d6ed9dfc23585eeaca8b3da11f86cd89092eea84d99af43b3a"
+    },
+    {
+      "case": "/data2/liyapeng_grp/program/MedMNISTMerge/outputs/pscore_full_20261003/shards/organsmnist_224/cases/small/organsmnist_224/swin_tiny/clients_7/beta_0p1/seed_42",
+      "checkpoint_sha256": "7045f6d5dbf1fef936521c382924c959e0bdf98e57cd282ae7d69796f1becb61",
+      "features_sha256": "c3a985a0a78c976f52ebda90330f445aa7a0a1c078534a35dc893e48f0654e44",
+      "protocol_sha256": "f8e33e05583c16ce4bcf21ba16455d208fcaa837f8c09800080ea1b654a6c21d",
+      "predictions_path": "/data2/liyapeng_grp/program/MedMNISTMerge/outputs/voting_feasibility_20261003/organsmnist_224/swin_tiny/clients_7/beta_0p1/seed_42/predictions.npz",
+      "predictions_sha256": "01afe6151bf933a6536c26662952ee9ad641eace063535a00a0d045cdeeafccf"
+    },
+    {
+      "case": "/data2/liyapeng_grp/program/MedMNISTMerge/outputs/pscore_full_20261003/shards/organsmnist_224/cases/small/organsmnist_224/vit_t/clients_3/beta_0/seed_42",
+      "checkpoint_sha256": "c0621a4dd5482a73af90f3ee69fa5145fa07fab7a315dd1791c96065c5ec34b5",
+      "features_sha256": "1911735080abcf922f22981aad4fcaeb6b91ada40fa663c90aa1be8d26e125b7",
+      "protocol_sha256": "d9d2a9ec9f23e766e2887b85b048c0c224ba06c35db5a5fe767fd388d23ec6bc",
+      "predictions_path": "/data2/liyapeng_grp/program/MedMNISTMerge/outputs/voting_feasibility_20261003/organsmnist_224/vit_t/clients_3/beta_0/seed_42/predictions.npz",
+      "predictions_sha256": "034b90e26da666fdd1fd707573c53914eb3e96a1714ae8de6f4a67447e6bf0e2"
+    },
+    {
+      "case": "/data2/liyapeng_grp/program/MedMNISTMerge/outputs/pscore_full_20261003/shards/organsmnist_224/cases/small/organsmnist_224/vit_t/clients_3/beta_0p01/seed_42",
+      "checkpoint_sha256": "3791de9525a465d022c4ebbc54dbb08e5aae23926da5b7d9ae9aeced813c4bd9",
+      "features_sha256": "1911735080abcf922f22981aad4fcaeb6b91ada40fa663c90aa1be8d26e125b7",
+      "protocol_sha256": "cab40846e5f4902ff00e6511fe3c6b083a810588e90fc6e1ebc5f0c85e9dfbac",
+      "predictions_path": "/data2/liyapeng_grp/program/MedMNISTMerge/outputs/voting_feasibility_20261003/organsmnist_224/vit_t/clients_3/beta_0p01/seed_42/predictions.npz",
+      "predictions_sha256": "4133b3817bee8a0173b4128cf746fc7b93349972b73da0635e4d65b4cdfdf4d1"
+    },
+    {
+      "case": "/data2/liyapeng_grp/program/MedMNISTMerge/outputs/pscore_full_20261003/shards/organsmnist_224/cases/small/organsmnist_224/vit_t/clients_3/beta_0p1/seed_42",
+      "checkpoint_sha256": "b167b577e3209408a1f01b2de66df8e05283194c395c6b34fbf98c7e01a7797b",
+      "features_sha256": "1911735080abcf922f22981aad4fcaeb6b91ada40fa663c90aa1be8d26e125b7",
+      "protocol_sha256": "0d5a401f11ce655959e7c7d9bd8d5dc4c6b198f8c6dd20a0a2ab599f5939a24b",
+      "predictions_path": "/data2/liyapeng_grp/program/MedMNISTMerge/outputs/voting_feasibility_20261003/organsmnist_224/vit_t/clients_3/beta_0p1/seed_42/predictions.npz",
+      "predictions_sha256": "8bf52ae6a342a79648ccf1db9d58d6d8b0222cbc2f80c2ec87c2a77ae9321054"
+    },
+    {
+      "case": "/data2/liyapeng_grp/program/MedMNISTMerge/outputs/pscore_full_20261003/shards/organsmnist_224/cases/small/organsmnist_224/vit_t/clients_5/beta_0/seed_42",
+      "checkpoint_sha256": "ed8ed49e94303b07c5c7361e61ef7c9f95cacbe90d3da234e25854370f0c8a17",
+      "features_sha256": "1911735080abcf922f22981aad4fcaeb6b91ada40fa663c90aa1be8d26e125b7",
+      "protocol_sha256": "b43b5584da4eb391c0723fec54e18a6042e485aa177cabeb6260740bdca4801d",
+      "predictions_path": "/data2/liyapeng_grp/program/MedMNISTMerge/outputs/voting_feasibility_20261003/organsmnist_224/vit_t/clients_5/beta_0/seed_42/predictions.npz",
+      "predictions_sha256": "73423137cc26904143467ad66720a85df49855f1807011512ce5fab01ee72706"
+    },
+    {
+      "case": "/data2/liyapeng_grp/program/MedMNISTMerge/outputs/pscore_full_20261003/shards/organsmnist_224/cases/small/organsmnist_224/vit_t/clients_5/beta_0p01/seed_42",
+      "checkpoint_sha256": "274692396d18cc411562cdbdf84e23033dc0b396ad48d1cefc21d9a9e7f23bd7",
+      "features_sha256": "1911735080abcf922f22981aad4fcaeb6b91ada40fa663c90aa1be8d26e125b7",
+      "protocol_sha256": "e16e3a9e7cff5e384ad9fabdca88e28b1b4a1ae4d595c55feccb3021ee325aa4",
+      "predictions_path": "/data2/liyapeng_grp/program/MedMNISTMerge/outputs/voting_feasibility_20261003/organsmnist_224/vit_t/clients_5/beta_0p01/seed_42/predictions.npz",
+      "predictions_sha256": "a945b9c239dd7f0f98113362440d666125e7acc0051eee10bcf80ba40e3c3aa3"
+    },
+    {
+      "case": "/data2/liyapeng_grp/program/MedMNISTMerge/outputs/pscore_full_20261003/shards/organsmnist_224/cases/small/organsmnist_224/vit_t/clients_5/beta_0p1/seed_42",
+      "checkpoint_sha256": "a587719a726e18288feabd7a653a726d7a8dc005180dcacafa73a10bcb763fda",
+      "features_sha256": "1911735080abcf922f22981aad4fcaeb6b91ada40fa663c90aa1be8d26e125b7",
+      "protocol_sha256": "bf7807e638aedd5b0e17efabd717efaf51e266ca2c90c254d9a93447100b2fa3",
+      "predictions_path": "/data2/liyapeng_grp/program/MedMNISTMerge/outputs/voting_feasibility_20261003/organsmnist_224/vit_t/clients_5/beta_0p1/seed_42/predictions.npz",
+      "predictions_sha256": "f52ecd61a35509a10a80df455c2df25eb8344725e99c4a42c075178a452cd78f"
+    },
+    {
+      "case": "/data2/liyapeng_grp/program/MedMNISTMerge/outputs/pscore_full_20261003/shards/organsmnist_224/cases/small/organsmnist_224/vit_t/clients_7/beta_0/seed_42",
+      "checkpoint_sha256": "c1720e2092aa917cbd76a8d72668e9aed3930599dfbbf63238d885ae07a6389e",
+      "features_sha256": "1911735080abcf922f22981aad4fcaeb6b91ada40fa663c90aa1be8d26e125b7",
+      "protocol_sha256": "e80033a1e6bdd442b4436503cd69b2018f5a33e41b7412f2ca9ac932e7f14f8e",
+      "predictions_path": "/data2/liyapeng_grp/program/MedMNISTMerge/outputs/voting_feasibility_20261003/organsmnist_224/vit_t/clients_7/beta_0/seed_42/predictions.npz",
+      "predictions_sha256": "b94e4bf6e935a54d0f180c35a6b1ad9364dc172ac61dad0354560f073f17f41f"
+    },
+    {
+      "case": "/data2/liyapeng_grp/program/MedMNISTMerge/outputs/pscore_full_20261003/shards/organsmnist_224/cases/small/organsmnist_224/vit_t/clients_7/beta_0p01/seed_42",
+      "checkpoint_sha256": "681ff3102af7205c47709cb00afaf6352d609cd43a48fed515ba7fff4cb69ce3",
+      "features_sha256": "1911735080abcf922f22981aad4fcaeb6b91ada40fa663c90aa1be8d26e125b7",
+      "protocol_sha256": "631ed25c75da9c86ab1a193640b13dd61dbc0c949757641bbf369667a4285a16",
+      "predictions_path": "/data2/liyapeng_grp/program/MedMNISTMerge/outputs/voting_feasibility_20261003/organsmnist_224/vit_t/clients_7/beta_0p01/seed_42/predictions.npz",
+      "predictions_sha256": "a41a32e19758a801e6f2e90f68c54d915f802af6ff65a0f9124f4ef17c1bfeb1"
+    },
+    {
+      "case": "/data2/liyapeng_grp/program/MedMNISTMerge/outputs/pscore_full_20261003/shards/organsmnist_224/cases/small/organsmnist_224/vit_t/clients_7/beta_0p1/seed_42",
+      "checkpoint_sha256": "4cb02d8cdbf2c2c795568c714976ff9fba08ff5bbd6213f5b93ed3d26c4018f0",
+      "features_sha256": "1911735080abcf922f22981aad4fcaeb6b91ada40fa663c90aa1be8d26e125b7",
+      "protocol_sha256": "a483245f9cbcb207edf6d00f8e64f72b8349dc2596870c05d132accef4a43194",
+      "predictions_path": "/data2/liyapeng_grp/program/MedMNISTMerge/outputs/voting_feasibility_20261003/organsmnist_224/vit_t/clients_7/beta_0p1/seed_42/predictions.npz",
+      "predictions_sha256": "56a7f754314a7a58583f4f2844cca9b68661a1ab6264b830cc581fa0ed308df4"
+    }
+  ]
+}
